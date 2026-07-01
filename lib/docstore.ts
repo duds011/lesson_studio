@@ -6,8 +6,19 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 
-const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
-const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
+// Find the Upstash/KV REST URL + token, tolerating any prefix the Vercel
+// integration used (e.g. STORAGE_KV_REST_API_URL from a "STORAGE" prefix).
+function findCred(suffix: RegExp, exclude?: RegExp): string | undefined {
+  const env = process.env
+  const key = Object.keys(env).find((k) => suffix.test(k) && (!exclude || !exclude.test(k)) && env[k])
+  return key ? env[key] : undefined
+}
+const KV_URL =
+  process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || findCred(/REST_API_URL$/)
+const KV_TOKEN =
+  process.env.KV_REST_API_TOKEN ||
+  process.env.UPSTASH_REDIS_REST_TOKEN ||
+  findCred(/REST_API_TOKEN$/, /READ_ONLY/)
 export const kvEnabled = Boolean(KV_URL && KV_TOKEN)
 
 const DATA_DIR = path.join(process.cwd(), '.data')
