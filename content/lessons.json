@@ -1,0 +1,805 @@
+{
+  "jeff-ganly-L1-1782767625596": {
+    "id": "jeff-ganly-L1-1782767625596",
+    "studentId": "jeff-ganly",
+    "lessonNumber": 1,
+    "date": "2026-06-27",
+    "title": "Directions, Particles & Duration",
+    "recap": {
+      "recap": "Lesson Recap — Directions, Particles & Duration\nToday you practiced giving directions, using location words, and working with key Japanese particles like に (ni), で (de), and も (mo). We also covered expressing durations and quantities, plus reviewed some polite and casual verb forms.\n\nまっすぐ行って、右に曲がります。\nMassugu itte, migi ni magarimasu.\nGo straight and turn right.\n\nスーパーで野菜を買いました。\nSūpā de yasai o kaimashita.\nI bought vegetables at the supermarket.\n\n一時間待ちました。\nIchijikan machimashita.\nI waited for one hour.\n\nたくさん写真を撮りました。\nTakusan shashin o torimashita.\nI took many pictures.\n\nMain takeaway: Focus on using the correct particle based on whether you’re indicating location or place of action. Remember the natural word order and practice both polite and casual sentence forms.",
+      "score": 7.7,
+      "talk_percentage": 42,
+      "grammar_density": "Medium-High",
+      "confidence_label": "Strong Foundation",
+      "teacher_note": "Great job today, Jeff! You showed strong understanding of particles and made good progress with location-based grammar and durations. Keep practicing your connections and working on the natural flow of your sentences—your efforts are paying off.",
+      "audio_script": "Hi Jeff, great work on today's lesson. We started by practicing directions with まっすぐ (massugu — straight) and みぎ (migi — right) to help you describe routes. For example, まっすぐ行って、右に曲がります (massugu itte, migi ni magarimasu) means 'go straight and turn right.' Next, we worked on particles like に (ni) for destination and で (de) for action locations—スーパーで野菜を買いました (sūpā de yasai o kaimashita) is 'I bought vegetables at the supermarket.' We practiced も (mo) as in 'also' for talking about things like おおさかにも行きました (Ōsaka ni mo ikimashita) which means 'I also went to Osaka.' You learned to express durations, such as 一時間待ちました (ichijikan machimashita) for 'I waited one hour.' Finally, we strengthened your use of counting words and quantity phrases—like たくさん (takusan) for 'many.' Your homework: complete the recap exercises, record the speaking tasks, and try writing sentences using today's patterns. Keep up the excellent work and see you next lesson!",
+      "vocab_total_count": 29,
+      "vocab_level_distribution": {
+        "N5": 16,
+        "N4": 7,
+        "N3": 5,
+        "N2": 1,
+        "N1": 0
+      },
+      "vocabulary": [
+        {
+          "word": "まっすぐ",
+          "reading": "massugu",
+          "definition": "Straight ahead.",
+          "explanation": "You'll use this when giving or following directions.",
+          "jlpt_level": "N5",
+          "example_sentence": "まっすぐ行きます。\nMassugu ikimasu.\nI go straight."
+        },
+        {
+          "word": "右",
+          "reading": "migi",
+          "definition": "Right (direction).",
+          "explanation": "Important for basic navigation and street directions.",
+          "jlpt_level": "N5",
+          "example_sentence": "右に曲がります。\nMigi ni magarimasu.\nTurn right."
+        },
+        {
+          "word": "左",
+          "reading": "hidari",
+          "definition": "Left (direction).",
+          "explanation": "Pair this with 'migi' for full directional ability!",
+          "jlpt_level": "N5",
+          "example_sentence": "左に銀行があります。\nHidari ni ginkō ga arimasu.\nThere's a bank on the left."
+        },
+        {
+          "word": "に",
+          "reading": "ni",
+          "definition": "To (destination particle).",
+          "explanation": "Marks the target direction or place you go to.",
+          "jlpt_level": "N5",
+          "example_sentence": "学校に行きます。\nGakkō ni ikimasu.\nI go to school."
+        },
+        {
+          "word": "で",
+          "reading": "de",
+          "definition": "At/in (action location particle).",
+          "explanation": "Indicates where an action takes place.",
+          "jlpt_level": "N5",
+          "example_sentence": "スーパーで買い物します。\nSūpā de kaimono shimasu.\nI shop at the supermarket."
+        },
+        {
+          "word": "も",
+          "reading": "mo",
+          "definition": "Also/too (particle).",
+          "explanation": "Use this to add 'me too!' in a sentence.",
+          "jlpt_level": "N5",
+          "example_sentence": "私も行きます。\nWatashi mo ikimasu.\nI will go too."
+        },
+        {
+          "word": "ごろ",
+          "reading": "goro",
+          "definition": "About/around (time approximation).",
+          "explanation": "Use with clock times—very common and useful.",
+          "jlpt_level": "N4",
+          "example_sentence": "三時ごろ帰ります。\nSanji goro kaerimasu.\nI’ll be back around 3 o’clock."
+        },
+        {
+          "word": "たくさん",
+          "reading": "takusan",
+          "definition": "Many/a lot.",
+          "explanation": "Very useful for talking about large quantities.",
+          "jlpt_level": "N5",
+          "example_sentence": "たくさん食べました。\nTakusan tabemashita.\nI ate a lot."
+        },
+        {
+          "word": "います",
+          "reading": "imasu",
+          "definition": "There is/are (for animate things).",
+          "explanation": "Used when something living exists at a location.",
+          "jlpt_level": "N5",
+          "example_sentence": "ねこがいます。\nNeko ga imasu.\nThere is a cat."
+        },
+        {
+          "word": "写真を撮る",
+          "reading": "shashin o toru",
+          "definition": "To take a photo.",
+          "explanation": "Useful for describing your travel and memories.",
+          "jlpt_level": "N5",
+          "example_sentence": "写真をたくさん撮りました。\nShashin o takusan torimashita.\nI took lots of photos."
+        }
+      ],
+      "homework": [
+        {
+          "description": "Complete the multiple choice and fill-in-the-blank exercises in the recap."
+        },
+        {
+          "description": "Record a voice memo reading one of the dialogue sections provided."
+        },
+        {
+          "description": "Write three original sentences using duration expressions and particles from today."
+        },
+        {
+          "description": "Book your next lesson for July as discussed."
+        }
+      ],
+      "exercises": [
+        {
+          "type": "read_aloud",
+          "prompt": "Read these sentences aloud",
+          "data": {
+            "focus": "Direction and location particles",
+            "sentences": [
+              {
+                "jp": "まっすぐいって、みぎにまがります。",
+                "en": "Go straight and turn right."
+              },
+              {
+                "jp": "スーパーでやさいをかいました。",
+                "en": "I bought vegetables at the supermarket."
+              },
+              {
+                "jp": "いちじかんまちました。",
+                "en": "I waited for one hour."
+              }
+            ]
+          }
+        },
+        {
+          "type": "speak",
+          "prompt": "Answer out loud",
+          "data": {
+            "prompt_jp": "きんようびにどこにいきましたか。",
+            "prompt_en": "Where did you go on Friday?",
+            "hint": "Use に particle and past tense"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which particle shows the place where an action happens?",
+            "options": [
+              "に",
+              "で",
+              "も"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "How do you say 'about three hours' in Japanese?",
+            "options": [
+              "さんじかんごろ",
+              "ごろさんじかん",
+              "さんじかん"
+            ],
+            "answer": 2
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "How do you say 'I went to Osaka too'?",
+            "options": [
+              "おおさかにもいきました",
+              "おおさかをもいきました",
+              "おおさかでいきました"
+            ],
+            "answer": 0
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "きのう、スーパー",
+            "after": "やさいをかいました。",
+            "options": [
+              "に",
+              "で",
+              "も"
+            ],
+            "answer": "で",
+            "en": "Yesterday, I bought vegetables at the supermarket."
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "いすのした",
+            "after": "ねこがいます。",
+            "options": [
+              "に",
+              "で",
+              "も"
+            ],
+            "answer": "に",
+            "en": "There is a cat under the chair."
+          }
+        }
+      ],
+      "sections": [
+        {
+          "title": "1. まっすぐ・みぎ・ひだり: Directions (Straight, Right, Left)",
+          "content": "Learning street and building directions is essential for travel and daily life in Japan.\n- **まっすぐ** *massugu* — straight ahead\n- **みぎ** *migi* — right\n- **ひだり** *hidari* — left\nまっすぐ行って、右に曲がります。\nMassugu itte, migi ni magarimasu.\nGo straight and turn right.\n**Pattern:** [direction] に [verb]\nNatural note: Always keep verb at the end in Japanese."
+        },
+        {
+          "title": "2. に・で: Particles for Location and Action",
+          "content": "Particles に and で change the meaning depending on the verb. Use に for destinations and existence, and で for the place of action.\n- **に** *ni* — to (direction or location)\n- **で** *de* — at, in (where action happens)\nスーパーでやさいをかいました。\nSūpā de yasai o kaimashita.\nI bought vegetables at the supermarket.\n**Pattern:** [place] で [action]\nImportant: に for 'there is', で for 'doing something'."
+        },
+        {
+          "title": "3. も: The 'Also/Too' Particle",
+          "content": "も allows you to add 'also' or 'too' in Japanese sentences, to show that something is in addition.\n- **も** *mo* — also, too\nおおさかにもいきました。\nŌsaka ni mo ikimashita.\nI also went to Osaka.\n**Pattern:** [noun/particle] も [verb]\nNatural note: も can come after particles like に or で."
+        },
+        {
+          "title": "4. Expressing Duration: ～じかん, ごろ",
+          "content": "You can express durations by using ～じかん for 'hours' and ごろ for an approximate time.\n- **いちじかん** *ichijikan* — one hour\n- **ごろ** *goro* — about/around (with times)\nいちじかんまちました。\nIchijikan machimashita.\nI waited for one hour.\n**Pattern:** [number] じかん\nImportant: Use ごろ only with clock times, not durations."
+        },
+        {
+          "title": "5. たくさん・かず: Quantity Expressions",
+          "content": "Use たくさん for 'many' and count with appropriate counters for things or people.\n- **たくさん** *takusan* — many, much\nたくさんしゃしんをとりました。\nTakusan shashin o torimashita.\nI took many pictures.\n- **ひとり** *hitori* — one person\nNatural note: たくさん comes before the object or verb."
+        },
+        {
+          "title": "6. います・あります: Existence of Living and Non-Living Things",
+          "content": "Use います for living things, あります for objects or places.\n- **います** *imasu* — there is (living)\n- **あります** *arimasu* — there is (non-living)\nねこがいます。\nNeko ga imasu.\nThere is a cat.\nNatural note: Animate vs inanimate makes a difference!"
+        },
+        {
+          "title": "7. Verb Tenses: Polite and Casual Past, Negative",
+          "content": "Japanese verbs have polite and casual forms. For past tense, use ～ました (polite) and ～た (casual).\n- **たべました** *tabemashita* — ate (polite)\n- **たべた** *tabeta* — ate (casual)\n- **たべませんでした** *tabemasen deshita* — did not eat\n**Pattern:** [verb stem] ました / ませんでした\nImportant: Match formality to who you’re speaking with!"
+        },
+        {
+          "title": "8. Connecting Sentences: て Form Sequences",
+          "content": "The て (te) form connects actions naturally, especially in lists or stories.\n- **行って** *itte* — go (and)\n- **食べて** *tabete* — eat (and)\nきょうとに行って、おおさかにも行きました。\nKyōto ni itte, Ōsaka ni mo ikimashita.\nI went to Kyoto, and also to Osaka.\n**Pattern:** [verb te-form], [verb]\nNatural note: Only the last verb turns into past tense."
+        },
+        {
+          "title": "9. よく・いつも: Frequency and Habit Expressions",
+          "content": "Use these to describe habits or routines.\n- **よく** *yoku* — often\n- **いつも** *itsumo* — always\nよくカフェにいきます。\nYoku kafe ni ikimasu.\nI often go to cafes.\n**Pattern:** [frequency] + [verb]\nNatural note: Put frequency words just before the verb."
+        },
+        {
+          "title": "10. Main Corrections & Refinements",
+          "content": "**まっすぐ** / massugu: Use for 'straight' in directions.\n**で** / de: For locations where actions happen.\n**に** / ni: Use for destinations or existence.\n**も** / mo: Add after particles for 'also'.\n**じかん** / jikan: Use as a counter for hours.\n**ごろ** / goro: Only for approximate times.\n**たべました** / tabemashita: Polite verb past tense.\n**います** / imasu: Use for living things.\n**あります** / arimasu: Use for non-living things.\n**しゃしんをとる** / shashin o toru: To take pictures."
+        }
+      ]
+    },
+    "studentTalkPct": 42,
+    "status": "draft",
+    "createdAt": 1782767625597
+  },
+  "jorge-de-los-rios-L1-1782767645354": {
+    "id": "jorge-de-los-rios-L1-1782767645354",
+    "studentId": "jorge-de-los-rios",
+    "lessonNumber": 1,
+    "date": "2026-06-27",
+    "title": "Frequency Adverbs & Negative Sentences",
+    "recap": {
+      "recap": "Lesson Recap — Frequency Adverbs & Negative Sentences\nToday we focused on expressing how often you do things and how to say negative sentences naturally in Japanese. You learned how to use words like \"mainichi\" (every day), \"tokidoki\" (sometimes), \"yoku\" (often), \"amari\" (not much), and \"zenzen\" (not at all) to talk about your routines and preferences. Here are some key examples:\nにほんごをまいにちべんきょうします\nNihongo wo mainichi benkyou shimasu\nI study Japanese every day\nときどきとしょかんへいきます\nTokidoki toshokan e ikimasu\nI sometimes go to the library\nすしはあまりすきじゃないです\nSushi wa amari suki janai desu\nI don't like sushi that much\nぜんぜんテレビをみません\nZenzen terebi wo mimasen\nI don't watch TV at all\nWe also practiced where to place time and location markers using particles like \"ni\" for time and \"de\" for place. Remember, in Japanese the verb usually goes at the end. Main takeaway: Using frequency adverbs and softening negative answers makes your Japanese sound much more natural!",
+      "score": 6.7,
+      "talk_percentage": 38,
+      "grammar_density": "Medium-High",
+      "confidence_label": "Strong Foundation",
+      "teacher_note": "Jorge, I loved seeing your progress and your energy in class today! You're becoming more comfortable with tricky concepts like negative adverbs and using particles for time and location. Keep practicing full sentences and don't be afraid to self-correct—it really helps with retention.",
+      "audio_script": "Hi Jorge, great work on today's lesson. We practiced words like まいにち (mainichi) — every day. For example, にほんごをまいにちべんきょうします (nihongo wo mainichi benkyou shimasu) means I study Japanese every day. You also learned よく (yoku) for often, and ときどき (tokidoki) for sometimes, as in ときどきとしょかんへいきます (tokidoki toshokan e ikimasu) — I sometimes go to the library. We covered あまり (amari) to gently say not much, as in すしはあまりすきじゃないです (sushi wa amari suki janai desu), which means I don't like sushi that much. ぜんぜん (zenzen) is used for not at all: ぜんぜんテレビをみません (zenzen terebi wo mimasen) — I don't watch TV at all. You practiced using に (ni) for marking time, and で (de) for places like だいがくでにほんごをはなします (daigaku de nihongo o hanashimasu) — I speak Japanese at university. Homework: try speaking two sentences a day using these words and patterns. Keep up your awesome energy and see you soon!",
+      "vocab_total_count": 23,
+      "vocab_level_distribution": {
+        "N5": 15,
+        "N4": 6,
+        "N3": 2,
+        "N2": 0,
+        "N1": 0
+      },
+      "vocabulary": [
+        {
+          "word": "まいにち",
+          "reading": "mainichi",
+          "definition": "Every day.",
+          "explanation": "You can use this to talk about your daily habits. It's simple and very common.",
+          "jlpt_level": "N5",
+          "example_sentence": "にほんごをまいにちべんきょうします"
+        },
+        {
+          "word": "よく",
+          "reading": "yoku",
+          "definition": "Often.",
+          "explanation": "Use this to say you do something frequently. Try adding it to many different verbs.",
+          "jlpt_level": "N5",
+          "example_sentence": "よくコーヒーをのみます"
+        },
+        {
+          "word": "ときどき",
+          "reading": "tokidoki",
+          "definition": "Sometimes.",
+          "explanation": "A good word for casual conversation about irregular habits.",
+          "jlpt_level": "N5",
+          "example_sentence": "ときどきとしょかんへいきます"
+        },
+        {
+          "word": "あまり",
+          "reading": "amari",
+          "definition": "Not very / not much.",
+          "explanation": "A gentle way to make negative sentences sound softer. Use with negative verbs.",
+          "jlpt_level": "N4",
+          "example_sentence": "すしはあまりすきじゃないです"
+        },
+        {
+          "word": "ぜんぜん",
+          "reading": "zenzen",
+          "definition": "Not at all.",
+          "explanation": "For total negatives. It's a strong word, so use it carefully.",
+          "jlpt_level": "N4",
+          "example_sentence": "ぜんぜんテレビをみません"
+        },
+        {
+          "word": "にほんご",
+          "reading": "nihongo",
+          "definition": "Japanese language.",
+          "explanation": "The language you are learning! Practice saying this daily.",
+          "jlpt_level": "N5",
+          "example_sentence": "にほんごをべんきょうします"
+        },
+        {
+          "word": "べんきょうします",
+          "reading": "benkyou shimasu",
+          "definition": "To study.",
+          "explanation": "A must-know verb. Use it for all subjects you study.",
+          "jlpt_level": "N5",
+          "example_sentence": "まいにちべんきょうします"
+        },
+        {
+          "word": "いきます",
+          "reading": "ikimasu",
+          "definition": "To go.",
+          "explanation": "You use this every time you talk about going somewhere.",
+          "jlpt_level": "N5",
+          "example_sentence": "がっこうへいきます"
+        },
+        {
+          "word": "たべます",
+          "reading": "tabemasu",
+          "definition": "To eat.",
+          "explanation": "A daily action! Useful for talking about meals.",
+          "jlpt_level": "N5",
+          "example_sentence": "ハンバーガーをたべます"
+        },
+        {
+          "word": "すき",
+          "reading": "suki",
+          "definition": "Like.",
+          "explanation": "Use this to talk about what you like or don't like.",
+          "jlpt_level": "N5",
+          "example_sentence": "ラーメンがすきです"
+        }
+      ],
+      "homework": [
+        {
+          "description": "Practice saying 3 negative sentences using あまり and ぜんぜん."
+        },
+        {
+          "description": "Create 5 example sentences with frequency adverbs (よく, ときどき, まいにち)."
+        },
+        {
+          "description": "Record yourself saying one full sentence using the correct particle for time (に) and one for location (で)."
+        }
+      ],
+      "exercises": [
+        {
+          "type": "read_aloud",
+          "prompt": "Read these sentences aloud",
+          "data": {
+            "focus": "Frequency adverbs & negative form",
+            "sentences": [
+              {
+                "jp": "まいにちにほんごをべんきょうします",
+                "en": "I study Japanese every day"
+              },
+              {
+                "jp": "ときどきとしょかんへいきます",
+                "en": "I sometimes go to the library"
+              },
+              {
+                "jp": "すしはあまりすきじゃないです",
+                "en": "I don't like sushi that much"
+              }
+            ]
+          }
+        },
+        {
+          "type": "speak",
+          "prompt": "Answer out loud",
+          "data": {
+            "prompt_jp": "あなたはよくコーヒーをのみますか",
+            "prompt_en": "Do you often drink coffee?",
+            "hint": "Use よく and a negative or positive answer"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which adverb means 'not at all'?",
+            "options": [
+              "あまり",
+              "ぜんぜん",
+              "ときどき"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which particle marks a time, like 'at 5:00'?",
+            "options": [
+              "で",
+              "が",
+              "に"
+            ],
+            "answer": 2
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "どこでにほんごをはなしますか？ What does 'で' indicate here?",
+            "options": [
+              "Time",
+              "Place",
+              "Reason"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "まいにち______をたべます",
+            "after": "",
+            "options": [
+              "ハンバーガー",
+              "きます",
+              "よく"
+            ],
+            "answer": "ハンバーガー",
+            "en": "I eat hamburgers every day"
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "",
+            "after": "にほんごをべんきょうしません",
+            "options": [
+              "ぜんぜん",
+              "よく",
+              "ときどき"
+            ],
+            "answer": "ぜんぜん",
+            "en": "I do not study Japanese at all"
+          }
+        }
+      ],
+      "sections": [
+        {
+          "title": "1. まいにち: Every Day",
+          "content": "Use まいにち when talking about things you do daily. It's placed before the verb or the object. \n- **まいにち** *mainichi* — every day\n- **べんきょうします** *benkyou shimasu* — to study\nにほんごをまいにちべんきょうします\nnihongo wo mainichi benkyou shimasu\nI study Japanese every day\n**Pattern:** [Topic/Obj] を まいにち [verb]\nNatural note: No particle is needed with frequency adverbs."
+        },
+        {
+          "title": "2. よく・ときどき: Often & Sometimes",
+          "content": "よく means often, ときどき means sometimes. Place them before the verb. \n- **よく** *yoku* — often\n- **ときどき** *tokidoki* — sometimes\nよくコーヒーをのみます\nyoku koohii wo nomimasu\nI often drink coffee\nときどきとしょかんへいきます\ntokidoki toshokan e ikimasu\nI sometimes go to the library\n**Pattern:** [Time] [Adverb] [Object/Place] [Verb]\nImportant: Both words make your conversation sound more natural."
+        },
+        {
+          "title": "3. あまり: Not Much (Negative Softener)",
+          "content": "あまり is used in negative sentences to soften the meaning. It means not much or not very. \n- **あまり** *amari* — not much\nすしはあまりすきじゃないです\nsushi wa amari suki janai desu\nI don't like sushi that much\n**Pattern:** [Topic] は あまり [Verb/Adj] じゃないです\nNatural note: Use with negative verbs or adjectives for polite conversation."
+        },
+        {
+          "title": "4. ぜんぜん: Not At All",
+          "content": "ぜんぜん means not at all. Use it for strong negatives. \n- **ぜんぜん** *zenzen* — not at all\nぜんぜんテレビをみません\nzenzen terebi wo mimasen\nI don't watch TV at all\n**Pattern:** ぜんぜん [Verb (negative)]\nImportant: ぜんぜん must be used with a negative verb."
+        },
+        {
+          "title": "5. Particle に and で: Marking Time and Place",
+          "content": "に is used for specific time, で is used for places where actions happen. \n- **に** *ni* — at (for time)\n- **で** *de* — at (for place)\nごごごじにがっこうへいきます\ngogo goji ni gakkou e ikimasu\nI go to school at 5:00 pm\nだいがくでにほんごをはなします\ndaigaku de nihongo o hanashimasu\nI speak Japanese at university\n**Pattern:** [Time] に, [Place] で\nTips: に is for points in time; で is for action locations."
+        },
+        {
+          "title": "6. Verb Placement: End of Sentence",
+          "content": "The verb usually comes at the end in Japanese. This makes the sentence sound natural. You can move other parts to the front. \n- **たべます** *tabemasu* — to eat\n- **いきます** *ikimasu* — to go\nはんばーがーをたべます\nhanbaagaa wo tabemasu\nI eat a hamburger\n**Pattern:** [Topic, Time, Place, Object] [Verb]\nNatural note: Rearranging order is okay, but keep verb at the end."
+        },
+        {
+          "title": "7. Making Natural Negative Sentences",
+          "content": "Use negative forms for verbs and adjectives to talk about things you don't do or like. Softening words make you sound more polite. \n- **べんきょうしません** *benkyou shimasen* — do not study\n- **すきじゃない** *suki janai* — do not like\nともだちにあまりあいません\ntomodachi ni amari aimasen\nI don’t see my friends very much\n**Pattern:** [Obj/Topic] は [amari/zenzen] [negative verb/adj]\nTip: Combine あまり and ぜんぜん with negative forms."
+        },
+        {
+          "title": "8. Mutual Friend Discussion: Culture Note",
+          "content": "You talked about DJ culture in Okinawa, and words related to clubs, music, and social activities. Try describing your activities using today's grammar and vocabulary!\n- **おきなわ** *Okinawa* — Okinawa\n- **ともだち** *tomodachi* — friend\n- **くらぶ** *kurabu* — club\nともだちとくらぶへいきます\ntomodachi to kurabu e ikimasu\nI go to clubs with friends\nNatural note: Try making sentences about your own experiences."
+        },
+        {
+          "title": "9. Main Corrections & Refinements",
+          "content": [
+            "**まいにち** / mainichi: Use for daily activities.",
+            "**あまり** / amari: Always pair with negative verbs.",
+            "**ぜんぜん** / zenzen: Must be used with negative verbs.",
+            "**に** / ni: For time markers like くじに.",
+            "**で** / de: For places where action occurs.",
+            "**べんきょうします** / benkyou shimasu: Make sure verb is at end.",
+            "**はなします** / hanashimasu: Place after object or place phrase.",
+            "**いきます** / ikimasu: Use correct direction particle.",
+            "**すきじゃない** / suki janai: Negative for \"do not like\".",
+            "**よく** / yoku: Place before verb for \"often\"."
+          ]
+        }
+      ]
+    },
+    "studentTalkPct": 38,
+    "status": "draft",
+    "createdAt": 1782767645354
+  },
+  "james-coker-L1-1782767671798": {
+    "id": "james-coker-L1-1782767671798",
+    "studentId": "james-coker",
+    "lessonNumber": 1,
+    "date": "2026-06-27",
+    "title": "Grammar Connections & Cultural Nuance",
+    "recap": {
+      "recap": "Lesson Recap — Grammar Connections & Cultural Nuance\nThis lesson explored key Japanese grammar for daily routines and how cultural context shapes language. We practiced the te-form for connecting actions, the use of particles like で (de) and の (no), and learned subtle differences between phrases such as でしょう (deshou) and ね (ne). Special attention was paid to how Japanese people show consideration with phrases like きをつかう (ki wo tsukau). Example:\nごはんを食べてから、べんきょうします。\nGohan wo tabete kara, benkyou shimasu.\nAfter eating dinner, I study.\nWe also discussed how words for meals vary (ばんごはん, ゆうごはん), and how to use common expressions of prohibition and permission, such as たばこをすってはいけません (tabako wo sutte wa ikemasen: you must not smoke). The lesson finished with nuances for saying \"please eat\" politely and expressing hearsay (〜そう/〜って). Example:\nきょうはピクニックにいきますって。\nKyou wa pikunikku ni ikimasu tte.\nI heard we're going on a picnic today.\nMain takeaway: Practicing grammar in context and understanding cultural nuance is key for sounding natural. Focus on the connections between phrases and the why behind sentence endings and particles.",
+      "score": 7.5,
+      "talk_percentage": 45,
+      "grammar_density": "Medium-High",
+      "confidence_label": "Strong Foundation",
+      "teacher_note": "James, you did a fantastic job tackling both grammar and cultural nuance in this lesson. Your thoughtful questions and real-life examples really show your curiosity and engagement. Keep practicing conversational patterns and embrace those cultural subtleties—you're making great progress!",
+      "audio_script": "Hi James, great work on today's lesson.\nToday we focused on te-form (てけい [te-kei]) for connecting actions in sentences, like 'ごはんをたべてから、べんきょうします' (gohan wo tabete kara, benkyou shimasu), meaning after eating dinner, I study. We also talked about the particle で (de), which means 'by' or 'with,' as in 'はしでたべます' (hashi de tabemasu) for 'eat with chopsticks.'\nYou learned ね (ne), used to seek agreement like 'おいしいですね' (oishii desu ne – it's tasty, right?), and でしょう (deshou), which suggests probable outcomes, often heard on the news: 'あめがふるでしょう' (ame ga furu deshou – it will probably rain).\nWe covered てはいけません (te wa ikemasen) to express prohibition, such as 'たばこをすってはいけません' (tabako wo sutte wa ikemasen – you must not smoke), and polite phrases like 'いただきます' (itadakimasu) before eating.\nFor home practice, keep working on creating daily routine sentences and review grammar points 1 to 5. Looking forward to hearing your examples and your questions next time!\nRemember, every bit of practice helps. Keep up the good work, James!",
+      "vocab_total_count": 31,
+      "vocab_level_distribution": {
+        "N5": 18,
+        "N4": 8,
+        "N3": 4,
+        "N2": 1,
+        "N1": 0
+      },
+      "vocabulary": [
+        {
+          "word": "てけい",
+          "reading": "te-kei",
+          "definition": "Te-form, connecting verb form.",
+          "explanation": "The te-form lets you join actions smoothly and is core for many Japanese patterns.",
+          "jlpt_level": "N5",
+          "example_sentence": "はをみがいて、ねます。"
+        },
+        {
+          "word": "から",
+          "reading": "kara",
+          "definition": "After; because.",
+          "explanation": "'Kara' connects events in sequence and shows cause.",
+          "jlpt_level": "N5",
+          "example_sentence": "べんきょうしてから、ごはんをたべます。"
+        },
+        {
+          "word": "で",
+          "reading": "de",
+          "definition": "By; with (particle).",
+          "explanation": "Use 'de' to state what you use or how you do something.",
+          "jlpt_level": "N5",
+          "example_sentence": "はしでごはんをたべます。"
+        },
+        {
+          "word": "いただきます",
+          "reading": "itadakimasu",
+          "definition": "I humbly receive. (Before meals)",
+          "explanation": "Saying this shows respect and gratitude before eating.",
+          "jlpt_level": "N5",
+          "example_sentence": "いただきます、といってたべます。"
+        },
+        {
+          "word": "でしょう",
+          "reading": "deshou",
+          "definition": "Probably; I suppose.",
+          "explanation": "'Deshou' adds a sense of probability or seeks agreement politely.",
+          "jlpt_level": "N4",
+          "example_sentence": "あしたはあめでしょう。"
+        },
+        {
+          "word": "ね",
+          "reading": "ne",
+          "definition": "Right? (seeks agreement)",
+          "explanation": "Adds friendliness and checks if someone agrees.",
+          "jlpt_level": "N5",
+          "example_sentence": "おいしいですね。"
+        },
+        {
+          "word": "てはいけません",
+          "reading": "te wa ikemasen",
+          "definition": "You must not (prohibition).",
+          "explanation": "Shows strong prohibition, useful for rules and signs.",
+          "jlpt_level": "N4",
+          "example_sentence": "ここでしゃしんをとってはいけません。"
+        },
+        {
+          "word": "き　を　つかう",
+          "reading": "ki wo tsukau",
+          "definition": "To be considerate; to worry about others.",
+          "explanation": "This warm phrase shows true Japanese thoughtfulness.",
+          "jlpt_level": "N3",
+          "example_sentence": "ともだちにきをつかいました。"
+        },
+        {
+          "word": "にんき",
+          "reading": "ninki",
+          "definition": "Popular; popularity.",
+          "explanation": "'Ninki' comes up a lot in daily life. Use it to talk about what's in or liked by many.",
+          "jlpt_level": "N4",
+          "example_sentence": "このレストランはにんきがあります。"
+        },
+        {
+          "word": "そう",
+          "reading": "sou",
+          "definition": "I heard; looks like (hearsay/guess).",
+          "explanation": "Use 'sou' to report rumors or what you just heard.",
+          "jlpt_level": "N4",
+          "example_sentence": "あしたはやすみだそうです。"
+        }
+      ],
+      "homework": [
+        {
+          "description": "Write 3 sentences about your daily routine using てから."
+        },
+        {
+          "description": "Practice saying polite meal expressions (いただきます, ごちそうさまでした)."
+        },
+        {
+          "description": "Review grammar points 1-5 from your notes."
+        }
+      ],
+      "exercises": [
+        {
+          "type": "read_aloud",
+          "prompt": "Read these sentences aloud",
+          "data": {
+            "focus": "Te-form and sequential actions",
+            "sentences": [
+              {
+                "jp": "ごはんをたべてから、べんきょうします。",
+                "en": "After eating dinner, I study."
+              },
+              {
+                "jp": "いえにかえって、シャワーをあびます。",
+                "en": "I go home and take a shower."
+              },
+              {
+                "jp": "ともだちにあってから、レストランにいきます。",
+                "en": "After meeting my friend, I go to a restaurant."
+              }
+            ]
+          }
+        },
+        {
+          "type": "speak",
+          "prompt": "Answer out loud",
+          "data": {
+            "prompt_jp": "きょうのよる、なにをしますか。",
+            "prompt_en": "What will you do tonight?",
+            "hint": "Use てから and a daily activity word."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which particle do you use for 'by bus'?",
+            "options": [
+              "の",
+              "で",
+              "が"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "How do you say 'You must not smoke here'?",
+            "options": [
+              "たばこをすいます",
+              "たばこをすってはいけません",
+              "たばこでいけません"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "What does 'いただきます' mean?",
+            "options": [
+              "Let's begin",
+              "Thank you",
+              "I humbly receive (before eating)"
+            ],
+            "answer": 2
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "でがっこうにいきます。",
+            "after": "",
+            "options": [
+              "バス",
+              "えんぴつ",
+              "みず"
+            ],
+            "answer": "バス",
+            "en": "I go to school by bus."
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "きのう、ともだち",
+            "after": "あそびました。",
+            "options": [
+              "と",
+              "に",
+              "が"
+            ],
+            "answer": "と",
+            "en": "Yesterday, I played with my friend."
+          }
+        }
+      ],
+      "sections": [
+        {
+          "title": "1. てけい: Te-form Connections",
+          "content": "We often use the te-form to link actions or show sequences. This gives your speech a natural flow for routines.\n- **てけい** *te-kei* — te-form\n- **から** *kara* — after; from\nごはんをたべてから、べんきょうします。\ngohan wo tabete kara, benkyou shimasu.\nAfter eating dinner, I study.\n**Pattern:** [verb in te-form] から [action]\nNatural note: This is very common in daily speech."
+        },
+        {
+          "title": "2. で: By/With Particle",
+          "content": "The particle で tells how or with what you do something. It's for means, tools, and places of action.\n- **で** *de* — by; with\n- **バス** *basu* — bus\nはしでたべます。\nhashi de tabemasu.\nI eat with chopsticks.\n**Pattern:** [tool/vehicle] で [action]\nImportant: Don't use の for 'by'!"
+        },
+        {
+          "title": "3. いただきます: Meal Etiquette",
+          "content": "『いただきます』 is said before eating to show gratitude. It’s polite and deeply cultural.\n- **いただきます** *itadakimasu* — I humbly receive\nごはんをいただきます。\ngohan wo itadakimasu.\nI will have the meal (thankfully).\nTips: Always use this at the start of a meal."
+        },
+        {
+          "title": "4. でしょう and ね: Agreement & Probability",
+          "content": "'Deshou' shows what you suppose is true or seeks agreement, often with a soft/uncertain nuance. 'Ne' invites agreement naturally.\n- **でしょう** *deshou* — probably\n- **ね** *ne* — right? isn't it?\nあしたはあめでしょう。\nashita wa ame deshou.\nIt will probably rain tomorrow.\n- おいしいですね。\noishii desu ne.\nIt's tasty, isn't it?\nPattern: [Statement] でしょう/ね\nNatural note: 'Deshou' is more formal or news-style."
+        },
+        {
+          "title": "5. てはいけません: Must Not Do",
+          "content": "'Te wa ikemasen' is used to show strict rules or prohibitions—on signs or giving polite commands.\n- **てはいけません** *te wa ikemasen* — must not\nさわってはいけません。\nsawatte wa ikemasen.\nDo not touch.\nPattern: [verb in te-form] はいけません\nImportant: Stronger than a casual 'don't.'"
+        },
+        {
+          "title": "6. きをつかう: Consideration in Japanese",
+          "content": "This phrase means being considerate—sometimes to a worrying degree. It’s unique to Japanese social interaction.\n- **きをつかう** *ki wo tsukau* — to care, worry for someone\nともだちにきをつかいました。\ntomodachi ni ki wo tsukaimashita.\nI was considerate of my friend.\nPattern: [person] にきをつかう\nNatural note: Use when you care about the feelings of others."
+        },
+        {
+          "title": "7. にんき: Popularity",
+          "content": "'Ninki' is about being popular or well-liked. It's common for trends and people.\n- **にんき** *ninki* — popular/popularity\nこのおみせはにんきがあります。\nkono omise wa ninki ga arimasu.\nThis shop is popular.\nTips: Comes from ‘person’ + ‘energy’ in kanji."
+        },
+        {
+          "title": "8. そう and って: Expressing Hearsay",
+          "content": "Use そう (sou) or って (tte) to report what someone said or what you heard.\n- **そう** *sou* — I heard / seems like\n- **って** *tte* — informal quoting particle\nピクニックにいくそうです。\npikunikku ni iku sou desu.\nI heard we're going on a picnic.\nPattern: [plain form] そう/って\nTip: 'tte' is casual, 'sou desu' is softer."
+        },
+        {
+          "title": "9. ごはん Words: Dinner Variations",
+          "content": "Japanese uses many words for dinner: ばんごはん, ゆうごはん, and just ごはん, often depending on region or formality.\n- **ばんごはん** *bangohan* — dinner\n- **ゆうごはん** *yuugohan* — dinner (evening meal)\nばんごはんをたべました。\nbangohan wo tabemashita.\nI ate dinner.\nPattern: [meal word] をたべます\nImportant: All are fine to use in most situations."
+        },
+        {
+          "title": "10. Polite Phrases: Encouraging and Requesting",
+          "content": "Encourage someone politely with 'たくさんたべてください' (please eat a lot). Use 'いただきます' at meals and 'もらえますか' or 'いただけますか' for requesting in shops or restaurants.\n- **ください** *kudasai* — please (request)\nたくさんたべてください。\ntakusan tabete kudasai.\nPlease eat a lot.\nTips: Use the soft form for elders."
+        },
+        {
+          "title": "Main Corrections & Refinements",
+          "content": "**てけい** / te-kei: Use te-form for linking actions.\n**はしで** / hashi de: Remember 'de' for tools/means.\n**てから** / te kara: Means 'after' doing something.\n**ね** / ne: Add 'ne' for agreement, gentle sound.\n**でしょう** / deshou: Use for probability or polite agreement.\n**てはいけません** / te wa ikemasen: For rules—must not do it.\n**きをつかう** / ki wo tsukau: Expresses caring in a subtle way.\n**にんき** / ninki: Means something/someone is popular.\n**そうです** / sou desu: Used to report what you heard.\n**たくさんたべてください** / takusan tabete kudasai: Polite encouragement to eat more."
+        }
+      ]
+    },
+    "studentTalkPct": 45,
+    "status": "draft",
+    "createdAt": 1782767671798
+  }
+}
