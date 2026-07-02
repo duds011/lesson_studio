@@ -34,7 +34,27 @@ export type Recap = {
 
 const PROMPT = `Analyze this Japanese lesson transcript and return ONLY valid JSON.
 
-The transcript is auto-generated and diarized (lines look like "Speaker Name: text"). It may be rough — infer the intended Japanese where obvious and correct it. The host/teacher is Noa; other speakers are the student.
+The transcript is auto-generated and diarized (lines look like "Speaker Name: text"). It is NOISY: parts are garbled phonetic gibberish (e.g. "キャンキャンナーグラム", "エペネンフォーエグザン") — IGNORE the gibberish and work from the clean, legible Japanese, which is reliable. The host/teacher is Noa; other speakers are the student.
+
+CRITICAL — BE EXHAUSTIVE. Read the ENTIRE transcript start to finish and extract EVERY grammar point, verb form, and pattern that was taught or drilled, even briefly. Give the LATER HALF of the transcript equal attention — points near the end (often buried in noisy text) are commonly and wrongly dropped. Scan the final third specifically for things like 〜ながら, 〜おかげで/〜せいで, 〜ばよかった, and set phrases. Do NOT stop early or summarize only the first few. A single textbook lesson often has 10-16 grammar points. Actively scan for these commonly-missed items and include each one you find:
+- Transitive/intransitive verb PAIRS (自動詞/他動詞): e.g. 開ける/開く, 出す/出る, つける/つく, 消す/消える, 汚す/汚れる, 落とす/落ちる, 入れる/入る — if ANY pair appears, make a dedicated section on the transitive/intransitive contrast.
+- Hearsay / reported speech: そうだ, みたい, 〜って, らしい
+- Potential form: 来られる/来られない, 食べられる, etc.
+- Conditionals: 〜と, 〜ば, 〜たら, 〜となると/〜になると ("when it becomes")
+- Regret / hindsight: 〜ばよかった
+- Preparation: 〜ておく/〜とく
+- Accidental/completed: 〜ちゃう/〜ちゃった, 〜てしまう/〜てしまった
+- Simultaneous: 〜ながら
+- Reason: 〜おかげで (positive), 〜せいで (negative), 〜んです, 〜から
+- Presumption: だろう/でしょう
+- Nominalization: 〜のは, 〜こと
+- State: 〜ている, 〜てある
+- Set phrases: お先に失礼します, お疲れ様, etc.
+Every grammar point that has clean Japanese evidence in the transcript MUST get its own section. Missing a point that was clearly taught is a failure.
+
+DO NOT OVER-SPLIT one grammar family: put ALL transitive/intransitive verb pairs (開ける/開く, 出す/出る, つける/つく, 消す/消える, 落とす/落ちる, etc.) together in ONE single section — list them as multiple examples inside it, never one section per pair. That frees room to cover the OTHER distinct points.
+
+Before writing, mentally list every distinct grammar point with transcript evidence, then output ONE section for EACH. Treat these as separate, mandatory sections whenever their pattern appears in the transcript (they are independent of each other): hearsay (そうだ/みたい/って), potential form (来られる), 〜となると/〜になると, 〜ておく/〜とく, 〜ちゃう/〜ちゃった/〜てしまった, 〜ながら, 〜おかげで/〜せいで, 〜ばよかった, 〜んです, だろう/でしょう, 〜のは, and set phrases (お先に失礼します). If the transcript shows it, it gets its own section — do not drop it to save space.
 
 Student: {{STUDENT}}
 
@@ -77,7 +97,7 @@ Create a lesson recap for the student. Clear, practical, student-friendly. Inclu
   English meaning
 Title: "Lesson Recap — [main topic]". End with a short Main takeaway section. Remove off-topic content.
 
-SECTION FORMAT — 6-14 sections, one per grammar point or topic:
+SECTION FORMAT — one section per DISTINCT grammar point/topic. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
 - Title: "1. Japanese: English" (e.g. "1. いきます: To Go Somewhere")
 - Start with 1-3 short plain English sentences.
 - Vocab bullets: - **hiragana** *romaji* — English meaning
@@ -130,7 +150,7 @@ export async function generateRecap(opts: { studentName: string; transcript: str
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: OPENAI_MODEL,
-      max_tokens: 16000,
+      max_tokens: 32000, // room for all sections + vocab + exercises + audio script (JP is token-heavy)
       response_format: { type: 'json_object' },
       messages: [{ role: 'user', content }],
     }),
