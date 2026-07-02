@@ -1081,5 +1081,285 @@
     "studentTalkPct": 35,
     "status": "draft",
     "createdAt": 1782986636614
+  },
+  "martin-petrezselyem-L1-1783006712085": {
+    "id": "martin-petrezselyem-L1-1783006712085",
+    "studentId": "martin-petrezselyem",
+    "lessonNumber": 1,
+    "date": "2026-07-02",
+    "title": "Lesson 1",
+    "recap": {
+      "recap": "Lesson Recap — Common Intermediate Grammar Patterns\n\nToday we focused on several useful grammar patterns for describing actions, regrets, and causes in Japanese. You practiced transitive/intransitive verb pairs, reported speech, and forms to express preparation, completion, and simultaneous actions. We also drilled expressions for reason, regret, and set phrases. Here are some examples:\n\nドアをあけると、みどりが見えます。\nDoa o akeru to, midori ga miemasu.\nWhen you open the door, you can see greenery.\n\nしゅくだいをしておきます。\nShukudai o shite okimasu.\nI will do my homework in advance.\n\nもっと勉強すればよかったです。\nMotto benkyou sureba yokatta desu.\nI wish I had studied more.\n\nMain takeaway: These patterns help you describe actions (and regrets) more naturally. Review them so you can use them flexibly in conversation!",
+      "score": 7.7,
+      "talk_percentage": 45,
+      "grammar_density": "Medium-High",
+      "confidence_label": "Strong Foundation",
+      "teacher_note": "Martin, great progress today! You are getting quicker at noticing grammar patterns and making self-corrections. Keep practicing speaking aloud and try to use these new forms in your daily Japanese.",
+      "audio_script": "Hi Martin, great work on today's lesson. Today we covered action pairs like あける (akeru — to open something) and あく (aku — something opens), for example: ドアをあけると、へやがあかるいです (doa o akeru to, heya ga akarui desu — When you open the door, the room is bright). We practiced reported speech such as そうだ (souda — I heard that), みたい (mitai — seems like), and って (tte — they said): かれはいそがしいって (kare wa isogashii tte — He said he's busy). \nYou tried preparation forms 〜ておく (te oku), for example: じゅんびしておく (junbi shite oku — I'll prepare ahead). We also used accidental forms like 〜ちゃう (chau): たべちゃった (tabechatta — I ate it by mistake). Simultaneous actions came up with ながら (nagara): あるきながら、はなします (aruki nagara, hanashimasu — Talk while walking). For reasons, you used 〜おかげで and 〜せいで, as in: きみのおかげでできた (kimi no okage de dekita — Thanks to you, I did it). Regret form 〜ばよかった also appeared: もっとべんきょうすればよかった (motto benkyou sureba yokatta — I wish I studied more). \nFor homework, review your example sentences aloud and write three more with your own situations. Keep building these patterns into your natural conversation. Nicely done today!",
+      "vocab_total_count": 28,
+      "vocab_level_distribution": {
+        "N5": 11,
+        "N4": 9,
+        "N3": 6,
+        "N2": 2,
+        "N1": 0
+      },
+      "vocabulary": [
+        {
+          "word": "あける",
+          "reading": "akeru",
+          "definition": "To open (something).",
+          "explanation": "Used for opening doors, windows, or books. Practice it with objects.",
+          "jlpt_level": "N5",
+          "example_sentence": "まどをあける。"
+        },
+        {
+          "word": "あく",
+          "reading": "aku",
+          "definition": "To open (intransitive).",
+          "explanation": "Means something opens by itself. Useful for spontaneous actions.",
+          "jlpt_level": "N5",
+          "example_sentence": "ドアがあく。"
+        },
+        {
+          "word": "しめる",
+          "reading": "shimeru",
+          "definition": "To close (something).",
+          "explanation": "For doors or windows. Remember, it's transitive.",
+          "jlpt_level": "N5",
+          "example_sentence": "ドアをしめる。"
+        },
+        {
+          "word": "しまる",
+          "reading": "shimaru",
+          "definition": "To close (intransitive).",
+          "explanation": "Describes something closing by itself. Watch the subject!",
+          "jlpt_level": "N5",
+          "example_sentence": "まどがしまる。"
+        },
+        {
+          "word": "そうだ",
+          "reading": "souda",
+          "definition": "I heard that; they say.",
+          "explanation": "For reported speech or hearsay. Great for stories.",
+          "jlpt_level": "N4",
+          "example_sentence": "あめがふるそうだ。"
+        },
+        {
+          "word": "みたい",
+          "reading": "mitai",
+          "definition": "Seems like; looks like.",
+          "explanation": "Used to give impressions. Often casual.",
+          "jlpt_level": "N4",
+          "example_sentence": "かれはつかれているみたい。"
+        },
+        {
+          "word": "って",
+          "reading": "tte",
+          "definition": "They said (casual quotation).",
+          "explanation": "Very casual and natural for quoting others.",
+          "jlpt_level": "N4",
+          "example_sentence": "いそがしいって。"
+        },
+        {
+          "word": "ながら",
+          "reading": "nagara",
+          "definition": "While doing (simultaneous actions).",
+          "explanation": "Expresses two actions at once. Start using in daily life.",
+          "jlpt_level": "N4",
+          "example_sentence": "あるきながら、たべます。"
+        },
+        {
+          "word": "〜ておく",
+          "reading": "teoku",
+          "definition": "Do in advance; prepare.",
+          "explanation": "Great for talking about preparation steps.",
+          "jlpt_level": "N4",
+          "example_sentence": "きっぷをかっておく。"
+        },
+        {
+          "word": "〜ばよかった",
+          "reading": "ba yokatta",
+          "definition": "I wish I had…; should have…",
+          "explanation": "Very useful for expressing regret or hindsight in conversation.",
+          "jlpt_level": "N3",
+          "example_sentence": "もっとねればよかった。"
+        }
+      ],
+      "homework": [
+        {
+          "description": "Write three sentences using 〜ながら (while doing…)."
+        },
+        {
+          "description": "Practice using 〜ばよかった with things you regret."
+        }
+      ],
+      "exercises": [
+        {
+          "type": "read_aloud",
+          "prompt": "Read these sentences aloud",
+          "data": {
+            "focus": "Simultaneous actions (〜ながら)",
+            "sentences": [
+              {
+                "jp": "あるきながら、たべます。",
+                "en": "I eat while walking."
+              },
+              {
+                "jp": "でんわしながら、メモします。",
+                "en": "I take notes while on the phone."
+              },
+              {
+                "jp": "おんがくをききながら、べんきょうします。",
+                "en": "I study while listening to music."
+              }
+            ]
+          }
+        },
+        {
+          "type": "speak",
+          "prompt": "Answer out loud",
+          "data": {
+            "prompt_jp": "しゅくだいをしたあと、なにをしますか？",
+            "prompt_en": "What will you do after finishing your homework?",
+            "hint": "Use 〜ておく and new verbs"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which form expresses regret? (I wish I had…)",
+            "options": [
+              "〜ながら",
+              "〜ばよかった",
+              "〜ておく"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "How do you say 'seems like'?",
+            "options": [
+              "そうだ",
+              "みたい",
+              "ながら"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Choose the intransitive verb for 'open'.",
+            "options": [
+              "あける",
+              "あく",
+              "あいてる"
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "まどを_____。",
+            "after": "",
+            "options": [
+              "あける",
+              "あく",
+              "しめる"
+            ],
+            "answer": "あける",
+            "en": "Open the window."
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "おかげで、はやくおわりました。あなた_____",
+            "after": "。",
+            "options": [
+              "のせいで",
+              "のおかげで",
+              "ながら"
+            ],
+            "answer": "のおかげで",
+            "en": "Thanks to you, I finished early."
+          }
+        }
+      ],
+      "sections": [
+        {
+          "title": "1. 自動詞/他動詞: Transitive & Intransitive Verb Pairs",
+          "content": "Japanese verbs sometimes come in pairs: one for an action you do (transitive), and one for things that happen by themselves (intransitive).\n- **あける** *akeru* — to open (something)\n- **あく** *aku* — something opens\n- **しめる** *shimeru* — to close (something)\n- **しまる** *shimaru* — something closes\n**Pattern:** [transitive] を [object]; [intransitive] が [subject]\nまどをあける。\nMado o akeru.\nOpen the window.\nドアがあく。\nDoa ga aku.\nThe door opens.\nImportant: Use を with transitive, が with intransitive. Practice with doors/windows!"
+        },
+        {
+          "title": "2. そうだ・みたい・って: Hearsay & Casual Quotation",
+          "content": "Use these to report what you've heard or give impressions.\n- **そうだ** *souda* — I heard that\n- **みたい** *mitai* — seems like\n- **って** *tte* — they said (casual)\nかれはねむいそうだ。\nKare wa nemui souda.\nI heard he is sleepy.\nきょうはやすみみたい。\nKyou wa yasumi mitai.\nSeems like today is a holiday.\nいそがしいって。\nIsogashii tte.\n(He) said he is busy.\n**Pattern:** [plain form] + そうだ / みたい / って\nNatural note: って is very casual, use with friends."
+        },
+        {
+          "title": "3. 可能形: Potential Form",
+          "content": "The potential form shows you 'can' do something. It changes depending on verb group.\n- **できる** *dekiru* — can do\n- **食べられる** *taberareru* — can eat\nパンが食べられる。\nPan ga taberareru.\nI can eat bread.\n日本語が話せます。\nNihongo ga hanasemasu.\nI can speak Japanese.\n**Pattern:** [verb stem] + られる (ichidan), える (godan)\nImportant: Use が before what you 'can' do."
+        },
+        {
+          "title": "4. 〜と、〜ば、〜たら: Conditionals",
+          "content": "Japanese has several ways to express 'if' or 'when.'\n- **と** *to* — when/if\n- **ば** *ba* — if (more hypothetical)\n- **たら** *tara* — if/when (after something happens)\nやすむと、げんきになります。\nYasumu to, genki ni narimasu.\nIf you rest, you'll get healthy.\nもっと早く来ればよかった。\nMotto hayaku kureba yokatta.\nI wish I had come earlier.\nたくさんたべたら、ねむくなる。\nTakusan tabetara, nemuku naru.\nIf I eat a lot, I get sleepy.\n**Pattern:** [plain form]+と／ば／たら\nTip: Use たら for natural conversation."
+        },
+        {
+          "title": "5. 〜ておく: Preparation Form",
+          "content": "Use 〜ておく to say you'll do something in advance or get ready.\n- **しておく** *shite oku* — do ahead\nチケットをかっておきます。\nChiketto o katte okimasu.\nI'll buy the ticket in advance.\n**Pattern:** [て-form] + おく\nNatural note: Used often for travel or meetings."
+        },
+        {
+          "title": "6. 〜てしまう・〜ちゃった: Completed/Accidental Action",
+          "content": "Shows you finished something (often with emotion or by accident).\n- **食べてしまいました** *tabete shimaimashita* — I ate it (all)\n- **食べちゃった** *tabechatta* — I accidentally ate it up\nパンをたべちゃった。\nPan o tabechatta.\nI ate the bread (oops).\n**Pattern:** [て-form] + しまう / ちゃう (casual)\nTip: Use ちゃう when speaking casually."
+        },
+        {
+          "title": "7. 〜ながら: Simultaneous Actions",
+          "content": "Use 〜ながら to describe two actions at once.\n- **歩きながら話す** *aruki nagara hanasu* — talk while walking\nコーヒーをのみながら、しゅくだいします。\nKouhii o nominagara, shukudai shimasu.\nDo homework while drinking coffee.\n**Pattern:** [stem]+ながら [main action]\nImportant: The verb before ながら is always in stem form."
+        },
+        {
+          "title": "8. 〜おかげで／〜せいで: Reason or Cause",
+          "content": "Use 〜おかげで for positive reasons, 〜せいで for negative ones.\n- **あなたのおかげで** *anata no okage de* — thanks to you\n- **雨のせいで** *ame no sei de* — because of the rain (bad result)\nあなたのおかげでたすかりました。\nAnata no okage de tasukarimashita.\nThanks to you, I was saved.\n**Pattern:** [noun/verb]+のおかげで / のせいで\nTip: おかげで feels thankful, せいで for complaints."
+        },
+        {
+          "title": "9. 〜ばよかった: Regret & Hindsight",
+          "content": "Use this to say 'I wish I had…' You can't go back!\n- **行けばよかった** *ikeba yokatta* — I wish I'd gone\n- **もっと勉強すればよかった** *motto benkyou sureba yokatta* — I wish I studied more\n**Pattern:** [ば-form]+よかった\nNatural note: Use when you feel regret."
+        },
+        {
+          "title": "10. んです: Reason, Clarification, or Emphasis",
+          "content": "Add んです to explain reason, emphasize, or seek confirmation.\n- **〜んです** *n desu* — giving/explaining reason\nいそがしいんです。\nIsogashii n desu.\nI'm busy (that's why).\n**Pattern:** [plain form]+んです\nTip: Softens the sentence or gives background."
+        },
+        {
+          "title": "11. でしょう/だろう: Presumption, Guess, or Confirmation",
+          "content": "Use でしょう and だろう to say 'probably' or ask for agreement.\n- **でしょう** *deshou* — probably, right?\n- **だろう** *darou* — probably (casual)\nあしたは雨でしょう。\nAshita wa ame deshou.\nIt will probably rain tomorrow.\n**Pattern:** [plain form]+でしょう/だろう\nImportant: だろう is more casual, deshou is polite."
+        },
+        {
+          "title": "12. 〜のは／〜こと: Nominalization",
+          "content": "Turn verbs and phrases into 'things' or 'acts.'\n- **食べるのは** *taberu no wa* — eating (the act of)\n歌うことがすき。\nUtau koto ga suki.\nI like singing.\n**Pattern:** [plain verb]+のは/こと\nTip: のは is for describing, こと for abilities/likes."
+        },
+        {
+          "title": "13. 〜ている／〜てある: Past & Current State",
+          "content": "Shows an ongoing state (ている) or a completed state (てある).\n- **ついている** *tsuite iru* — is on\n- **つけてある** *tsukete aru* — has been turned on\nライトがついている。\nRaito ga tsuite iru.\nThe light is on.\n**Pattern:** [て-form]+いる / +ある\nTip: てある is always for completed actions, often by someone."
+        },
+        {
+          "title": "14. Set Phrases: Common Expressions",
+          "content": "Useful phrases for politeness or work.\n- **おつかれさま** *otsukaresama* — good work (after effort)\n- **おさきにしつれいします** *osaki ni shitsurei shimasu* — Excuse me for leaving first\nおつかれさまでした。\nOtsukaresama deshita.\nThanks for your hard work.\n**Pattern:** [set phrase]\nTip: Use at work or study group meetings."
+        },
+        {
+          "title": "Main Corrections & Refinements",
+          "content": "- **あける / akeru**: Use with objects, not for opening by itself.\n- **あく / aku**: Use when things open by themselves.\n- **ながら / nagara**: Only stem form before this.\n- **ばよかった / ba yokatta**: For regrets only, not for hopes.\n- **ておく / te oku**: Shows advance actions, not after the fact.\n- **てしまう / te shimau**: Use for totally/completely done actions.\n- **おかげで / okage de**: Only for good results.\n- **せいで / sei de**: Use for negative situations.\n- **んです / n desu**: Adds 'because'; not always needed.\n- **こと / koto**: For turning verbs into 'things' or 'acts.'"
+        }
+      ]
+    },
+    "studentTalkPct": 45,
+    "status": "draft",
+    "createdAt": 1783006712085
   }
 }
