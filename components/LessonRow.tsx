@@ -74,7 +74,7 @@ export default function LessonRow({
     try {
       const j = await (await fetch('/api/recall/send-bot', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Noa' }),
+        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder' }),
       })).json()
       if (!j.ok) { setErr(j.error || 'Failed'); return }
       setBot({ botId: j.botId, status: j.status, label: 'Bot joining…', state: 'joining' })
@@ -127,24 +127,24 @@ export default function LessonRow({
           <div className="l-meta">
             <span className="plat" style={{ color: p.color }}>● {p.label}</span>
             {lesson.meetingUrl
-              ? <span title={lesson.meetingUrl}>· 🔗 {lesson.meetingUrl.replace(/^https?:\/\//, '').slice(0, 30)}…</span>
+              ? <span title={lesson.meetingUrl}>· {lesson.meetingUrl.replace(/^https?:\/\//, '').slice(0, 30)}…</span>
               : <span>· no meeting link</span>}
           </div>
         </div>
         <div className="l-actions">
           {recapStatus === 'published' ? (
-            <button className="btn btn-ghost btn-sm" onClick={openRecap}>📄 View recap</button>
+            <button className="btn btn-ghost btn-sm" onClick={openRecap}>View recap</button>
           ) : recapStatus === 'draft' ? (
-            <button className="btn btn-primary btn-sm" onClick={openRecap}>📝 Review recap</button>
+            <button className="btn btn-primary btn-sm" onClick={openRecap}>Review recap</button>
           ) : botDone ? (
             <button className="btn btn-primary btn-sm" disabled={building} onClick={buildRecap}>
-              {building ? 'Building…' : '✨ Build recap'}
+              {building ? 'Building…' : 'Build recap'}
             </button>
           ) : bot ? (
             <span className={`pill ${pillClass[bot.state] || 'gray'}`}><span className="dot" />{bot.label}</span>
           ) : lesson.meetingUrl ? (
             <button className="btn btn-primary btn-sm" disabled={sending} onClick={sendBot}>
-              {sending ? 'Sending…' : '🤖 Send bot now'}
+              {sending ? 'Sending…' : 'Record lesson'}
             </button>
           ) : (
             <span className="pill amber"><span className="dot" />No link</span>
@@ -227,7 +227,7 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
           <button className="x" onClick={onClose}>✕</button>
         </div>
         <div className="drawer-body">
-          {status === 'draft' && <div className="review-banner">⚠️ AI draft — review &amp; approve before it reaches the student.</div>}
+          {status === 'draft' && <div className="review-banner">AI draft — review &amp; approve before it reaches the student.</div>}
 
           <div className="mini-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
             <div className="mini"><div className="k">Score</div><div className="v">{recap.score}</div></div>
@@ -288,7 +288,7 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
           {/* audio script */}
           {recap.audio_script && (
             <div className="block">
-              <h4>🎧 Voice memo script</h4>
+              <h4>Voice memo script</h4>
               <p style={{ whiteSpace: 'pre-wrap', fontSize: '.88rem' }}>{recap.audio_script}</p>
             </div>
           )}

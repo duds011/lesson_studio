@@ -125,7 +125,7 @@ export function RecapBody({ recap }: { recap: any }) {
 
       {recap.audio_script && (
         <div className="block">
-          <h4>🎧 Voice memo script</h4>
+          <h4>Voice memo script</h4>
           <p style={{ whiteSpace: 'pre-wrap', fontSize: '.88rem' }}>{recap.audio_script}</p>
         </div>
       )}

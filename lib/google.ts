@@ -79,6 +79,7 @@ async function fetchEmail(accessToken: string): Promise<string> {
 async function refreshAccessToken(token: GoogleToken): Promise<GoogleToken> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
+    cache: 'no-store',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: env('GOOGLE_CLIENT_ID'),
@@ -106,18 +107,23 @@ async function getValidAccessToken(): Promise<GoogleToken | null> {
   return refreshAccessToken(token)
 }
 
-/** Authenticated Google fetch that force-refreshes + retries once on a 401. */
+/** Authenticated Google fetch. Bypasses Next's fetch cache (a cached 401 would
+ *  defeat the retry) and force-refreshes + retries once when Google rejects
+ *  the stored access token — even if its expiry claims it's still valid. */
 async function gfetch(url: string, init: RequestInit = {}): Promise<Response> {
   let token = await getValidAccessToken()
   if (!token) throw new Error('Not connected')
   const withAuth = (t: string): RequestInit => ({
     ...init,
+    cache: 'no-store',
     headers: { ...(init.headers || {}), Authorization: `Bearer ${t}` },
   })
   let res = await fetch(url, withAuth(token.access_token))
   if (res.status === 401) {
+    console.warn('[google] stored access token rejected — refreshing and retrying')
     token = await refreshAccessToken(token)
     res = await fetch(url, withAuth(token.access_token))
+    if (res.status === 401) console.error('[google] retry after refresh still 401')
   }
   return res
 }

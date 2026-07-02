@@ -6,5 +6,6 @@ export async function POST(req: NextRequest) {
   const form = await req.formData()
   const platform = String(form.get('platform') || '') as Platform
   if (platform === 'google_meet' || platform === 'zoom') await setPlatform(platform)
-  return NextResponse.redirect(`${publicBase(req)}/`, { status: 303 })
+  const back = req.headers.get('referer')?.includes('/settings') ? '/settings' : '/'
+  return NextResponse.redirect(`${publicBase(req)}${back}`, { status: 303 })
 }

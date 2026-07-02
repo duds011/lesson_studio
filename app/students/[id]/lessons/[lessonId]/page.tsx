@@ -1,10 +1,9 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getStudent, getStudents, getLessons, getLessonsByStudent } from '@/lib/students'
-import KanaBackground from '@/components/KanaBackground'
+import { getStudent, getLessons, getLessonsByStudent } from '@/lib/students'
+import { PublicNav } from '@/components/AppNav'
 import LessonPageTabs from '@/components/LessonPageTabs'
 
-// Pre-render every lesson page at build time (static → Netlify).
+// Pre-render every lesson page at build time (static).
 export async function generateStaticParams() {
   const lessons = await getLessons()
   return Object.values(lessons).map((l) => ({ id: l.studentId, lessonId: l.id }))
@@ -20,21 +19,13 @@ export default async function LessonPage({ params }: { params: { id: string; les
 
   return (
     <>
-      <KanaBackground />
-      <nav>
-        <div className="nav-in">
-          <a className="logo" href={`/students/${student.id}`}><span className="mark">の</span><span><span className="brand-word">GENOA</span> Library</span></a>
-          <div className="nav-right">
-            <Link className="btn btn-ghost btn-sm" href={`/students/${student.id}`}>← {student.name}</Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav backHref={`/students/${student.id}`} backLabel={student.name} />
 
-      <main className="main-wrap">
+      <main className="main-wrap page-fade">
         <section className="summary-panel">
-          <div className="eyebrow"><span className="dot" />Lesson Recap</div>
+          <div className="eyebrow">Lesson recap</div>
           <h1>{lesson.title}</h1>
-          <p className="lead">🇯🇵 Japanese Lesson Recap · {student.name} &amp; Noa</p>
+          <p className="lead">{student.language} lesson · {student.name}</p>
 
           <div className="lesson-meta">
             <div className="meta-box"><div className="meta-label">Student</div><div className="meta-value">{student.name}</div></div>
@@ -46,7 +37,7 @@ export default async function LessonPage({ params }: { params: { id: string; les
           <LessonPageTabs lesson={lesson as any} studentFirst={student.name.split(' ')[0]} />
         </section>
       </main>
-      <footer>{student.name} • Lesson {lesson.lessonNumber} recap</footer>
+      <footer>{student.name} · Lesson {lesson.lessonNumber} recap · Lesson Studio</footer>
     </>
   )
 }

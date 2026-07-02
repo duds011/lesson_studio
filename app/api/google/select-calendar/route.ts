@@ -7,5 +7,6 @@ export async function POST(req: NextRequest) {
   const id = String(form.get('calendarId') || '')
   const name = String(form.get('calendarName') || '')
   if (id) await setSelectedCalendar(id, name)
-  return NextResponse.redirect(`${publicBase(req)}/`, { status: 303 })
+  const back = req.headers.get('referer')?.includes('/settings') ? '/settings' : '/'
+  return NextResponse.redirect(`${publicBase(req)}${back}`, { status: 303 })
 }

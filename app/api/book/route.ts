@@ -55,8 +55,8 @@ export async function POST(req: NextRequest) {
     const result = await createBookingEvent({
       summary: `${BOOKING.title} — ${name}`,
       description: zoomLink
-        ? `Booked via GENOA Lesson Studio.\nStudent: ${name} (${email})\nZoom: ${zoomLink}`
-        : `Booked via GENOA Lesson Studio.\nStudent: ${name} (${email})`,
+        ? `Booked via Lesson Studio.\nStudent: ${name} (${email})\nZoom: ${zoomLink}`
+        : `Booked via Lesson Studio.\nStudent: ${name} (${email})`,
       startUTC: new Date(startMs).toISOString(),
       endUTC: new Date(endMs).toISOString(),
       timeZone: BOOKING.tz,

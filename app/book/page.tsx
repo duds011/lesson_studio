@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { PublicNav } from '@/components/AppNav'
 
 type Day = { date: string; weekday: string; slots: string[] }
 type SlotsResponse = { ok: boolean; tz: string; title: string; durationMin: number; days: Day[]; error?: string }
@@ -58,43 +59,44 @@ export default function BookPage() {
 
   return (
     <>
-      <nav>
-        <div className="nav-in">
-          <a className="logo" href="/book">
-            <span className="mark">の</span>
-            <span><span className="brand-word">GENOA</span> · Book a Lesson</span>
-          </a>
-          <div className="nav-right">
-            <a className="btn btn-ghost btn-sm" href="/">Teacher view</a>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
-      <main className="wrap">
+      <main className="wrap page-fade">
         <div className="page-head">
           <div>
-            <span className="eyebrow"><span className="dot" style={{ width: '.4rem', height: '.4rem', background: 'var(--brand)' }} />Student booking</span>
-            <h2 className="title">Book your Japanese lesson 🇯🇵</h2>
-            <p className="sub">{data?.durationMin ?? 50}-minute lesson with Noa · times shown in Japan time. You’ll get a Google Meet link and calendar invite.</p>
+            <span className="eyebrow">Book a lesson</span>
+            <h2 className="title">Pick a time that works for you</h2>
+            <p className="sub">{data?.durationMin ?? 50}-minute lesson · times shown in {tz.replace('_', ' ')} time. You&rsquo;ll receive a meeting link and calendar invite.</p>
           </div>
         </div>
 
         {confirmed ? (
-          <div className="book-card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem' }}>🎉</div>
-            <h3 style={{ margin: '.4rem 0' }}>You’re booked!</h3>
+          <div className="book-card" style={{ textAlign: 'center', margin: '0 auto' }}>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto .4rem', display: 'block' }} aria-hidden="true">
+              <circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" />
+            </svg>
+            <h3 style={{ margin: '.4rem 0' }}>You&rsquo;re booked!</h3>
             <p className="sub">{picked && `${fmtDateLong(picked.slice(0, 10))} at ${fmtTime(picked)}`}</p>
             <p className="sub">A calendar invite is on its way to <strong>{email}</strong>.</p>
             {confirmed.meetUrl && (
               <p style={{ marginTop: '1rem' }}>
-                <a className="btn btn-primary" href={confirmed.meetUrl} target="_blank" rel="noreferrer">Open Google Meet link</a>
+                <a className="btn btn-primary" href={confirmed.meetUrl} target="_blank" rel="noreferrer">Open meeting link</a>
               </p>
             )}
           </div>
         ) : loading ? (
-          <div className="empty">Loading available times…</div>
+          <div className="book-grid" aria-busy="true" aria-label="Loading available times">
+            <div className="book-days">
+              {[0, 1, 2, 3, 4].map((i) => <span key={i} className="skel" style={{ height: 46 }} />)}
+            </div>
+            <div>
+              <div className="slot-grid">
+                {Array.from({ length: 12 }).map((_, i) => <span key={i} className="skel" style={{ height: 40 }} />)}
+              </div>
+            </div>
+          </div>
         ) : !data?.ok ? (
-          <div className="empty">⚠️ {data?.error || 'Availability unavailable. Is the calendar connected?'}</div>
+          <div className="empty">{data?.error || 'Availability unavailable. Is the calendar connected?'}</div>
         ) : data.days.length === 0 ? (
           <div className="empty">No open lesson times in the next {30} days.</div>
         ) : (

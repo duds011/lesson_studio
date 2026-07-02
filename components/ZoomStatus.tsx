@@ -16,7 +16,7 @@ export default function ZoomStatus() {
     return <span className="pill amber"><span className="dot" />Zoom app not set up yet</span>
   }
   if (!s.connected) {
-    return <a className="btn btn-primary btn-sm" href="/api/zoom/auth">🔗 Connect Zoom</a>
+    return <a className="btn btn-primary btn-sm" href="/api/zoom/auth">Connect Zoom</a>
   }
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.5rem' }}>

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getStudent, getStudents, getLessonsByStudent, progressStats } from '@/lib/students'
-import KanaBackground from '@/components/KanaBackground'
+import { PublicNav } from '@/components/AppNav'
 
 export async function generateStaticParams() {
   return (await getStudents()).map((s) => ({ id: s.id }))
@@ -15,17 +15,9 @@ export default async function StudentDashboard({ params }: { params: { id: strin
 
   return (
     <>
-      <KanaBackground />
-      <nav>
-        <div className="nav-in">
-          <a className="logo" href="/students"><span className="mark">の</span><span><span className="brand-word">GENOA</span> Library</span></a>
-          <div className="nav-right">
-            <Link className="btn btn-ghost btn-sm" href="/students">← All students</Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav backHref="/students" backLabel="All students" />
 
-      <main className="main-wrap">
+      <main className="main-wrap page-fade">
         <section className="summary-panel">
           <div className="profile-head">
             <div className="avatar lg">{student.name.charAt(0).toUpperCase()}</div>
@@ -39,10 +31,10 @@ export default async function StudentDashboard({ params }: { params: { id: strin
             <div className="analytics-card"><div className="analytics-label">Lessons</div><div className="analytics-value">{stats.lessonCount}</div></div>
             <div className="analytics-card"><div className="analytics-label">Avg score</div><div className="analytics-value">{stats.avgScore ?? '—'}</div></div>
             <div className="analytics-card"><div className="analytics-label">Vocab learned</div><div className="analytics-value">{stats.totalVocab}</div></div>
-            <div className="analytics-card"><div className="analytics-label">Latest confidence</div><div className="analytics-value" style={{ fontSize: '1.1rem', paddingTop: '.4rem' }}>{lessons[lessons.length - 1]?.recap?.confidence_label ?? '—'}</div></div>
+            <div className="analytics-card"><div className="analytics-label">Latest confidence</div><div className="analytics-value" style={{ fontSize: '1.05rem', paddingTop: '.4rem' }}>{lessons[lessons.length - 1]?.recap?.confidence_label ?? '—'}</div></div>
           </div>
 
-          <h2 className="section-heading">📚 Lessons</h2>
+          <h2 className="section-heading">Lessons</h2>
           {lessons.length === 0 ? (
             <div className="empty">No lessons yet for {student.name}.</div>
           ) : (
@@ -60,7 +52,7 @@ export default async function StudentDashboard({ params }: { params: { id: strin
           )}
         </section>
       </main>
-      <footer>{student.name} • GENOA Library</footer>
+      <footer>{student.name} · Lesson Studio</footer>
     </>
   )
 }

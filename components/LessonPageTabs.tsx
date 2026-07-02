@@ -12,7 +12,7 @@ const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
 type Tab = typeof TABS[number]
 
 export default function LessonPageTabs({
-  lesson, studentFirst, teacherFirst = 'Noa',
+  lesson, studentFirst, teacherFirst = 'Teacher',
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string
 }) {
@@ -40,7 +40,7 @@ export default function LessonPageTabs({
       {/* ── PROGRESS ── */}
       {tab === 'Progress' && (
         <div className="lesson-dashboard">
-          <h3 className="dashboard-title">📊 Lesson Dashboard</h3>
+          <h3 className="dashboard-title">Lesson overview</h3>
           <div className="analytics-grid">
             <div className="analytics-card">
               <div className="analytics-label">Speaking Balance</div>
@@ -82,7 +82,7 @@ export default function LessonPageTabs({
           ))}
           {r.audio_script && (
             <div className="lesson-block">
-              <h3>🎧 Voice Memo Script</h3>
+              <h3>Voice memo script</h3>
               <p style={{ whiteSpace: 'pre-wrap' }}>{r.audio_script}</p>
             </div>
           )}
@@ -96,13 +96,13 @@ export default function LessonPageTabs({
       {tab === 'Homework' && (
         <div>
           <div className="lesson-block">
-            <h3>📝 Your Tasks (宿題)</h3>
+            <h3>Homework</h3>
             {(r.homework?.length ?? 0) === 0 ? <p className="analytics-note">No homework for this lesson.</p> : (
               <ul>{r.homework.map((h: any, i: number) => <li key={i}>{h.description}</li>)}</ul>
             )}
           </div>
           <div className="lesson-block">
-            <h3>🎯 Practice Exercises</h3>
+            <h3>Practice exercises</h3>
             <LessonExercises exercises={r.exercises || []} />
           </div>
         </div>

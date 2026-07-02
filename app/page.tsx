@@ -1,9 +1,9 @@
+import Link from 'next/link'
 import { getToken, getBots, getRecaps } from '@/lib/store'
-import { isConfigured, listUpcomingLessons, listCalendars, type Lesson, type CalendarInfo } from '@/lib/google'
+import { isConfigured, listUpcomingLessons, type Lesson } from '@/lib/google'
 import { friendlyStatus } from '@/lib/recall'
-import { getSettings } from '@/lib/settings'
+import AppNav from '@/components/AppNav'
 import LessonRow from '@/components/LessonRow'
-import ZoomStatus from '@/components/ZoomStatus'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
 
@@ -18,9 +18,6 @@ function fmtDay(iso: string, tz: string): string {
   if (dayKey(d, tz) === dayKey(now, tz)) return 'Today'
   if (dayKey(d, tz) === dayKey(tomorrow, tz)) return 'Tomorrow'
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz })
-}
-function fmtTime(iso: string, tz: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', timeZone: tz })
 }
 
 type DayGroup = { key: string; label: string; date: string; items: Lesson[] }
@@ -45,37 +42,13 @@ function groupByDay(lessons: Lesson[]): DayGroup[] {
   }
   return groups
 }
-function fmtDur(start: string, end: string): string {
-  const mins = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000)
-  return mins > 0 ? `${mins} min` : ''
-}
-
-function Nav({ email }: { email?: string }) {
-  return (
-    <nav>
-      <div className="nav-in">
-        <a className="logo" href="/">
-          <span className="mark">の</span>
-          <span><span className="brand-word">GENOA</span> · Lesson Studio</span>
-        </a>
-        <div className="nav-right">
-          <span className={`cal-chip ${email ? 'on' : ''}`}>
-            <span className="dot" />
-            {email ? email : 'Calendar not connected'}
-          </span>
-          <div className="avatar" title="Noa">N</div>
-        </div>
-      </div>
-    </nav>
-  )
-}
 
 function ConnectScreen({ configured }: { configured: boolean }) {
   return (
-    <main className="wrap">
+    <main className="wrap page-fade">
       <div className="connect-card">
         <div className="g-orb">
-          <svg width="34" height="34" viewBox="0 0 48 48">
+          <svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#4285F4" d="M44 24c0-1.4-.1-2.7-.4-4H24v8h11.3c-.5 2.6-2 4.8-4.3 6.3v5.2h6.9C41.9 36 44 30.5 44 24z" />
             <path fill="#34A853" d="M24 44c5.8 0 10.6-1.9 14.2-5.2l-6.9-5.2c-1.9 1.3-4.3 2-7.3 2-5.6 0-10.4-3.8-12.1-8.9H4.7v5.4C8.3 39.6 15.6 44 24 44z" />
             <path fill="#FBBC05" d="M11.9 26.7c-.4-1.3-.7-2.7-.7-4.7s.3-3.4.7-4.7v-5.4H4.7C3.6 18.3 3 21.1 3 24s.6 5.7 1.7 8.1l7.2-5.4z" />
@@ -83,17 +56,17 @@ function ConnectScreen({ configured }: { configured: boolean }) {
           </svg>
         </div>
         <h1>Connect your Google Calendar</h1>
-        <p>Noa, link your calendar so Lesson Studio can see your upcoming lessons and send the recording assistant into each one.</p>
+        <p>Link your calendar so Lesson Studio can see your upcoming lessons, take bookings, and record each class.</p>
         {!configured && (
           <div className="warn-box">
-            ⚠️ Google OAuth isn’t configured yet. Add <strong>GOOGLE_CLIENT_ID</strong> and{' '}
-            <strong>GOOGLE_CLIENT_SECRET</strong> to <code>.env</code>, then restart the dev server.
+            Google OAuth isn&rsquo;t configured yet. Add <strong>GOOGLE_CLIENT_ID</strong> and{' '}
+            <strong>GOOGLE_CLIENT_SECRET</strong> to the environment, then restart.
           </div>
         )}
         <ul className="scopes">
-          <li>📅 <strong>Read your calendar events</strong> — to find lessons and their Zoom / Meet links</li>
-          <li>🤖 <strong>Send the Noa bot</strong> to lessons you choose to record</li>
-          <li>📝 <strong>Build a recap</strong> from the recording for your review</li>
+          <li><strong>Read your calendar</strong> — find lessons and their meeting links</li>
+          <li><strong>Record lessons</strong> — send the recording assistant to classes you choose</li>
+          <li><strong>Build recaps</strong> — AI lesson summaries for you to review and share</li>
         </ul>
         <a
           className="btn btn-primary"
@@ -103,49 +76,33 @@ function ConnectScreen({ configured }: { configured: boolean }) {
         >
           Continue with Google
         </a>
-        <p className="fineprint">You’ll be sent to Google’s consent screen. We only request read access to your calendar.</p>
+        <p className="fineprint">You&rsquo;ll be sent to Google&rsquo;s consent screen. Manage this later in Settings.</p>
       </div>
     </main>
   )
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: { connected?: string }
-}) {
+export default async function Home() {
   const token = await getToken()
   const configured = isConfigured()
 
   if (!token) {
     return (
       <>
-        <Nav />
+        <AppNav connected={false} />
         <ConnectScreen configured={configured} />
       </>
     )
   }
 
-  // Load the teacher's calendars so she can pick which one holds her lessons.
-  let calendars: CalendarInfo[] = []
-  let needsReconnect = false
-  try {
-    calendars = await listCalendars()
-  } catch (e: any) {
-    if (e?.message === 'SCOPE') needsReconnect = true
-  }
-
-  const selectedId = token.calendarId || 'primary'
-  const settings = await getSettings()
-
   let lessons: Lesson[] = []
   let fetchError = ''
-  if (!needsReconnect) {
-    try {
-      lessons = await listUpcomingLessons()
-    } catch (e: any) {
-      fetchError = e?.message ?? 'Could not load calendar'
-    }
+  let needsReconnect = false
+  try {
+    lessons = await listUpcomingLessons()
+  } catch (e: any) {
+    if (e?.message === 'SCOPE') needsReconnect = true
+    else fetchError = e?.message ?? 'Could not load calendar'
   }
 
   // Existing bot dispatches + recaps, keyed by calendar event id.
@@ -160,93 +117,45 @@ export default async function Home({
 
   return (
     <>
-      <Nav email={token.email} />
-      <main className="wrap">
-        <div className="flow-note">
-          ✅ Live data from Google Calendar. Next milestones: send the Recall bot per lesson → AI recap → review.
-        </div>
-
+      <AppNav email={token.email} connected />
+      <main className="wrap page-fade">
         <div className="page-head">
           <div>
-            <span className="eyebrow"><span className="dot" style={{ width: '.4rem', height: '.4rem', background: 'var(--brand)' }} />Lesson Studio</span>
-            <h2 className="title">おはよう, Noa 👋</h2>
-            <p className="sub">Lessons pulled live from your <strong>{token.calendarName || 'primary'}</strong> calendar.</p>
+            <span className="eyebrow">Dashboard</span>
+            <h2 className="title">Upcoming lessons</h2>
+            <p className="sub">
+              From your <strong>{token.calendarName || 'primary'}</strong> calendar · record any lesson and its recap is drafted for review.
+            </p>
           </div>
-          <div style={{ display: 'flex', gap: '.6rem', alignItems: 'center' }}>
-            <a className="btn btn-ghost btn-sm" href="/students">👥 Students</a>
-            <a className="btn btn-ghost btn-sm" href="/book">🔗 Student booking page</a>
-            <form action="/api/google/disconnect" method="post">
-              <button className="btn btn-danger-ghost btn-sm" type="submit">Disconnect calendar</button>
-            </form>
-          </div>
+          <Link className="btn btn-ghost btn-sm" href="/settings">Manage connections</Link>
         </div>
 
         {needsReconnect ? (
-          <div className="empty" style={{ borderColor: '#fde68a', background: '#fffbeb' }}>
-            🔐 To read your other calendars (like “Japnese lesson”), reconnect to grant the wider permission.
-            <div style={{ marginTop: '.8rem' }}>
-              <a className="btn btn-primary btn-sm" href="/api/google/auth">Reconnect Google Calendar</a>
-            </div>
+          <div className="empty">
+            Your Google connection needs updated permissions.{' '}
+            <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>
           </div>
+        ) : fetchError ? (
+          <div className="empty">{fetchError}</div>
+        ) : lessons.length === 0 ? (
+          <div className="empty">No upcoming lessons on this calendar. Share your booking page to fill it up.</div>
         ) : (
-          <>
-            <div className="section-label">🗂 Which calendar has your lessons?</div>
-            <div className="cal-picker">
-              {calendars.map((c) => {
-                const sel = c.id === selectedId || (c.primary && selectedId === 'primary')
-                return (
-                  <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
-                    <input type="hidden" name="calendarId" value={c.id} />
-                    <input type="hidden" name="calendarName" value={c.name} />
-                    <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>
-                      {sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}
-                    </button>
-                  </form>
-                )
-              })}
+          groupByDay(lessons).map((g) => (
+            <div className="day-group" key={g.key}>
+              <div className="day-head">
+                <span className="day-label">{g.label}</span>
+                <span className="day-date">{g.date}</span>
+              </div>
+              {g.items.map((l) => (
+                <LessonRow
+                  key={l.id}
+                  lesson={{ id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl }}
+                  initialBot={botFor(l.id)}
+                  initialRecapStatus={recapRecs[l.id]?.status ?? null}
+                />
+              ))}
             </div>
-
-            <div className="section-label">🎥 Meeting platform for new bookings</div>
-            <div className="cal-picker" style={{ alignItems: 'center' }}>
-              <form action="/api/settings" method="post" style={{ display: 'inline' }}>
-                <input type="hidden" name="platform" value="google_meet" />
-                <button type="submit" className={`cal-opt ${settings.platform === 'google_meet' ? 'sel' : ''}`}>
-                  {settings.platform === 'google_meet' ? '✓ ' : ''}Google Meet
-                </button>
-              </form>
-              <form action="/api/settings" method="post" style={{ display: 'inline' }}>
-                <input type="hidden" name="platform" value="zoom" />
-                <button type="submit" className={`cal-opt ${settings.platform === 'zoom' ? 'sel' : ''}`}>
-                  {settings.platform === 'zoom' ? '✓ ' : ''}Zoom
-                </button>
-              </form>
-              {settings.platform === 'zoom' && <ZoomStatus />}
-            </div>
-
-            <div className="section-label">📅 Upcoming lessons</div>
-            {fetchError ? (
-              <div className="empty">⚠️ {fetchError}</div>
-            ) : lessons.length === 0 ? (
-              <div className="empty">No upcoming lessons on this calendar. Pick another calendar above, or add a lesson.</div>
-            ) : (
-              groupByDay(lessons).map((g) => (
-                <div className="day-group" key={g.key}>
-                  <div className="day-head">
-                    <span className="day-label">{g.label}</span>
-                    <span className="day-date">{g.date}</span>
-                  </div>
-                  {g.items.map((l) => (
-                    <LessonRow
-                      key={l.id}
-                      lesson={{ id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl }}
-                      initialBot={botFor(l.id)}
-                      initialRecapStatus={recapRecs[l.id]?.status ?? null}
-                    />
-                  ))}
-                </div>
-              ))
-            )}
-          </>
+          ))
         )}
       </main>
     </>
