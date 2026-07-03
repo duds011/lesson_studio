@@ -27,16 +27,22 @@ export default async function SettingsPage() {
       <main className="wrap page-fade">
         <div className="page-head">
           <div>
-            <span className="eyebrow">Settings</span>
-            <h2 className="title">Connections &amp; preferences</h2>
-            <p className="sub">Manage your calendar, meeting platform, and integrations.</p>
+            <span className="eyebrow">Workspace</span>
+            <h2 className="title">Settings</h2>
+            <p className="sub">Keep lesson scheduling and recording services connected.</p>
           </div>
         </div>
 
+        <div className="settings-layout">
+          <aside className="settings-index" aria-label="Settings sections">
+            <a href="#connections">Connections</a>
+            <a href="#booking">Booking preference</a>
+          </aside>
+          <div className="settings-stack">
         {/* Google Calendar */}
-        <div className="settings-card">
+        <div className="settings-card" id="connections">
           <h3>Google Calendar</h3>
-          <p className="desc">Lessons are read from — and bookings are written to — this calendar.</p>
+          <p className="desc">Source calendar for upcoming lessons and new bookings.</p>
           {!token ? (
             <a className="btn btn-primary" href="/api/google/auth">Connect Google Calendar</a>
           ) : needsReconnect ? (
@@ -74,14 +80,14 @@ export default async function SettingsPage() {
         {/* Zoom */}
         <div className="settings-card">
           <h3>Zoom</h3>
-          <p className="desc">Connect Zoom to create a unique Zoom meeting for each booking.</p>
+          <p className="desc">Create a unique Zoom room when a student books a lesson.</p>
           <ZoomStatus />
         </div>
 
         {/* Meeting platform */}
-        <div className="settings-card">
-          <h3>Meeting platform</h3>
-          <p className="desc">Which platform should new bookings use?</p>
+        <div className="settings-card" id="booking">
+          <h3>Default meeting platform</h3>
+          <p className="desc">Choose the service used for future bookings.</p>
           <div className="cal-picker">
             <form action="/api/settings" method="post" style={{ display: 'inline' }}>
               <input type="hidden" name="platform" value="google_meet" />
@@ -95,6 +101,8 @@ export default async function SettingsPage() {
                 {settings.platform === 'zoom' ? '✓ ' : ''}Zoom
               </button>
             </form>
+          </div>
+        </div>
           </div>
         </div>
       </main>

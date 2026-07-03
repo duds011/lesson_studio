@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     if (e?.message === 'SCOPE') {
       return NextResponse.json(
-        { ok: false, error: 'Noa needs to reconnect her calendar to enable bookings (write access).' },
+        { ok: false, error: 'Your teacher needs to reconnect their calendar to enable bookings.' },
         { status: 403 }
       )
     }

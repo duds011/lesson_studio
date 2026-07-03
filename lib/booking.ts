@@ -2,12 +2,12 @@
  * Native booking engine — replaces Calendly.
  * All availability is in Japan time (Asia/Tokyo, fixed +09:00, no DST).
  *
- * EDIT THIS CONFIG to match Noa's real availability.
+ * Edit this configuration to match the teacher's availability.
  */
 export const BOOKING = {
   tz: 'Asia/Tokyo',
   offset: '+09:00',
-  title: "Noa's Japanese Lesson",
+  title: 'Language lesson',
   durationMin: 50,
   incrementMin: 30,
   minNoticeHours: 24,

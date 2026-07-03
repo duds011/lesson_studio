@@ -4,14 +4,14 @@ import { saveBot } from '@/lib/store'
 
 export const dynamic = 'force-dynamic'
 
-// Dispatch the Noa bot into a meeting now (or scheduled via join_at).
+// Dispatch the lesson recorder into a meeting now (or scheduled via join_at).
 export async function POST(req: NextRequest) {
   try {
     const { eventId, meetingUrl, botName, joinAt } = await req.json()
     if (!eventId || !meetingUrl) {
       return NextResponse.json({ ok: false, error: 'Missing eventId or meetingUrl.' }, { status: 400 })
     }
-    const bot = await createBot(meetingUrl, botName || 'Noa', joinAt)
+    const bot = await createBot(meetingUrl, botName || 'Lesson Recorder', joinAt)
     await saveBot({
       eventId,
       botId: bot.id,

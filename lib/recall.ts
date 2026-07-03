@@ -20,7 +20,7 @@ function latestStatus(bot: any): string {
 export type BotInfo = { id: string; status: string; meetingUrl?: string | null }
 
 /** Send a bot into a live meeting (or scheduled via join_at). */
-export async function createBot(meetingUrl: string, botName = 'Noa', joinAt?: string): Promise<BotInfo> {
+export async function createBot(meetingUrl: string, botName = 'Lesson Recorder', joinAt?: string): Promise<BotInfo> {
   const body: any = {
     meeting_url: meetingUrl,
     bot_name: botName,

@@ -30,8 +30,8 @@ function fmtDur(start: string, end: string) {
 function studentName(title: string) {
   const clean = title.replace(/&#x27;/g, "'").replace(/&amp;/g, '&')
   if (clean.includes(' — ')) return clean.split(' — ').pop()!.trim()
-  const m = clean.match(/^(?:\d+:\d+\s+)?(.+?)\s+and\s+Noa/i)
-  if (m) return m[1].trim()
+  const paired = clean.match(/^(?:\d+:\d+\s+)?(.+?)\s+(?:and|with)\s+.+$/i)
+  if (paired) return paired[1].trim()
   return clean
 }
 
@@ -117,21 +117,21 @@ export default function LessonRow({
 
   return (
     <>
-      <div className={`lesson ${live ? 'live' : ''}`}>
-        <div className="l-time">
-          <div className="t">{fmtTime(lesson.start, lesson.tz)}</div>
-          <div className="dur">{fmtDur(lesson.start, lesson.end)}</div>
+      <div className={`lesson-row ${live ? 'live' : ''}`}>
+        <div className="lesson-time">
+          <div>{fmtTime(lesson.start, lesson.tz)}</div>
+          <small>{fmtDur(lesson.start, lesson.end)}</small>
         </div>
-        <div className="l-body">
-          <div className="who" dangerouslySetInnerHTML={{ __html: lesson.title }} />
-          <div className="l-meta">
+        <div>
+          <div className="lesson-title" dangerouslySetInnerHTML={{ __html: lesson.title }} />
+          <div className="lesson-meta-text">
             <span className="plat" style={{ color: p.color }}>● {p.label}</span>
             {lesson.meetingUrl
               ? <span title={lesson.meetingUrl}>· {lesson.meetingUrl.replace(/^https?:\/\//, '').slice(0, 30)}…</span>
               : <span>· no meeting link</span>}
           </div>
         </div>
-        <div className="l-actions">
+        <div className="lesson-actions">
           {recapStatus === 'published' ? (
             <button className="btn btn-ghost btn-sm" onClick={openRecap}>View recap</button>
           ) : recapStatus === 'draft' ? (
@@ -220,14 +220,14 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
   const dist: Record<string, number> = recap.vocab_level_distribution || {}
   return (
     <>
-      <div className="scrim open" onClick={onClose} />
-      <aside className="drawer open">
+      <div className="drawer-scrim" onClick={onClose} />
+      <aside className="drawer" role="dialog" aria-modal="true" aria-label={`${title} lesson recap review`}>
         <div className="drawer-head">
-          <h3>{title} · Recap</h3>
-          <button className="x" onClick={onClose}>✕</button>
+          <div><span className="eyebrow">Review before publishing</span><h3>{title} · Lesson recap</h3></div>
+          <button className="close-btn" onClick={onClose} aria-label="Close recap review">×</button>
         </div>
         <div className="drawer-body">
-          {status === 'draft' && <div className="review-banner">AI draft — review &amp; approve before it reaches the student.</div>}
+          {status === 'draft' && <div className="review-banner">AI draft — review the content below before it reaches the student.</div>}
 
           <div className="mini-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
             <div className="mini"><div className="k">Score</div><div className="v">{recap.score}</div></div>
@@ -304,7 +304,7 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
           {status === 'draft' ? (
             <>
               <button className="btn btn-ghost" onClick={onClose}>Edit later</button>
-              <button className="btn btn-green" onClick={onPublish}>✓ Approve &amp; send to student</button>
+              <button className="btn btn-green" onClick={onPublish}>Approve &amp; send to student</button>
             </>
           ) : (
             <button className="btn btn-ghost" onClick={onClose}>Close</button>

@@ -121,13 +121,22 @@ export default async function Home() {
       <main className="wrap page-fade">
         <div className="page-head">
           <div>
-            <span className="eyebrow">Dashboard</span>
-            <h2 className="title">Upcoming lessons</h2>
+            <span className="eyebrow">Overview</span>
+            <h2 className="title">Your teaching day</h2>
             <p className="sub">
-              From your <strong>{token.calendarName || 'primary'}</strong> calendar · record any lesson and its recap is drafted for review.
+              Lessons from <strong>{token.calendarName || 'your primary calendar'}</strong>, ready to record and turn into student recaps.
             </p>
           </div>
-          <Link className="btn btn-ghost btn-sm" href="/settings">Manage connections</Link>
+          <div className="page-actions">
+            <Link className="btn btn-ghost" href="/settings">Manage connections</Link>
+            <Link className="btn btn-primary" href="/book" target="_blank">Open booking page ↗</Link>
+          </div>
+        </div>
+
+        <div className="dashboard-summary" aria-label="Lesson summary">
+          <div className="summary-stat"><span>Upcoming lessons</span><strong>{lessons.length}</strong></div>
+          <div className="summary-stat"><span>Drafts to review</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'draft').length}</strong></div>
+          <div className="summary-stat"><span>Published recaps</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</strong></div>
         </div>
 
         {needsReconnect ? (
@@ -138,7 +147,7 @@ export default async function Home() {
         ) : fetchError ? (
           <div className="empty">{fetchError}</div>
         ) : lessons.length === 0 ? (
-          <div className="empty">No upcoming lessons on this calendar. Share your booking page to fill it up.</div>
+          <div className="empty"><strong>Your agenda is clear.</strong><br />No upcoming lessons are on this calendar. Share your booking page when you are ready.</div>
         ) : (
           groupByDay(lessons).map((g) => (
             <div className="day-group" key={g.key}>
