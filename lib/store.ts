@@ -72,6 +72,14 @@ export async function updateBotStatus(eventId: string, status: string): Promise<
   }
 }
 
+/** Stop tracking a bot after it has been explicitly cancelled. */
+export async function deleteBot(eventId: string): Promise<void> {
+  const all = await getBots()
+  if (!all[eventId]) return
+  delete all[eventId]
+  await writeDoc('bots', all)
+}
+
 // ── Recaps: AI-generated draft per calendar event ──
 export type RecapRec = {
   eventId: string

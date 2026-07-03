@@ -47,10 +47,11 @@ export async function getBot(id: string): Promise<BotInfo> {
 
 /** Make the bot leave / stop. */
 export async function removeBot(id: string): Promise<void> {
-  await fetch(`${BASE}/api/v1/bot/${id}/leave_call/`, {
+  const res = await fetch(`${BASE}/api/v1/bot/${id}/leave_call/`, {
     method: 'POST',
     headers: { Authorization: authHeader() },
   })
+  if (!res.ok) throw new Error(`Recall remove bot failed (${res.status}): ${await res.text()}`)
 }
 
 export type TranscriptResult = {

@@ -48,6 +48,7 @@ export default function LessonRow({
 }) {
   const [bot, setBot] = useState<Bot>(initialBot)
   const [sending, setSending] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
   const [building, setBuilding] = useState(false)
   const [err, setErr] = useState('')
   const [recap, setRecap] = useState<any>(null)
@@ -79,6 +80,25 @@ export default function LessonRow({
       if (!j.ok) { setErr(j.error || 'Failed'); return }
       setBot({ botId: j.botId, status: j.status, label: 'Bot joining…', state: 'joining' })
     } catch { setErr('Failed to send bot') } finally { setSending(false) }
+  }
+
+  async function cancelBot() {
+    if (!bot || bot.state !== 'joining') return
+    if (!window.confirm('Cancel the lesson recorder? It will leave the waiting room or meeting.')) return
+    setCancelling(true); setErr('')
+    try {
+      const response = await fetch('/api/recall/cancel-bot', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: lesson.id }),
+      })
+      const json = await response.json()
+      if (!response.ok || !json.ok) { setErr(json.error || 'Could not cancel recorder'); return }
+      setBot(null)
+    } catch {
+      setErr('Could not cancel recorder')
+    } finally {
+      setCancelling(false)
+    }
   }
 
   async function buildRecap() {
@@ -141,7 +161,14 @@ export default function LessonRow({
               {building ? 'Building…' : 'Build recap'}
             </button>
           ) : bot ? (
-            <span className={`pill ${pillClass[bot.state] || 'gray'}`}><span className="dot" />{bot.label}</span>
+            <>
+              <span className={`pill ${pillClass[bot.state] || 'gray'}`}><span className="dot" />{bot.label}</span>
+              {bot.state === 'joining' && (
+                <button className="btn btn-danger-ghost btn-sm" disabled={cancelling} onClick={cancelBot}>
+                  {cancelling ? 'Cancelling…' : 'Cancel bot'}
+                </button>
+              )}
+            </>
           ) : lesson.meetingUrl ? (
             <button className="btn btn-primary btn-sm" disabled={sending} onClick={sendBot}>
               {sending ? 'Sending…' : 'Record lesson'}
