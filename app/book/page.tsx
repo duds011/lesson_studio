@@ -61,13 +61,14 @@ export default function BookPage() {
     <>
       <PublicNav />
 
-      <main className="wrap page-fade">
-        <div className="page-head">
+      <main className="booking-shell page-fade">
+        <div className="booking-intro">
           <div>
-            <span className="eyebrow">Book a lesson</span>
-            <h2 className="title">Pick a time that works for you</h2>
-            <p className="sub">{data?.durationMin ?? 50}-minute lesson · times shown in {tz.replace('_', ' ')} time. You&rsquo;ll receive a meeting link and calendar invite.</p>
+            <span className="eyebrow">Schedule a lesson</span>
+            <h2 className="title">Find a time that works</h2>
+            <p className="sub">Choose an available day and time. Your confirmation and meeting details will arrive by email.</p>
           </div>
+          <div className="booking-duration">{data?.durationMin ?? 50} minutes · {tz.replace('_', ' ')}</div>
         </div>
 
         {confirmed ? (
@@ -103,7 +104,7 @@ export default function BookPage() {
           <div className="book-grid">
             {/* day picker */}
             <div className="book-days">
-              <div className="section-label" style={{ margin: '0 0 .6rem' }}>Pick a day</div>
+              <div className="section-label" style={{ margin: '0 0 .6rem' }}>1 · Choose a day</div>
               {data.days.map((d) => (
                 <button
                   key={d.date}
@@ -119,7 +120,7 @@ export default function BookPage() {
             {/* slots + form */}
             <div className="book-main">
               <div className="section-label" style={{ margin: '0 0 .6rem' }}>
-                {activeDay ? fmtDateLong(activeDay.date) : 'Pick a day'}
+                2 · {activeDay ? `Choose a time · ${fmtDateLong(activeDay.date)}` : 'Choose a time'}
               </div>
               <div className="slot-grid">
                 {activeDay?.slots.map((s) => (
@@ -135,7 +136,8 @@ export default function BookPage() {
 
               {picked && (
                 <div className="book-card" style={{ marginTop: '1.2rem' }}>
-                  <h3 style={{ marginTop: 0 }}>Confirm {fmtTime(picked)}</h3>
+                  <div className="section-label">3 · Your details</div>
+                  <h3 style={{ margin: '.35rem 0 0' }}>Confirm {fmtTime(picked)}</h3>
                   <div className="field">
                     <label>Your name</label>
                     <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />

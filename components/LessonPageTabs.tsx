@@ -12,7 +12,7 @@ const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
 type Tab = typeof TABS[number]
 
 export default function LessonPageTabs({
-  lesson, studentFirst, teacherFirst = 'Teacher',
+  lesson, studentFirst, teacherFirst = 'Your teacher',
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string
 }) {
@@ -31,16 +31,16 @@ export default function LessonPageTabs({
 
   return (
     <div>
-      <div className="tabs">
+      <div className="tabs" role="tablist" aria-label="Lesson recap sections">
         {TABS.map((t) => (
-          <button key={t} className={`tab ${tab === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{t}</button>
+          <button key={t} role="tab" aria-selected={tab === t} className={`tab ${tab === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{t === 'Homework' ? 'Practice' : t}</button>
         ))}
       </div>
 
       {/* ── PROGRESS ── */}
       {tab === 'Progress' && (
-        <div className="lesson-dashboard">
-          <h3 className="dashboard-title">Lesson overview</h3>
+        <div className="lesson-dashboard" role="tabpanel">
+          <h3 className="dashboard-title">How this lesson went</h3>
           <div className="analytics-grid">
             <div className="analytics-card">
               <div className="analytics-label">Speaking Balance</div>
@@ -72,7 +72,7 @@ export default function LessonPageTabs({
 
       {/* ── LESSON ── */}
       {tab === 'Lesson' && (
-        <div>
+        <div className="tab-panel" role="tabpanel">
           <div className="lesson-block"><FormattedContent content={r.recap} /></div>
           {lessonSections.map((s, i) => (
             <div className="lesson-block" key={i}>
@@ -94,7 +94,7 @@ export default function LessonPageTabs({
 
       {/* ── HOMEWORK ── */}
       {tab === 'Homework' && (
-        <div>
+        <div className="tab-panel" role="tabpanel">
           <div className="lesson-block">
             <h3>Homework</h3>
             {(r.homework?.length ?? 0) === 0 ? <p className="analytics-note">No homework for this lesson.</p> : (
@@ -110,7 +110,7 @@ export default function LessonPageTabs({
 
       {/* ── VOCABULARY ── */}
       {tab === 'Vocabulary' && (
-        <div>
+        <div className="tab-panel" role="tabpanel">
           <div className="lesson-block">
             <h3>Vocabulary by JLPT level</h3>
             {JLPT.map((lv) => (

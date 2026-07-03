@@ -34,7 +34,7 @@ export type Recap = {
 
 const PROMPT = `Analyze this Japanese lesson transcript and return ONLY valid JSON.
 
-The transcript is auto-generated and diarized (lines look like "Speaker Name: text"). It is NOISY: parts are garbled phonetic gibberish (e.g. "キャンキャンナーグラム", "エペネンフォーエグザン") — IGNORE the gibberish and work from the clean, legible Japanese, which is reliable. The host/teacher is Noa; other speakers are the student.
+The transcript is auto-generated and diarized (lines look like "Speaker Name: text"). It is NOISY: parts are garbled phonetic gibberish (e.g. "キャンキャンナーグラム", "エペネンフォーエグザン") — IGNORE the gibberish and work from the clean, legible Japanese, which is reliable. The meeting host is the teacher; other speakers are the student.
 
 CRITICAL — BE EXHAUSTIVE. Read the ENTIRE transcript start to finish and extract EVERY grammar point, verb form, and pattern that was taught or drilled, even briefly. Give the LATER HALF of the transcript equal attention — points near the end (often buried in noisy text) are commonly and wrongly dropped. Scan the final third specifically for things like 〜ながら, 〜おかげで/〜せいで, 〜ばよかった, and set phrases. Do NOT stop early or summarize only the first few. A single textbook lesson often has 10-16 grammar points. Actively scan for these commonly-missed items and include each one you find:
 - Transitive/intransitive verb PAIRS (自動詞/他動詞): e.g. 開ける/開く, 出す/出る, つける/つく, 消す/消える, 汚す/汚れる, 落とす/落ちる, 入れる/入る — if ANY pair appears, make a dedicated section on the transitive/intransitive contrast.

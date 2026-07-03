@@ -22,22 +22,24 @@ export default async function LessonPage({ params }: { params: { id: string; les
       <PublicNav backHref={`/students/${student.id}`} backLabel={student.name} />
 
       <main className="main-wrap page-fade">
-        <section className="summary-panel">
-          <div className="eyebrow">Lesson recap</div>
-          <h1>{lesson.title}</h1>
-          <p className="lead">{student.language} lesson · {student.name}</p>
-
-          <div className="lesson-meta">
-            <div className="meta-box"><div className="meta-label">Student</div><div className="meta-value">{student.name}</div></div>
-            <div className="meta-box"><div className="meta-label">Lesson</div><div className="meta-value">Lesson {lesson.lessonNumber}</div></div>
-            <div className="meta-box"><div className="meta-label">Date</div><div className="meta-value">{fmtDate}</div></div>
-            <div className="meta-box"><div className="meta-label">Score</div><div className="meta-value">{lesson.recap.score} / 10</div></div>
+        <section>
+          <div className="lesson-hero">
+            <div>
+              <div className="eyebrow">Lesson {lesson.lessonNumber} · Recap</div>
+              <h1>{lesson.title}</h1>
+              <p className="lead">A review of what you covered, what improved, and what to practice next.</p>
+              <div className="lesson-meta">
+                <div className="meta-box"><div className="meta-label">Student</div><div className="meta-value">{student.name}</div></div>
+                <div className="meta-box"><div className="meta-label">Language</div><div className="meta-value">{student.language}</div></div>
+                <div className="meta-box"><div className="meta-label">Date</div><div className="meta-value">{fmtDate}</div></div>
+              </div>
+            </div>
+            <div className="lesson-score"><div><strong>{lesson.recap.score}</strong><span>OUT OF 10</span></div></div>
           </div>
-
           <LessonPageTabs lesson={lesson as any} studentFirst={student.name.split(' ')[0]} />
         </section>
       </main>
-      <footer>{student.name} · Lesson {lesson.lessonNumber} recap · Lesson Studio</footer>
+      <footer>Lesson Studio · Lesson {lesson.lessonNumber} recap</footer>
     </>
   )
 }
