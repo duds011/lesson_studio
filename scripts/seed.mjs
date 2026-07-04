@@ -77,7 +77,8 @@ async function main() {
   for (const s of students) {
     if (!studentsWithLessons.has(s.id)) continue // only seed students who have a recap
 
-    const tempPassword = 'Lesson' + Math.floor(1000 + Math.random() * 9000) + '!'
+    // Deterministic so re-running the seed doesn't churn credentials.
+    const tempPassword = s.name.split(' ')[0].replace(/[^a-zA-Z]/g, '') + 'Lesson26!'
     const authId = await ensureUser(s.email, tempPassword, { full_name: s.name, role: 'student' })
     await admin.from('profiles').upsert({ id: authId, role: 'student', full_name: s.name, email: s.email })
 
@@ -116,6 +117,7 @@ async function main() {
         vocab_level_distribution: r.vocab_level_distribution ?? null,
         teacher_note: r.teacher_note ?? null,
         audio_script: r.audio_script ?? null,
+        recap_json: r, // full structured recap for the tabbed lesson view
       })
 
       if (Array.isArray(r.sections) && r.sections.length) {

@@ -73,7 +73,6 @@ export default function LessonPageTabs({
       {/* ── LESSON ── */}
       {tab === 'Lesson' && (
         <div className="tab-panel" role="tabpanel">
-          <div className="lesson-block"><FormattedContent content={r.recap} /></div>
           {lessonSections.map((s, i) => (
             <div className="lesson-block" key={i}>
               <h3>{s.title}</h3>

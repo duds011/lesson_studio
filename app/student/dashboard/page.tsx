@@ -170,18 +170,24 @@ export default async function StudentDashboard() {
             Your lessons will appear here once your teacher publishes them.
           </div>
         ) : (
-          <div>
-            {rows.map((lesson) => {
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+            {rows.map((lesson, idx) => {
               const s = summaryOf(lesson)
+              const preview = s?.recap ? String(s.recap).replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120) + '…' : ''
               return (
-                <Link key={lesson.id} href={`/student/lessons/${lesson.id}`} className="lesson-card">
-                  <div className="lc-num">L{lesson.lesson_number}</div>
-                  <div>
-                    <div className="lc-title">{lesson.title || `Lesson ${lesson.lesson_number}`}</div>
-                    <div className="lc-meta">{ordinal(lesson.lesson_number)} lesson · {formatDateShort(lesson.lesson_date)}</div>
+                <Link key={lesson.id} href={`/student/lessons/${lesson.id}`} className="surface" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <span className="pill" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
+                      Lesson {lesson.lesson_number}{idx === 0 ? ' · Latest' : ''}
+                    </span>
+                    {s?.score != null && <span style={{ fontWeight: 800, color: 'var(--brand)', fontSize: 12 }}>{s.score}/10</span>}
                   </div>
-                  {s?.score != null ? <div className="lc-score" style={{ color: 'var(--brand)' }}>{s.score}<span style={{ fontSize: 10, color: 'var(--muted)' }}>/10</span></div> : <div />}
-                  <span className="lc-arrow">→</span>
+                  <div>
+                    <div style={{ fontWeight: 750, fontSize: 15, lineHeight: 1.3 }}>{lesson.title || `Lesson ${lesson.lesson_number}`}</div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{ordinal(lesson.lesson_number)} lesson · {formatDateShort(lesson.lesson_date)}</div>
+                  </div>
+                  {preview && <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>{preview}</p>}
+                  <span className="btn btn-primary" style={{ marginTop: 'auto', justifyContent: 'center', width: '100%' }}>Open Lesson →</span>
                 </Link>
               )
             })}
