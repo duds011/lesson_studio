@@ -24,9 +24,9 @@ export async function GET(req: Request) {
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const admin = createAdminClient()
-  const { data: signed, error } = await admin.storage.from(row.bucket).createSignedUrl(row.path, 120, {
-    download: row.file_name ?? undefined,
-  })
+  // Files download as attachments; audio streams inline so <audio> can play it.
+  const signOpts = kind === 'file' ? { download: row.file_name ?? undefined } : {}
+  const { data: signed, error } = await admin.storage.from(row.bucket).createSignedUrl(row.path, 3600, signOpts)
   if (error || !signed) return NextResponse.json({ error: error?.message ?? 'Sign failed' }, { status: 500 })
 
   return NextResponse.redirect(signed.signedUrl)
