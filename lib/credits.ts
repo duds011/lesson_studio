@@ -15,7 +15,10 @@ export type Credits = { purchased: number; used: number; remaining: number; low:
 
 function toCredits(purchased: number, used: number): Credits {
   const remaining = purchased - used
-  return { purchased, used, remaining, low: remaining <= LOW_THRESHOLD }
+  // Only flag "low" once the student actually has a package/usage — a brand-new
+  // student with nothing recorded should not read as "out of lessons".
+  const hasActivity = purchased > 0 || used > 0
+  return { purchased, used, remaining, low: hasActivity && remaining <= LOW_THRESHOLD }
 }
 
 export async function getStudentCredits(client: Client, studentId: string): Promise<Credits> {

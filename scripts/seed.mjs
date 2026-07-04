@@ -159,38 +159,6 @@ async function main() {
     console.log(`✔ Student: ${s.name} (${studentLessons.length} lesson${studentLessons.length !== 1 ? 's' : ''})`)
   }
 
-  // ── Sample payments + bookings (so remaining/low-balance UI is demoable) ──
-  const demo = [
-    { email: 'jeffganly@gmail.com', amount: 120, lessons: 4, used: 0 },      // healthy: 4 left
-    { email: 'andrikusumo@gmail.com', amount: 120, lessons: 4, used: 3 },    // low: 1 left ⚠️
-    { email: 'petrezselyemmartin@gmail.com', amount: 60, lessons: 2, used: 2 }, // out: 0 left
-  ]
-  const emailToId = {}
-  for (const s of students) emailToId[s.email] = null
-  const { data: srows } = await admin.from('students').select('id, email')
-  for (const r of srows || []) emailToId[r.email] = r.id
-
-  for (const d of demo) {
-    const sid = emailToId[d.email]
-    if (!sid) continue
-    await admin.from('payments').delete().eq('student_id', sid)
-    await admin.from('bookings').delete().eq('student_id', sid)
-    await admin.from('payments').insert({
-      student_id: sid, teacher_id: teacherId, amount: d.amount, currency: 'USD', status: 'paid',
-      category: 'student', description: `${d.lessons}-lesson package`, lessons_covered: d.lessons,
-      payment_date: new Date().toISOString().slice(0, 10), method: 'Bank transfer',
-    })
-    for (let i = 0; i < d.used; i++) {
-      const start = new Date(Date.now() - (d.used - i) * 7 * 86400_000)
-      await admin.from('bookings').insert({
-        student_id: sid, teacher_id: teacherId, status: 'booked',
-        start_utc: start.toISOString(), end_utc: new Date(start.getTime() + 50 * 60000).toISOString(),
-        google_event_id: `seed-${sid}-${i}`,
-      })
-    }
-    console.log(`✔ Payment: ${d.email} — $${d.amount} / ${d.lessons} lessons, ${d.used} used`)
-  }
-
   console.log('\n── Student login credentials ─────────────────────────')
   for (const c of created) console.log(`${c.name.padEnd(24)} ${c.email.padEnd(34)} ${c.password}`)
   console.log('──────────────────────────────────────────────────────')

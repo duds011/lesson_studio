@@ -33,6 +33,9 @@ export default async function TeacherDashboard() {
     statsByStudent.set(l.student_id, s)
   }
 
+  const { data: profile } = await supabase.from('profiles').select('currency').eq('id', user.id).single()
+  const currency = (profile as any)?.currency ?? 'USD'
+
   const creditMap = await getCreditsByStudent(supabase, user.id)
 
   const rows = (students || []) as any[]
@@ -47,7 +50,7 @@ export default async function TeacherDashboard() {
           <h1 className="title" style={{ margin: '6px 0 4px' }}>Your students</h1>
           <p className="sub">Create student accounts, manage logins, and track progress built from lesson recaps.</p>
         </div>
-        <div className="page-actions"><AddStudentForm /></div>
+        <div className="page-actions"><AddStudentForm currency={currency} /></div>
       </div>
 
       <div className="dashboard-summary">

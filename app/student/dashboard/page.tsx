@@ -91,19 +91,26 @@ export default async function StudentDashboard() {
       </div>
 
       {/* Lessons remaining + book */}
-      <div className="analytics-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', borderColor: credits.remaining <= 0 ? '#f0cece' : credits.low ? '#ead7a5' : 'var(--line)', background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : 'var(--surface)' }}>
-        <div>
-          <span className="analytics-label">Lessons remaining</span>
-          <div className="analytics-value" style={{ color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
-            {credits.remaining}
-            {credits.purchased > 0 && <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--muted)' }}> / {credits.purchased} bought</span>}
+      {(() => {
+        const hasPkg = credits.purchased > 0 || credits.used > 0
+        const out = hasPkg && credits.remaining <= 0
+        const low = credits.low && !out
+        return (
+          <div className="analytics-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', borderColor: out ? '#f0cece' : low ? '#ead7a5' : 'var(--line)', background: out ? 'var(--red-soft)' : low ? 'var(--amber-soft)' : 'var(--surface)' }}>
+            <div>
+              <span className="analytics-label">Lessons remaining</span>
+              <div className="analytics-value" style={{ color: out ? 'var(--red)' : low ? 'var(--amber)' : 'var(--brand)' }}>
+                {hasPkg ? credits.remaining : '—'}
+                {credits.purchased > 0 && <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--muted)' }}> / {credits.purchased} bought</span>}
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                {out ? 'You’re out of prepaid lessons — time to top up.' : low ? 'You’re on your last lesson — consider booking a new package.' : 'Book your next lesson any time.'}
+              </span>
+            </div>
+            <Link href="/student/book" className="btn btn-primary">Book a lesson →</Link>
           </div>
-          <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-            {credits.remaining <= 0 ? 'You’re out of prepaid lessons — time to top up.' : credits.low ? 'You’re on your last lesson — consider booking a new package.' : 'Book your next lesson any time.'}
-          </span>
-        </div>
-        <Link href="/student/book" className="btn btn-primary">Book a lesson →</Link>
-      </div>
+        )
+      })()}
 
       {/* Progress stats */}
       <div className="analytics-grid">
