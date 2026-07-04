@@ -65,13 +65,13 @@ export default async function TeacherDashboard() {
             const avg = st.scores.length ? (st.scores.reduce((a, b) => a + b, 0) / st.scores.length).toFixed(1) : '—'
             return (
               <div key={s.id} className="student-card" style={{ gridTemplateColumns: 'minmax(180px,1.4fr) 90px 90px minmax(160px,1fr)' }}>
-                <div className="student-identity">
+                <Link href={`/teacher/students/${s.id}`} className="student-identity" style={{ color: 'inherit' }} title="View progress & recaps">
                   <div className="avatar">{s.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>
                   <div>
                     <div className="sc-name">{s.full_name}</div>
                     <div className="sc-email">{s.email}</div>
                   </div>
-                </div>
+                </Link>
                 <div>
                   <div className="analytics-label">Lessons</div>
                   <strong>{st.count}</strong>
