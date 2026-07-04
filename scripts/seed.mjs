@@ -42,6 +42,19 @@ const admin = createClient(URL, SERVICE_KEY, { auth: { autoRefreshToken: false, 
 const students = JSON.parse(readFileSync(path.join(root, 'content/students.json'), 'utf-8'))
 const lessons = Object.values(JSON.parse(readFileSync(path.join(root, 'content/lessons.json'), 'utf-8')))
 
+// A short, descriptive lesson title. Prefer a real committed title; otherwise
+// pull the topic from the recap's "Lesson Recap — <topic>" opening line.
+function lessonTitle(l, r) {
+  const t = (l.title || '').trim()
+  if (t && !/^lesson\s*\d+$/i.test(t)) return t
+  const first = (r.recap || '').split('\n').map((s) => s.trim()).find(Boolean) || ''
+  const m = first.match(/lesson recap\s*[—\-:]\s*(.+)$/i)
+  if (m) return m[1].trim().slice(0, 80)
+  const sec = (r.sections || []).find((s) => !/main corrections|refinement|takeaway/i.test(s.title))
+  if (sec) return sec.title.replace(/^\d+\.\s*/, '').trim().slice(0, 80)
+  return `Lesson ${l.lessonNumber}`
+}
+
 async function findUserByEmail(email) {
   // Page through users (small dataset) to find an existing account.
   for (let page = 1; page <= 20; page++) {
@@ -101,7 +114,7 @@ async function main() {
           teacher_id: teacherId,
           lesson_number: l.lessonNumber,
           lesson_date: l.date,
-          title: l.title || null,
+          title: lessonTitle(l, r),
           status: 'published',
         })
         .select('id')
