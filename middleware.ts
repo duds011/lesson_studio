@@ -38,8 +38,17 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  // Not logged in → send to login for protected routes.
-  if (!user && (path.startsWith('/teacher') || path.startsWith('/student'))) {
+  // Route buckets. The student PORTAL is /student/* (note: /students is the
+  // teacher's student list, so match /student/ with a trailing slash).
+  const isStudentPortal = path === '/student' || path.startsWith('/student/')
+  const isTeacherArea =
+    path === '/' ||
+    path.startsWith('/settings') ||
+    path.startsWith('/students') ||
+    path.startsWith('/teacher')
+
+  // Not logged in → send to login for any gated route.
+  if (!user && (isTeacherArea || isStudentPortal)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -53,22 +62,19 @@ export async function middleware(request: NextRequest) {
       return profile?.role
     }
 
-    // Already authed and hitting the login page → route to the right dashboard.
+    // Already authed and hitting the login page → route to the right home.
     if (path === '/login') {
       const role = await roleOf()
-      const dest = role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'
+      const dest = role === 'teacher' ? '/' : '/student/dashboard'
       return NextResponse.redirect(new URL(dest, request.url))
     }
 
     // Keep teachers and students in their own areas.
-    if (path.startsWith('/teacher') || path.startsWith('/student')) {
-      const role = await roleOf()
-      if (path.startsWith('/teacher') && role !== 'teacher') {
-        return NextResponse.redirect(new URL('/student/dashboard', request.url))
-      }
-      if (path.startsWith('/student') && role !== 'student') {
-        return NextResponse.redirect(new URL('/teacher/dashboard', request.url))
-      }
+    if (isTeacherArea && (await roleOf()) !== 'teacher') {
+      return NextResponse.redirect(new URL('/student/dashboard', request.url))
+    }
+    if (isStudentPortal && (await roleOf()) !== 'student') {
+      return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
@@ -76,5 +82,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/login', '/student/:path*', '/teacher/:path*'],
+  // NB: /book and all /api/* routes are deliberately excluded so the public
+  // booking page and the Google/Zoom OAuth callbacks keep working without login.
+  matcher: ['/', '/login', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*'],
 }

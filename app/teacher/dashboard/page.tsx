@@ -88,8 +88,8 @@ export default async function TeacherDashboard() {
       )}
 
       <p style={{ fontSize: 11, color: 'var(--muted)' }}>
-        Tip: your calendar, recordings, and recap tools live on the{' '}
-        <Link href="/" style={{ color: 'var(--brand)', fontWeight: 700 }}>main studio</Link>.
+        Your calendar, recordings, and recap tools are under{' '}
+        <Link href="/" style={{ color: 'var(--brand)', fontWeight: 700 }}>Overview</Link> in the sidebar.
       </p>
     </div>
   )

@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'arrow' | 'external'
 
@@ -24,13 +25,21 @@ export function LogoMark() {
 
 const LINKS = [
   { href: '/', label: 'Overview', icon: 'home' as IconName },
-  { href: '/students', label: 'Students', icon: 'users' as IconName },
+  { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName },
 ]
 
 export default function AppNav({ email, connected }: { email?: string | null; connected?: boolean }) {
   const pathname = usePathname()
+  const router = useRouter()
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
   const accountLabel = email?.split('@')[0] || 'Teacher workspace'
+
+  async function signOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <aside className="app-sidebar" aria-label="Teacher workspace navigation">
@@ -65,7 +74,9 @@ export default function AppNav({ email, connected }: { email?: string | null; co
       <div className="sidebar-account">
         <span className="account-avatar">{accountLabel.charAt(0).toUpperCase()}</span>
         <span className="account-copy"><strong>{accountLabel}</strong><small><span className={`status-dot ${connected ? 'online' : ''}`} />{connected ? 'Calendar connected' : 'Setup needed'}</small></span>
-        <Icon name="arrow" />
+        <button onClick={signOut} className="btn btn-ghost btn-sm" title="Sign out" aria-label="Sign out" style={{ padding: '6px 8px' }}>
+          Sign out
+        </button>
       </div>
     </aside>
   )

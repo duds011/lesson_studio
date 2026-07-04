@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import PortalNav from '@/components/portal/PortalNav'
+import AppNav from '@/components/AppNav'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,12 +14,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
 
   return (
     <>
-      <PortalNav
-        brand="Lesson Studio · Teacher"
-        email={user.email ?? ''}
-        links={[{ href: '/teacher/dashboard', label: 'Students' }]}
-      />
-      <main className="main-wrap page-fade">{children}</main>
+      <AppNav email={user.email} connected />
+      <main className="wrap page-fade">{children}</main>
     </>
   )
 }
