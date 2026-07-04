@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateShort, ordinal } from '@/lib/portal-utils'
+import { getStudentCredits } from '@/lib/credits'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 
@@ -49,6 +50,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
     }
   }
   const totalVocab = Object.values(vocabDistribution).reduce((sum, n) => sum + n, 0)
+  const credits = await getStudentCredits(supabase, student.id)
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -59,6 +61,12 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
           <div>
             <h1 className="title" style={{ margin: 0 }}>{student.full_name}</h1>
             <p className="sub" style={{ margin: 0 }}>{student.email} · {student.level} · {student.language}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : 'var(--brand-soft)', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
+                {credits.purchased > 0 || credits.used > 0 ? `${credits.remaining} lesson${credits.remaining === 1 ? '' : 's'} left / ${credits.purchased} bought` : 'No lessons purchased yet'}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
+              </span>
+              <Link href="/teacher/payments" className="btn btn-ghost btn-sm">Manage payments →</Link>
+            </div>
           </div>
         </div>
       </div>

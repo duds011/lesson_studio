@@ -16,6 +16,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         email={user.email ?? ''}
         links={[
           { href: '/student/dashboard', label: 'Dashboard' },
+          { href: '/student/book', label: 'Book a lesson' },
         ]}
       />
       <main className="main-wrap page-fade">{children}</main>

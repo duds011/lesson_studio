@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getCreditsByStudent } from '@/lib/credits'
 import AddStudentForm from '@/components/portal/AddStudentForm'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 
@@ -32,8 +33,11 @@ export default async function TeacherDashboard() {
     statsByStudent.set(l.student_id, s)
   }
 
+  const creditMap = await getCreditsByStudent(supabase, user.id)
+
   const rows = (students || []) as any[]
   const totalLessons = (lessons || []).length
+  const lowStudents = rows.filter((r) => (creditMap.get(r.id) ?? { low: false }).low)
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -52,6 +56,20 @@ export default async function TeacherDashboard() {
         <div className="summary-stat"><span>Lessons recorded</span><strong>{totalLessons}</strong></div>
       </div>
 
+      {lowStudents.length > 0 && (
+        <div className="warn-box" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <strong>⚠️ Running low on lessons:</strong>
+          {lowStudents.map((s) => {
+            const c = creditMap.get(s.id)!
+            return (
+              <Link key={s.id} href={`/teacher/students/${s.id}`} className="pill" style={{ background: c.remaining <= 0 ? 'var(--red-soft)' : '#fff', color: c.remaining <= 0 ? 'var(--red)' : 'var(--amber)', border: '1px solid #ead7a5' }}>
+                {s.full_name.split(' ')[0]} · {c.remaining <= 0 ? 'out' : `${c.remaining} left`}
+              </Link>
+            )
+          })}
+        </div>
+      )}
+
       {rows.length === 0 ? (
         <div className="empty">
           <strong style={{ color: 'var(--ink)' }}>No students yet</strong>
@@ -63,8 +81,9 @@ export default async function TeacherDashboard() {
           {rows.map((s) => {
             const st = statsByStudent.get(s.id) ?? { count: 0, scores: [], vocab: 0 }
             const avg = st.scores.length ? (st.scores.reduce((a, b) => a + b, 0) / st.scores.length).toFixed(1) : '—'
+            const c = creditMap.get(s.id) ?? { purchased: 0, used: 0, remaining: 0, low: false }
             return (
-              <div key={s.id} className="student-card" style={{ gridTemplateColumns: 'minmax(180px,1.4fr) 90px 90px minmax(160px,1fr)' }}>
+              <div key={s.id} className="student-card" style={{ gridTemplateColumns: 'minmax(170px,1.3fr) 70px 70px 96px minmax(150px,1fr)' }}>
                 <Link href={`/teacher/students/${s.id}`} className="student-identity" style={{ color: 'inherit' }} title="View progress & recaps">
                   <div className="avatar">{s.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>
                   <div>
@@ -77,8 +96,14 @@ export default async function TeacherDashboard() {
                   <strong>{st.count}</strong>
                 </div>
                 <div>
-                  <div className="analytics-label">Avg score</div>
+                  <div className="analytics-label">Avg</div>
                   <strong style={{ color: 'var(--brand)' }}>{avg}</strong>
+                </div>
+                <div>
+                  <div className="analytics-label">Left</div>
+                  <strong style={{ color: c.remaining <= 0 ? 'var(--red)' : c.low ? 'var(--amber)' : 'var(--ink)' }}>
+                    {c.purchased > 0 || c.used > 0 ? c.remaining : '—'}{c.low && (c.purchased > 0 || c.used > 0) ? ' ⚠️' : ''}
+                  </strong>
                 </div>
                 <StudentAdminActions studentId={s.id} hasLogin={!!s.profile_id} />
               </div>

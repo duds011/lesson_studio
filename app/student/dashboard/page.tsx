@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getStudentCredits } from '@/lib/credits'
 import { formatDateShort, getLevelLabel, ordinal } from '@/lib/portal-utils'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
@@ -75,6 +77,10 @@ export default async function StudentDashboard() {
   const nextMilestone = MILESTONES.find((m) => m > lessonCount) ?? 50
   const levelLabel = getLevelLabel(lessonCount)
 
+  // Payments are teacher-only under RLS, so read the credit totals with admin
+  // and surface only the resulting count to the student.
+  const credits = await getStudentCredits(createAdminClient(), student.id)
+
   return (
     <div style={{ display: 'grid', gap: 22 }}>
       {/* Header */}
@@ -82,6 +88,21 @@ export default async function StudentDashboard() {
         <span className="eyebrow">Student View</span>
         <h1 className="title" style={{ margin: '6px 0 4px' }}>Welcome back, {student.full_name.split(' ')[0]}</h1>
         <p className="sub">Your lessons, progress, and recaps — all in one place.</p>
+      </div>
+
+      {/* Lessons remaining + book */}
+      <div className="analytics-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', borderColor: credits.remaining <= 0 ? '#f0cece' : credits.low ? '#ead7a5' : 'var(--line)', background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : 'var(--surface)' }}>
+        <div>
+          <span className="analytics-label">Lessons remaining</span>
+          <div className="analytics-value" style={{ color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
+            {credits.remaining}
+            {credits.purchased > 0 && <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--muted)' }}> / {credits.purchased} bought</span>}
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+            {credits.remaining <= 0 ? 'You’re out of prepaid lessons — time to top up.' : credits.low ? 'You’re on your last lesson — consider booking a new package.' : 'Book your next lesson any time.'}
+          </span>
+        </div>
+        <Link href="/student/book" className="btn btn-primary">Book a lesson →</Link>
       </div>
 
       {/* Progress stats */}
