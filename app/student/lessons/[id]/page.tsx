@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateShort, ordinal } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
+import LessonExchange from '@/components/portal/LessonExchange'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,8 +29,13 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
 
   if (!recap) notFound()
 
+  const [{ data: files }, { data: audios }] = await Promise.all([
+    supabase.from('lesson_attachments').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+    supabase.from('student_audio_submissions').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+  ])
+
   return (
-    <div className="page-fade">
+    <div className="page-fade" style={{ maxWidth: 860 }}>
       <Link href="/student/dashboard" className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }}>← Dashboard</Link>
       <div className="lesson-hero">
         <div>
@@ -48,6 +54,8 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         studentFirst={studentName.split(' ')[0] || 'You'}
         teacherFirst="Noa"
       />
+
+      <LessonExchange lessonId={l.id} role="student" files={files || []} audios={audios || []} />
     </div>
   )
 }
