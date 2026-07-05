@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { usePathname } from 'next/navigation'
 
 type NavLink = { href: string; label: string }
 
@@ -16,14 +15,6 @@ export default function PortalNav({
   links: NavLink[]
 }) {
   const pathname = usePathname()
-  const router = useRouter()
-
-  async function signOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   return (
     <header className="portal-header">
@@ -50,9 +41,9 @@ export default function PortalNav({
               </Link>
             )
           })}
-          <button onClick={signOut} className="btn btn-ghost btn-sm" style={{ marginLeft: 4 }}>
+          <a href="/logout" className="btn btn-danger-ghost btn-sm" style={{ marginLeft: 4 }}>
             Sign out
-          </button>
+          </a>
         </nav>
       </div>
     </header>

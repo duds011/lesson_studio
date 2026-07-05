@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { usePathname } from 'next/navigation'
 
 type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'arrow' | 'external' | 'wallet'
 
@@ -32,16 +31,8 @@ const LINKS = [
 
 export default function AppNav({ email, connected }: { email?: string | null; connected?: boolean }) {
   const pathname = usePathname()
-  const router = useRouter()
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
   const accountLabel = email?.split('@')[0] || 'Teacher workspace'
-
-  async function signOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   return (
     <aside className="app-sidebar" aria-label="Teacher workspace navigation">
@@ -76,9 +67,9 @@ export default function AppNav({ email, connected }: { email?: string | null; co
       <div className="sidebar-account">
         <span className="account-avatar">{accountLabel.charAt(0).toUpperCase()}</span>
         <span className="account-copy"><strong>{accountLabel}</strong><small><span className={`status-dot ${connected ? 'online' : ''}`} />{connected ? 'Calendar connected' : 'Setup needed'}</small></span>
-        <button onClick={signOut} className="btn btn-ghost btn-sm" title="Sign out" aria-label="Sign out" style={{ padding: '6px 8px' }}>
+        <a href="/logout" className="btn btn-danger-ghost btn-sm" title="Sign out" aria-label="Sign out" style={{ padding: '6px 8px' }}>
           Sign out
-        </button>
+        </a>
       </div>
     </aside>
   )
