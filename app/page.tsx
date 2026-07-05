@@ -3,45 +3,9 @@ import { getToken, getBots, getRecaps } from '@/lib/store'
 import { isConfigured, listUpcomingLessons, type Lesson } from '@/lib/google'
 import { friendlyStatus } from '@/lib/recall'
 import AppNav from '@/components/AppNav'
-import LessonRow from '@/components/LessonRow'
+import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
-
-// Compare two instants by their calendar day *in a given timezone*.
-function dayKey(d: Date, tz: string): string {
-  return d.toLocaleDateString('en-CA', { timeZone: tz }) // YYYY-MM-DD
-}
-function fmtDay(iso: string, tz: string): string {
-  const d = new Date(iso)
-  const now = new Date()
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-  if (dayKey(d, tz) === dayKey(now, tz)) return 'Today'
-  if (dayKey(d, tz) === dayKey(tomorrow, tz)) return 'Tomorrow'
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz })
-}
-
-type DayGroup = { key: string; label: string; date: string; items: Lesson[] }
-// Lessons arrive sorted by start time, so we can group sequentially.
-function groupByDay(lessons: Lesson[]): DayGroup[] {
-  const groups: DayGroup[] = []
-  for (const l of lessons) {
-    const key = dayKey(new Date(l.start), l.tz)
-    const last = groups[groups.length - 1]
-    if (last && last.key === key) {
-      last.items.push(l)
-    } else {
-      groups.push({
-        key,
-        label: fmtDay(l.start, l.tz),
-        date: new Date(l.start).toLocaleDateString(undefined, {
-          weekday: 'long', month: 'short', day: 'numeric', timeZone: l.tz,
-        }),
-        items: [l],
-      })
-    }
-  }
-  return groups
-}
 
 function ConnectScreen({ configured }: { configured: boolean }) {
   return (
@@ -115,6 +79,11 @@ export default async function Home() {
     return { botId: rec.botId, status: rec.status, label: f.label, state: f.state }
   }
 
+  const initialLessons: CalEvent[] = lessons.map((l) => ({
+    id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl,
+    attendees: l.attendees, bot: botFor(l.id), recapStatus: recapRecs[l.id]?.status ?? null,
+  }))
+
   return (
     <>
       <AppNav email={token.email} connected />
@@ -122,7 +91,7 @@ export default async function Home() {
         <div className="page-head">
           <div>
             <span className="eyebrow">Overview</span>
-            <h2 className="title">Your teaching day</h2>
+            <h2 className="title">Your teaching calendar</h2>
             <p className="sub">
               Lessons from <strong>{token.calendarName || 'your primary calendar'}</strong>, ready to record and turn into student recaps.
             </p>
@@ -146,25 +115,8 @@ export default async function Home() {
           </div>
         ) : fetchError ? (
           <div className="empty">{fetchError}</div>
-        ) : lessons.length === 0 ? (
-          <div className="empty"><strong>Your agenda is clear.</strong><br />No upcoming lessons are on this calendar. Share your booking page when you are ready.</div>
         ) : (
-          groupByDay(lessons).map((g) => (
-            <div className="day-group" key={g.key}>
-              <div className="day-head">
-                <span className="day-label">{g.label}</span>
-                <span className="day-date">{g.date}</span>
-              </div>
-              {g.items.map((l) => (
-                <LessonRow
-                  key={l.id}
-                  lesson={{ id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl }}
-                  initialBot={botFor(l.id)}
-                  initialRecapStatus={recapRecs[l.id]?.status ?? null}
-                />
-              ))}
-            </div>
-          ))
+          <TeacherCalendar initialLessons={initialLessons} />
         )}
       </main>
     </>
