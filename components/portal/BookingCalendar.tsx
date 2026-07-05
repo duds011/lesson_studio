@@ -113,7 +113,7 @@ export default function BookingCalendar({ remaining }: { remaining: number | nul
       ) : data.days.length === 0 || !month ? (
         <div className="empty">No open lesson times in the next 30 days.</div>
       ) : (
-        <div className="book-grid">
+        <div className="booking-layout">
           {/* Month calendar */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -153,7 +153,7 @@ export default function BookingCalendar({ remaining }: { remaining: number | nul
           </div>
 
           {/* Times for the chosen day */}
-          <div className="book-main">
+          <div className="book-main" style={{ border: '1px solid var(--line)', borderRadius: 16 }}>
             <div className="section-label" style={{ margin: '0 0 .6rem' }}>2 · {activeDay ? `Choose a time · ${fmtDateLong(activeDay.date)}` : 'Choose a time'}</div>
             {!activeDay ? (
               <div className="empty" style={{ marginTop: 0 }}>Pick a highlighted day to see open times.</div>

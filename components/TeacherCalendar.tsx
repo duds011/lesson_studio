@@ -129,7 +129,7 @@ function MonthView({ grid, anchor, today, byDay, onPick, onDay }: {
 }) {
   return (
     <div className="analytics-card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,minmax(0,1fr))' }}>
         {DOW.map((d) => <div key={d} style={{ padding: '8px 6px', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '.08em', borderBottom: '1px solid var(--line)' }}>{d}</div>)}
         {grid.map((d, i) => {
           const inMonth = d.getMonth() === anchor.getMonth()
@@ -141,10 +141,11 @@ function MonthView({ grid, anchor, today, byDay, onPick, onDay }: {
               {evs.slice(0, 3).map((e) => {
                 const s = statusDot(e)
                 return (
-                  <button key={e.id} onClick={(ev) => { ev.stopPropagation(); onPick(e) }} title={e.title.replace(/<[^>]*>/g, '')}
-                    style={{ textAlign: 'left', border: 0, background: 'var(--brand-soft)', color: 'var(--brand)', borderRadius: 5, padding: '2px 5px', fontSize: 10.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                  <button key={e.id} onClick={(ev) => { ev.stopPropagation(); onPick(e) }} title={`${fmtTime(e.start)} · ${e.title.replace(/<[^>]*>/g, '')}`}
+                    style={{ textAlign: 'left', border: 0, background: 'var(--brand-soft)', color: 'var(--brand)', borderRadius: 5, padding: '2px 5px', fontSize: 10.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', minWidth: 0, maxWidth: '100%' }}>
                     {s && <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.c, flexShrink: 0 }} />}
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmtTime(e.start)} {e.title.replace(/<[^>]*>/g, '')}</span>
+                    <span style={{ fontWeight: 700, flexShrink: 0 }}>{fmtTime(e.start)}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, fontWeight: 500 }}>{e.title.replace(/<[^>]*>/g, '')}</span>
                   </button>
                 )
               })}
@@ -163,12 +164,12 @@ function WeekView({ days, today, byDay, onPick, onDay }: {
 }) {
   return (
     <div className="analytics-card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,minmax(0,1fr))' }}>
         {days.map((d, i) => {
           const isToday = sameYmd(d, today)
           const evs = byDay.get(ymd(d)) ?? []
           return (
-            <div key={i} style={{ borderRight: i !== 6 ? '1px solid var(--line)' : undefined, minHeight: 220, display: 'flex', flexDirection: 'column' }}>
+            <div key={i} style={{ borderRight: i !== 6 ? '1px solid var(--line)' : undefined, minHeight: 220, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <button onClick={() => onDay(d)} style={{ border: 0, borderBottom: '1px solid var(--line)', background: isToday ? 'var(--brand-soft)' : 'var(--surface-2)', padding: '7px 4px', cursor: 'pointer' }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>{DOW[d.getDay()]}</div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: isToday ? 'var(--brand)' : 'var(--ink)' }}>{d.getDate()}</div>
@@ -177,7 +178,7 @@ function WeekView({ days, today, byDay, onPick, onDay }: {
                 {evs.map((e) => {
                   const s = statusDot(e)
                   return (
-                    <button key={e.id} onClick={() => onPick(e)} style={{ textAlign: 'left', border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '5px 6px', cursor: 'pointer', display: 'grid', gap: 1 }}>
+                    <button key={e.id} onClick={() => onPick(e)} style={{ textAlign: 'left', border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '5px 6px', cursor: 'pointer', display: 'grid', gap: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 4 }}>{s && <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.c }} />}{fmtTime(e.start)}</span>
                       <span style={{ fontSize: 10.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title.replace(/<[^>]*>/g, '')}</span>
                     </button>
