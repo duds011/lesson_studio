@@ -1,14 +1,17 @@
 import { getToken } from '@/lib/store'
 import { listCalendars, type CalendarInfo } from '@/lib/google'
 import { getSettings } from '@/lib/settings'
+import { getBookingConfig } from '@/lib/booking'
 import AppNav from '@/components/AppNav'
 import ZoomStatus from '@/components/ZoomStatus'
+import AvailabilityEditor from '@/components/AvailabilityEditor'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
   const token = await getToken()
   const settings = await getSettings()
+  const bookingConfig = await getBookingConfig()
 
   let calendars: CalendarInfo[] = []
   let needsReconnect = false
@@ -37,6 +40,7 @@ export default async function SettingsPage() {
           <aside className="settings-index" aria-label="Settings sections">
             <a href="#connections">Connections</a>
             <a href="#booking">Booking preference</a>
+            <a href="#availability">Availability</a>
           </aside>
           <div className="settings-stack">
         {/* Google Calendar */}
@@ -103,6 +107,9 @@ export default async function SettingsPage() {
             </form>
           </div>
         </div>
+
+        {/* Availability & booking rules */}
+        <AvailabilityEditor config={bookingConfig} />
           </div>
         </div>
       </main>

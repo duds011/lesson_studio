@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStudentCredits } from '@/lib/credits'
 import { createBookingEvent, getBusyIntervals } from '@/lib/google'
-import { BOOKING } from '@/lib/booking'
+import { getBookingConfig } from '@/lib/booking'
 import { getSettings } from '@/lib/settings'
 import { createZoomMeeting, isZoomConfigured } from '@/lib/zoom'
 
@@ -21,14 +21,15 @@ export async function POST(req: Request) {
     const { data: student } = await admin.from('students').select('id, teacher_id, full_name, email').eq('profile_id', user.id).single()
     if (!student) return NextResponse.json({ ok: false, error: 'No student profile linked to your account.' }, { status: 403 })
 
+    const cfg = await getBookingConfig()
     const { start } = await req.json()
     const startMs = new Date(start).getTime()
     if (isNaN(startMs)) return NextResponse.json({ ok: false, error: 'Invalid time.' }, { status: 400 })
-    const endMs = startMs + BOOKING.durationMin * 60_000
+    const endMs = startMs + cfg.durationMin * 60_000
 
     // Re-check the slot is still free (with buffers).
-    const bufBefore = BOOKING.bufferBeforeMin * 60_000
-    const bufAfter = BOOKING.bufferAfterMin * 60_000
+    const bufBefore = cfg.bufferBeforeMin * 60_000
+    const bufAfter = cfg.bufferAfterMin * 60_000
     const busy = await getBusyIntervals(new Date(startMs - 3 * 3600_000).toISOString(), new Date(endMs + 3 * 3600_000).toISOString())
     if (busy.some((b) => startMs - bufBefore < b.end && endMs + bufAfter > b.start)) {
       return NextResponse.json({ ok: false, error: 'That slot was just taken — please pick another.' }, { status: 409 })
@@ -38,16 +39,16 @@ export async function POST(req: Request) {
     let zoomLink: string | undefined
     if (platform === 'zoom') {
       if (!isZoomConfigured()) return NextResponse.json({ ok: false, error: 'Zoom isn’t connected yet.' }, { status: 400 })
-      const z = await createZoomMeeting({ topic: `${BOOKING.title} — ${student.full_name}`, startISO: new Date(startMs).toISOString(), durationMin: BOOKING.durationMin, timezone: BOOKING.tz })
+      const z = await createZoomMeeting({ topic: `${cfg.title} — ${student.full_name}`, startISO: new Date(startMs).toISOString(), durationMin: cfg.durationMin, timezone: cfg.tz })
       zoomLink = z.joinUrl
     }
 
     const result = await createBookingEvent({
-      summary: `${BOOKING.title} — ${student.full_name}`,
+      summary: `${cfg.title} — ${student.full_name}`,
       description: `Booked via student portal.\nStudent: ${student.full_name} (${student.email})${zoomLink ? `\nZoom: ${zoomLink}` : ''}`,
       startUTC: new Date(startMs).toISOString(),
       endUTC: new Date(endMs).toISOString(),
-      timeZone: BOOKING.tz,
+      timeZone: cfg.tz,
       attendeeEmail: student.email,
       attendeeName: student.full_name,
       addMeet: platform === 'google_meet',
