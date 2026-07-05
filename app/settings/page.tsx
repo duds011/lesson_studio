@@ -2,9 +2,11 @@ import { getToken } from '@/lib/store'
 import { listCalendars, type CalendarInfo } from '@/lib/google'
 import { getSettings } from '@/lib/settings'
 import { getBookingConfig } from '@/lib/booking'
+import { zoomConnection, isZoomConfigured } from '@/lib/zoom'
+import { createClient } from '@/lib/supabase/server'
 import AppNav from '@/components/AppNav'
-import ZoomStatus from '@/components/ZoomStatus'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
+import ConnectorsGallery from '@/components/ConnectorsGallery'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +25,18 @@ export default async function SettingsPage() {
     }
   }
   const selectedId = token?.calendarId || 'primary'
+
+  // Connector statuses for the gallery.
+  const zoom = { configured: isZoomConfigured(), ...(await zoomConnection()) }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled').eq('id', user.id).single()
+    : { data: null }
+  const stripe = {
+    connected: Boolean((profile as any)?.stripe_account_id),
+    chargesEnabled: Boolean((profile as any)?.stripe_charges_enabled),
+  }
 
   return (
     <>
@@ -43,50 +57,38 @@ export default async function SettingsPage() {
             <a href="#availability">Availability</a>
           </aside>
           <div className="settings-stack">
-        {/* Google Calendar */}
+        {/* Connectors gallery */}
         <div className="settings-card" id="connections">
-          <h3>Google Calendar</h3>
-          <p className="desc">Source calendar for upcoming lessons and new bookings.</p>
-          {!token ? (
-            <a className="btn btn-primary" href="/api/google/auth">Connect Google Calendar</a>
-          ) : needsReconnect ? (
-            <div className="settings-row">
-              <span className="pill amber"><span className="dot" />Wider permission needed</span>
-              <a className="btn btn-primary btn-sm" href="/api/google/auth">Reconnect Google</a>
-            </div>
-          ) : (
-            <>
-              <div className="settings-row" style={{ marginBottom: '1rem' }}>
-                <span className="pill green"><span className="dot" />Connected · {token.email}</span>
-                <form action="/api/google/disconnect" method="post">
-                  <button className="btn btn-danger-ghost btn-sm" type="submit">Disconnect</button>
-                </form>
-              </div>
-              <p className="desc" style={{ marginBottom: '.6rem' }}>Which calendar holds your lessons?</p>
-              <div className="cal-picker">
-                {calendars.map((c) => {
-                  const sel = c.id === selectedId || (c.primary && selectedId === 'primary')
-                  return (
-                    <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
-                      <input type="hidden" name="calendarId" value={c.id} />
-                      <input type="hidden" name="calendarName" value={c.name} />
-                      <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>
-                        {sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}
-                      </button>
-                    </form>
-                  )
-                })}
-              </div>
-            </>
-          )}
+          <h3>Connections</h3>
+          <p className="desc">Connect the tools that power scheduling, meetings, and payments.</p>
+          <ConnectorsGallery
+            google={{ connected: Boolean(token), needsReconnect, email: token?.email }}
+            zoom={zoom}
+            stripe={stripe}
+          />
         </div>
 
-        {/* Zoom */}
-        <div className="settings-card">
-          <h3>Zoom</h3>
-          <p className="desc">Create a unique Zoom room when a student books a lesson.</p>
-          <ZoomStatus />
-        </div>
+        {/* Which calendar holds lessons (only when Google is connected) */}
+        {token && !needsReconnect && calendars.length > 0 && (
+          <div className="settings-card">
+            <h3>Lesson calendar</h3>
+            <p className="desc">Which calendar holds your lessons?</p>
+            <div className="cal-picker">
+              {calendars.map((c) => {
+                const sel = c.id === selectedId || (c.primary && selectedId === 'primary')
+                return (
+                  <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
+                    <input type="hidden" name="calendarId" value={c.id} />
+                    <input type="hidden" name="calendarName" value={c.name} />
+                    <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>
+                      {sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}
+                    </button>
+                  </form>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Meeting platform */}
         <div className="settings-card" id="booking">
