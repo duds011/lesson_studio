@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
+import type { PaymentMethod } from '@/lib/payment-methods'
 
 type Day = { date: string; weekday: string; slots: string[] }
 type SlotsResponse = { ok: boolean; tz: string; title: string; durationMin: number; days: Day[]; error?: string }
@@ -13,6 +15,7 @@ export default function StudentBookPage() {
   const [picked, setPicked] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmed, setConfirmed] = useState<{ meetUrl: string | null; remaining: number; warn: boolean } | null>(null)
+  const [payMethods, setPayMethods] = useState<PaymentMethod[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -21,6 +24,10 @@ export default function StudentBookPage() {
       .then((d: SlotsResponse) => { setData(d); if (d.ok && d.days.length) setActiveDate(d.days[0].date) })
       .catch(() => setError('Could not load availability.'))
       .finally(() => setLoading(false))
+    fetch('/api/portal/payment-methods')
+      .then((r) => r.json())
+      .then((d) => { if (d.ok) setPayMethods(d.methods ?? []) })
+      .catch(() => {})
   }, [])
 
   const tz = data?.tz ?? 'Asia/Tokyo'
@@ -59,6 +66,7 @@ export default function StudentBookPage() {
           <p className="sub" style={{ marginTop: 8 }}>You have <strong>{confirmed.remaining}</strong> prepaid lesson{confirmed.remaining === 1 ? '' : 's'} remaining.</p>
           {confirmed.warn && <div className="warn-box" style={{ marginTop: 10 }}>Heads up — you&rsquo;re out of prepaid lessons. Your teacher has been notified; please arrange your next package.</div>}
           {confirmed.meetUrl && <p style={{ marginTop: 12 }}><a className="btn btn-primary" href={confirmed.meetUrl} target="_blank" rel="noreferrer">Open meeting link</a></p>}
+          {payMethods.length > 0 && <div style={{ marginTop: 16 }}><PaymentMethodsPanel methods={payMethods} compact /></div>}
           <p style={{ marginTop: 12 }}><Link className="btn btn-ghost btn-sm" href="/student/dashboard">Back to dashboard</Link></p>
         </div>
       ) : loading ? (

@@ -3,9 +3,11 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStudentCredits } from '@/lib/credits'
+import { getTeacherPaymentMethods } from '@/lib/payment-methods'
 import { formatDateShort, getLevelLabel, ordinal } from '@/lib/portal-utils'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
+import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,7 +81,11 @@ export default async function StudentDashboard() {
 
   // Payments are teacher-only under RLS, so read the credit totals with admin
   // and surface only the resulting count to the student.
-  const credits = await getStudentCredits(createAdminClient(), student.id)
+  const admin = createAdminClient()
+  const [credits, paymentMethods] = await Promise.all([
+    getStudentCredits(admin, student.id),
+    getTeacherPaymentMethods(admin, student.teacher_id),
+  ])
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -111,6 +117,9 @@ export default async function StudentDashboard() {
           </div>
         )
       })()}
+
+      {/* How to pay the teacher */}
+      <PaymentMethodsPanel methods={paymentMethods} />
 
       {/* Progress stats */}
       <div className="analytics-grid">

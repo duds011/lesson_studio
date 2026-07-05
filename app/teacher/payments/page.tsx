@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCreditsByStudent } from '@/lib/credits'
+import { normalizeMethods } from '@/lib/payment-methods'
 import PaymentsManager, { ManagedPayment, StudentOption, Credit } from '@/components/portal/PaymentsManager'
+import PaymentMethodsManager from '@/components/portal/PaymentMethodsManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,11 +18,12 @@ export default async function PaymentsPage() {
   const [{ data: students }, { data: payments }, { data: profile }, creditMap] = await Promise.all([
     supabase.from('students').select('id, full_name').eq('teacher_id', user.id).order('full_name'),
     supabase.from('payments').select('*').eq('teacher_id', user.id),
-    supabase.from('profiles').select('currency').eq('id', user.id).single(),
+    supabase.from('profiles').select('currency, payment_methods').eq('id', user.id).single(),
     getCreditsByStudent(supabase, user.id),
   ])
 
   const currency = (profile as any)?.currency ?? 'USD'
+  const paymentMethods = normalizeMethods((profile as any)?.payment_methods)
   const nameById = new Map((students ?? []).map((s: any) => [s.id, s.full_name]))
 
   const managed: ManagedPayment[] = (payments ?? []).map((p: any) => ({
@@ -50,6 +53,7 @@ export default async function PaymentsPage() {
         <p className="sub">All student payments in one place — track revenue, lesson packages, and who&rsquo;s running low.</p>
       </div>
       <PaymentsManager students={studentOptions} credits={credits} payments={managed} currency={currency} />
+      <PaymentMethodsManager initial={paymentMethods} />
     </div>
   )
 }

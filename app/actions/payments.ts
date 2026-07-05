@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { normalizeMethods, type PaymentMethod } from '@/lib/payment-methods'
 
 export interface PaymentInput {
   amount: number
@@ -105,5 +106,17 @@ export async function updateTeacherCurrency(currency: string): Promise<Result> {
   const { error } = await auth.supabase.from('profiles').update({ currency }).eq('id', auth.user.id)
   if (error) return { success: false, error: error.message }
   revalidatePath('/teacher/payments')
+  return { success: true }
+}
+
+export async function updatePaymentMethods(methods: PaymentMethod[]): Promise<Result> {
+  const auth = await requireTeacher()
+  if ('error' in auth) return { success: false, error: auth.error }
+  // Re-validate server-side; the teacher writes only their own profile (RLS).
+  const clean = normalizeMethods(methods)
+  const { error } = await auth.supabase.from('profiles').update({ payment_methods: clean }).eq('id', auth.user.id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/teacher/payments')
+  revalidatePath('/student/dashboard')
   return { success: true }
 }
