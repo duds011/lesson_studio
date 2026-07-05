@@ -8,6 +8,7 @@ import { formatDateShort, getLevelLabel, ordinal } from '@/lib/portal-utils'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
+import BuyLessons, { BuyPkg } from '@/components/portal/BuyLessons'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,10 +83,12 @@ export default async function StudentDashboard() {
   // Payments are teacher-only under RLS, so read the credit totals with admin
   // and surface only the resulting count to the student.
   const admin = createAdminClient()
-  const [credits, paymentMethods] = await Promise.all([
+  const [credits, paymentMethods, { data: pkgRows }] = await Promise.all([
     getStudentCredits(admin, student.id),
     getTeacherPaymentMethods(admin, student.teacher_id),
+    admin.from('lesson_packages').select('id, name, lessons_count, amount, currency').eq('teacher_id', student.teacher_id).eq('active', true).order('amount', { ascending: true }),
   ])
+  const buyPackages: BuyPkg[] = (pkgRows ?? []).map((p: any) => ({ id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency }))
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -118,7 +121,10 @@ export default async function StudentDashboard() {
         )
       })()}
 
-      {/* How to pay the teacher */}
+      {/* Buy lessons by card (Stripe) */}
+      <BuyLessons packages={buyPackages} />
+
+      {/* How to pay the teacher (manual methods) */}
       <PaymentMethodsPanel methods={paymentMethods} />
 
       {/* Progress stats */}
