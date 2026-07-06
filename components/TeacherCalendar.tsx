@@ -112,9 +112,9 @@ export default function TeacherCalendar({ initialLessons }: { initialLessons: Ca
       ) : view === 'month' ? (
         <MonthView grid={monthGrid(anchor)} anchor={anchor} today={today} byDay={byDay} onPick={setSelected} onDay={(d) => { setAnchor(d); setView('day') }} />
       ) : view === 'week' ? (
-        <TimeGrid days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i))} today={today} byDay={byDay} onPick={setSelected} onDay={(d) => { setAnchor(d); setView('day') }} />
+        <WeekView days={Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i))} today={today} byDay={byDay} onPick={setSelected} onDay={(d) => { setAnchor(d); setView('day') }} />
       ) : view === 'day' ? (
-        <TimeGrid days={[anchor]} today={today} byDay={byDay} onPick={setSelected} onDay={(d) => { setAnchor(d); setView('day') }} />
+        <DayView day={anchor} events={byDay.get(ymd(anchor)) ?? []} />
       ) : (
         <ListView byDay={byDay} today={today} />
       )}
@@ -159,88 +159,51 @@ function MonthView({ grid, anchor, today, byDay, onPick, onDay }: {
   )
 }
 
-/* ── Week & Day: hour time-grid with a live "now" line ── */
-const DAY_START = 7
-const DAY_END = 23
-const HOUR_PX = 42
-const nowOffsetPx = (): number | null => {
-  const n = new Date()
-  const min = (n.getHours() * 60 + n.getMinutes()) - DAY_START * 60
-  if (min < 0 || min > (DAY_END - DAY_START) * 60) return null
-  return (min / 60) * HOUR_PX
-}
-
-function TimeGrid({ days, today, byDay, onPick, onDay }: {
+/* ── Week ── */
+function WeekView({ days, today, byDay, onPick, onDay }: {
   days: Date[]; today: Date; byDay: Map<string, CalEvent[]>; onPick: (e: CalEvent) => void; onDay: (d: Date) => void
 }) {
-  const [nowPx, setNowPx] = useState<number | null>(nowOffsetPx())
-  useEffect(() => {
-    const t = setInterval(() => setNowPx(nowOffsetPx()), 60000)
-    return () => clearInterval(t)
-  }, [])
-
-  const hours: number[] = []
-  for (let h = DAY_START; h <= DAY_END; h++) hours.push(h)
-  const gridH = (DAY_END - DAY_START) * HOUR_PX
-  const fmtHour = (h: number) => new Date(2000, 0, 1, h).toLocaleTimeString([], { hour: 'numeric' })
-  const posOf = (e: CalEvent) => {
-    const s = new Date(e.start), en = new Date(e.end)
-    const startMin = (s.getHours() * 60 + s.getMinutes()) - DAY_START * 60
-    let durMin = (en.getTime() - s.getTime()) / 60000
-    if (!(durMin > 0)) durMin = 50
-    return { top: Math.max(0, (startMin / 60) * HOUR_PX), height: Math.max(22, (durMin / 60) * HOUR_PX - 2) }
-  }
-
   return (
-    <div className="analytics-card" style={{ padding: 0, overflow: 'auto', maxHeight: '70vh' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', position: 'sticky', top: 0, background: '#fff', zIndex: 3 }}>
-        <div style={{ width: 52, flexShrink: 0 }} />
+    <div className="analytics-card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,minmax(0,1fr))' }}>
         {days.map((d, i) => {
-          const isToday = sameYmd(d, today)
-          return (
-            <button key={i} onClick={() => onDay(d)} style={{ flex: 1, minWidth: 0, border: 0, borderLeft: '1px solid var(--line)', background: isToday ? 'var(--brand-soft)' : '#fff', padding: '7px 4px', cursor: 'pointer', textAlign: 'center' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>{DOW[d.getDay()]}</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: isToday ? 'var(--brand)' : 'var(--ink)' }}>{d.getDate()}</div>
-            </button>
-          )
-        })}
-      </div>
-      {/* Body */}
-      <div style={{ display: 'flex' }}>
-        <div style={{ width: 52, flexShrink: 0, position: 'relative', height: gridH }}>
-          {hours.map((h, idx) => (
-            <div key={h} style={{ position: 'absolute', top: idx * HOUR_PX - 6, right: 6, fontSize: 10, color: 'var(--muted)' }}>{idx === 0 ? '' : fmtHour(h)}</div>
-          ))}
-        </div>
-        {days.map((d, ci) => {
           const isToday = sameYmd(d, today)
           const evs = byDay.get(ymd(d)) ?? []
           return (
-            <div key={ci} style={{ flex: 1, minWidth: 0, position: 'relative', height: gridH, borderLeft: '1px solid var(--line)', background: isToday ? 'rgba(98,89,232,.06)' : undefined }}>
-              {hours.map((h, idx) => (
-                <div key={h} style={{ position: 'absolute', top: idx * HOUR_PX, left: 0, right: 0, borderTop: '1px solid var(--line)' }} />
-              ))}
-              {evs.map((e) => {
-                const { top, height } = posOf(e)
-                const s = statusDot(e)
-                return (
-                  <button key={e.id} onClick={() => onPick(e)} title={`${fmtTime(e.start)} · ${e.title.replace(/<[^>]*>/g, '')}`}
-                    style={{ position: 'absolute', top, height, left: 3, right: 3, textAlign: 'left', border: '1px solid #c7c2f5', background: 'var(--brand-soft)', borderRadius: 6, padding: '2px 5px', cursor: 'pointer', overflow: 'hidden', display: 'block', zIndex: 1 }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 3 }}>{s && <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.c, flexShrink: 0 }} />}{fmtTime(e.start)}</span>
-                    <span style={{ fontSize: 10, color: 'var(--ink)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title.replace(/<[^>]*>/g, '')}</span>
-                  </button>
-                )
-              })}
-              {isToday && nowPx != null && (
-                <div style={{ position: 'absolute', top: nowPx, left: 0, right: 0, borderTop: '2px solid var(--red)', zIndex: 2, pointerEvents: 'none' }}>
-                  <span style={{ position: 'absolute', left: -3, top: -4, width: 8, height: 8, borderRadius: '50%', background: 'var(--red)' }} />
-                </div>
-              )}
+            <div key={i} style={{ borderRight: i !== 6 ? '1px solid var(--line)' : undefined, minHeight: 220, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <button onClick={() => onDay(d)} style={{ border: 0, borderBottom: '1px solid var(--line)', background: isToday ? 'var(--brand-soft)' : 'var(--surface-2)', padding: '7px 4px', cursor: 'pointer' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>{DOW[d.getDay()]}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: isToday ? 'var(--brand)' : 'var(--ink)' }}>{d.getDate()}</div>
+              </button>
+              <div style={{ padding: 5, display: 'grid', gap: 4, alignContent: 'start' }}>
+                {evs.map((e) => {
+                  const s = statusDot(e)
+                  return (
+                    <button key={e.id} onClick={() => onPick(e)} style={{ textAlign: 'left', border: '1px solid var(--line)', background: '#fff', borderRadius: 7, padding: '5px 6px', cursor: 'pointer', display: 'grid', gap: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 4 }}>{s && <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.c }} />}{fmtTime(e.start)}</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title.replace(/<[^>]*>/g, '')}</span>
+                    </button>
+                  )
+                })}
+                {evs.length === 0 && <span style={{ fontSize: 10, color: 'var(--line-strong,#c9cdc4)', textAlign: 'center', paddingTop: 8 }}>—</span>}
+              </div>
             </div>
           )
         })}
       </div>
+    </div>
+  )
+}
+
+/* ── Day: full lesson rows with Join / Record actions visible inline ── */
+function DayView({ day, events }: { day: Date; events: CalEvent[] }) {
+  if (events.length === 0) return <div className="empty"><strong>Nothing on {day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}.</strong><br />No lessons scheduled this day.</div>
+  return (
+    <div className="day-group">
+      <div className="day-head"><span className="day-label">{day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span></div>
+      {events.map((e) => (
+        <LessonRow key={e.id} lesson={{ id: e.id, title: e.title, start: e.start, end: e.end, tz: e.tz, platform: e.platform, meetingUrl: e.meetingUrl, attendees: e.attendees }} initialBot={e.bot} initialRecapStatus={e.recapStatus} />
+      ))}
     </div>
   )
 }
