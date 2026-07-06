@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import LessonRow, { type LessonView } from '@/components/LessonRow'
+import LessonTools from '@/components/portal/LessonTools'
 
 type Bot = { botId: string; status: string; label: string; state: string } | null
 export type CalEvent = LessonView & { attendees?: string[]; bot: Bot; recapStatus: 'draft' | 'published' | null }
@@ -256,6 +257,7 @@ function EventModal({ event, onClose }: { event: CalEvent; onClose: () => void }
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
         <LessonRow lesson={{ id: event.id, title: event.title, start: event.start, end: event.end, tz: event.tz, platform: event.platform, meetingUrl: event.meetingUrl, attendees: event.attendees }} initialBot={event.bot} initialRecapStatus={event.recapStatus} />
+        <LessonTools eventId={event.id} attendees={event.attendees ?? []} />
       </div>
     </div>
   )

@@ -155,6 +155,9 @@ export default function LessonRow({
           </div>
         </div>
         <div className="lesson-actions">
+          {lesson.meetingUrl && (
+            <a className="btn btn-primary btn-sm" href={lesson.meetingUrl} target="_blank" rel="noreferrer">Join call ↗</a>
+          )}
           {recapStatus === 'published' ? (
             <button className="btn btn-ghost btn-sm" onClick={openRecap}>View recap</button>
           ) : recapStatus === 'draft' ? (

@@ -12,8 +12,15 @@ export interface LinkedStudent { studentId: string; teacherId: string; fullName:
 export async function mapEventToStudent(admin: Admin, eventId: string, attendeeEmails: string[] = []): Promise<LinkedStudent | null> {
   let studentId: string | null = null
 
-  const { data: booking } = await admin.from('bookings').select('student_id').eq('google_event_id', eventId).maybeSingle()
-  if (booking?.student_id) studentId = booking.student_id
+  // 1. Explicit manual link set by the teacher wins.
+  const { data: link } = await admin.from('lesson_event_links').select('student_id').eq('event_id', eventId).maybeSingle()
+  if (link?.student_id) studentId = link.student_id
+
+  // 2. Portal booking for this event.
+  if (!studentId) {
+    const { data: booking } = await admin.from('bookings').select('student_id').eq('google_event_id', eventId).maybeSingle()
+    if (booking?.student_id) studentId = booking.student_id
+  }
 
   if (!studentId && attendeeEmails.length) {
     const emails = attendeeEmails.map((e) => e.toLowerCase())
