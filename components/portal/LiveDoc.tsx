@@ -2,11 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as Y from 'yjs'
+import { Awareness, encodeAwarenessUpdate, applyAwarenessUpdate, removeAwarenessStates } from 'y-protocols/awareness'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import Placeholder from '@tiptap/extension-placeholder'
 import { createClient } from '@/lib/supabase/client'
+
+const ROLE_COLOR = { teacher: '#6259e8', student: '#e8590c' } as const
 
 // Chunked base64 <-> Uint8Array (Yjs updates are binary).
 function b64encode(u: Uint8Array): string {
@@ -24,6 +28,8 @@ function b64decode(str: string): Uint8Array {
 
 export default function LiveDoc({ studentId, role, name, fill }: { studentId: string; role: 'teacher' | 'student'; name: string; fill?: boolean }) {
   const ydoc = useMemo(() => new Y.Doc(), [studentId])
+  const awareness = useMemo(() => new Awareness(ydoc), [ydoc])
+  const color = ROLE_COLOR[role]
   const [peers, setPeers] = useState<string[]>([])
   const [status, setStatus] = useState<'connecting' | 'live'>('connecting')
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -34,6 +40,7 @@ export default function LiveDoc({ studentId, role, name, fill }: { studentId: st
       StarterKit.configure({ history: false }), // Yjs owns history
       Placeholder.configure({ placeholder: 'Start writing the lesson notes…' }),
       Collaboration.configure({ document: ydoc }),
+      CollaborationCursor.configure({ provider: { awareness }, user: { name, color } }),
     ],
     editorProps: { attributes: { class: 'livedoc-editor' } },
   }, [ydoc])
@@ -56,6 +63,15 @@ export default function LiveDoc({ studentId, role, name, fill }: { studentId: st
     }
     ydoc.on('update', onLocal)
 
+    // Awareness = live cursors + selections (who is typing, with their name/color).
+    const onAware = ({ added, updated, removed }: any, origin: any) => {
+      if (origin === 'remote') return
+      const changed = added.concat(updated, removed)
+      channel.send({ type: 'broadcast', event: 'awareness', payload: { a: b64encode(encodeAwarenessUpdate(awareness, changed)) } })
+    }
+    awareness.on('update', onAware)
+    const broadcastAwareness = () => channel.send({ type: 'broadcast', event: 'awareness', payload: { a: b64encode(encodeAwarenessUpdate(awareness, Array.from(awareness.getStates().keys()))) } })
+
     const scheduleSave = () => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(async () => {
@@ -67,8 +83,10 @@ export default function LiveDoc({ studentId, role, name, fill }: { studentId: st
     channel
       .on('broadcast', { event: 'update' }, ({ payload }) => { try { Y.applyUpdate(ydoc, b64decode(payload.u), 'remote') } catch {} })
       .on('broadcast', { event: 'sync' }, ({ payload }) => { try { Y.applyUpdate(ydoc, b64decode(payload.s), 'remote') } catch {} })
+      .on('broadcast', { event: 'awareness' }, ({ payload }) => { try { applyAwarenessUpdate(awareness, b64decode(payload.a), 'remote') } catch {} })
       .on('broadcast', { event: 'request' }, () => {
         channel.send({ type: 'broadcast', event: 'sync', payload: { s: b64encode(Y.encodeStateAsUpdate(ydoc)) } })
+        broadcastAwareness()
       })
       .on('presence', { event: 'sync' }, () => {
         const st = channel.presenceState() as Record<string, { name: string }[]>
@@ -79,16 +97,21 @@ export default function LiveDoc({ studentId, role, name, fill }: { studentId: st
           setStatus('live')
           await channel.track({ name, role })
           channel.send({ type: 'broadcast', event: 'request', payload: {} })
+          broadcastAwareness()
         }
       })
 
     return () => {
       cancelled = true
       ydoc.off('update', onLocal)
+      awareness.off('update', onAware)
+      // Tell peers our cursor is gone, then tear down.
+      removeAwarenessStates(awareness, [awareness.clientID], 'local')
+      broadcastAwareness()
       if (saveTimer.current) clearTimeout(saveTimer.current)
       supabase.removeChannel(channel)
     }
-  }, [studentId, ydoc, role, name])
+  }, [studentId, ydoc, awareness, role, name, color])
 
   const others = peers.filter((p) => p !== name)
 
