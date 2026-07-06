@@ -45,6 +45,9 @@ export default function LiveDoc({ studentId, role, name, fill }: { studentId: st
     editorProps: { attributes: { class: 'livedoc-editor' } },
   }, [ydoc])
 
+  const editorRef = useRef<typeof editor>(editor)
+  editorRef.current = editor
+
   useEffect(() => {
     const supabase = createClient()
     let cancelled = false
@@ -76,7 +79,13 @@ export default function LiveDoc({ studentId, role, name, fill }: { studentId: st
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(async () => {
         const s = b64encode(Y.encodeStateAsUpdate(ydoc))
-        await supabase.from('lesson_docs').update({ state: s, updated_at: new Date().toISOString() }).eq('student_id', studentId)
+        const ed = editorRef.current
+        await supabase.from('lesson_docs').update({
+          state: s,
+          content_html: ed?.getHTML() ?? null,
+          content_text: ed?.getText() ?? null,
+          updated_at: new Date().toISOString(),
+        }).eq('student_id', studentId)
       }, 1500)
     }
 

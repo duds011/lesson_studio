@@ -235,7 +235,7 @@ function ListView({ byDay, today }: { byDay: Map<string, CalEvent[]>; today: Dat
         <div className="day-group" key={k}>
           <div className="day-head"><span className="day-label">{dayLabel(k)}</span></div>
           {byDay.get(k)!.map((e) => (
-            <LessonRow key={e.id} lesson={{ id: e.id, title: e.title, start: e.start, end: e.end, tz: e.tz, platform: e.platform, meetingUrl: e.meetingUrl }} initialBot={e.bot} initialRecapStatus={e.recapStatus} />
+            <LessonRow key={e.id} lesson={{ id: e.id, title: e.title, start: e.start, end: e.end, tz: e.tz, platform: e.platform, meetingUrl: e.meetingUrl, attendees: e.attendees }} initialBot={e.bot} initialRecapStatus={e.recapStatus} />
           ))}
         </div>
       ))}
@@ -255,7 +255,7 @@ function EventModal({ event, onClose }: { event: CalEvent; onClose: () => void }
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
-        <LessonRow lesson={{ id: event.id, title: event.title, start: event.start, end: event.end, tz: event.tz, platform: event.platform, meetingUrl: event.meetingUrl }} initialBot={event.bot} initialRecapStatus={event.recapStatus} />
+        <LessonRow lesson={{ id: event.id, title: event.title, start: event.start, end: event.end, tz: event.tz, platform: event.platform, meetingUrl: event.meetingUrl, attendees: event.attendees }} initialBot={event.bot} initialRecapStatus={event.recapStatus} />
       </div>
     </div>
   )

@@ -12,11 +12,6 @@ export default function TeacherLiveDocPanel({ studentId, teacherName, initialAct
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
 
-  const startAndOpen = () => startTransition(async () => {
-    setError('')
-    const res = await setLiveDoc(studentId, true)
-    if (res.success) { setActive(true); openWindow(studentId) } else setError(res.error || 'Failed')
-  })
   const end = () => startTransition(async () => {
     setError('')
     const res = await setLiveDoc(studentId, false)
@@ -27,15 +22,21 @@ export default function TeacherLiveDocPanel({ studentId, teacherName, initialAct
     <div className="analytics-card" style={{ padding: 18, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
       <div>
         <p className="analytics-label" style={{ marginBottom: 2 }}>📝 Live lesson doc</p>
-        <span style={{ fontSize: 12, color: 'var(--muted)' }}>Opens a shared notepad in its own window — you and the student edit together live.</span>
+        <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+          {active ? 'The shared notepad is live — open it to write with the student.' : 'Opens automatically when you start recording this student’s lesson.'}
+        </span>
         {error && <p style={{ color: 'var(--red)', fontSize: 12, margin: '6px 0 0' }}>{error}</p>}
       </div>
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-        {active && <span className="pill green"><span className="dot" />Live</span>}
-        <button className="btn btn-primary btn-sm" disabled={pending} onClick={active ? () => openWindow(studentId) : startAndOpen}>
-          {pending ? '…' : active ? 'Open window ↗' : 'Start live doc ↗'}
-        </button>
-        {active && <button className="btn btn-danger-ghost btn-sm" disabled={pending} onClick={end}>End session</button>}
+        {active ? (
+          <>
+            <span className="pill green"><span className="dot" />Live</span>
+            <button className="btn btn-primary btn-sm" onClick={() => openWindow(studentId)}>Open window ↗</button>
+            <button className="btn btn-danger-ghost btn-sm" disabled={pending} onClick={end}>End session</button>
+          </>
+        ) : (
+          <span className="pill" style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}>Idle</span>
+        )}
       </div>
     </div>
   )

@@ -8,16 +8,17 @@ type Recap = any
 type Lesson = { id: string; lessonNumber: number; date: string; title: string; recap: Recap }
 
 const JLPT = ['N5', 'N4', 'N3', 'N2', 'N1'] as const
-const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
-type Tab = typeof TABS[number]
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher',
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string
 }) {
-  const [tab, setTab] = useState<Tab>('Progress')
   const r = lesson.recap
+  const hasWhiteboard = typeof r.whiteboard_html === 'string' && r.whiteboard_html.trim().length > 0
+  const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary', ...(hasWhiteboard ? ['Whiteboard'] : [])] as const
+  type Tab = typeof TABS[number]
+  const [tab, setTab] = useState<Tab>('Progress')
 
   const studentTalk = typeof r.talk_percentage === 'number' ? r.talk_percentage : 40
   const teacherTalk = 100 - studentTalk
@@ -136,6 +137,17 @@ export default function LessonPageTabs({
                 {v.example_sentence && <><br /><span className="jp" style={{ fontWeight: 600 }}>{v.example_sentence}</span></>}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── WHITEBOARD ── */}
+      {tab === 'Whiteboard' && (
+        <div className="tab-panel" role="tabpanel">
+          <div className="lesson-block">
+            <h3>Shared lesson notes</h3>
+            <p className="analytics-note" style={{ marginTop: 0 }}>What you and your teacher wrote together during the lesson.</p>
+            <div className="wb-content" dangerouslySetInnerHTML={{ __html: r.whiteboard_html }} />
           </div>
         </div>
       )}

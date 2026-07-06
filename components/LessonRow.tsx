@@ -10,6 +10,7 @@ export type LessonView = {
   tz: string
   platform: 'meet' | 'zoom' | 'other'
   meetingUrl: string | null
+  attendees?: string[]
 }
 type Bot = { botId: string; status: string; label: string; state: string } | null
 
@@ -54,6 +55,7 @@ export default function LessonRow({
   const [recap, setRecap] = useState<any>(null)
   const [recapStatus, setRecapStatus] = useState<'draft' | 'published' | null>(initialRecapStatus)
   const [open, setOpen] = useState(false)
+  const [liveStudentId, setLiveStudentId] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -75,10 +77,11 @@ export default function LessonRow({
     try {
       const j = await (await fetch('/api/recall/send-bot', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder' }),
+        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder', attendees: lesson.attendees ?? [] }),
       })).json()
       if (!j.ok) { setErr(j.error || 'Failed'); return }
       setBot({ botId: j.botId, status: j.status, label: 'Bot joining…', state: 'joining' })
+      if (j.studentId) setLiveStudentId(j.studentId)
     } catch { setErr('Failed to send bot') } finally { setSending(false) }
   }
 
@@ -106,7 +109,7 @@ export default function LessonRow({
     try {
       const j = await (await fetch('/api/recap/build', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, studentName: studentName(lesson.title) }),
+        body: JSON.stringify({ eventId: lesson.id, studentName: studentName(lesson.title), lessonDate: lesson.start, lessonTitle: lesson.title, attendees: lesson.attendees ?? [] }),
       })).json()
       if (!j.ok) { setErr(j.error || 'Recap failed'); return }
       setRecap(j.recap); setRecapStatus('draft'); setOpen(true)
@@ -175,6 +178,11 @@ export default function LessonRow({
             </button>
           ) : (
             <span className="pill amber"><span className="dot" />No link</span>
+          )}
+          {liveStudentId && (
+            <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/live/${liveStudentId}`, `livedoc-${liveStudentId}`, 'popup,width=980,height=760,noopener=no')}>
+              📝 Open live doc ↗
+            </button>
           )}
           {err && <span style={{ color: 'var(--red)', fontSize: '.76rem', fontWeight: 600 }}>{err}</span>}
         </div>

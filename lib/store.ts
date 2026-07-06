@@ -89,6 +89,11 @@ export type RecapRec = {
   studentTalkPct: number | null
   status: 'draft' | 'published'
   createdAt: number
+  // Live-doc + lesson linkage (for the whiteboard tab + publishing to the student).
+  whiteboardHtml?: string
+  lessonDate?: string
+  lessonTitle?: string
+  attendees?: string[]
 }
 
 export async function getRecaps(): Promise<Record<string, RecapRec>> {
