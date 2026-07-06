@@ -5,6 +5,7 @@ import { formatDateShort, ordinal } from '@/lib/portal-utils'
 import { getStudentCredits } from '@/lib/credits'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
+import TeacherLiveDocPanel from '@/components/portal/TeacherLiveDocPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +53,12 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
   const totalVocab = Object.values(vocabDistribution).reduce((sum, n) => sum + n, 0)
   const credits = await getStudentCredits(supabase, student.id)
 
+  const [{ data: docRow }, { data: teacherProfile }] = await Promise.all([
+    supabase.from('lesson_docs').select('active').eq('student_id', student.id).maybeSingle(),
+    supabase.from('profiles').select('full_name, email').eq('id', user.id).single(),
+  ])
+  const teacherName = (teacherProfile as any)?.full_name || (teacherProfile as any)?.email?.split('@')[0] || 'Teacher'
+
   return (
     <div style={{ display: 'grid', gap: 22 }}>
       <div>
@@ -77,6 +84,9 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
         <div className="analytics-card"><span className="analytics-label">Latest Talk</span><div className="analytics-value" style={{ color: 'var(--brand)' }}>{latestTalk ?? '—'}<span style={{ fontSize: 15, fontWeight: 400, color: 'var(--muted)' }}>%</span></div></div>
         <div className="analytics-card"><span className="analytics-label">Vocab items</span><div className="analytics-value" style={{ color: 'var(--brand)' }}>{totalVocab}</div></div>
       </div>
+
+      <TeacherLiveDocPanel studentId={student.id} teacherName={teacherName} initialActive={Boolean((docRow as any)?.active)} />
+
 
       {totalVocab > 0 && <VocabLevelBreakdown distribution={vocabDistribution} totalCount={totalVocab} />}
 
