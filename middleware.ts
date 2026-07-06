@@ -46,9 +46,11 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/settings') ||
     path.startsWith('/students') ||
     path.startsWith('/teacher')
+  // Shared live-doc window — either role may open it (the page authorizes).
+  const isLive = path.startsWith('/live')
 
   // Not logged in → send to login for any gated route.
-  if (!user && (isTeacherArea || isStudentPortal)) {
+  if (!user && (isTeacherArea || isStudentPortal || isLive)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -84,5 +86,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // NB: /book and all /api/* routes are deliberately excluded so the public
   // booking page and the Google/Zoom OAuth callbacks keep working without login.
-  matcher: ['/', '/login', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*'],
+  matcher: ['/', '/login', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*', '/live/:path*'],
 }

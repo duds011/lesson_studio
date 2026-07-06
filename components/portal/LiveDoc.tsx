@@ -22,7 +22,7 @@ function b64decode(str: string): Uint8Array {
   return u
 }
 
-export default function LiveDoc({ studentId, role, name }: { studentId: string; role: 'teacher' | 'student'; name: string }) {
+export default function LiveDoc({ studentId, role, name, fill }: { studentId: string; role: 'teacher' | 'student'; name: string; fill?: boolean }) {
   const ydoc = useMemo(() => new Y.Doc(), [studentId])
   const [peers, setPeers] = useState<string[]>([])
   const [status, setStatus] = useState<'connecting' | 'live'>('connecting')
@@ -97,7 +97,7 @@ export default function LiveDoc({ studentId, role, name }: { studentId: string; 
   )
 
   return (
-    <div className="livedoc">
+    <div className={`livedoc${fill ? ' fill' : ''}`}>
       <div className="livedoc-bar">
         {editor && (
           <div className="livedoc-tools">
