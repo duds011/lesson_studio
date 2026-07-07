@@ -36,7 +36,7 @@ const statusDot = (e: CalEvent): { c: string; t: string } | null => {
 }
 
 export default function TeacherCalendar({ initialLessons }: { initialLessons: CalEvent[] }) {
-  const [view, setView] = useState<View>('month')
+  const [view, setView] = useState<View>('week')
   const [anchor, setAnchor] = useState<Date>(startOfDay(new Date()))
   const [events, setEvents] = useState<CalEvent[]>(initialLessons)
   const [loading, setLoading] = useState(false)
