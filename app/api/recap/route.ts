@@ -47,19 +47,17 @@ export async function POST(req: NextRequest) {
         .single()
       if (le) throw le
 
-      const recapJson = { ...recapObj, whiteboard_html: rec.whiteboardHtml || null }
       const { error: se } = await admin.from('lesson_summaries').upsert(
         {
           lesson_id: lessonRow.id,
           recap: typeof recapObj.recap === 'string' ? recapObj.recap : null,
-          recap_json: recapJson,
+          recap_json: recapObj,
           score: recapObj.score ?? null,
           talk_percentage: recapObj.talk_percentage ?? null,
           vocab_total_count: recapObj.vocab_total_count ?? null,
           vocab_level_distribution: recapObj.vocab_level_distribution ?? null,
           teacher_note: recapObj.teacher_note ?? null,
           audio_script: recapObj.audio_script ?? null,
-          whiteboard_html: rec.whiteboardHtml || null,
         },
         { onConflict: 'lesson_id' },
       )

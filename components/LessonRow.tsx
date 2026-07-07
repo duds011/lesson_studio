@@ -55,7 +55,6 @@ export default function LessonRow({
   const [recap, setRecap] = useState<any>(null)
   const [recapStatus, setRecapStatus] = useState<'draft' | 'published' | null>(initialRecapStatus)
   const [open, setOpen] = useState(false)
-  const [liveStudentId, setLiveStudentId] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -81,7 +80,6 @@ export default function LessonRow({
       })).json()
       if (!j.ok) { setErr(j.error || 'Failed'); return }
       setBot({ botId: j.botId, status: j.status, label: 'Bot joining…', state: 'joining' })
-      if (j.studentId) setLiveStudentId(j.studentId)
     } catch { setErr('Failed to send bot') } finally { setSending(false) }
   }
 
@@ -181,11 +179,6 @@ export default function LessonRow({
             </button>
           ) : (
             <span className="pill amber"><span className="dot" />No link</span>
-          )}
-          {liveStudentId && (
-            <button className="btn btn-ghost btn-sm" onClick={() => window.open(`/live/${liveStudentId}`, `livedoc-${liveStudentId}`, 'popup,width=980,height=760,noopener=no')}>
-              📝 Open live doc ↗
-            </button>
           )}
           {err && <span style={{ color: 'var(--red)', fontSize: '.76rem', fontWeight: 600 }}>{err}</span>}
         </div>

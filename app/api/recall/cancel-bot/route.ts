@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { removeBot } from '@/lib/recall'
 import { deleteBot, getBots } from '@/lib/store'
-import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,13 +19,6 @@ export async function POST(req: NextRequest) {
 
     await removeBot(tracked.botId)
     await deleteBot(eventId)
-
-    // Lesson no longer live → close the shared doc.
-    try {
-      const admin = createAdminClient()
-      await admin.from('lesson_docs').update({ active: false }).eq('active_event_id', eventId)
-    } catch (e) { console.error('live-doc deactivate failed', e) }
-
     return NextResponse.json({ ok: true })
   } catch (error: any) {
     return NextResponse.json(

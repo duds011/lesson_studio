@@ -9,7 +9,6 @@ import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
-import StudentLiveDocPanel from '@/components/portal/StudentLiveDocPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,7 +89,6 @@ export default async function StudentDashboard() {
     admin.from('lesson_packages').select('id, name, lessons_count, amount, currency').eq('teacher_id', student.teacher_id).eq('active', true).order('amount', { ascending: true }),
   ])
   const buyPackages: BuyPkg[] = (pkgRows ?? []).map((p: any) => ({ id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency }))
-  const { data: docRow } = await admin.from('lesson_docs').select('active').eq('student_id', student.id).maybeSingle()
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -100,9 +98,6 @@ export default async function StudentDashboard() {
         <h1 className="title" style={{ margin: '6px 0 4px' }}>Welcome back, {student.full_name.split(' ')[0]}</h1>
         <p className="sub">Your lessons, progress, and recaps — all in one place.</p>
       </div>
-
-      {/* Live lesson doc (shows when the teacher starts a session) */}
-      <StudentLiveDocPanel studentId={student.id} studentName={student.full_name} initialActive={Boolean((docRow as any)?.active)} />
 
       {/* Compact lessons-remaining + book + buy-more (modal) */}
       <StudentLessonsBar credits={credits} packages={buyPackages} />

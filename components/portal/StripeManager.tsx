@@ -90,9 +90,14 @@ export default function StripeManager({
             {chargesEnabled ? '✅ Connected — payouts go straight to you.' : connected ? '⏳ Started — finish onboarding to accept payments.' : 'Not connected yet.'}
           </div>
         </div>
-        <a href="/api/stripe/connect/start" className={`btn btn-sm ${chargesEnabled ? 'btn-ghost' : 'btn-primary'}`}>
-          {chargesEnabled ? 'Manage / update' : connected ? 'Finish onboarding' : 'Connect Stripe'}
-        </a>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {chargesEnabled && (
+            <a href="/api/stripe/dashboard" className="btn btn-primary btn-sm" title="See your balance and pay out to your bank">💸 Transfer to bank</a>
+          )}
+          <a href="/api/stripe/connect/start" className={`btn btn-sm ${chargesEnabled ? 'btn-ghost' : 'btn-primary'}`}>
+            {chargesEnabled ? 'Manage' : connected ? 'Finish onboarding' : 'Connect Stripe'}
+          </a>
+        </div>
       </div>
 
       {/* Packages */}

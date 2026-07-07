@@ -89,8 +89,7 @@ export type RecapRec = {
   studentTalkPct: number | null
   status: 'draft' | 'published'
   createdAt: number
-  // Live-doc + lesson linkage (for the whiteboard tab + publishing to the student).
-  whiteboardHtml?: string
+  // Lesson linkage for publishing the recap to the student's Supabase record.
   lessonDate?: string
   lessonTitle?: string
   attendees?: string[]

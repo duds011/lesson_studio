@@ -48,16 +48,12 @@ export default function LessonTools({ eventId, attendees }: { eventId: string; a
           </select>
         )}
         {saving && <span style={{ fontSize: 11, color: 'var(--muted)' }}>Saving…</span>}
-        <button className="btn btn-primary btn-sm" disabled={!selected} style={{ marginLeft: 'auto' }}
-          onClick={() => selected && window.open(`/live/${selected}`, `livedoc-${selected}`, 'popup,width=980,height=760,noopener=no')}>
-          📝 Open live doc ↗
-        </button>
       </div>
       {chosen && !chosen.hasLogin && (
-        <span style={{ fontSize: 11, color: 'var(--amber)' }}>⚠️ {chosen.name} has no student login yet — they’ll see the doc &amp; recap once you create their login (Students → the student → Create login).</span>
+        <span style={{ fontSize: 11, color: 'var(--amber)' }}>⚠️ {chosen.name} has no student login yet — they’ll see the recap once you create their login (Students → the student → Create login).</span>
       )}
       {!selected && !loading && (
-        <span style={{ fontSize: 11, color: 'var(--muted)' }}>Link a student to open a shared doc and deliver the recap. Leave unlinked for a test call.</span>
+        <span style={{ fontSize: 11, color: 'var(--muted)' }}>Link a student so this lesson’s recap is delivered to them. Leave unlinked for a test call.</span>
       )}
     </div>
   )

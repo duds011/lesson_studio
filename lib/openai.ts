@@ -139,17 +139,11 @@ Anchor: N5: です、行く、食べる | N4: 帰る、困る、準備する | N
 Transcript:
 {{TRANSCRIPT}}`
 
-export async function generateRecap(opts: { studentName: string; transcript: string; whiteboard?: string }): Promise<Recap> {
+export async function generateRecap(opts: { studentName: string; transcript: string }): Promise<Recap> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
 
-  // The teacher and student may have written on a shared lesson doc/whiteboard;
-  // fold its notes into the analysis (grammar points, vocab, examples written there).
-  const wb = (opts.whiteboard ?? '').trim()
-  const transcriptBlock = wb
-    ? `${opts.transcript}\n\n---\nSHARED LESSON DOC / WHITEBOARD (notes the teacher & student wrote during the lesson — treat as authoritative for spelling and any grammar/vocab written here, and include them):\n${wb}`
-    : opts.transcript
-  const content = PROMPT.replace('{{STUDENT}}', opts.studentName).replace('{{TRANSCRIPT}}', transcriptBlock)
+  const content = PROMPT.replace('{{STUDENT}}', opts.studentName).replace('{{TRANSCRIPT}}', opts.transcript)
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
