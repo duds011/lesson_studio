@@ -91,11 +91,7 @@ VOCABULARY DETECTION — for vocab_total_count and vocab_level_distribution:
 - vocab_level_distribution: count of items per JLPT level. Include all 5 levels even if count is 0.
 
 RECAP FORMAT — for the "recap" field:
-Create a lesson recap for the student. Clear, practical, student-friendly. Include romaji for all Japanese. Use 3-line format for examples:
-  Japanese sentence
-  Romaji
-  English meaning
-Title: "Lesson Recap — [main topic]". End with a short Main takeaway section. Remove off-topic content.
+Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name the lesson's main topic and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, romaji blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
 
 SECTION FORMAT — one section per DISTINCT grammar point/topic. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
 - Title: "1. Japanese: English" (e.g. "1. いきます: To Go Somewhere")
