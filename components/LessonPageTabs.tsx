@@ -16,6 +16,7 @@ export default function LessonPageTabs({
   lesson: Lesson; studentFirst: string; teacherFirst?: string
 }) {
   const r = lesson.recap
+  const m = r.metrics as any
   const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
   type Tab = typeof TABS[number]
   const [tab, setTab] = useState<Tab>('Progress')
@@ -41,8 +42,6 @@ export default function LessonPageTabs({
       {/* ── PROGRESS ── */}
       {tab === 'Progress' && (
         <div className="lesson-dashboard" role="tabpanel">
-          <h3 className="dashboard-title">How this lesson went</h3>
-
           {lessonSections.length > 0 && (
             <div className="corrections-card" style={{ marginBottom: '1rem' }}>
               <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">🗒️</span><span className="stat-card-label">What we covered</span></div>
@@ -50,6 +49,28 @@ export default function LessonPageTabs({
             </div>
           )}
 
+          {m && (
+            <div className="corrections-card" style={{ marginBottom: '1rem' }}>
+              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
+              <div className="metric-grid">
+                <div className="metric"><div className="mv">{m.studentWpm ?? '—'}</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
+                <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
+                <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
+                <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
+                <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
+                <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
+              </div>
+            </div>
+          )}
+
+          {corrections && (
+            <div className="corrections-card" style={{ marginBottom: '1rem' }}>
+              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{corrections.title.replace(/^\d+\.\s*/, '')}</span></div>
+              <FormattedContent content={corrections.content} />
+            </div>
+          )}
+
+          <h3 className="dashboard-title">How this lesson went</h3>
           <div className="stat-cards">
             {/* Speaking balance */}
             <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
@@ -75,13 +96,6 @@ export default function LessonPageTabs({
               <p className="stat-card-note" style={{ marginTop: 'auto' }}>{r.vocab_total_count ? `${r.vocab_total_count} vocabulary items practiced` : ''}</p>
             </div>
           </div>
-
-          {corrections && (
-            <div className="corrections-card">
-              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{corrections.title.replace(/^\d+\.\s*/, '')}</span></div>
-              <FormattedContent content={corrections.content} />
-            </div>
-          )}
         </div>
       )}
 
