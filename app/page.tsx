@@ -6,6 +6,8 @@ import AppNav from '@/components/AppNav'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
 import type { DraftRecap } from '@/components/RecapReview'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { mapEventToStudent } from '@/lib/lesson-link'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
 
@@ -86,11 +88,28 @@ export default async function Home() {
     attendees: l.attendees, bot: botFor(l.id), recapStatus: recapRecs[l.id]?.status ?? null,
   }))
 
-  // Draft recaps waiting for the teacher to review, edit, and send.
-  const draftRecaps: DraftRecap[] = Object.values(recapRecs)
+  // Draft recaps waiting for the teacher to review, edit, and send. Resolve the
+  // lesson number each will get (existing lesson for the event, else next up).
+  const admin = createAdminClient()
+  const draftList = Object.values(recapRecs)
     .filter((r) => r.status === 'draft')
     .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-    .map((r) => ({ eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle }))
+  const draftRecaps: DraftRecap[] = await Promise.all(draftList.map(async (r) => {
+    let lessonNumber: number | null = null
+    try {
+      const linked = await mapEventToStudent(admin, r.eventId, r.attendees ?? [])
+      if (linked) {
+        const { data: ls } = await admin.from('lessons').select('lesson_number, source_event_id, status').eq('student_id', linked.studentId)
+        const existing = (ls || []).find((x: any) => x.source_event_id === r.eventId)
+        if (existing?.lesson_number) lessonNumber = existing.lesson_number
+        else {
+          const maxN = (ls || []).filter((x: any) => x.status === 'published').reduce((m: number, x: any) => Math.max(m, x.lesson_number ?? 0), 0)
+          lessonNumber = maxN + 1
+        }
+      }
+    } catch { /* leave null */ }
+    return { eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle, createdAt: r.createdAt, lessonNumber }
+  }))
 
   return (
     <>

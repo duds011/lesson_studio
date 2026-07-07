@@ -9,6 +9,8 @@ export type DraftRecap = {
   recap: any
   lessonDate?: string
   lessonTitle?: string
+  lessonNumber?: number | null
+  createdAt?: number
 }
 
 type Section = { title: string; content: string }
