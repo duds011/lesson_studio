@@ -4,6 +4,8 @@ import { isConfigured, listUpcomingLessons, type Lesson } from '@/lib/google'
 import { friendlyStatus } from '@/lib/recall'
 import AppNav from '@/components/AppNav'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
+import RecapsToReview from '@/components/RecapsToReview'
+import type { DraftRecap } from '@/components/RecapReview'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
 
@@ -84,6 +86,12 @@ export default async function Home() {
     attendees: l.attendees, bot: botFor(l.id), recapStatus: recapRecs[l.id]?.status ?? null,
   }))
 
+  // Draft recaps waiting for the teacher to review, edit, and send.
+  const draftRecaps: DraftRecap[] = Object.values(recapRecs)
+    .filter((r) => r.status === 'draft')
+    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+    .map((r) => ({ eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle }))
+
   return (
     <>
       <AppNav email={token.email} connected />
@@ -107,6 +115,12 @@ export default async function Home() {
           <div className="summary-stat"><span>Drafts to review</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'draft').length}</strong></div>
           <div className="summary-stat"><span>Published recaps</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</strong></div>
         </div>
+
+        {draftRecaps.length > 0 && (
+          <div style={{ marginBottom: 22 }}>
+            <RecapsToReview drafts={draftRecaps} />
+          </div>
+        )}
 
         {needsReconnect ? (
           <div className="empty">
