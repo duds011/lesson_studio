@@ -34,10 +34,11 @@ export async function POST(req: NextRequest) {
     // Prefer the real diarized talk % when we have it.
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     // Attach measured Tier-1 fluency metrics (from the transcript's word timestamps).
+    // NOTE: raw distinct-token counting is NOT a reliable vocab measure for
+    // Japanese (fine ASR tokenization + noisy transcript inflates it), so the
+    // headline vocab count stays the model's estimate. Proper measurement needs
+    // a morphological analyzer (kuromoji) + JLPT dictionary — a later upgrade.
     recap.metrics = t.metrics
-    // Headline vocab count is now MEASURED (distinct words actually spoken),
-    // not the model's estimate. The curated 10-word list + JLPT breakdown stay.
-    if (t.metrics.lessonVocab > 0) recap.vocab_total_count = t.metrics.lessonVocab
 
     await saveRecap({
       eventId,
