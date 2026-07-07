@@ -38,6 +38,29 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
+  const roleOf = async () => {
+    if (!user) return null
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    return profile?.role ?? null
+  }
+
+  // Teacher-only API routes that previously relied only on the login wall.
+  // Guarded here so they stay locked once production is public.
+  const isProtectedApi =
+    path.startsWith('/api/recall') ||
+    path.startsWith('/api/recap') ||
+    path === '/api/settings' ||
+    path === '/api/google/disconnect' ||
+    path === '/api/google/select-calendar' ||
+    path === '/api/zoom/disconnect' ||
+    path === '/api/zoom/status'
+  if (isProtectedApi) {
+    if ((await roleOf()) !== 'teacher') {
+      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    return supabaseResponse
+  }
+
   // Route buckets. The student PORTAL is /student/* (note: /students is the
   // teacher's student list, so match /student/ with a trailing slash).
   const isStudentPortal = path === '/student' || path.startsWith('/student/')
@@ -52,15 +75,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    const roleOf = async () => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-      return profile?.role
-    }
-
     // Already authed and hitting the login page → route to the right home.
     if (path === '/login') {
       const role = await roleOf()
@@ -81,7 +95,13 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // NB: /book and all /api/* routes are deliberately excluded so the public
-  // booking page and the Google/Zoom OAuth callbacks keep working without login.
-  matcher: ['/', '/login', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*'],
+  // NB: public /api routes (/api/book, Google/Zoom OAuth callbacks, /api/stripe,
+  // /api/portal, /api/cron) are deliberately NOT matched. Only the teacher-only
+  // API routes below are gated (they had no auth of their own).
+  matcher: [
+    '/', '/login', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*',
+    '/api/recall/:path*', '/api/recap', '/api/recap/:path*',
+    '/api/settings', '/api/google/disconnect', '/api/google/select-calendar',
+    '/api/zoom/disconnect', '/api/zoom/status',
+  ],
 }
