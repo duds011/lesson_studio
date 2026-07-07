@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import LessonExercises from './LessonExercises'
+import LessonTopics from './LessonTopics'
 import type { DraftRecap } from './RecapReview'
 
 type Section = { title: string; content: string }
@@ -133,6 +134,13 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 8px' }}>A short overview {first} sees first. Keep it to a couple of sentences.</p>
               <AutoTextarea value={body} onChange={setBody} placeholder="Short lesson summary…" minRows={3} />
             </section>
+
+            {cleanSections().length > 0 && (
+              <section className="block">
+                <h4>What we covered</h4>
+                <LessonTopics sections={cleanSections()} />
+              </section>
+            )}
           </div>
         )}
 

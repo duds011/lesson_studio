@@ -35,6 +35,9 @@ export async function POST(req: NextRequest) {
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     // Attach measured Tier-1 fluency metrics (from the transcript's word timestamps).
     recap.metrics = t.metrics
+    // Headline vocab count is now MEASURED (distinct words actually spoken),
+    // not the model's estimate. The curated 10-word list + JLPT breakdown stay.
+    if (t.metrics.lessonVocab > 0) recap.vocab_total_count = t.metrics.lessonVocab
 
     await saveRecap({
       eventId,

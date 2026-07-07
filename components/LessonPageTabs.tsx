@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { FormattedContent } from './RecapView'
 import LessonExercises from './LessonExercises'
+import LessonTopics from './LessonTopics'
 
 type Recap = any
 type Lesson = { id: string; lessonNumber: number; date: string; title: string; recap: Recap }
@@ -41,6 +42,14 @@ export default function LessonPageTabs({
       {tab === 'Progress' && (
         <div className="lesson-dashboard" role="tabpanel">
           <h3 className="dashboard-title">How this lesson went</h3>
+
+          {lessonSections.length > 0 && (
+            <div className="corrections-card" style={{ marginBottom: '1rem' }}>
+              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">🗒️</span><span className="stat-card-label">What we covered</span></div>
+              <LessonTopics sections={lessonSections} />
+            </div>
+          )}
+
           <div className="stat-cards">
             {/* Speaking balance */}
             <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>

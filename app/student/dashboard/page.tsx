@@ -41,7 +41,7 @@ export default async function StudentDashboard() {
     .from('lessons')
     .select(`
       id, lesson_number, lesson_date, title,
-      lesson_summaries ( score, talk_percentage, recap, vocab_level_distribution, vocab_total_count ),
+      lesson_summaries ( score, talk_percentage, recap, recap_json, vocab_level_distribution, vocab_total_count ),
       vocabulary_items ( id, jlpt_level )
     `)
     .eq('student_id', student.id)
@@ -171,11 +171,14 @@ export default async function StudentDashboard() {
             const dist = s?.vocab_level_distribution
             const distSum = dist && typeof dist === 'object' ? Object.values(dist).reduce((a: number, b: any) => a + Number(b), 0) : 0
             const vocabCount = s?.vocab_total_count ?? (distSum > 0 ? distSum : (l.vocabulary_items?.length ?? 0))
+            const metrics = s?.recap_json?.metrics || {}
             return {
               lessonNumber: l.lesson_number,
               score: s?.score ?? null,
               talkPct: s?.talk_percentage ?? null,
               vocabCount,
+              wpm: metrics.studentWpm ?? null,
+              responseSec: metrics.avgResponseSec ?? null,
             }
           })}
         />

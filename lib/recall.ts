@@ -64,6 +64,17 @@ export type LessonMetrics = {
   studentTurns: number // number of student speaking turns
   avgTurnWords: number | null // avg words per student turn
   longestTurnSec: number | null // longest unbroken student stretch (seconds)
+  lessonVocab: number // measured distinct content words across the whole lesson
+  studentVocab: number // measured distinct content words the student produced
+}
+
+// Grammatical glue + copulas we don't count as "vocabulary".
+const NON_VOCAB = new Set(['は', 'を', 'が', 'に', 'の', 'へ', 'と', 'も', 'で', 'や', 'か', 'ね', 'よ', 'わ', 'さ', 'ん', 'な', 'だ', 'です', 'ます', 'the', 'a', 'an', 'is', 'to', 'of', 'and'])
+const normToken = (t: string) => t.replace(/[\s、。，．・！？!?;:…「」『』（）()\[\]{}"'’“”~〜ー－—\-.,]/g, '').toLowerCase()
+function isVocab(raw: string): string | null {
+  const w = normToken(raw)
+  if (!w || NON_VOCAB.has(w) || FILLERS.includes(w)) return null
+  return w
 }
 
 export type TranscriptResult = {
@@ -168,6 +179,18 @@ function computeMetrics(turns: MTurn[], studentSec: number): LessonMetrics {
   const studentTurns = student.length
   const avgTurnWords = studentTurns ? Math.round(studentWords / studentTurns) : null
 
+  // Measured vocabulary: distinct content words actually spoken this lesson.
+  const lessonSet = new Set<string>()
+  const studentSet = new Set<string>()
+  for (const t of turns) {
+    for (const w of t.words) {
+      const v = isVocab(w.t)
+      if (!v) continue
+      lessonSet.add(v)
+      if (!t.isHost) studentSet.add(v)
+    }
+  }
+
   return {
     studentWpm,
     avgResponseSec,
@@ -176,6 +199,8 @@ function computeMetrics(turns: MTurn[], studentSec: number): LessonMetrics {
     studentTurns,
     avgTurnWords,
     longestTurnSec: studentTurns ? Math.round(longestTurnSec) : null,
+    lessonVocab: lessonSet.size,
+    studentVocab: studentSet.size,
   }
 }
 

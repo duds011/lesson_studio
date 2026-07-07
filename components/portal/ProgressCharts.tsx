@@ -12,7 +12,12 @@ interface ChartLesson {
   score: number | null
   talkPct: number | null
   vocabCount: number
+  wpm?: number | null
+  responseSec?: number | null
 }
+
+const GREEN = '#10b981'
+const AMBER = '#f59e0b'
 
 interface Props {
   lessons: ChartLesson[] // descending order — we reverse for charts
@@ -47,6 +52,8 @@ export default function ProgressCharts({ lessons }: Props) {
 
   const hasScores = data.some((l) => l.score !== null)
   const hasTalk = data.some((l) => l.talkPct !== null)
+  const hasWpm = data.some((l) => l.wpm != null)
+  const hasResp = data.some((l) => l.responseSec != null)
 
   return (
     <div style={{ marginTop: 24 }}>
@@ -110,6 +117,54 @@ export default function ProgressCharts({ lessons }: Props) {
               </div>
             )}
           </div>
+
+          {(hasWpm || hasResp) && (
+            <div style={{ display: 'grid', gridTemplateColumns: hasWpm && hasResp ? 'repeat(2, minmax(0,1fr))' : '1fr', gap: 14 }}>
+              {hasWpm && (
+                <div className="analytics-card" style={{ padding: 18 }}>
+                  <p className="analytics-label" style={{ marginBottom: 12 }}>⚡ Speaking Pace <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(words/min)</span></p>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <ComposedChart data={data} margin={{ top: 4, right: 4, left: -22, bottom: 0 }} barSize={22}>
+                      <defs>
+                        <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={GREEN} stopOpacity={0.55} />
+                          <stop offset="100%" stopColor={GREEN} stopOpacity={0.12} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                      <XAxis dataKey="lessonNumber" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(n) => `L${n}`} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip label2="wpm" />} />
+                      <Bar dataKey="wpm" fill="url(#wg)" radius={[4, 4, 0, 0]} />
+                      <Line type="monotone" dataKey="wpm" stroke={GREEN} strokeWidth={2} dot={{ fill: GREEN, r: 3, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 5, fill: GREEN, stroke: '#fff', strokeWidth: 2 }} connectNulls />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {hasResp && (
+                <div className="analytics-card" style={{ padding: 18 }}>
+                  <p className="analytics-label" style={{ marginBottom: 12 }}>⏱️ Thinking Time <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(lower is faster)</span></p>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <ComposedChart data={data} margin={{ top: 4, right: 4, left: -22, bottom: 0 }} barSize={22}>
+                      <defs>
+                        <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={AMBER} stopOpacity={0.55} />
+                          <stop offset="100%" stopColor={AMBER} stopOpacity={0.12} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                      <XAxis dataKey="lessonNumber" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(n) => `L${n}`} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}s`} />
+                      <Tooltip content={<CustomTooltip suffix="s" label2="to reply" />} />
+                      <Bar dataKey="responseSec" fill="url(#rg)" radius={[4, 4, 0, 0]} />
+                      <Line type="monotone" dataKey="responseSec" stroke={AMBER} strokeWidth={2} dot={{ fill: AMBER, r: 3, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 5, fill: AMBER, stroke: '#fff', strokeWidth: 2 }} connectNulls />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="analytics-card" style={{ padding: 18 }}>
             <p className="analytics-label" style={{ marginBottom: 12 }}>📖 Vocabulary Growth</p>
