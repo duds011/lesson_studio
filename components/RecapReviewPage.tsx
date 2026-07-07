@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import LessonExercises from './LessonExercises'
 import type { DraftRecap } from './RecapReview'
 
 type Section = { title: string; content: string }
@@ -68,8 +69,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const label = (t: Tab) => t === 'Lesson' ? 'Recap' : t
 
   return (
-    <main className="wrap page-fade">
-      <div className="review-page" style={{ maxWidth: 860 }}>
+    <div className="review-page" style={{ maxWidth: 860 }}>
         <Link href="/" className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }}>← Back to overview</Link>
 
         <div className="page-head" style={{ marginBottom: 16 }}>
@@ -137,7 +137,11 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
                 {homework.length === 0 && <p className="sub" style={{ margin: 0 }}>No homework yet.</p>}
                 <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => setHomework([...homework, ''])}>+ Add homework</button>
               </div>
-              <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>The {r.exercises?.length || 7} interactive practice exercises are generated automatically and sent with the recap.</p>
+            </section>
+            <section className="block">
+              <h4>Practice exercises</h4>
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>Auto-generated from this lesson and sent with the recap. This is exactly what {first} will practice.</p>
+              <LessonExercises exercises={r.exercises || []} />
             </section>
           </div>
         )}
@@ -157,12 +161,21 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
             </section>
             <section className="block">
               <h4>Words from this lesson {vocab.length ? `· ${vocab.length}` : ''}</h4>
-              <ul className="fc-list">
-                {vocab.map((v, i) => (
-                  <li key={i}><span className="jp">{v.word}</span> <span className="romaji">{v.reading}</span> — {v.definition}{v.jlpt_level && <span className="jlpt sm"> {v.jlpt_level}</span>}</li>
-                ))}
-                {vocab.length === 0 && <li className="sub">No vocabulary captured.</li>}
-              </ul>
+              {vocab.length === 0 ? <p className="sub" style={{ margin: 0 }}>No vocabulary captured.</p> : (
+                <div className="vocab-grid">
+                  {vocab.map((v, i) => (
+                    <div className="vocab-card" key={i}>
+                      <div className="vocab-card-top">
+                        <span className="jp" style={{ fontSize: '1.15rem', fontWeight: 700 }}>{v.word}</span>
+                        {v.jlpt_level && <span className="jlpt sm">{v.jlpt_level}</span>}
+                      </div>
+                      <span className="romaji">{v.reading}</span>
+                      <p style={{ margin: '4px 0 0', fontSize: '.85rem' }}>{v.definition}</p>
+                      {v.example_sentence && <p className="jp" style={{ margin: '6px 0 0', fontSize: '.85rem', color: 'var(--muted)' }}>{v.example_sentence}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         )}
@@ -173,7 +186,6 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
           <button className="btn btn-ghost" disabled={busy !== ''} onClick={save}>{busy === 'save' ? 'Saving…' : 'Save draft'}</button>
           <button className="btn btn-green" disabled={busy !== ''} onClick={approve}>{busy === 'publish' ? 'Sending…' : 'Approve & send'}</button>
         </div>
-      </div>
-    </main>
+    </div>
   )
 }
