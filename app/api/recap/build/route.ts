@@ -22,9 +22,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Transcript is empty.' }, { status: 422 })
     }
 
-    const recap = await generateRecap({ studentName: studentName || 'Student', transcript: t.plain })
+    const recap: any = await generateRecap({ studentName: studentName || 'Student', transcript: t.plain })
     // Prefer the real diarized talk % when we have it.
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
+    // Attach measured Tier-1 fluency metrics (from the transcript's word timestamps).
+    recap.metrics = t.metrics
 
     await saveRecap({
       eventId,

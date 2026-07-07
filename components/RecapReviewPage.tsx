@@ -63,6 +63,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
 
   const first = rec.studentName.split(' ')[0]
   const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : ''
+  const m = r.metrics as any
   const dist: Record<string, number> = r.vocab_level_distribution || {}
   const distMax = Math.max(1, ...JLPT.map((l) => dist[l] ?? 0))
   const vocab: any[] = r.vocabulary || []
@@ -94,6 +95,22 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
               <div className="mini"><div className="k">Student talk</div><div className="v">{r.talk_percentage ?? '—'}%</div></div>
               <div className="mini"><div className="k">Vocab</div><div className="v">{r.vocab_total_count ?? vocab.length}</div></div>
             </div>
+
+            {m && (
+              <section className="block">
+                <h4>Fluency metrics</h4>
+                <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>Measured from the recording — not AI-estimated.</p>
+                <div className="metric-grid">
+                  <div className="metric"><div className="mv">{m.studentWpm ?? '—'}</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
+                  <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">avg gap before {first} replies</div></div>
+                  <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best unbroken stretch</div></div>
+                  <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
+                  <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">えーと, あの, um…</div></div>
+                  <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
+                </div>
+              </section>
+            )}
+
             <section className="block">
               <h4>Summary</h4>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 8px' }}>A short overview {first} sees first. Keep it to a couple of sentences.</p>

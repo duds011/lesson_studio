@@ -54,11 +54,35 @@ export async function removeBot(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Recall remove bot failed (${res.status}): ${await res.text()}`)
 }
 
+// Tier-1 fluency metrics, computed purely from the word-level timestamps that
+// Recall already returns — no audio processing, no extra API cost.
+export type LessonMetrics = {
+  studentWpm: number | null // student words per minute of student speech
+  avgResponseSec: number | null // avg thinking time: teacher stops → student starts
+  fillerCount: number // hesitation words in student speech (えーと, あの, um…)
+  longPauseCount: number // mid-utterance silences ≥ 1.5s in student speech
+  studentTurns: number // number of student speaking turns
+  avgTurnWords: number | null // avg words per student turn
+  longestTurnSec: number | null // longest unbroken student stretch (seconds)
+}
+
 export type TranscriptResult = {
   lines: string[] // "Speaker: text"
   plain: string // joined transcript for the LLM
   talk: { name: string; isHost: boolean; seconds: number }[]
   studentTalkPct: number | null
+  metrics: LessonMetrics
+}
+
+const FILLERS = ['えーと', 'えー', 'ええと', 'えっと', 'あのー', 'あの', 'そのー', 'んー', 'まあ', 'なんか', 'um', 'uh', 'erm', 'like']
+function countFillers(text: string): number {
+  const lower = text.toLowerCase()
+  let n = 0
+  for (const f of FILLERS) {
+    const re = /[a-z]/.test(f) ? new RegExp(`\\b${f}\\b`, 'g') : new RegExp(f, 'g')
+    n += (lower.match(re) || []).length
+  }
+  return n
 }
 
 /** Fetch + normalize the diarized transcript for a finished bot. */
@@ -76,16 +100,26 @@ export async function getTranscript(botId: string): Promise<TranscriptResult> {
   const secByName: Record<string, number> = {}
   const hostByName: Record<string, boolean> = {}
 
+  // Structured, time-ordered turns so we can measure pace, pauses and latency.
+  type Turn = { name: string; isHost: boolean; text: string; start: number; end: number; words: { t: string; s: number; e: number }[] }
+  const turns: Turn[] = []
+
   for (const seg of segments) {
     const name = seg.participant?.name || 'Unknown'
     hostByName[name] = !!seg.participant?.is_host
-    const words = seg.words || []
-    if (words.length) {
-      lines.push(`${name}: ${words.map((w: any) => w.text).join(' ')}`)
-      const first = words[0]?.start_timestamp?.relative ?? 0
-      const last = words[words.length - 1]?.end_timestamp?.relative ?? first
-      secByName[name] = (secByName[name] ?? 0) + Math.max(0, last - first)
-    }
+    const rawWords = seg.words || []
+    if (!rawWords.length) continue
+    const words = rawWords.map((w: any) => ({
+      t: String(w.text ?? ''),
+      s: w.start_timestamp?.relative ?? 0,
+      e: w.end_timestamp?.relative ?? (w.start_timestamp?.relative ?? 0),
+    }))
+    const text = words.map((w: { t: string }) => w.t).join(' ')
+    const start = words[0].s
+    const end = words[words.length - 1].e
+    lines.push(`${name}: ${text}`)
+    secByName[name] = (secByName[name] ?? 0) + Math.max(0, end - start)
+    turns.push({ name, isHost: hostByName[name], text, start, end, words })
   }
 
   const talk = Object.keys(secByName).map((name) => ({
@@ -97,7 +131,52 @@ export async function getTranscript(botId: string): Promise<TranscriptResult> {
   const totalSec = talk.reduce((a, b) => a + b.seconds, 0)
   const studentTalkPct = totalSec > 0 ? Math.round((studentSec / totalSec) * 100) : null
 
-  return { lines, plain: lines.join('\n'), talk, studentTalkPct }
+  const metrics = computeMetrics(turns.sort((a, b) => a.start - b.start), studentSec)
+  return { lines, plain: lines.join('\n'), talk, studentTalkPct, metrics }
+}
+
+type MTurn = { isHost: boolean; text: string; start: number; end: number; words: { t: string; s: number; e: number }[] }
+function computeMetrics(turns: MTurn[], studentSec: number): LessonMetrics {
+  const student = turns.filter((t) => !t.isHost)
+
+  // WPM over student speaking time only.
+  const studentWords = student.reduce((a, t) => a + t.words.length, 0)
+  const studentWpm = studentSec > 2 ? Math.round((studentWords / studentSec) * 60) : null
+
+  // Response latency: teacher turn immediately followed by a student turn.
+  const gaps: number[] = []
+  for (let i = 1; i < turns.length; i++) {
+    if (turns[i - 1].isHost && !turns[i].isHost) {
+      const gap = turns[i].start - turns[i - 1].end
+      if (gap >= 0 && gap < 30) gaps.push(gap) // ignore negatives (overlap) and long off-topic breaks
+    }
+  }
+  const avgResponseSec = gaps.length ? Math.round((gaps.reduce((a, b) => a + b, 0) / gaps.length) * 10) / 10 : null
+
+  // Fillers + long mid-utterance pauses in student speech.
+  let fillerCount = 0
+  let longPauseCount = 0
+  let longestTurnSec = 0
+  for (const t of student) {
+    fillerCount += countFillers(t.text)
+    for (let i = 1; i < t.words.length; i++) {
+      if (t.words[i].s - t.words[i - 1].e >= 1.5) longPauseCount++
+    }
+    longestTurnSec = Math.max(longestTurnSec, t.end - t.start)
+  }
+
+  const studentTurns = student.length
+  const avgTurnWords = studentTurns ? Math.round(studentWords / studentTurns) : null
+
+  return {
+    studentWpm,
+    avgResponseSec,
+    fillerCount,
+    longPauseCount,
+    studentTurns,
+    avgTurnWords,
+    longestTurnSec: studentTurns ? Math.round(longestTurnSec) : null,
+  }
 }
 
 /** Map Recall status codes → friendly label + state for the UI. */
