@@ -41,6 +41,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const [note, setNote] = useState<string>(r.teacher_note || '')
   const [homework, setHomework] = useState<string[]>(((r.homework || []) as any[]).map((h) => h?.description || '').filter(Boolean))
   const [busy, setBusy] = useState<'' | 'save' | 'publish'>('')
+  const [rebuilding, setRebuilding] = useState(false)
   const [msg, setMsg] = useState('')
 
   const setSection = (i: number, patch: Partial<Section>) => setSections(sections.map((s, j) => (j === i ? { ...s, ...patch } : s)))
@@ -61,6 +62,17 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
     router.push('/'); router.refresh()
   }
 
+  async function rebuild() {
+    if (!confirm('Rebuild this recap from the recording? This regenerates the summary, sections, homework and fluency metrics, and discards any manual edits.')) return
+    setRebuilding(true); setMsg('')
+    const res = await fetch('/api/recap/build', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: rec.eventId, studentName: rec.studentName, lessonDate: rec.lessonDate, lessonTitle: rec.lessonTitle }),
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Rebuild failed' }))
+    if (!res.ok) { setRebuilding(false); setMsg(res.error || 'Rebuild failed'); return }
+    window.location.reload() // pull the freshly generated recap
+  }
+
   const first = rec.studentName.split(' ')[0]
   const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : ''
   const m = r.metrics as any
@@ -78,6 +90,11 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
             <span className="eyebrow">Review before sending</span>
             <h2 className="title">{rec.studentName} · Lesson recap</h2>
             <p className="sub">{rec.lessonTitle || 'Lesson'}{rec.lessonDate ? ` · ${fmtDate(rec.lessonDate)}` : ''} — review each tab, then send it to {first}.</p>
+          </div>
+          <div className="page-actions">
+            <button className="btn btn-ghost btn-sm" disabled={rebuilding} onClick={rebuild} title="Regenerate from the recording with the latest AI + metrics">
+              {rebuilding ? 'Rebuilding…' : '↻ Rebuild from recording'}
+            </button>
           </div>
         </div>
 
