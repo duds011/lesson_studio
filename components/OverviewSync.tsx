@@ -15,8 +15,13 @@ export default function OverviewSync() {
     let cancelled = false
     ;(async () => {
       try {
+        // 1. Schedule bots for upcoming lessons already on the calendar.
         await fetch('/api/recall/ensure-scheduled', { method: 'POST' }).catch(() => {})
+        // 2. Refresh recording statuses so finished calls are marked done.
         await fetch('/api/recall/status', { cache: 'no-store' }).catch(() => {})
+        // 3. Auto-build recaps for finished recordings → they appear in
+        //    "Recaps to review" without a manual Build step.
+        await fetch('/api/recap/build-pending', { method: 'POST' }).catch(() => {})
       } finally {
         if (!cancelled) router.refresh()
       }

@@ -207,6 +207,7 @@ function computeMetrics(turns: MTurn[], studentSec: number): LessonMetrics {
 /** Map Recall status codes → friendly label + state for the UI. */
 export function friendlyStatus(code: string): { label: string; state: 'idle' | 'joining' | 'recording' | 'done' | 'error' } {
   switch (code) {
+    case 'ready': return { label: 'Bot scheduled ✓', state: 'joining' }
     case 'joining_call': return { label: 'Bot joining…', state: 'joining' }
     case 'in_waiting_room': return { label: 'In waiting room', state: 'joining' }
     case 'in_call_not_recording': return { label: 'In call', state: 'joining' }
@@ -218,6 +219,7 @@ export function friendlyStatus(code: string): { label: string; state: 'idle' | '
     case 'analysis_done': return { label: 'Done', state: 'done' }
     case 'fatal':
     case 'analysis_failed': return { label: 'Failed', state: 'error' }
-    default: return { label: code, state: 'idle' }
+    // A bot record exists but the status is early/unmapped → it's scheduled.
+    default: return { label: 'Bot scheduled ✓', state: 'joining' }
   }
 }
