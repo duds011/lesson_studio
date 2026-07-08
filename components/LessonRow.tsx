@@ -76,7 +76,7 @@ export default function LessonRow({
     try {
       const j = await (await fetch('/api/recall/send-bot', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder', attendees: lesson.attendees ?? [] }),
+        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder', attendees: lesson.attendees ?? [], studentName: studentName(lesson.title), lessonTitle: lesson.title, lessonDate: lesson.start }),
       })).json()
       if (!j.ok) { setErr(j.error || 'Failed'); return }
       setBot({ botId: j.botId, status: j.status, label: 'Bot joining…', state: 'joining' })

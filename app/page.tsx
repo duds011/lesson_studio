@@ -5,6 +5,8 @@ import { friendlyStatus } from '@/lib/recall'
 import AppNav from '@/components/AppNav'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
+import RecordingsToBuild, { type Recording } from '@/components/RecordingsToBuild'
+import OverviewSync from '@/components/OverviewSync'
 import type { DraftRecap } from '@/components/RecapReview'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { mapEventToStudent } from '@/lib/lesson-link'
@@ -111,6 +113,21 @@ export default async function Home() {
     return { eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle, createdAt: r.createdAt, lessonNumber }
   }))
 
+  // Finished recordings with no recap yet → offer a "Build recap" action.
+  const recordingsReady: Recording[] = (await Promise.all(
+    Object.values(botRecs)
+      .filter((b) => friendlyStatus(b.status).state === 'done' && !recapRecs[b.eventId])
+      .map(async (b) => {
+        let name = b.studentName
+        if (!name) {
+          const linked = await mapEventToStudent(admin, b.eventId, b.attendees ?? []).catch(() => null)
+          name = linked?.fullName
+        }
+        if (!name) return null // unmatched recording (e.g. a trial) — don't surface
+        return { eventId: b.eventId, studentName: name, lessonTitle: b.lessonTitle, lessonDate: b.lessonDate || new Date(b.createdAt).toISOString() }
+      }),
+  )).filter(Boolean) as Recording[]
+
   return (
     <>
       <AppNav email={token.email} connected />
@@ -134,6 +151,14 @@ export default async function Home() {
           <div className="summary-stat"><span>Drafts to review</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'draft').length}</strong></div>
           <div className="summary-stat"><span>Published recaps</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</strong></div>
         </div>
+
+        <OverviewSync />
+
+        {recordingsReady.length > 0 && (
+          <div style={{ marginBottom: 22 }}>
+            <RecordingsToBuild recordings={recordingsReady} />
+          </div>
+        )}
 
         {draftRecaps.length > 0 && (
           <div style={{ marginBottom: 22 }}>

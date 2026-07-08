@@ -52,7 +52,19 @@ export async function clearZoomToken(): Promise<void> {
 }
 
 // ── Bot tracking: which Recall bot is attached to which calendar event ──
-export type BotRec = { eventId: string; botId: string; status: string; meetingUrl: string; createdAt: number }
+// Lesson metadata is stored alongside so a finished recording can be shown
+// (student name + date) and turned into a recap without another lookup.
+export type BotRec = {
+  eventId: string
+  botId: string
+  status: string
+  meetingUrl: string
+  createdAt: number
+  studentName?: string
+  lessonTitle?: string
+  lessonDate?: string
+  attendees?: string[]
+}
 
 export async function getBots(): Promise<Record<string, BotRec>> {
   return (await readDoc<Record<string, BotRec>>('bots')) ?? {}
