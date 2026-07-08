@@ -17,7 +17,10 @@ export type ScheduleResult =
  */
 export async function scheduleUpcomingBots(windowHours = 30): Promise<ScheduleResult> {
   const now = Date.now()
-  const from = new Date(now).toISOString()
+  // Start a few hours in the past so a lesson that JUST ended is still in the
+  // list and its bot record gets enriched (student name/date) for the
+  // "recordings ready" panel — no bot is created for past lessons.
+  const from = new Date(now - 6 * 3600_000).toISOString()
   const to = new Date(now + windowHours * 3600_000).toISOString()
 
   let lessons
