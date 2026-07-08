@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDateShort, ordinal } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
 import LessonExchange from '@/components/portal/LessonExchange'
+import LessonAdminActions from '@/components/portal/LessonAdminActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
 
   const { data: lesson } = await supabase
     .from('lessons')
-    .select(`id, lesson_number, lesson_date, title, status,
+    .select(`id, lesson_number, lesson_date, title, status, source_event_id,
       lesson_summaries ( recap_json, score ),
       students ( full_name )`)
     .eq('id', params.lessonId)
@@ -36,7 +37,10 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
 
   return (
     <div className="page-fade" style={{ maxWidth: 860 }}>
-      <Link href={`/teacher/students/${params.id}`} className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }}>← {studentName || 'Student'}</Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+        <Link href={`/teacher/students/${params.id}`} className="btn btn-ghost btn-sm">← {studentName || 'Student'}</Link>
+        <LessonAdminActions lessonId={l.id} studentId={params.id} sourceEventId={l.source_event_id} />
+      </div>
       <div className="lesson-hero">
         <div>
           <div className="eyebrow">Lesson {l.lesson_number} · Recap</div>

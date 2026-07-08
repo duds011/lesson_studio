@@ -5,6 +5,7 @@ import { formatDateShort, ordinal } from '@/lib/portal-utils'
 import { getStudentCredits } from '@/lib/credits'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
+import StudentAdminActions from '@/components/portal/StudentAdminActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,7 +56,10 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
   return (
     <div style={{ display: 'grid', gap: 22 }}>
       <div>
-        <Link href="/teacher/dashboard" className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }}>← All students</Link>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+          <Link href="/teacher/dashboard" className="btn btn-ghost btn-sm">← All students</Link>
+          <StudentAdminActions studentId={student.id} hasLogin={!!student.profile_id} />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div className="avatar lg">{student.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>
           <div>

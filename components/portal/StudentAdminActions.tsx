@@ -32,7 +32,7 @@ export default function StudentAdminActions({ studentId, hasLogin }: { studentId
     setBusy(true)
     const res = await deleteStudent(studentId)
     setBusy(false)
-    if (res.success) router.refresh()
+    if (res.success) { router.push('/teacher/dashboard'); router.refresh() }
     else setNotice(res.error || 'Failed')
   }
 
