@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { exchangeCode } from '@/lib/google'
+import { getTeacherId } from '@/lib/current-teacher'
 
 // Public base URL, honoring ngrok / proxy forwarding headers.
 function publicBase(req: NextRequest): string {
@@ -18,8 +19,11 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.redirect(`${base}/?connected=denied`)
   if (!code) return NextResponse.redirect(`${base}/?connected=error`)
 
+  const teacherId = await getTeacherId()
+  if (!teacherId) return NextResponse.redirect(`${base}/login`)
+
   try {
-    await exchangeCode(code)
+    await exchangeCode(code, teacherId)
     return NextResponse.redirect(`${base}/?connected=ok`)
   } catch (e) {
     console.error('OAuth callback failed:', e)

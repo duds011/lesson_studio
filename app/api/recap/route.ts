@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getRecaps, setRecapStatus } from '@/lib/store'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { mapEventToStudent } from '@/lib/lesson-link'
+import { getTeacherId } from '@/lib/current-teacher'
 
 export const dynamic = 'force-dynamic'
 
 // Get a stored recap for an event.
 export async function GET(req: NextRequest) {
+  const teacherId = await getTeacherId()
+  if (!teacherId) return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
   const eventId = new URL(req.url).searchParams.get('eventId')
   if (!eventId) return NextResponse.json({ ok: false, error: 'Missing eventId' }, { status: 400 })
-  const all = await getRecaps()
+  const all = await getRecaps(teacherId)
   const rec = all[eventId]
   if (!rec) return NextResponse.json({ ok: false, error: 'No recap' }, { status: 404 })
   return NextResponse.json({ ok: true, ...rec })
@@ -18,20 +21,22 @@ export async function GET(req: NextRequest) {
 // Publish a recap (teacher approval) → also write it to the student's Supabase
 // record so it shows in their portal, including the whiteboard snapshot.
 export async function POST(req: NextRequest) {
+  const teacherId = await getTeacherId()
+  if (!teacherId) return NextResponse.json({ ok: false, error: 'Not authenticated' }, { status: 401 })
   const { eventId } = await req.json()
   if (!eventId) return NextResponse.json({ ok: false, error: 'Missing eventId' }, { status: 400 })
 
-  const all = await getRecaps()
+  const all = await getRecaps(teacherId)
   const rec = all[eventId]
   if (!rec) return NextResponse.json({ ok: false, error: 'No recap to publish' }, { status: 404 })
 
-  await setRecapStatus(eventId, 'published')
+  await setRecapStatus(teacherId, eventId, 'published')
 
   // Bridge the built recap to the student's Supabase record.
   let delivered = false
   try {
     const admin = createAdminClient()
-    const linked = await mapEventToStudent(admin, eventId, rec.attendees ?? [])
+    const linked = await mapEventToStudent(admin, eventId, rec.attendees ?? [], teacherId)
     if (linked) {
       const recapObj: any = rec.recap || {}
       const lessonDate = rec.lessonDate ? rec.lessonDate.slice(0, 10) : new Date().toISOString().slice(0, 10)

@@ -23,7 +23,7 @@ export async function GET(req: Request) {
   if (!from || !to) return NextResponse.json({ ok: false, error: 'Missing range' }, { status: 400 })
 
   try {
-    const [lessons, botRecs, recapRecs] = await Promise.all([listLessonsInRange(from, to), getBots(), getRecaps()])
+    const [lessons, botRecs, recapRecs] = await Promise.all([listLessonsInRange(user.id, from, to), getBots(user.id), getRecaps(user.id)])
     const items = lessons.map((l) => {
       const rec = botRecs[l.id]
       const bot = rec ? { botId: rec.botId, status: rec.status, ...(() => { const f = friendlyStatus(rec.status); return { label: f.label, state: f.state } })() } : null

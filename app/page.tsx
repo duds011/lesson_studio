@@ -9,6 +9,7 @@ import OverviewSync from '@/components/OverviewSync'
 import type { DraftRecap } from '@/components/RecapReview'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { mapEventToStudent } from '@/lib/lesson-link'
+import { getTeacherId } from '@/lib/current-teacher'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
 
@@ -52,10 +53,11 @@ function ConnectScreen({ configured }: { configured: boolean }) {
 }
 
 export default async function Home() {
-  const token = await getToken()
+  const teacherId = await getTeacherId()
+  const token = teacherId ? await getToken(teacherId) : null
   const configured = isConfigured()
 
-  if (!token) {
+  if (!teacherId || !token) {
     return (
       <>
         <AppNav connected={false} />
@@ -68,15 +70,15 @@ export default async function Home() {
   let fetchError = ''
   let needsReconnect = false
   try {
-    lessons = await listUpcomingLessons()
+    lessons = await listUpcomingLessons(teacherId)
   } catch (e: any) {
     if (e?.message === 'SCOPE') needsReconnect = true
     else fetchError = e?.message ?? 'Could not load calendar'
   }
 
   // Existing bot dispatches + recaps, keyed by calendar event id.
-  const botRecs = await getBots()
-  const recapRecs = await getRecaps()
+  const botRecs = await getBots(teacherId)
+  const recapRecs = await getRecaps(teacherId)
   const botFor = (eventId: string) => {
     const rec = botRecs[eventId]
     if (!rec) return null
@@ -98,7 +100,7 @@ export default async function Home() {
   const draftRecaps: DraftRecap[] = await Promise.all(draftList.map(async (r) => {
     let lessonNumber: number | null = null
     try {
-      const linked = await mapEventToStudent(admin, r.eventId, r.attendees ?? [])
+      const linked = await mapEventToStudent(admin, r.eventId, r.attendees ?? [], teacherId)
       if (linked) {
         const { data: ls } = await admin.from('lessons').select('lesson_number, source_event_id, status').eq('student_id', linked.studentId)
         const existing = (ls || []).find((x: any) => x.source_event_id === r.eventId)

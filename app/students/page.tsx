@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getStudents, getLessons } from '@/lib/students'
 import AppNav from '@/components/AppNav'
 import { getToken } from '@/lib/store'
+import { getTeacherId } from '@/lib/current-teacher'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,8 @@ function ArrowIcon() {
 export default async function StudentsPage() {
   const students = await getStudents()
   const lessons = await getLessons()
-  const token = await getToken()
+  const teacherId = await getTeacherId()
+  const token = teacherId ? await getToken(teacherId) : null
   const countByStudent: Record<string, number> = {}
   for (const l of Object.values(lessons)) countByStudent[l.studentId] = (countByStudent[l.studentId] ?? 0) + 1
 

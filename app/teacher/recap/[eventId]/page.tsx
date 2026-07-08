@@ -2,12 +2,14 @@ import Link from 'next/link'
 import { getRecaps } from '@/lib/store'
 import RecapReviewPage from '@/components/RecapReviewPage'
 import type { DraftRecap } from '@/components/RecapReview'
+import { getTeacherId } from '@/lib/current-teacher'
 
 export const dynamic = 'force-dynamic'
 
 export default async function Page({ params }: { params: { eventId: string } }) {
   const eventId = decodeURIComponent(params.eventId)
-  const all = await getRecaps()
+  const teacherId = await getTeacherId()
+  const all = teacherId ? await getRecaps(teacherId) : {}
   const rec = all[eventId]
 
   if (!rec) {

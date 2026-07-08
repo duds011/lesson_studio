@@ -40,7 +40,7 @@ async function fetchZoomEmail(accessToken: string): Promise<string> {
 }
 
 /** Step 2 — exchange the auth code for tokens and store them. */
-export async function exchangeZoomCode(code: string): Promise<ZoomToken> {
+export async function exchangeZoomCode(code: string, teacherId: string): Promise<ZoomToken> {
   const res = await fetch('https://zoom.us/oauth/token', {
     method: 'POST',
     headers: { Authorization: `Basic ${basicAuth()}`, 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -55,11 +55,11 @@ export async function exchangeZoomCode(code: string): Promise<ZoomToken> {
     refresh_token: data.refresh_token,
     expiry_date: Date.now() + data.expires_in * 1000,
   }
-  await saveZoomToken(token)
+  await saveZoomToken(teacherId, token)
   return token
 }
 
-async function refreshZoomToken(token: ZoomToken): Promise<ZoomToken> {
+async function refreshZoomToken(teacherId: string, token: ZoomToken): Promise<ZoomToken> {
   const res = await fetch('https://zoom.us/oauth/token', {
     method: 'POST',
     headers: { Authorization: `Basic ${basicAuth()}`, 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -73,32 +73,32 @@ async function refreshZoomToken(token: ZoomToken): Promise<ZoomToken> {
     refresh_token: data.refresh_token, // rotated — must persist
     expiry_date: Date.now() + data.expires_in * 1000,
   }
-  await saveZoomToken(refreshed)
+  await saveZoomToken(teacherId, refreshed)
   return refreshed
 }
 
-async function getValidZoomToken(): Promise<ZoomToken | null> {
-  const token = await getZoomToken()
+async function getValidZoomToken(teacherId: string): Promise<ZoomToken | null> {
+  const token = await getZoomToken(teacherId)
   if (!token) return null
   if (Date.now() < token.expiry_date - 60_000) return token
-  return refreshZoomToken(token)
+  return refreshZoomToken(teacherId, token)
 }
 
 /** Connection state for the UI. */
-export async function zoomConnection(): Promise<{ connected: boolean; email?: string }> {
-  const token = await getZoomToken()
+export async function zoomConnection(teacherId: string): Promise<{ connected: boolean; email?: string }> {
+  const token = await getZoomToken(teacherId)
   if (!token) return { connected: false }
   return { connected: true, email: token.email }
 }
 
 /** Create a scheduled Zoom meeting as the connected teacher; returns join URL. */
-export async function createZoomMeeting(opts: {
+export async function createZoomMeeting(teacherId: string, opts: {
   topic: string
   startISO: string
   durationMin: number
   timezone: string
 }): Promise<{ joinUrl: string; meetingId: string }> {
-  const token = await getValidZoomToken()
+  const token = await getValidZoomToken(teacherId)
   if (!token) throw new Error('ZOOM_NOT_CONNECTED')
   const res = await fetch('https://api.zoom.us/v2/users/me/meetings', {
     method: 'POST',

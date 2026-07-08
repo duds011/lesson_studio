@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { exchangeZoomCode } from '@/lib/zoom'
+import { getTeacherId } from '@/lib/current-teacher'
 
 // Build the public base URL, honoring ngrok / proxy forwarding headers.
 function publicBase(req: NextRequest): string {
@@ -17,8 +18,11 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.redirect(`${base}/?zoom=denied`)
   if (!code) return NextResponse.redirect(`${base}/?zoom=error`)
 
+  const teacherId = await getTeacherId()
+  if (!teacherId) return NextResponse.redirect(`${base}/login`)
+
   try {
-    await exchangeZoomCode(code)
+    await exchangeZoomCode(code, teacherId)
     return NextResponse.redirect(`${base}/?zoom=ok`)
   } catch (e) {
     console.error('Zoom callback failed:', e)

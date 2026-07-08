@@ -4,6 +4,7 @@ import { getSettings } from '@/lib/settings'
 import { getBookingConfig } from '@/lib/booking'
 import { zoomConnection, isZoomConfigured } from '@/lib/zoom'
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import AppNav from '@/components/AppNav'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
@@ -11,15 +12,20 @@ import ConnectorsGallery from '@/components/ConnectorsGallery'
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
-  const token = await getToken()
-  const settings = await getSettings()
-  const bookingConfig = await getBookingConfig()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+  const teacherId = user.id
+
+  const token = await getToken(teacherId)
+  const settings = await getSettings(teacherId)
+  const bookingConfig = await getBookingConfig(teacherId)
 
   let calendars: CalendarInfo[] = []
   let needsReconnect = false
   if (token) {
     try {
-      calendars = await listCalendars()
+      calendars = await listCalendars(teacherId)
     } catch (e: any) {
       if (e?.message === 'SCOPE') needsReconnect = true
     }
@@ -27,9 +33,7 @@ export default async function SettingsPage() {
   const selectedId = token?.calendarId || 'primary'
 
   // Connector statuses for the gallery.
-  const zoom = { configured: isZoomConfigured(), ...(await zoomConnection()) }
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const zoom = { configured: isZoomConfigured(), ...(await zoomConnection(teacherId)) }
   const { data: profile } = user
     ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled').eq('id', user.id).single()
     : { data: null }

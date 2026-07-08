@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -89,7 +90,10 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="fineprint">Accounts are created by your teacher. Ask them for your password if you don&rsquo;t have one.</p>
+        <p className="fineprint" style={{ marginTop: 16 }}>
+          Teacher? <Link href="/signup" style={{ color: 'var(--brand)', fontWeight: 700 }}>Create an account</Link>
+        </p>
+        <p className="fineprint">Students: your account is created by your teacher — ask them for your password.</p>
       </div>
     </main>
   )

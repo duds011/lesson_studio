@@ -15,7 +15,7 @@ export type ScheduleResult =
  * upcoming lessons whether newly booked or already on the calendar, so it can
  * be run on any trigger (daily cron, app load, external pinger).
  */
-export async function scheduleUpcomingBots(windowHours = 30): Promise<ScheduleResult> {
+export async function scheduleUpcomingBots(teacherId: string, windowHours = 30): Promise<ScheduleResult> {
   const now = Date.now()
   // Start a few hours in the past so a lesson that JUST ended is still in the
   // list and its bot record gets enriched (student name/date) for the
@@ -25,12 +25,12 @@ export async function scheduleUpcomingBots(windowHours = 30): Promise<ScheduleRe
 
   let lessons
   try {
-    lessons = await listLessonsInRange(from, to)
+    lessons = await listLessonsInRange(teacherId, from, to)
   } catch (e: any) {
     return { ok: false, error: e?.message === 'SCOPE' ? 'Calendar needs reconnect' : (e?.message ?? 'calendar failed') }
   }
 
-  const bots = await getBots()
+  const bots = await getBots(teacherId)
   const admin = createAdminClient()
   const scheduled: string[] = []
   const skipped: { title: string; reason: string }[] = []
@@ -41,18 +41,18 @@ export async function scheduleUpcomingBots(windowHours = 30): Promise<ScheduleRe
     if (existing?.studentName) continue // already scheduled AND enriched
     if (!existing && new Date(l.start).getTime() <= now) continue // past, nothing to do
 
-    const linked = await mapEventToStudent(admin, l.id, l.attendees ?? [])
+    const linked = await mapEventToStudent(admin, l.id, l.attendees ?? [], teacherId)
     if (!linked) { if (!existing) skipped.push({ title: l.title, reason: 'not a student' }); continue }
     const meta = { studentName: linked.fullName, lessonTitle: l.title, lessonDate: l.start, attendees: l.attendees ?? [] }
 
     // Existing bot missing metadata → backfill it (e.g. scheduled before this).
-    if (existing) { await saveBot({ ...existing, ...meta }); continue }
+    if (existing) { await saveBot(teacherId, { ...existing, ...meta }); continue }
 
     try {
       // ~1 min before start, but never in the past (short-notice lessons).
       const joinAt = new Date(Math.max(now + 15_000, new Date(l.start).getTime() - 60_000)).toISOString()
       const bot = await createBot(l.meetingUrl, 'Lesson Recorder', joinAt)
-      await saveBot({ eventId: l.id, botId: bot.id, status: bot.status, meetingUrl: l.meetingUrl, createdAt: Date.now(), ...meta })
+      await saveBot(teacherId, { eventId: l.id, botId: bot.id, status: bot.status, meetingUrl: l.meetingUrl, createdAt: Date.now(), ...meta })
       scheduled.push(l.title)
     } catch (e: any) {
       skipped.push({ title: l.title, reason: `bot failed: ${e?.message ?? 'error'}` })

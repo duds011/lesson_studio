@@ -5,6 +5,10 @@
  */
 import { getToken, saveToken, type GoogleToken } from './store'
 
+// Public booking is deferred from multi-tenancy — those flows use the primary
+// teacher's connection until per-teacher booking links are built.
+export const DEFAULT_TEACHER_ID = process.env.DEFAULT_TEACHER_ID || '85e46f7b-e240-4389-84d7-5dc03cf28443'
+
 const SCOPES = [
   // Full calendar access: list calendars, read events (free/busy),
   // and CREATE booking events with Google Meet links.
@@ -37,8 +41,8 @@ export function buildAuthUrl(state: string): string {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }
 
-/** Step 2 — swap the ?code=... for tokens and persist them. */
-export async function exchangeCode(code: string): Promise<GoogleToken> {
+/** Step 2 — swap the ?code=... for tokens and persist them for this teacher. */
+export async function exchangeCode(code: string, teacherId: string): Promise<GoogleToken> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -60,7 +64,7 @@ export async function exchangeCode(code: string): Promise<GoogleToken> {
     refresh_token: data.refresh_token,
     expiry_date: Date.now() + data.expires_in * 1000,
   }
-  await saveToken(token)
+  await saveToken(teacherId, token)
   return token
 }
 
@@ -76,7 +80,7 @@ async function fetchEmail(accessToken: string): Promise<string> {
   }
 }
 
-async function refreshAccessToken(token: GoogleToken): Promise<GoogleToken> {
+async function refreshAccessToken(teacherId: string, token: GoogleToken): Promise<GoogleToken> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     cache: 'no-store',
@@ -95,23 +99,23 @@ async function refreshAccessToken(token: GoogleToken): Promise<GoogleToken> {
     access_token: data.access_token,
     expiry_date: Date.now() + data.expires_in * 1000,
   }
-  await saveToken(refreshed)
+  await saveToken(teacherId, refreshed)
   return refreshed
 }
 
-/** Returns a valid access token, refreshing if the stored one expired. */
-async function getValidAccessToken(): Promise<GoogleToken | null> {
-  const token = await getToken()
+/** Returns a valid access token for this teacher, refreshing if expired. */
+async function getValidAccessToken(teacherId: string): Promise<GoogleToken | null> {
+  const token = await getToken(teacherId)
   if (!token) return null
   if (Date.now() < token.expiry_date - 60_000) return token // still good
-  return refreshAccessToken(token)
+  return refreshAccessToken(teacherId, token)
 }
 
 /** Authenticated Google fetch. Bypasses Next's fetch cache (a cached 401 would
  *  defeat the retry) and force-refreshes + retries once when Google rejects
  *  the stored access token — even if its expiry claims it's still valid. */
-async function gfetch(url: string, init: RequestInit = {}): Promise<Response> {
-  let token = await getValidAccessToken()
+async function gfetch(teacherId: string, url: string, init: RequestInit = {}): Promise<Response> {
+  let token = await getValidAccessToken(teacherId)
   if (!token) throw new Error('Not connected')
   const withAuth = (t: string): RequestInit => ({
     ...init,
@@ -121,7 +125,7 @@ async function gfetch(url: string, init: RequestInit = {}): Promise<Response> {
   let res = await fetch(url, withAuth(token.access_token))
   if (res.status === 401) {
     console.warn('[google] stored access token rejected — refreshing and retrying')
-    token = await refreshAccessToken(token)
+    token = await refreshAccessToken(teacherId, token)
     res = await fetch(url, withAuth(token.access_token))
     if (res.status === 401) console.error('[google] retry after refresh still 401')
   }
@@ -163,10 +167,10 @@ function extractMeeting(ev: any): { platform: Lesson['platform']; url: string | 
 export type CalendarInfo = { id: string; name: string; primary: boolean }
 
 /** List all of the teacher's calendars (needs calendar.readonly scope). */
-export async function listCalendars(): Promise<CalendarInfo[]> {
-  const token = await getValidAccessToken()
+export async function listCalendars(teacherId: string): Promise<CalendarInfo[]> {
+  const token = await getValidAccessToken(teacherId)
   if (!token) return []
-  const res = await gfetch('https://www.googleapis.com/calendar/v3/users/me/calendarList')
+  const res = await gfetch(teacherId, 'https://www.googleapis.com/calendar/v3/users/me/calendarList')
   if (res.status === 403) throw new Error('SCOPE') // old token without calendar.readonly
   if (!res.ok) throw new Error(`Calendar list failed: ${await res.text()}`)
   const data = await res.json()
@@ -178,8 +182,8 @@ export async function listCalendars(): Promise<CalendarInfo[]> {
 }
 
 /** List upcoming calendar events as lessons, from the teacher's chosen calendar. */
-export async function listUpcomingLessons(maxResults = 20): Promise<Lesson[]> {
-  const token = await getValidAccessToken()
+export async function listUpcomingLessons(teacherId: string, maxResults = 20): Promise<Lesson[]> {
+  const token = await getValidAccessToken(teacherId)
   if (!token) return []
 
   const calendarId = token.calendarId || 'primary'
@@ -193,7 +197,7 @@ export async function listUpcomingLessons(maxResults = 20): Promise<Lesson[]> {
     maxResults: String(maxResults),
     conferenceDataVersion: '1',
   })
-  const res = await gfetch(
+  const res = await gfetch(teacherId,
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`
   )
   if (!res.ok) throw new Error(`Calendar fetch failed: ${await res.text()}`)
@@ -224,8 +228,8 @@ export async function listUpcomingLessons(maxResults = 20): Promise<Lesson[]> {
 }
 
 /** List events on the teacher's calendar within an explicit time range (for the calendar grid). */
-export async function listLessonsInRange(timeMinISO: string, timeMaxISO: string, maxResults = 250): Promise<Lesson[]> {
-  const token = await getValidAccessToken()
+export async function listLessonsInRange(teacherId: string, timeMinISO: string, timeMaxISO: string, maxResults = 250): Promise<Lesson[]> {
+  const token = await getValidAccessToken(teacherId)
   if (!token) return []
   const calendarId = token.calendarId || 'primary'
 
@@ -237,7 +241,7 @@ export async function listLessonsInRange(timeMinISO: string, timeMaxISO: string,
     maxResults: String(maxResults),
     conferenceDataVersion: '1',
   })
-  const res = await gfetch(
+  const res = await gfetch(teacherId,
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`
   )
   if (res.status === 403) throw new Error('SCOPE')
@@ -263,17 +267,18 @@ export async function listLessonsInRange(timeMinISO: string, timeMaxISO: string,
 }
 
 /** Which calendar bookings are written to / conflicts checked against. */
-export async function getBookingCalendarId(): Promise<string> {
-  const token = await getToken()
+export async function getBookingCalendarId(teacherId: string): Promise<string> {
+  const token = await getToken(teacherId)
   return token?.calendarId || 'primary'
 }
 
 /** Busy intervals (epoch ms) from the booking calendar, for conflict checks. */
 export async function getBusyIntervals(
+  teacherId: string,
   timeMinISO: string,
   timeMaxISO: string
 ): Promise<{ start: number; end: number }[]> {
-  const token = await getValidAccessToken()
+  const token = await getValidAccessToken(teacherId)
   if (!token) return []
   const calendarId = token.calendarId || 'primary'
   const params = new URLSearchParams({
@@ -283,7 +288,7 @@ export async function getBusyIntervals(
     orderBy: 'startTime',
     maxResults: '250',
   })
-  const res = await gfetch(
+  const res = await gfetch(teacherId,
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`
   )
   if (!res.ok) throw new Error(`Busy fetch failed: ${await res.text()}`)
@@ -299,7 +304,7 @@ export async function getBusyIntervals(
 export type BookingResult = { eventId: string; htmlLink: string; meetUrl: string | null }
 
 /** Create a booking event on the teacher's calendar, optionally with a Meet link. */
-export async function createBookingEvent(opts: {
+export async function createBookingEvent(teacherId: string, opts: {
   summary: string
   description?: string
   startUTC: string // ISO
@@ -310,7 +315,7 @@ export async function createBookingEvent(opts: {
   addMeet: boolean
   location?: string // e.g. a Zoom join URL
 }): Promise<BookingResult> {
-  const token = await getValidAccessToken()
+  const token = await getValidAccessToken(teacherId)
   if (!token) throw new Error('Not connected')
   const calendarId = token.calendarId || 'primary'
 
@@ -332,7 +337,7 @@ export async function createBookingEvent(opts: {
   }
 
   const params = new URLSearchParams({ conferenceDataVersion: '1', sendUpdates: 'all' })
-  const res = await gfetch(
+  const res = await gfetch(teacherId,
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`,
     {
       method: 'POST',

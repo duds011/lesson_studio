@@ -13,12 +13,12 @@ type Overrides = { studentName?: string; lessonDate?: string; lessonTitle?: stri
  * transcript → measured metrics → OpenAI → stored draft. Lesson metadata falls
  * back to the bot record / existing draft so the student linkage is preserved.
  */
-export async function buildRecapDraft(eventId: string, overrides: Overrides = {}): Promise<BuildResult> {
-  const bots = await getBots()
+export async function buildRecapDraft(teacherId: string, eventId: string, overrides: Overrides = {}): Promise<BuildResult> {
+  const bots = await getBots(teacherId)
   const bot = bots[eventId]
   if (!bot) return { ok: false, error: 'No bot found for this lesson.', status: 404 }
 
-  const prev = (await getRecaps())[eventId]
+  const prev = (await getRecaps(teacherId))[eventId]
   const name = overrides.studentName || bot.studentName || prev?.studentName || 'Student'
   const date = overrides.lessonDate || bot.lessonDate || prev?.lessonDate
   const title = overrides.lessonTitle || bot.lessonTitle || prev?.lessonTitle
@@ -33,7 +33,7 @@ export async function buildRecapDraft(eventId: string, overrides: Overrides = {}
   // model's estimate — raw JP token counting is unreliable.
   recap.metrics = t.metrics
 
-  await saveRecap({
+  await saveRecap(teacherId, {
     eventId,
     studentName: name,
     recap,

@@ -9,7 +9,7 @@ type Admin = { from: (t: string) => any }
 
 export interface LinkedStudent { studentId: string; teacherId: string; fullName: string; email: string | null }
 
-export async function mapEventToStudent(admin: Admin, eventId: string, attendeeEmails: string[] = []): Promise<LinkedStudent | null> {
+export async function mapEventToStudent(admin: Admin, eventId: string, attendeeEmails: string[] = [], teacherId?: string): Promise<LinkedStudent | null> {
   let studentId: string | null = null
 
   // 1. Explicit manual link set by the teacher wins.
@@ -24,7 +24,10 @@ export async function mapEventToStudent(admin: Admin, eventId: string, attendeeE
 
   if (!studentId && attendeeEmails.length) {
     const emails = attendeeEmails.map((e) => e.toLowerCase())
-    const { data: s } = await admin.from('students').select('id').in('email', emails).limit(1).maybeSingle()
+    // Scope by teacher so two teachers with a same-email student don't cross-match.
+    let q = admin.from('students').select('id').in('email', emails)
+    if (teacherId) q = q.eq('teacher_id', teacherId)
+    const { data: s } = await q.limit(1).maybeSingle()
     if (s?.id) studentId = s.id
   }
   if (!studentId) return null

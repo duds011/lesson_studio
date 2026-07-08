@@ -49,6 +49,6 @@ export async function saveAvailability(input: BookingOverrides): Promise<Result>
     dateOverrides,
   }
 
-  await saveBookingOverrides(clean)
+  await saveBookingOverrides(user.id, clean)
   return { success: true }
 }

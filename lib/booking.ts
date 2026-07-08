@@ -55,9 +55,9 @@ export const BOOKING = DEFAULT_BOOKING
 // The teacher may edit everything except the timezone (fixed +09:00 Tokyo).
 export type BookingOverrides = Partial<Omit<BookingConfig, 'tz' | 'offset'>>
 
-/** Current effective booking config: stored overrides merged over defaults. */
-export async function getBookingConfig(): Promise<BookingConfig> {
-  const stored = await readDoc<BookingOverrides>('availability')
+/** Current effective booking config for a teacher: overrides merged over defaults. */
+export async function getBookingConfig(teacherId: string): Promise<BookingConfig> {
+  const stored = await readDoc<BookingOverrides>(`availability:${teacherId}`)
   return {
     ...DEFAULT_BOOKING,
     ...(stored ?? {}),
@@ -66,8 +66,8 @@ export async function getBookingConfig(): Promise<BookingConfig> {
   }
 }
 
-export async function saveBookingOverrides(o: BookingOverrides): Promise<void> {
-  await writeDoc('availability', o)
+export async function saveBookingOverrides(teacherId: string, o: BookingOverrides): Promise<void> {
+  await writeDoc(`availability:${teacherId}`, o)
 }
 
 const MIN = 60_000
