@@ -114,104 +114,92 @@ export default async function StudentDashboard() {
       {/* How to pay the teacher (manual methods) */}
       <PaymentMethodsPanel methods={paymentMethods} />
 
-      {/* Progress stats */}
-      <div className="analytics-grid analytics-grid-compact">
-        <div className="analytics-card">
-          <span className="analytics-label">Lessons</span>
-          <div className="analytics-value" style={{ color: 'var(--brand)' }}>{lessonCount}</div>
-        </div>
-        <div className="analytics-card">
-          <span className="analytics-label">Latest Score</span>
-          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {latestScore ?? '—'}<span className="analytics-unit">/10</span>
+      {/* Snapshot: stat strip + slim milestone footer */}
+      <div className="analytics-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="stat-strip">
+          <div className="stat-cell">
+            <span className="k">Lessons</span>
+            <div className="v" style={{ color: 'var(--brand)' }}>{lessonCount}</div>
           </div>
-          <span style={{ fontSize: 10, color: 'var(--muted)' }}>{scoreDelta} since lesson 1</span>
-        </div>
-        <div className="analytics-card">
-          <span className="analytics-label">Avg Score</span>
-          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {avgScore != null ? avgScore.toFixed(1) : '—'}<span className="analytics-unit">/10</span>
+          <div className="stat-cell">
+            <span className="k">Latest Score</span>
+            <div className="v">{latestScore ?? '—'}<span className="u">/10</span></div>
+            <span className={`d ${scoreDelta.startsWith('+') && scoreDelta !== '+0.0' ? 'up' : ''}`}>{scoreDelta} since L1</span>
+          </div>
+          <div className="stat-cell">
+            <span className="k">Avg Score</span>
+            <div className="v">{avgScore != null ? avgScore.toFixed(1) : '—'}<span className="u">/10</span></div>
+          </div>
+          <div className="stat-cell">
+            <span className="k">You Talk</span>
+            <div className="v">{latestTalk ?? '—'}<span className="u">%</span></div>
+            {talkDelta !== null && <span className={`d ${talkDelta > 0 ? 'up' : ''}`}>{talkDelta >= 0 ? '+' : ''}{talkDelta}% since L1</span>}
+          </div>
+          <div className="stat-cell">
+            <span className="k">Thinking</span>
+            <div className="v">{avgThinkSec != null ? avgThinkSec.toFixed(1) : '—'}<span className="u">s</span></div>
+            <span className="d">avg before reply</span>
+          </div>
+          <div className="stat-cell">
+            <span className="k">Pace</span>
+            <div className="v">{avgWpm != null ? Math.round(avgWpm) : '—'}<span className="u">wpm</span></div>
+            <span className="d">avg words / min</span>
+          </div>
+          <div className="stat-cell">
+            <span className="k">Answers</span>
+            <div className="v">{avgTurnWords != null ? Math.round(avgTurnWords) : '—'}<span className="u">words</span></div>
+            <span className="d">avg per answer</span>
           </div>
         </div>
-        <div className="analytics-card">
-          <span className="analytics-label">You Talk</span>
-          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {latestTalk ?? '—'}<span className="analytics-unit">%</span>
-          </div>
-          {talkDelta !== null && (
-            <span style={{ fontSize: 10, color: 'var(--muted)' }}>{talkDelta >= 0 ? '+' : ''}{talkDelta}% since lesson 1</span>
-          )}
-        </div>
-        <div className="analytics-card">
-          <span className="analytics-label">Thinking Time</span>
-          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {avgThinkSec != null ? avgThinkSec.toFixed(1) : '—'}<span className="analytics-unit">s</span>
-          </div>
-          <span style={{ fontSize: 10, color: 'var(--muted)' }}>avg before you reply</span>
-        </div>
-        <div className="analytics-card">
-          <span className="analytics-label">Speaking Pace</span>
-          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {avgWpm != null ? Math.round(avgWpm) : '—'}<span className="analytics-unit">wpm</span>
-          </div>
-          <span style={{ fontSize: 10, color: 'var(--muted)' }}>avg words / min</span>
-        </div>
-        <div className="analytics-card">
-          <span className="analytics-label">Answer Length</span>
-          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {avgTurnWords != null ? Math.round(avgTurnWords) : '—'}<span className="analytics-unit">words</span>
-          </div>
-          <span style={{ fontSize: 10, color: 'var(--muted)' }}>avg words / answer</span>
-        </div>
-      </div>
 
-      {/* Milestone track */}
-      <div className="analytics-card" style={{ padding: 20 }}>
-        <div style={{ position: 'relative', padding: '2.5rem 12px 1.75rem' }}>
-          <div style={{ position: 'relative', height: 6, background: 'var(--surface-2)', borderRadius: 999 }}>
-            <div style={{ position: 'absolute', height: '100%', borderRadius: 999, transition: '.7s', width: `${Math.min((lessonCount / 50) * 100, 100)}%`, background: 'linear-gradient(90deg, var(--brand), #8b5cf6)' }} />
-            {MILESTONES.map((m, i) => {
-              const pct = (m / 50) * 100
-              const reached = lessonCount >= m
-              return (
-                <div key={m} style={{ position: 'absolute', top: '50%', transform: 'translate(-50%,-50%)', left: `${pct}%` }}>
-                  <span style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', fontSize: 16, lineHeight: 1 }}>{MILESTONE_EMOJIS[i]}</span>
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid', borderColor: reached ? 'var(--brand)' : 'var(--line-strong)', background: reached ? 'var(--brand)' : '#fff' }} />
-                  <span style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{m}</span>
-                </div>
-              )
-            })}
+        <div className="milestone-slim">
+          <span className="milestone-now" title={levelLabel}>
+            {MILESTONE_EMOJIS[Math.max(0, MILESTONES.filter((m) => lessonCount >= m).length - 1)]}
+          </span>
+          <div className="milestone-track">
+            <div className="milestone-fill" style={{ width: `${Math.min((lessonCount / 50) * 100, 100)}%` }} />
+            {MILESTONES.map((m, i) => (
+              <span
+                key={m}
+                className={`milestone-dot ${lessonCount >= m ? 'hit' : ''}`}
+                style={{ left: `${(m / 50) * 100}%` }}
+                title={`${MILESTONE_EMOJIS[i]} ${m} lessons`}
+              />
+            ))}
           </div>
+          <span className="milestone-next">
+            {nextMilestone > lessonCount
+              ? `${nextMilestone - lessonCount} more to ${MILESTONE_EMOJIS[MILESTONES.indexOf(nextMilestone)]} ${getLevelLabel(nextMilestone)}`
+              : '🏆 Max milestone reached'}
+          </span>
         </div>
-        <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', margin: 0 }}>
-          {nextMilestone > lessonCount
-            ? `${nextMilestone - lessonCount} more lesson${nextMilestone - lessonCount !== 1 ? 's' : ''} to unlock ${MILESTONE_EMOJIS[MILESTONES.indexOf(nextMilestone)]} ${levelLabel}`
-            : '🏆 Maximum milestone reached!'}
-        </p>
       </div>
 
       {/* Vocabulary breakdown */}
       {totalVocab > 0 && <VocabLevelBreakdown distribution={vocabDistribution} totalCount={totalVocab} />}
 
-      {/* Charts (need ≥2 lessons) */}
+      {/* Progress sparklines (need ≥2 lessons) */}
       {lessonCount >= 2 && (
-        <ProgressCharts
-          lessons={rows.map((l) => {
-            const s = summaryOf(l)
-            const dist = s?.vocab_level_distribution
-            const distSum = dist && typeof dist === 'object' ? Object.values(dist).reduce((a: number, b: any) => a + Number(b), 0) : 0
-            const vocabCount = s?.vocab_total_count ?? (distSum > 0 ? distSum : (l.vocabulary_items?.length ?? 0))
-            const metrics = s?.recap_json?.metrics || {}
-            return {
-              lessonNumber: l.lesson_number,
-              score: s?.score ?? null,
-              talkPct: s?.talk_percentage ?? null,
-              vocabCount,
-              wpm: metrics.studentWpm ?? null,
-              responseSec: metrics.avgResponseSec ?? null,
-            }
-          })}
-        />
+        <section>
+          <h2 className="section-heading" style={{ margin: '4px 0 11px' }}>Your progress</h2>
+          <ProgressCharts
+            lessons={rows.map((l) => {
+              const s = summaryOf(l)
+              const dist = s?.vocab_level_distribution
+              const distSum = dist && typeof dist === 'object' ? Object.values(dist).reduce((a: number, b: any) => a + Number(b), 0) : 0
+              const vocabCount = s?.vocab_total_count ?? (distSum > 0 ? distSum : (l.vocabulary_items?.length ?? 0))
+              const metrics = s?.recap_json?.metrics || {}
+              return {
+                lessonNumber: l.lesson_number,
+                score: s?.score ?? null,
+                talkPct: s?.talk_percentage ?? null,
+                vocabCount,
+                wpm: metrics.studentWpm ?? null,
+                responseSec: metrics.avgResponseSec ?? null,
+              }
+            })}
+          />
+        </section>
       )}
 
       {/* Lessons */}

@@ -1,11 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  ComposedChart, Bar, Line, BarChart,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine,
-} from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 interface ChartLesson {
   lessonNumber: number
@@ -16,187 +11,106 @@ interface ChartLesson {
   responseSec?: number | null
 }
 
-const GREEN = '#10b981'
-const AMBER = '#f59e0b'
-
 interface Props {
   lessons: ChartLesson[] // descending order — we reverse for charts
 }
 
 const BRAND = '#6259e8'
 const PURPLE = '#8b5cf6'
+const GREEN = '#10b981'
+const AMBER = '#f59e0b'
+const PINK = '#ec4899'
 
-function CustomTooltip({ active, payload, label, suffix = '', label2 = '' }: any) {
+function SparkTooltip({ active, payload, label, suffix = '' }: any) {
   if (!active || !payload?.length) return null
-  const val = payload.find((p: any) => p.type === 'bar')?.value ?? payload[0]?.value
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 11, boxShadow: 'var(--shadow)', padding: '8px 11px', fontSize: 11 }}>
-      <p style={{ color: 'var(--muted)', margin: '0 0 3px', fontWeight: 700 }}>Lesson {label}</p>
-      <p style={{ color: 'var(--ink)', margin: 0, fontWeight: 800 }}>{val}{suffix} {label2}</p>
+    <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 9, boxShadow: 'var(--shadow)', padding: '5px 9px', fontSize: 10.5, lineHeight: 1.4 }}>
+      <span style={{ color: 'var(--muted)', fontWeight: 700 }}>L{label} · </span>
+      <span style={{ color: 'var(--ink)', fontWeight: 800 }}>{payload[0].value}{suffix}</span>
+    </div>
+  )
+}
+
+function Spark({
+  label, data, dataKey, color, suffix = '', domain, lowerIsBetter = false, format,
+}: {
+  label: string
+  data: any[]
+  dataKey: string
+  color: string
+  suffix?: string
+  domain?: [number, number]
+  lowerIsBetter?: boolean
+  format?: (v: number) => string | number
+  }) {
+  const vals = data.map((d) => d[dataKey]).filter((v) => v != null) as number[]
+  if (vals.length === 0) return null
+  const latest = vals[vals.length - 1]
+  const delta = vals.length > 1 ? latest - vals[0] : 0
+  const improved = lowerIsBetter ? delta < 0 : delta > 0
+  const fmt = format ?? ((v: number) => v)
+  const gid = `spark-${dataKey}`
+
+  return (
+    <div className="spark-tile">
+      <div className="spark-head">
+        <span className="spark-label">{label}</span>
+        <span className="spark-value" style={{ color }}>
+          {fmt(latest)}<span className="spark-unit">{suffix}</span>
+        </span>
+      </div>
+      {delta !== 0 && (
+        <span className={`spark-delta ${improved ? 'up' : 'down'}`}>
+          {delta > 0 ? '▲' : '▼'} {fmt(Math.abs(delta))}{suffix} since L{data[0].lessonNumber}
+        </span>
+      )}
+      {vals.length < 2 ? (
+        <div className="spark-empty">Trend appears after your next lesson</div>
+      ) : (
+      <div className="spark-chart">
+        <ResponsiveContainer width="100%" height={56}>
+          <AreaChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 0 }}>
+            <defs>
+              <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.32} />
+                <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="lessonNumber" hide />
+            <YAxis domain={domain ?? ['auto', 'auto']} hide />
+            <Tooltip content={<SparkTooltip suffix={suffix} />} cursor={{ stroke: color, strokeOpacity: 0.25 }} />
+            <Area
+              type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2}
+              fill={`url(#${gid})`} connectNulls
+              dot={{ r: 2.5, fill: color, stroke: '#fff', strokeWidth: 1.5 }}
+              activeDot={{ r: 4, fill: color, stroke: '#fff', strokeWidth: 2 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      )}
     </div>
   )
 }
 
 export default function ProgressCharts({ lessons }: Props) {
-  const [open, setOpen] = useState(true)
-
   if (lessons.length < 2) return null
 
   const data = [...lessons].reverse() // chronological
 
   let running = 0
-  const vocabData = data.map((l) => {
+  const withVocab = data.map((l) => {
     running += l.vocabCount
-    return { lessonNumber: l.lessonNumber, cumVocab: running, newWords: l.vocabCount }
+    return { ...l, cumVocab: running }
   })
 
-  const hasScores = data.some((l) => l.score !== null)
-  const hasTalk = data.some((l) => l.talkPct !== null)
-  const hasWpm = data.some((l) => l.wpm != null)
-  const hasResp = data.some((l) => l.responseSec != null)
-
   return (
-    <div style={{ marginTop: 24 }}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="btn btn-ghost"
-        style={{ width: '100%', justifyContent: 'center', gap: 8, background: 'var(--brand-soft)', borderColor: 'transparent', color: 'var(--brand)', marginBottom: open ? 14 : 0 }}
-      >
-        <span>Progress charts</span>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: '.2s' }}>
-          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-
-      {open && (
-        <div style={{ display: 'grid', gap: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: hasScores && hasTalk ? 'repeat(2, minmax(0,1fr))' : '1fr', gap: 14 }}>
-            {hasScores && (
-              <div className="analytics-card" style={{ padding: 18 }}>
-                <p className="analytics-label" style={{ marginBottom: 12 }}>📈 Score Progress</p>
-                <ResponsiveContainer width="100%" height={160}>
-                  <ComposedChart data={data} margin={{ top: 4, right: 4, left: -22, bottom: 0 }} barSize={22}>
-                    <defs>
-                      <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={BRAND} stopOpacity={0.55} />
-                        <stop offset="100%" stopColor={BRAND} stopOpacity={0.12} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                    <XAxis dataKey="lessonNumber" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(n) => `L${n}`} axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 10]} ticks={[0, 5, 10]} tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                    <ReferenceLine y={7} stroke="#e0e7ff" strokeDasharray="4 3" />
-                    <Tooltip content={<CustomTooltip suffix="/10" label2="score" />} />
-                    <Bar dataKey="score" fill="url(#sg)" radius={[4, 4, 0, 0]} />
-                    <Line type="monotone" dataKey="score" stroke={BRAND} strokeWidth={2} dot={{ fill: BRAND, r: 3, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 5, fill: BRAND, stroke: '#fff', strokeWidth: 2 }} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {hasTalk && (
-              <div className="analytics-card" style={{ padding: 18 }}>
-                <p className="analytics-label" style={{ marginBottom: 12 }}>🗣️ Your Talk Time</p>
-                <ResponsiveContainer width="100%" height={160}>
-                  <ComposedChart data={data} margin={{ top: 4, right: 4, left: -22, bottom: 0 }} barSize={22}>
-                    <defs>
-                      <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={PURPLE} stopOpacity={0.55} />
-                        <stop offset="100%" stopColor={PURPLE} stopOpacity={0.12} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                    <XAxis dataKey="lessonNumber" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(n) => `L${n}`} axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 100]} ticks={[0, 50, 100]} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => `${v}%`} axisLine={false} tickLine={false} />
-                    <ReferenceLine y={50} stroke="#ede9fe" strokeDasharray="4 3" />
-                    <Tooltip content={<CustomTooltip suffix="%" label2="talk time" />} />
-                    <Bar dataKey="talkPct" fill="url(#tg)" radius={[4, 4, 0, 0]} />
-                    <Line type="monotone" dataKey="talkPct" stroke={PURPLE} strokeWidth={2} dot={{ fill: PURPLE, r: 3, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 5, fill: PURPLE, stroke: '#fff', strokeWidth: 2 }} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-
-          {(hasWpm || hasResp) && (
-            <div style={{ display: 'grid', gridTemplateColumns: hasWpm && hasResp ? 'repeat(2, minmax(0,1fr))' : '1fr', gap: 14 }}>
-              {hasWpm && (
-                <div className="analytics-card" style={{ padding: 18 }}>
-                  <p className="analytics-label" style={{ marginBottom: 12 }}>⚡ Speaking Pace <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(words/min)</span></p>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <ComposedChart data={data} margin={{ top: 4, right: 4, left: -22, bottom: 0 }} barSize={22}>
-                      <defs>
-                        <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={GREEN} stopOpacity={0.55} />
-                          <stop offset="100%" stopColor={GREEN} stopOpacity={0.12} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                      <XAxis dataKey="lessonNumber" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(n) => `L${n}`} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                      <Tooltip content={<CustomTooltip label2="wpm" />} />
-                      <Bar dataKey="wpm" fill="url(#wg)" radius={[4, 4, 0, 0]} />
-                      <Line type="monotone" dataKey="wpm" stroke={GREEN} strokeWidth={2} dot={{ fill: GREEN, r: 3, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 5, fill: GREEN, stroke: '#fff', strokeWidth: 2 }} connectNulls />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {hasResp && (
-                <div className="analytics-card" style={{ padding: 18 }}>
-                  <p className="analytics-label" style={{ marginBottom: 12 }}>⏱️ Thinking Time <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(lower is faster)</span></p>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <ComposedChart data={data} margin={{ top: 4, right: 4, left: -22, bottom: 0 }} barSize={22}>
-                      <defs>
-                        <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={AMBER} stopOpacity={0.55} />
-                          <stop offset="100%" stopColor={AMBER} stopOpacity={0.12} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                      <XAxis dataKey="lessonNumber" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(n) => `L${n}`} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}s`} />
-                      <Tooltip content={<CustomTooltip suffix="s" label2="to reply" />} />
-                      <Bar dataKey="responseSec" fill="url(#rg)" radius={[4, 4, 0, 0]} />
-                      <Line type="monotone" dataKey="responseSec" stroke={AMBER} strokeWidth={2} dot={{ fill: AMBER, r: 3, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 5, fill: AMBER, stroke: '#fff', strokeWidth: 2 }} connectNulls />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="analytics-card" style={{ padding: 18 }}>
-            <p className="analytics-label" style={{ marginBottom: 12 }}>📖 Vocabulary Growth</p>
-            <ResponsiveContainer width="100%" height={130}>
-              <BarChart data={vocabData} margin={{ top: 4, right: 4, left: -22, bottom: 0 }} barSize={20}>
-                <defs>
-                  <linearGradient id="vg" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND} stopOpacity={1} />
-                    <stop offset="100%" stopColor={PURPLE} stopOpacity={0.7} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                <XAxis dataKey="lessonNumber" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(n) => `L${n}`} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  content={({ active, payload, label }: any) => {
-                    if (!active || !payload?.length) return null
-                    return (
-                      <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 11, boxShadow: 'var(--shadow)', padding: '8px 11px', fontSize: 11 }}>
-                        <p style={{ color: 'var(--muted)', margin: '0 0 3px', fontWeight: 700 }}>Lesson {label}</p>
-                        <p style={{ color: 'var(--ink)', margin: 0, fontWeight: 800 }}>{payload[0].value} total words</p>
-                        <p style={{ color: 'var(--muted)', margin: 0 }}>+{payload[0].payload.newWords} this lesson</p>
-                      </div>
-                    )
-                  }}
-                />
-                <Bar dataKey="cumVocab" fill="url(#vg)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
+    <div className="spark-grid">
+      <Spark label="Score" data={withVocab} dataKey="score" color={BRAND} suffix="/10" domain={[0, 10]} format={(v) => v.toFixed(1)} />
+      <Spark label="You talk" data={withVocab} dataKey="talkPct" color={PURPLE} suffix="%" domain={[0, 100]} />
+      <Spark label="Pace" data={withVocab} dataKey="wpm" color={GREEN} suffix=" wpm" />
+      <Spark label="Thinking" data={withVocab} dataKey="responseSec" color={AMBER} suffix="s" lowerIsBetter />
+      <Spark label="Vocabulary" data={withVocab} dataKey="cumVocab" color={PINK} suffix=" words" />
     </div>
   )
 }

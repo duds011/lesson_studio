@@ -24,23 +24,19 @@ export default function VocabLevelBreakdown({
   })).filter((l) => l.count > 0)
 
   return (
-    <div className="analytics-card" style={{ padding: 18 }}>
-      <p className="analytics-label" style={{ marginBottom: 12 }}>🧩 Vocabulary by JLPT level</p>
-
-      <div style={{ display: 'flex', height: 12, borderRadius: 999, overflow: 'hidden', background: 'var(--surface-2)' }}>
+    <div className="vocab-line analytics-card">
+      <span className="vocab-line-label">
+        Vocabulary <strong>{totalCount}</strong>
+      </span>
+      <div className="vocab-line-bar" role="img" aria-label={`Vocabulary by JLPT level: ${levels.map((l) => `${l.level} ${l.count}`).join(', ')}`}>
         {levels.map((l) => (
           <div key={l.level} style={{ width: `${l.pct}%`, background: JLPT_COLORS[l.level] }} title={`${l.level}: ${l.count}`} />
         ))}
       </div>
-
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+      <div className="vocab-line-chips">
         {levels.map((l) => (
-          <span
-            key={l.level}
-            className="jlpt"
-            style={{ background: JLPT_COLORS[l.level] + '18', color: JLPT_COLORS[l.level], border: `1px solid ${JLPT_COLORS[l.level]}35` }}
-          >
-            {l.level} · {l.count}
+          <span key={l.level} className="vocab-chip" style={{ color: JLPT_COLORS[l.level] }}>
+            <i style={{ background: JLPT_COLORS[l.level] }} />{l.level} {l.count}
           </span>
         ))}
       </div>
