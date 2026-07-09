@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { formatDateShort, ordinal } from '@/lib/portal-utils'
+import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import { getStudentCredits } from '@/lib/credits'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
@@ -27,7 +27,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
     .from('lessons')
     .select(`
       id, lesson_number, lesson_date, title, status,
-      lesson_summaries ( score, talk_percentage, recap, vocab_level_distribution, vocab_total_count ),
+      lesson_summaries ( score, talk_percentage, recap, recap_json, vocab_level_distribution, vocab_total_count ),
       vocabulary_items ( id )
     `)
     .eq('student_id', student.id)
@@ -109,7 +109,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
                 <Link key={lesson.id} href={`/teacher/students/${student.id}/lessons/${lesson.id}`} className="lesson-card">
                   <div className="lc-num">L{lesson.lesson_number}</div>
                   <div>
-                    <div className="lc-title">{lesson.title || `Lesson ${lesson.lesson_number}`}</div>
+                    <div className="lc-title">{lessonDisplayTitle(s?.recap_json, lesson.title, lesson.lesson_number)}</div>
                     <div className="lc-meta">{ordinal(lesson.lesson_number)} lesson · {formatDateShort(lesson.lesson_date)}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

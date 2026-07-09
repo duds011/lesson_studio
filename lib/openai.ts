@@ -17,6 +17,7 @@ export type Exercise = { type: string; prompt: string; data: any }
 export type Section = { title: string; content: string }
 
 export type Recap = {
+  lesson_title: string
   recap: string
   score: number
   talk_percentage: number
@@ -60,6 +61,7 @@ Student: {{STUDENT}}
 
 Return this exact structure. Replace ALL bracketed placeholders with calculated values — never copy placeholder text:
 {
+  "lesson_title": "[short clean lesson title — follow LESSON TITLE rules below]",
   "recap": "[Full formatted lesson recap — follow RECAP FORMAT below]",
   "score": [calculated 0.0-10.0],
   "talk_percentage": [estimated integer 0-100],
@@ -89,6 +91,9 @@ VOCABULARY DETECTION — for vocab_total_count and vocab_level_distribution:
 - Include words, grammar patterns, particles, expressions, set phrases, and counter words.
 - vocab_total_count: total number of distinct items found.
 - vocab_level_distribution: count of items per JLPT level. Include all 5 levels even if count is 0.
+
+LESSON TITLE — for the "lesson_title" field:
+A short, clean, student-facing title (3-7 words, English, Title Case) naming what the lesson covered — like a textbook chapter heading. Examples: "Contrasting Ideas & Giving Reasons", "Making Comparisons and Strong Advice", "Greetings and Self Introduction". NO student/teacher names, NO dates, NO lesson numbers, NO quotes.
 
 RECAP FORMAT — for the "recap" field:
 Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name the lesson's main topic and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, romaji blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.

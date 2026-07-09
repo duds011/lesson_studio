@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStudentCredits } from '@/lib/credits'
 import { getTeacherPaymentMethods } from '@/lib/payment-methods'
-import { formatDateShort, getLevelLabel, ordinal } from '@/lib/portal-utils'
+import { formatDateShort, getLevelLabel, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
@@ -65,6 +65,15 @@ export default async function StudentDashboard() {
   const firstTalk = talks[talks.length - 1] ?? null
   const talkDelta = latestTalk != null && firstTalk != null ? latestTalk - firstTalk : null
 
+  // Speaking metrics averaged across all lessons (from recap_json.metrics).
+  const metricAvg = (key: string) => {
+    const vals = rows.map((l) => summaryOf(l)?.recap_json?.metrics?.[key]).filter((v) => typeof v === 'number') as number[]
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
+  }
+  const avgThinkSec = metricAvg('avgResponseSec')
+  const avgWpm = metricAvg('studentWpm')
+  const avgTurnWords = metricAvg('avgTurnWords')
+
   // Aggregate the full GPT-detected vocab distribution across lessons.
   const vocabDistribution: Record<string, number> = {}
   for (const l of rows) {
@@ -106,7 +115,7 @@ export default async function StudentDashboard() {
       <PaymentMethodsPanel methods={paymentMethods} />
 
       {/* Progress stats */}
-      <div className="analytics-grid">
+      <div className="analytics-grid analytics-grid-compact">
         <div className="analytics-card">
           <span className="analytics-label">Lessons</span>
           <div className="analytics-value" style={{ color: 'var(--brand)' }}>{lessonCount}</div>
@@ -114,24 +123,45 @@ export default async function StudentDashboard() {
         <div className="analytics-card">
           <span className="analytics-label">Latest Score</span>
           <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {latestScore ?? '—'}<span style={{ fontSize: 15, fontWeight: 400, color: 'var(--muted)' }}>/10</span>
+            {latestScore ?? '—'}<span className="analytics-unit">/10</span>
           </div>
           <span style={{ fontSize: 10, color: 'var(--muted)' }}>{scoreDelta} since lesson 1</span>
         </div>
         <div className="analytics-card">
           <span className="analytics-label">Avg Score</span>
           <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {avgScore != null ? avgScore.toFixed(1) : '—'}<span style={{ fontSize: 15, fontWeight: 400, color: 'var(--muted)' }}>/10</span>
+            {avgScore != null ? avgScore.toFixed(1) : '—'}<span className="analytics-unit">/10</span>
           </div>
         </div>
         <div className="analytics-card">
           <span className="analytics-label">You Talk</span>
           <div className="analytics-value" style={{ color: 'var(--brand)' }}>
-            {latestTalk ?? '—'}<span style={{ fontSize: 15, fontWeight: 400, color: 'var(--muted)' }}>%</span>
+            {latestTalk ?? '—'}<span className="analytics-unit">%</span>
           </div>
           {talkDelta !== null && (
             <span style={{ fontSize: 10, color: 'var(--muted)' }}>{talkDelta >= 0 ? '+' : ''}{talkDelta}% since lesson 1</span>
           )}
+        </div>
+        <div className="analytics-card">
+          <span className="analytics-label">Thinking Time</span>
+          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
+            {avgThinkSec != null ? avgThinkSec.toFixed(1) : '—'}<span className="analytics-unit">s</span>
+          </div>
+          <span style={{ fontSize: 10, color: 'var(--muted)' }}>avg before you reply</span>
+        </div>
+        <div className="analytics-card">
+          <span className="analytics-label">Speaking Pace</span>
+          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
+            {avgWpm != null ? Math.round(avgWpm) : '—'}<span className="analytics-unit">wpm</span>
+          </div>
+          <span style={{ fontSize: 10, color: 'var(--muted)' }}>avg words / min</span>
+        </div>
+        <div className="analytics-card">
+          <span className="analytics-label">Answer Length</span>
+          <div className="analytics-value" style={{ color: 'var(--brand)' }}>
+            {avgTurnWords != null ? Math.round(avgTurnWords) : '—'}<span className="analytics-unit">words</span>
+          </div>
+          <span style={{ fontSize: 10, color: 'var(--muted)' }}>avg words / answer</span>
         </div>
       </div>
 
@@ -207,7 +237,7 @@ export default async function StudentDashboard() {
                     {s?.score != null && <span style={{ fontWeight: 800, color: 'var(--brand)', fontSize: 12 }}>{s.score}/10</span>}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 750, fontSize: 15, lineHeight: 1.3 }}>{lesson.title || `Lesson ${lesson.lesson_number}`}</div>
+                    <div style={{ fontWeight: 750, fontSize: 15, lineHeight: 1.3 }}>{lessonDisplayTitle(s?.recap_json, lesson.title, lesson.lesson_number)}</div>
                     <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{ordinal(lesson.lesson_number)} lesson · {formatDateShort(lesson.lesson_date)}</div>
                   </div>
                   {preview && <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>{preview}</p>}

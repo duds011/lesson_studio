@@ -5,20 +5,34 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter()
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setNotice('')
 
     const supabase = createClient()
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const origin = window.location.origin
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${origin}/teacher/dashboard`,
+        data: {
+          role: 'teacher',
+          full_name: fullName.trim(),
+        },
+      },
+    })
 
     if (authError) {
       setError(authError.message)
@@ -26,28 +40,39 @@ export default function LoginPage() {
       return
     }
 
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single()
-
-      router.push(profile?.role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')
+    if (data.session) {
+      router.push('/teacher/dashboard')
       router.refresh()
+      return
     }
+
+    setNotice('Check your email to confirm your account, then sign in.')
+    setLoading(false)
   }
 
   return (
     <main className="wrap page-fade" style={{ marginLeft: 0 }}>
-      <div className="connect-card" style={{ maxWidth: 440 }}>
+      <div className="connect-card" style={{ maxWidth: 460 }}>
         <div className="g-orb" style={{ background: 'var(--brand-soft)', borderColor: 'transparent' }}>
-          <span style={{ fontSize: 22 }}>📚</span>
+          <span style={{ fontSize: 22 }}>KL</span>
         </div>
-        <h1>Sign in</h1>
-        <p>Welcome back. Sign in to see your lessons, progress, and recaps.</p>
+        <h1>Create a teacher account</h1>
+        <p>Start your Koku Library workspace for students, lesson recaps, bookings, and progress tracking.</p>
 
-        <form onSubmit={handleLogin} style={{ marginTop: 22 }}>
+        <form onSubmit={handleSignup} style={{ marginTop: 22 }}>
+          <div className="field">
+            <label htmlFor="fullName">Full name</label>
+            <input
+              id="fullName"
+              type="text"
+              placeholder="Noa Tanaka"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              autoComplete="name"
+            />
+          </div>
+
           <div className="field">
             <label htmlFor="email">Email address</label>
             <input
@@ -66,11 +91,12 @@ export default function LoginPage() {
             <input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="At least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              autoComplete="current-password"
+              minLength={6}
+              autoComplete="new-password"
             />
           </div>
 
@@ -80,18 +106,24 @@ export default function LoginPage() {
             </div>
           )}
 
+          {notice && (
+            <div className="warn-box" style={{ marginTop: 12, borderColor: '#b8dec7', background: 'var(--green-soft)', color: 'var(--green)' }}>
+              {notice}
+            </div>
+          )}
+
           <button
             type="submit"
             className="btn btn-primary"
             disabled={loading}
             style={{ width: '100%', justifyContent: 'center', marginTop: 18, padding: '12px 14px' }}
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
         <p className="fineprint">
-          Teachers can <Link href="/signup" style={{ fontWeight: 800 }}>create an account</Link>. Students should ask their teacher for login details.
+          Already have an account? <Link href="/login" style={{ fontWeight: 800 }}>Sign in</Link>
         </p>
       </div>
     </main>

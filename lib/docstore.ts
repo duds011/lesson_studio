@@ -22,6 +22,7 @@ const KV_TOKEN =
 export const kvEnabled = Boolean(KV_URL && KV_TOKEN)
 
 const DATA_DIR = path.join(process.cwd(), '.data')
+const SEED_DATA_DIR = path.join(process.cwd(), 'content', 'runtime-data')
 
 async function kvCommand(args: (string | number)[]): Promise<any> {
   const res = await fetch(KV_URL as string, {
@@ -42,7 +43,11 @@ export async function readDoc<T = any>(name: string): Promise<T | null> {
   try {
     return JSON.parse(await fs.readFile(path.join(DATA_DIR, `${name}.json`), 'utf-8')) as T
   } catch {
-    return null
+    try {
+      return JSON.parse(await fs.readFile(path.join(SEED_DATA_DIR, `${name}.json`), 'utf-8')) as T
+    } catch {
+      return null
+    }
   }
 }
 

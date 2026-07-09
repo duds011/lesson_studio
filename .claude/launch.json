@@ -2,9 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "noa-lessons",
+      "name": "lesson-studio",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
+      "cwd": "C:\\Users\\854se\\Desktop\\KOKU LABS\\lesson studio app koku",
       "port": 3000
     }
   ]

@@ -41,7 +41,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   )
   const [note, setNote] = useState<string>(r.teacher_note || '')
   const [homework, setHomework] = useState<string[]>(((r.homework || []) as any[]).map((h) => h?.description || '').filter(Boolean))
-  const [busy, setBusy] = useState<'' | 'save' | 'publish'>('')
+  const [busy, setBusy] = useState<'' | 'save' | 'publish' | 'delete'>('')
   const [rebuilding, setRebuilding] = useState(false)
   const [msg, setMsg] = useState('')
 
@@ -72,6 +72,18 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
     }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Rebuild failed' }))
     if (!res.ok) { setRebuilding(false); setMsg(res.error || 'Rebuild failed'); return }
     window.location.reload() // pull the freshly generated recap
+  }
+
+  async function deleteDraft() {
+    if (!confirm(`Delete ${rec.studentName}'s draft recap? This removes it from Recaps to review and cannot be undone.`)) return
+    setBusy('delete'); setMsg('')
+    const res = await fetch('/api/recap', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: rec.eventId }),
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Could not delete recap' }))
+    if (!res.ok) { setBusy(''); setMsg(res.error || 'Could not delete recap'); return }
+    router.push('/'); router.refresh()
   }
 
   const first = rec.studentName.split(' ')[0]
@@ -224,6 +236,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
 
         <div className="review-actions">
           <span style={{ fontSize: 13, color: 'var(--green)', marginRight: 'auto' }}>{msg}</span>
+          <button className="btn btn-danger-ghost" disabled={busy !== ''} onClick={deleteDraft}>{busy === 'delete' ? 'Deleting...' : 'Delete draft'}</button>
           <Link href="/" className="btn btn-ghost">Cancel</Link>
           <button className="btn btn-ghost" disabled={busy !== ''} onClick={save}>{busy === 'save' ? 'Saving…' : 'Save draft'}</button>
           <button className="btn btn-green" disabled={busy !== ''} onClick={approve}>{busy === 'publish' ? 'Sending…' : 'Approve & send'}</button>

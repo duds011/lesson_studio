@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRecaps, setRecapStatus } from '@/lib/store'
+import { deleteRecap, dismissRecap, getRecaps, setRecapStatus } from '@/lib/store'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { mapEventToStudent } from '@/lib/lesson-link'
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     if (linked) {
       const recapObj: any = rec.recap || {}
       const lessonDate = rec.lessonDate ? rec.lessonDate.slice(0, 10) : new Date().toISOString().slice(0, 10)
-      const title = rec.lessonTitle || 'Lesson'
+      const title = (typeof recapObj.lesson_title === 'string' && recapObj.lesson_title.trim()) || rec.lessonTitle || 'Lesson'
 
       const { data: lessonRow, error: le } = await admin
         .from('lessons')
@@ -70,4 +70,21 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, delivered })
+}
+
+// Delete a draft recap that the teacher does not want to review/send.
+export async function DELETE(req: NextRequest) {
+  const { eventId } = await req.json()
+  if (!eventId) return NextResponse.json({ ok: false, error: 'Missing eventId' }, { status: 400 })
+
+  const all = await getRecaps()
+  const rec = all[eventId]
+  if (!rec) return NextResponse.json({ ok: false, error: 'No recap to delete' }, { status: 404 })
+  if (rec.status === 'published') {
+    return NextResponse.json({ ok: false, error: 'Published recaps cannot be deleted here' }, { status: 409 })
+  }
+
+  await deleteRecap(eventId)
+  await dismissRecap(eventId)
+  return NextResponse.json({ ok: true })
 }

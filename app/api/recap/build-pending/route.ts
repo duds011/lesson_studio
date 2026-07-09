@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getBots, getRecaps } from '@/lib/store'
+import { getBots, getDismissedRecaps, getRecaps } from '@/lib/store'
 import { friendlyStatus } from '@/lib/recall'
 import { buildRecapDraft } from '@/lib/build-recap'
 
@@ -10,8 +10,8 @@ export const maxDuration = 60
 // load: auto-build a draft recap for every finished recording that doesn't have
 // one yet, so recaps land in "Recaps to review" without a manual Build step.
 export async function POST() {
-  const [bots, recaps] = await Promise.all([getBots(), getRecaps()])
-  const pending = Object.values(bots).filter((b) => friendlyStatus(b.status).state === 'done' && !recaps[b.eventId])
+  const [bots, dismissed, recaps] = await Promise.all([getBots(), getDismissedRecaps(), getRecaps()])
+  const pending = Object.values(bots).filter((b) => friendlyStatus(b.status).state === 'done' && !recaps[b.eventId] && !dismissed[b.eventId])
 
   const built: string[] = []
   const failed: { eventId: string; error: string }[] = []

@@ -1,0 +1,14 @@
+# Keep runtime seed data in CLI deployments. Vercel uses .gitignore when this
+# file is absent, which would exclude .data and make seeded draft recaps vanish.
+
+.git
+.next
+node_modules
+dist
+*.log
+
+.env
+.env.local
+.env*.local
+.vercel
+.data

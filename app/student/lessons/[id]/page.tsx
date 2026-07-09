@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { formatDateShort, ordinal } from '@/lib/portal-utils'
+import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
 import LessonExchange from '@/components/portal/LessonExchange'
 
@@ -40,7 +40,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
       <div className="lesson-hero">
         <div>
           <div className="eyebrow">Lesson {l.lesson_number} · Recap</div>
-          <h1>{l.title || `Lesson ${l.lesson_number}`}</h1>
+          <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
           <div className="lesson-meta">
             <div className="meta-box"><div className="meta-label">Lesson</div><div className="meta-value">{ordinal(l.lesson_number)}</div></div>
             <div className="meta-box"><div className="meta-label">Date</div><div className="meta-value">{formatDateShort(l.lesson_date)}</div></div>

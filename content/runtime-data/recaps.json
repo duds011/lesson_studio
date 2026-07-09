@@ -1,0 +1,712 @@
+{
+  "4m33q8kcipcrb49618i6urj468": {
+    "eventId": "4m33q8kcipcrb49618i6urj468",
+    "studentName": "Jonh Pork",
+    "recap": {
+      "recap": "Lesson Recap — Greetings & Key Classroom Phrases\nToday we practiced common greetings and basic classroom Japanese. We learned how to say hello, introduce ourselves, give instructions, and explain simple reasons using から (kara).\nこんにちは\nkonnichiwa\nHello.\nはじめまして\nhajimemashite\nNice to meet you.\n起きてください\nokite kudasai\nPlease wake up.\nクラスで寝てはいけません\nkurasu de nete wa ikemasen\nYou must not sleep in class.\n教科書を持ってきてください\nkyoukasho o motte kite kudasai\nPlease bring your textbook.\n本を借ります\nhon o karimasu\n(I) borrow a book.\n６時に起きて勉強しました\nroku ji ni okite benkyou shimashita\n(I) got up at 6 and studied.\n写真を撮ってはいけません\nshashin o totte wa ikemasen\nYou must not take pictures.\nバスに乗りましょう\nbasu ni norimashou\nLet's ride the bus.\nテストがありますから、勉強します\ntesuto ga arimasu kara, benkyou shimasu\nI will study because there is a test.\nMain takeaway: Greetings, classroom language, giving reasons with から (kara), and using instructional and prohibitive forms.",
+      "score": 5,
+      "talk_percentage": 0,
+      "grammar_density": "Medium",
+      "confidence_label": "Building",
+      "teacher_note": "Great participation today, Jonh! You practiced greetings and followed classroom cues well. Let’s keep it up and challenge yourself to make more full Japanese sentences next time.",
+      "audio_script": "Hi Jonh, great work on today's lesson.\nWe started with greetings like こんにちは (konnichiwa) — hello. For meeting someone new, say はじめまして (hajimemashite) — nice to meet you.\nFor instructions, we practiced sentences like 起きてください (okite kudasai) — please wake up, and 教科書を持ってきてください (kyoukasho o motte kite kudasai) — please bring your textbook.\nWe also learned classroom rules: クラスで寝てはいけません (kurasu de nete wa ikemasen) — you must not sleep in class, and 写真を撮ってはいけません (shashin o totte wa ikemasen) — you must not take pictures.\nTo explain reasons, we used から (kara), as in テストがありますから、勉強します (tesuto ga arimasu kara, benkyou shimasu) — I will study because there is a test.\nHomework is to review these grammar patterns and use them in two new sentences.\nKeep going! You're off to a good start.",
+      "vocab_total_count": 17,
+      "vocab_level_distribution": {
+        "N5": 12,
+        "N4": 4,
+        "N3": 1,
+        "N2": 0,
+        "N1": 0
+      },
+      "vocabulary": [
+        {
+          "word": "こんにちは",
+          "reading": "konnichiwa",
+          "definition": "Hello.",
+          "explanation": "A polite and easy greeting for daytime use.",
+          "jlpt_level": "N5",
+          "example_sentence": "こんにちは。"
+        },
+        {
+          "word": "はじめまして",
+          "reading": "hajimemashite",
+          "definition": "Nice to meet you.",
+          "explanation": "This phrase is used when meeting someone for the first time.",
+          "jlpt_level": "N5",
+          "example_sentence": "はじめまして、ジョンです。"
+        },
+        {
+          "word": "ください",
+          "reading": "kudasai",
+          "definition": "Please (do something).",
+          "explanation": "Add after a verb to politely ask someone to do it.",
+          "jlpt_level": "N5",
+          "example_sentence": "起きてください。"
+        },
+        {
+          "word": "いけません",
+          "reading": "ikemasen",
+          "definition": "Is not allowed.",
+          "explanation": "Used with て-form verbs to say something is prohibited.",
+          "jlpt_level": "N5",
+          "example_sentence": "寝てはいけません。"
+        },
+        {
+          "word": "持ってきて",
+          "reading": "motte kite",
+          "definition": "Bring (something).",
+          "explanation": "Combines 'to hold' and 'to come', to mean 'bring'.",
+          "jlpt_level": "N5",
+          "example_sentence": "教科書を持ってきてください。"
+        },
+        {
+          "word": "本",
+          "reading": "hon",
+          "definition": "Book.",
+          "explanation": "Common word for any kind of book.",
+          "jlpt_level": "N5",
+          "example_sentence": "本を借ります。"
+        },
+        {
+          "word": "勉強します",
+          "reading": "benkyou shimasu",
+          "definition": "To study.",
+          "explanation": "Describes the act of studying or learning.",
+          "jlpt_level": "N5",
+          "example_sentence": "毎日勉強します。"
+        },
+        {
+          "word": "写真",
+          "reading": "shashin",
+          "definition": "Photo.",
+          "explanation": "Useful for talking about pictures or photography.",
+          "jlpt_level": "N5",
+          "example_sentence": "写真を撮ります。"
+        },
+        {
+          "word": "から",
+          "reading": "kara",
+          "definition": "Because.",
+          "explanation": "Put at the end of a clause to state the reason.",
+          "jlpt_level": "N5",
+          "example_sentence": "雨が降っているから、行きません。"
+        },
+        {
+          "word": "乗りましょう",
+          "reading": "norimashou",
+          "definition": "Let's ride.",
+          "explanation": "Invites others to ride a vehicle together.",
+          "jlpt_level": "N4",
+          "example_sentence": "バスに乗りましょう。"
+        }
+      ],
+      "homework": [
+        {
+          "description": "Write two sentences using から (kara) to explain a reason."
+        },
+        {
+          "description": "Practice reading the greeting phrases aloud three times each."
+        },
+        {
+          "description": "Memorize the classroom expressions (e.g., 起きてください, 持ってきてください, etc.)."
+        }
+      ],
+      "exercises": [
+        {
+          "type": "read_aloud",
+          "prompt": "Read these sentences aloud",
+          "data": {
+            "focus": "Classroom instructions and greetings",
+            "sentences": [
+              {
+                "jp": "こんにちは。",
+                "en": "Hello."
+              },
+              {
+                "jp": "はじめまして。",
+                "en": "Nice to meet you."
+              },
+              {
+                "jp": "教科書を持ってきてください。",
+                "en": "Please bring your textbook."
+              }
+            ]
+          }
+        },
+        {
+          "type": "speak",
+          "prompt": "Answer out loud",
+          "data": {
+            "prompt_jp": "なぜ勉強しますか？",
+            "prompt_en": "Why do you study?",
+            "hint": "Use から (kara) to give your reason."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "What does 「写真を撮ってはいけません」 mean?",
+            "options": [
+              "You can take pictures.",
+              "You must not take pictures.",
+              "Take only one picture."
+            ],
+            "answer": 1
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "How do you say 'nice to meet you' in Japanese?",
+            "options": [
+              "こんにちは",
+              "ありがとう",
+              "はじめまして"
+            ],
+            "answer": 2
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which particle is used for 'because'?",
+            "options": [
+              "ので",
+              "が",
+              "から"
+            ],
+            "answer": 2
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "バスに",
+            "after": "。",
+            "options": [
+              "のりましょう",
+              "ねましょう",
+              "たべましょう"
+            ],
+            "answer": "のりましょう",
+            "en": "Let's ride the bus."
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "きょうかしょを",
+            "after": "ください。",
+            "options": [
+              "みせて",
+              "もってきて",
+              "たべて"
+            ],
+            "answer": "もってきて",
+            "en": "Please bring your textbook."
+          }
+        }
+      ],
+      "sections": [
+        {
+          "title": "1. こんにちは: Hello",
+          "content": "We began with the simple greeting used any time during the day.\n- **こんにちは** *konnichiwa* — Hello\nExample:\nこんにちは。\nkonnichiwa.\nHello.\nImportant: Use with anyone, formal or informal."
+        },
+        {
+          "title": "2. はじめまして: Nice to Meet You",
+          "content": "This is the first phrase for introductions in Japanese.\n- **はじめまして** *hajimemashite* — Nice to meet you\nExample:\nはじめまして。\nhajimemashite.\nNice to meet you.\nImportant: Only use when meeting someone for the first time."
+        },
+        {
+          "title": "3. ください: Please (Do Something)",
+          "content": "Used after a verb te-form for requests or polite commands.\n- **ください** *kudasai* — Please (do)\nExample:\n起きてください。\nokite kudasai.\nPlease wake up.\n**Pattern:** verb-te + ください"
+        },
+        {
+          "title": "4. てはいけません: Must Not/Not Allowed",
+          "content": "This pattern shows prohibitions or rules. Attach to the te-form of verbs.\n- **てはいけません** *te wa ikemasen* — Must not\nExample:\nクラスで寝てはいけません。\nkurasu de nete wa ikemasen.\nYou must not sleep in class.\n**Pattern:** verb-te + はいけません"
+        },
+        {
+          "title": "5. 持ってきてください: Please Bring",
+          "content": "Combine verbs 持つ (to hold) and 来る (to come) for 'bring'.\n- **持ってきてください** *motte kite kudasai* — Please bring\nExample:\n教科書を持ってきてください。\nkyoukasho o motte kite kudasai.\nPlease bring your textbook."
+        },
+        {
+          "title": "6. 本を借ります: Borrow a Book",
+          "content": "Describes borrowing a book from a place.\n- **本** *hon* — Book\nExample:\n本を借ります。\nhon o karimasu.\nI borrow a book."
+        },
+        {
+          "title": "7. 勉強します: To Study",
+          "content": "The verb for study is useful in many situations.\n- **勉強します** *benkyou shimasu* — To study\nExample:\n６時に起きて勉強しました。\nroku ji ni okite benkyou shimashita.\nI got up at 6 and studied.\nTips: Pair with time words for practice."
+        },
+        {
+          "title": "8. 写真を撮ってはいけません: No Photos Allowed",
+          "content": "Forbids taking pictures in certain places.\n- **写真** *shashin* — Photo\nExample:\nここで写真を撮ってはいけません。\nkoko de shashin o totte wa ikemasen.\nYou must not take pictures here."
+        },
+        {
+          "title": "9. から: Because",
+          "content": "Used at the end of an explanation to show a reason.\n- **から** *kara* — Because\nExample:\nテストがありますから、勉強します。\ntesuto ga arimasu kara, benkyou shimasu.\nI will study because there is a test.\n**Pattern:** sentence + から"
+        },
+        {
+          "title": "10. 乗りましょう: Let's Ride",
+          "content": "Use the volitional form to make suggestions.\n- **乗りましょう** *norimashou* — Let's ride\nExample:\nバスに乗りましょう。\nbasu ni norimashou.\nLet's ride the bus.\nNatural note: Good for group plans."
+        },
+        {
+          "title": "Main Corrections & Refinements",
+          "content": "**こんにちは** / konnichiwa: Use this for greetings during the day.\n**はじめまして** / hajimemashite: Only say this at first meetings.\n**おきてください** / okite kudasai: Makes a gentle command.\n**ねてはいけません** / nete wa ikemasen: Means you must not sleep.\n**もってきてください** / motte kite kudasai: For 'please bring' instructions.\n**しゃしん** / shashin: Means photo or picture.\n**かり ます** / karimasu: To borrow (from).\n**から** / kara: Place at the end to mean 'because.'\n**のりましょう** / norimashou: Suggests an action together.\n**べんきょうします** / benkyou shimasu: Use for 'study'."
+        }
+      ]
+    },
+    "talk": [
+      {
+        "name": "Noa Nishimura",
+        "isHost": true,
+        "seconds": 191
+      }
+    ],
+    "studentTalkPct": 0,
+    "status": "draft",
+    "createdAt": 1782764982229
+  },
+  "jdfha54pad3pori7vtpk6h94s8": {
+    "eventId": "jdfha54pad3pori7vtpk6h94s8",
+    "studentName": "john pork",
+    "recap": {
+      "recap": "Lesson Recap — Introducing Yourself in Japanese\nToday, we practiced basic self-introductions. The key greeting is:\nこんにちは\nkon'nichiwa\nHello (Good afternoon)\nTo introduce yourself:\nわたしはジョン・ポークです。\nwatashi wa John Pork desu.\nI am John Pork.\nTo ask someone their name:\nおなまえはなんですか？\nonamae wa nan desu ka?\nWhat is your name?\nAnother fun expression:\nたまごがすきです。\ntamago ga suki desu.\nI like eggs.\nMain takeaway: Use simple, polite phrases like こんにちは and わたしは[Name]です when meeting someone new. Practice answering \"おなまえはなんですか？\" to get comfortable!",
+      "score": 3.6,
+      "talk_percentage": 17,
+      "grammar_density": "Low",
+      "confidence_label": "Developing",
+      "teacher_note": "Thanks for your effort in this session, John! You listened carefully and are starting to catch key phrases. Keep practicing saying them aloud—repetition will help your confidence and fluency grow. Looking forward to more of your speaking next time!",
+      "audio_script": "Hi John, great work on today's lesson. Today we learned こんにちは (kon'nichiwa) which means hello or good afternoon. Next, when introducing yourself, you can say わたしはジョン・ポークです (watashi wa John Pork desu) — I am John Pork. To ask for someone’s name, you can use おなまえはなんですか？ (onamae wa nan desu ka) — What is your name? We also practiced たまごがすきです (tamago ga suki desu) — I like eggs, which is a fun phrase to use in conversation. For homework, please review and repeat all the sentences we used today, practicing each one out loud. Keep up the good work, and see you next time!",
+      "vocab_total_count": 13,
+      "vocab_level_distribution": {
+        "N5": 7,
+        "N4": 3,
+        "N3": 3,
+        "N2": 0,
+        "N1": 0
+      },
+      "vocabulary": [
+        {
+          "word": "こんにちは",
+          "reading": "konnichiwa",
+          "definition": "Hello. Good afternoon.",
+          "explanation": "Use this when greeting someone politely during the day. It's a friendly, basic greeting.",
+          "jlpt_level": "N5",
+          "example_sentence": "こんにちは、わたしはジョンです。\nkonnichiwa, watashi wa John desu.\nHello, I am John."
+        },
+        {
+          "word": "わたし",
+          "reading": "watashi",
+          "definition": "I. Me.",
+          "explanation": "This is a polite way to say 'I' or 'me' in Japanese. Great for beginners!",
+          "jlpt_level": "N5",
+          "example_sentence": "わたしはがくせいです。\nwatashi wa gakusei desu.\nI am a student."
+        },
+        {
+          "word": "です",
+          "reading": "desu",
+          "definition": "Polite sentence ending.",
+          "explanation": "Attach 'desu' to make your sentences sound polite and complete.",
+          "jlpt_level": "N5",
+          "example_sentence": "わたしはジョンです。\nwatashi wa John desu.\nI am John."
+        },
+        {
+          "word": "おなまえ",
+          "reading": "onamae",
+          "definition": "Your name.",
+          "explanation": "This is a polite way to refer to someone else's name.",
+          "jlpt_level": "N4",
+          "example_sentence": "おなまえはなんですか？\nonamae wa nan desu ka?\nWhat is your name?"
+        },
+        {
+          "word": "なん",
+          "reading": "nan",
+          "definition": "What.",
+          "explanation": "A very common word to ask questions. Use it often!",
+          "jlpt_level": "N5",
+          "example_sentence": "これはなんですか？\nkore wa nan desu ka?\nWhat is this?"
+        },
+        {
+          "word": "たまご",
+          "reading": "tamago",
+          "definition": "Egg.",
+          "explanation": "A popular and important Japanese food. Fun to say!",
+          "jlpt_level": "N5",
+          "example_sentence": "たまごがすきです。\ntamago ga suki desu.\nI like eggs."
+        },
+        {
+          "word": "すき",
+          "reading": "suki",
+          "definition": "Like. Fond of.",
+          "explanation": "Use this to say you like or enjoy something.",
+          "jlpt_level": "N5",
+          "example_sentence": "にほんごがすきです。\nnihongo ga suki desu.\nI like Japanese."
+        },
+        {
+          "word": "が",
+          "reading": "ga",
+          "definition": "Subject particle.",
+          "explanation": "'Ga' marks the subject of the sentence. It's basic and important.",
+          "jlpt_level": "N5",
+          "example_sentence": "たまごがすきです。\ntamago ga suki desu.\nI like eggs."
+        },
+        {
+          "word": "は",
+          "reading": "wa",
+          "definition": "Topic particle.",
+          "explanation": "Use 'wa' to mark the topic of your sentence. Very common!",
+          "jlpt_level": "N5",
+          "example_sentence": "わたしはがくせいです。\nwatashi wa gakusei desu.\nI am a student."
+        },
+        {
+          "word": "なんですか",
+          "reading": "nan desu ka",
+          "definition": "What is it?",
+          "explanation": "Add this to ask a question politely. Good for many situations.",
+          "jlpt_level": "N4",
+          "example_sentence": "おなまえはなんですか？\nonamae wa nan desu ka?\nWhat is your name?"
+        }
+      ],
+      "homework": [
+        {
+          "description": "Repeat aloud all sentences introduced in today’s lesson, focusing on clear pronunciation."
+        }
+      ],
+      "exercises": [
+        {
+          "type": "read_aloud",
+          "prompt": "Read these sentences aloud",
+          "data": {
+            "focus": "Greetings and self-introduction",
+            "sentences": [
+              {
+                "jp": "こんにちは。",
+                "en": "Hello."
+              },
+              {
+                "jp": "わたしはジョン・ポークです。",
+                "en": "I am John Pork."
+              },
+              {
+                "jp": "おなまえはなんですか？",
+                "en": "What is your name?"
+              }
+            ]
+          }
+        },
+        {
+          "type": "speak",
+          "prompt": "Answer out loud",
+          "data": {
+            "prompt_jp": "おなまえはなんですか？",
+            "prompt_en": "What is your name?",
+            "hint": "Use わたしは [your name] です"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "How do you say 'I like eggs' in Japanese?",
+            "options": [
+              "たまごがすきです。",
+              "たまごをたべます。",
+              "たまごでいいです。"
+            ],
+            "answer": 0
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which particle marks the topic in a sentence?",
+            "options": [
+              "は",
+              "が",
+              "を"
+            ],
+            "answer": 0
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "How do you ask 'What is your name?' politely?",
+            "options": [
+              "おなまえはなんですか？",
+              "あなたはだれですか？",
+              "なまえをいってください。"
+            ],
+            "answer": 0
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "わたし",
+            "after": "ジョン・ポークです。",
+            "options": [
+              "は",
+              "が",
+              "を"
+            ],
+            "answer": "は",
+            "en": "I am John Pork."
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "たまご",
+            "after": "すきです。",
+            "options": [
+              "が",
+              "は",
+              "に"
+            ],
+            "answer": "が",
+            "en": "I like eggs."
+          }
+        }
+      ],
+      "sections": [
+        {
+          "title": "1. こんにちは: Hello",
+          "content": "Use こんにちは to greet people in the afternoon or daytime. It's a friendly starter.\n- **こんにちは** *konnichiwa* — Hello\nExample:\nこんにちは、はじめまして。\nkonnichiwa, hajimemashite.\nHello, nice to meet you.\n**Pattern:** こんにちは。\nNatural note: Not used at night."
+        },
+        {
+          "title": "2. わたしは〜です: I am...",
+          "content": "State your name or identity using this pattern. It's simple and polite.\n- **わたし** *watashi* — I, me\n- **です** *desu* — Polite ending\nExample:\nわたしはジョン・ポークです。\nwatashi wa John Pork desu.\nI am John Pork.\n**Pattern:** わたしは [Name] です\nImportant: Use your own name in place of [Name]."
+        },
+        {
+          "title": "3. おなまえはなんですか？: What is your name?",
+          "content": "To politely ask someone their name, use this phrase. It's often one of the first questions you learn.\n- **おなまえ** *onamae* — Your name (polite)\n- **なん** *nan* — What\nExample:\nおなまえはなんですか？\nonamae wa nan desu ka?\nWhat is your name?\n**Pattern:** おなまえはなんですか？\nNatural note: Add か at the end to form a question."
+        },
+        {
+          "title": "4. たまごがすきです: I like eggs",
+          "content": "Say what you like using '[thing]がすきです'. Eggs are common in Japanese food and culture.\n- **たまご** *tamago* — Egg\n- **すき** *suki* — Like\nExample:\nたまごがすきです。\ntamago ga suki desu.\nI like eggs.\n**Pattern:** [Thing]がすきです\nImportant: Use this to talk about your favorite things."
+        },
+        {
+          "title": "5. が: Subject Particle",
+          "content": "Use が to mark the main subject of a sentence, especially what is liked or desired.\n- **が** *ga* — Subject particle\nExample:\nたまごがすきです。\ntamago ga suki desu.\nI like eggs.\n**Pattern:** [subject]が[verb/predicate]\nNatural note: が often comes before すきです."
+        },
+        {
+          "title": "6. は: Topic Particle",
+          "content": "Use は to mark the topic you are talking about. It comes after the topic noun.\n- **は** *wa* — Topic particle\nExample:\nわたしはジョンです。\nwatashi wa John desu.\nI am John.\n**Pattern:** [topic]は[comment]\nImportant: Pronounced 'wa' but written as 'は'."
+        },
+        {
+          "title": "7. なんですか: What is...? (Polite Question Ending)",
+          "content": "Use なんですか to politely ask 'What is it?' or for more information.\n- **なん** *nan* — What\n- **ですか** *desu ka* — Polite question ending\nExample:\nこれはなんですか？\nkore wa nan desu ka?\nWhat is this?\n**Pattern:** [subject]はなんですか？\nNatural note: Use in questions to be polite."
+        },
+        {
+          "title": "8. Main Corrections & Refinements",
+          "content": "- **こんにちは** / konnichiwa: Use for daytime greetings.\n- **わたし** / watashi: Always say 'I' before your name.\n- **は** / wa: Topic marker after 'watashi'.\n- **です** / desu: End politely with 'desu'.\n- **おなまえはなんですか** / onamae wa nan desu ka: Full question for asking names.\n- **たまごがすきです** / tamago ga suki desu: Structure for talking about likes.\n- **が** / ga: Use 'ga' before 'suki'.\n- **なん** / nan: Used for 'what'.\n- **ですか** / desu ka: Turns statement into a question.\n- **すき** / suki: Used to express what you like."
+        }
+      ]
+    },
+    "talk": [
+      {
+        "name": "Duarte Oliveira",
+        "isHost": false,
+        "seconds": 27
+      },
+      {
+        "name": "Noa Nishimura",
+        "isHost": true,
+        "seconds": 136
+      }
+    ],
+    "studentTalkPct": 17,
+    "status": "published",
+    "createdAt": 1782832323650
+  },
+  "mock-derek-lesson-2-review": {
+    "eventId": "mock-derek-lesson-2-review",
+    "studentName": "Derek Hui",
+    "status": "draft",
+    "createdAt": 1783622910636,
+    "lessonDate": "2026-07-09T18:48:30.436Z",
+    "lessonTitle": "Mock Lesson 2 - Directions, Time, and Daily Routines",
+    "attendees": [
+      "derek@derekhui.com"
+    ],
+    "talk": [
+      {
+        "name": "Derek",
+        "isHost": false,
+        "seconds": 524
+      },
+      {
+        "name": "Teacher",
+        "isHost": true,
+        "seconds": 676
+      }
+    ],
+    "studentTalkPct": 44,
+    "recap": {
+      "recap": "Derek practiced giving simple directions, saying times, and describing daily routines with polite verb forms. He is beginning to connect short phrases more naturally and needs more repetition with particles like に, で, and へ.",
+      "score": 7.1,
+      "talk_percentage": 44,
+      "grammar_density": "Medium",
+      "confidence_label": "Growing",
+      "teacher_note": "Great work today, Derek. Your answers were more complete than last time, especially when talking about routine actions. For the next lesson, focus on choosing the right particle and answering in full sentences.",
+      "audio_script": "Hi Derek, nice work on your second lesson. Today you practiced directions like まっすぐ行ってください, time phrases like しちじに起きます, and daily routine verbs such as 食べます, 行きます, and 勉強します. Keep practicing the particles に, で, and へ, because they will make your sentences much clearer.",
+      "vocab_total_count": 18,
+      "vocab_level_distribution": {
+        "N5": 13,
+        "N4": 4,
+        "N3": 1,
+        "N2": 0,
+        "N1": 0
+      },
+      "metrics": {
+        "studentWpm": 82,
+        "avgResponseSec": 2.4,
+        "fillerCount": 7,
+        "longPauseCount": 4,
+        "studentTurns": 31,
+        "avgTurnWords": 9,
+        "longestTurnSec": 38,
+        "studentVocab": 42
+      },
+      "sections": [
+        {
+          "title": "1. Directions with まっすぐ and 曲がります",
+          "content": "Derek practiced giving basic directions using まっすぐ行ってください and 右に曲がります. The main goal was to keep the direction phrase in a natural order and use に before the turning direction."
+        },
+        {
+          "title": "2. Time phrases with に",
+          "content": "We reviewed how に marks a specific time. Example: しちじに起きます means \"I wake up at seven.\" Derek understood the pattern but should keep practicing with different times."
+        },
+        {
+          "title": "3. Daily routine verbs",
+          "content": "Derek described routine actions using 食べます, 行きます, 勉強します, and 寝ます. He started combining them with time phrases to make fuller sentences."
+        },
+        {
+          "title": "4. Particle contrast: に, で, へ",
+          "content": "We compared に for time/destination, で for place of action, and へ for direction. This was the trickiest part, so the next review should include more sentence sorting practice."
+        }
+      ],
+      "vocabulary": [
+        {
+          "word": "まっすぐ",
+          "reading": "massugu",
+          "definition": "straight ahead",
+          "explanation": "Used when giving directions.",
+          "jlpt_level": "N5",
+          "example_sentence": "まっすぐ行ってください。"
+        },
+        {
+          "word": "右",
+          "reading": "migi",
+          "definition": "right",
+          "explanation": "Direction word used with に曲がります.",
+          "jlpt_level": "N5",
+          "example_sentence": "右に曲がります。"
+        },
+        {
+          "word": "左",
+          "reading": "hidari",
+          "definition": "left",
+          "explanation": "Direction word used with に曲がります.",
+          "jlpt_level": "N5",
+          "example_sentence": "左に曲がってください。"
+        },
+        {
+          "word": "起きます",
+          "reading": "okimasu",
+          "definition": "to wake up",
+          "explanation": "Daily routine verb.",
+          "jlpt_level": "N5",
+          "example_sentence": "しちじに起きます。"
+        },
+        {
+          "word": "勉強します",
+          "reading": "benkyou shimasu",
+          "definition": "to study",
+          "explanation": "Useful daily routine verb.",
+          "jlpt_level": "N5",
+          "example_sentence": "日本語を勉強します。"
+        },
+        {
+          "word": "駅",
+          "reading": "eki",
+          "definition": "station",
+          "explanation": "Common place word for directions.",
+          "jlpt_level": "N5",
+          "example_sentence": "駅へ行きます。"
+        }
+      ],
+      "homework": [
+        {
+          "description": "Write five daily routine sentences using a specific time + に."
+        },
+        {
+          "description": "Practice three direction sentences using まっすぐ, 右, and 左."
+        },
+        {
+          "description": "Sort ten example sentences by particle: に, で, or へ."
+        }
+      ],
+      "exercises": [
+        {
+          "type": "read_aloud",
+          "prompt": "Read these routine sentences aloud",
+          "data": {
+            "focus": "Time + routine verbs",
+            "sentences": [
+              {
+                "jp": "しちじに起きます。",
+                "en": "I wake up at seven."
+              },
+              {
+                "jp": "はちじに朝ごはんを食べます。",
+                "en": "I eat breakfast at eight."
+              },
+              {
+                "jp": "夜に日本語を勉強します。",
+                "en": "I study Japanese at night."
+              }
+            ]
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "prompt": "Quick check",
+          "data": {
+            "question": "Which particle marks a specific time?",
+            "options": [
+              "に",
+              "で",
+              "を"
+            ],
+            "answer": 0
+          }
+        },
+        {
+          "type": "fill_blank",
+          "prompt": "Fill in the blank",
+          "data": {
+            "before": "しちじ",
+            "after": "起きます。",
+            "options": [
+              "に",
+              "で",
+              "へ"
+            ],
+            "answer": "に",
+            "en": "I wake up at seven."
+          }
+        }
+      ]
+    }
+  }
+}

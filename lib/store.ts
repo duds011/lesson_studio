@@ -111,6 +111,10 @@ export async function getRecaps(): Promise<Record<string, RecapRec>> {
   return (await readDoc<Record<string, RecapRec>>('recaps')) ?? {}
 }
 
+export async function getDismissedRecaps(): Promise<Record<string, number>> {
+  return (await readDoc<Record<string, number>>('dismissed-recaps')) ?? {}
+}
+
 export async function saveRecap(rec: RecapRec): Promise<void> {
   const all = await getRecaps()
   all[rec.eventId] = rec
@@ -123,4 +127,18 @@ export async function setRecapStatus(eventId: string, status: 'draft' | 'publish
     all[eventId].status = status
     await writeDoc('recaps', all)
   }
+}
+
+export async function deleteRecap(eventId: string): Promise<boolean> {
+  const all = await getRecaps()
+  if (!all[eventId]) return false
+  delete all[eventId]
+  await writeDoc('recaps', all)
+  return true
+}
+
+export async function dismissRecap(eventId: string): Promise<void> {
+  const dismissed = await getDismissedRecaps()
+  dismissed[eventId] = Date.now()
+  await writeDoc('dismissed-recaps', dismissed)
 }
