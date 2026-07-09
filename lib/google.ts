@@ -223,6 +223,45 @@ export async function listUpcomingLessons(maxResults = 20): Promise<Lesson[]> {
     })
 }
 
+/** List events on the teacher's calendar within an explicit time range (for the calendar grid). */
+export async function listLessonsInRange(timeMinISO: string, timeMaxISO: string, maxResults = 250): Promise<Lesson[]> {
+  const token = await getValidAccessToken()
+  if (!token) return []
+  const calendarId = token.calendarId || 'primary'
+
+  const params = new URLSearchParams({
+    timeMin: timeMinISO,
+    timeMax: timeMaxISO,
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: String(maxResults),
+    conferenceDataVersion: '1',
+  })
+  const res = await gfetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`
+  )
+  if (res.status === 403) throw new Error('SCOPE')
+  if (!res.ok) throw new Error(`Calendar fetch failed: ${await res.text()}`)
+  const data = await res.json()
+  const calendarTz: string = data.timeZone || 'UTC'
+
+  return (data.items ?? [])
+    .filter((ev: any) => ev.start?.dateTime && ev.status !== 'cancelled') // skip all-day + cancelled
+    .map((ev: any): Lesson => {
+      const { platform, url } = extractMeeting(ev)
+      return {
+        id: ev.id,
+        title: ev.summary ?? '(no title)',
+        start: ev.start.dateTime,
+        end: ev.end?.dateTime ?? ev.start.dateTime,
+        tz: ev.start.timeZone || calendarTz,
+        attendees: (ev.attendees ?? []).map((a: any) => a.email).filter(Boolean),
+        platform,
+        meetingUrl: url,
+      }
+    })
+}
+
 /** Which calendar bookings are written to / conflicts checked against. */
 export async function getBookingCalendarId(): Promise<string> {
   const token = await getToken()

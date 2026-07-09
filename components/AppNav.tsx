@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'arrow' | 'external'
+type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'arrow' | 'external' | 'wallet' | 'clock'
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -14,6 +14,8 @@ function Icon({ name }: { name: IconName }) {
     book: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></>,
     arrow: <><path d="m9 18 6-6-6-6"/></>,
     external: <><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h7"/></>,
+    wallet: <><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M21 12a2 2 0 0 0-2-2h-5a2 2 0 0 0 0 4h5a2 2 0 0 0 2-2Z"/></>,
+    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
   }
   return <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
@@ -24,7 +26,8 @@ export function LogoMark() {
 
 const LINKS = [
   { href: '/', label: 'Overview', icon: 'home' as IconName },
-  { href: '/students', label: 'Students', icon: 'users' as IconName },
+  { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName },
+  { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName },
 ]
 
 export default function AppNav({ email, connected }: { email?: string | null; connected?: boolean }) {
@@ -53,6 +56,9 @@ export default function AppNav({ email, connected }: { email?: string | null; co
 
         <div className="nav-section-label">Manage</div>
         <nav className="side-nav">
+          <Link href="/settings#availability" className="side-link">
+            <Icon name="clock" /><span>Availability</span>
+          </Link>
           <Link href="/book" className={`side-link ${isActive('/book') ? 'active' : ''}`} target="_blank">
             <Icon name="calendar" /><span>Booking page</span><Icon name="external" />
           </Link>
@@ -65,7 +71,9 @@ export default function AppNav({ email, connected }: { email?: string | null; co
       <div className="sidebar-account">
         <span className="account-avatar">{accountLabel.charAt(0).toUpperCase()}</span>
         <span className="account-copy"><strong>{accountLabel}</strong><small><span className={`status-dot ${connected ? 'online' : ''}`} />{connected ? 'Calendar connected' : 'Setup needed'}</small></span>
-        <Icon name="arrow" />
+        <a href="/logout" className="btn btn-danger-ghost btn-sm" title="Sign out" aria-label="Sign out" style={{ padding: '6px 8px' }}>
+          Sign out
+        </a>
       </div>
     </aside>
   )

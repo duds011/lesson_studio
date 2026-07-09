@@ -2,9 +2,30 @@
  * Native booking engine — replaces Calendly.
  * All availability is in Japan time (Asia/Tokyo, fixed +09:00, no DST).
  *
- * Edit this configuration to match the teacher's availability.
+ * DEFAULT_BOOKING holds the fallback config; the teacher edits an overrides
+ * doc (see getBookingConfig / saveBookingOverrides) from Settings → Availability.
  */
-export const BOOKING = {
+import { readDoc, writeDoc } from './docstore'
+
+export type Range = [string, string] // ['HH:MM','HH:MM']
+
+export interface BookingConfig {
+  tz: string
+  offset: string
+  title: string
+  durationMin: number
+  incrementMin: number
+  minNoticeHours: number
+  bufferBeforeMin: number
+  bufferAfterMin: number
+  maxPerDay: number
+  daysAhead: number
+  addMeet: boolean
+  weeklyHours: Record<number, Range[]> // 0=Sun … 6=Sat; [] = unavailable
+  dateOverrides: Record<string, Range[]> // Tokyo YYYY-MM-DD → ranges ([] = day off)
+}
+
+export const DEFAULT_BOOKING: BookingConfig = {
   tz: 'Asia/Tokyo',
   offset: '+09:00',
   title: 'Language lesson',
@@ -16,30 +37,37 @@ export const BOOKING = {
   maxPerDay: 5,
   daysAhead: 30,
   addMeet: true,
-
-  // Weekly hours by weekday (0=Sun … 6=Sat). [] = unavailable that day.
-  // ⚠️ BEST-GUESS from the Calendly screenshot — please confirm/correct.
   weeklyHours: {
-    0: [] as [string, string][],                 // Sun — unavailable
-    1: [] as [string, string][],                 // Mon — unavailable
-    2: [['09:00', '23:00']] as [string, string][], // Tue
-    3: [['09:00', '23:00']] as [string, string][], // Wed
-    4: [['09:00', '23:00']] as [string, string][], // Thu
-    5: [['09:00', '20:00']] as [string, string][], // Fri
-    6: [['09:00', '17:00']] as [string, string][], // Sat
-  } as Record<number, [string, string][]>,
+    0: [],
+    1: [],
+    2: [['09:00', '23:00']],
+    3: [['09:00', '23:00']],
+    4: [['09:00', '23:00']],
+    5: [['09:00', '20:00']],
+    6: [['09:00', '17:00']],
+  },
+  dateOverrides: {},
+}
 
-  // Date-specific overrides (Tokyo YYYY-MM-DD). Present here = replaces weekly hours.
-  // [] = fully unavailable that day.
-  dateOverrides: {
-    '2026-07-01': [['16:00', '18:00']],
-    '2026-07-02': [['13:00', '16:30'], ['20:00', '22:00']],
-    '2026-07-03': [],
-    '2026-07-05': [],
-    '2026-07-06': [],
-    '2026-07-12': [],
-    '2026-07-13': [],
-  } as Record<string, [string, string][]>,
+// Back-compat alias — the fixed constants (tz/offset) used by the helpers below.
+export const BOOKING = DEFAULT_BOOKING
+
+// The teacher may edit everything except the timezone (fixed +09:00 Tokyo).
+export type BookingOverrides = Partial<Omit<BookingConfig, 'tz' | 'offset'>>
+
+/** Current effective booking config: stored overrides merged over defaults. */
+export async function getBookingConfig(): Promise<BookingConfig> {
+  const stored = await readDoc<BookingOverrides>('availability')
+  return {
+    ...DEFAULT_BOOKING,
+    ...(stored ?? {}),
+    tz: DEFAULT_BOOKING.tz,
+    offset: DEFAULT_BOOKING.offset,
+  }
+}
+
+export async function saveBookingOverrides(o: BookingOverrides): Promise<void> {
+  await writeDoc('availability', o)
 }
 
 const MIN = 60_000
@@ -48,42 +76,43 @@ export type Busy = { start: number; end: number } // epoch ms
 
 // ── Tokyo date helpers (Japan has no DST, so a fixed +09:00 offset is safe) ──
 export function todayTokyo(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: BOOKING.tz })
+  return new Date().toLocaleDateString('en-CA', { timeZone: DEFAULT_BOOKING.tz })
 }
 export function addDaysTokyo(dateStr: string, n: number): string {
-  const base = new Date(`${dateStr}T00:00:00${BOOKING.offset}`).getTime()
-  return new Date(base + n * 86_400_000).toLocaleDateString('en-CA', { timeZone: BOOKING.tz })
+  const base = new Date(`${dateStr}T00:00:00${DEFAULT_BOOKING.offset}`).getTime()
+  return new Date(base + n * 86_400_000).toLocaleDateString('en-CA', { timeZone: DEFAULT_BOOKING.tz })
 }
 function weekdayIndex(dateStr: string): number {
   // noon Tokyo = 03:00Z same calendar day → getUTCDay gives the right weekday
-  return new Date(`${dateStr}T12:00:00${BOOKING.offset}`).getUTCDay()
+  return new Date(`${dateStr}T12:00:00${DEFAULT_BOOKING.offset}`).getUTCDay()
 }
 function toMs(dateStr: string, hhmm: string): number {
-  return new Date(`${dateStr}T${hhmm}:00${BOOKING.offset}`).getTime()
+  return new Date(`${dateStr}T${hhmm}:00${DEFAULT_BOOKING.offset}`).getTime()
 }
 
-export function intervalsForDate(dateStr: string): [string, string][] {
-  if (dateStr in BOOKING.dateOverrides) return BOOKING.dateOverrides[dateStr]
-  return BOOKING.weeklyHours[weekdayIndex(dateStr)] ?? []
+export function intervalsForDate(cfg: BookingConfig, dateStr: string): Range[] {
+  if (dateStr in cfg.dateOverrides) return cfg.dateOverrides[dateStr]
+  return cfg.weeklyHours[weekdayIndex(dateStr)] ?? []
 }
 
 /** Available slot start times (epoch ms) for one Tokyo date. */
 export function slotsForDate(
+  cfg: BookingConfig,
   dateStr: string,
   nowMs: number,
   busy: Busy[],
   countThatDay: number
 ): number[] {
-  if (countThatDay >= BOOKING.maxPerDay) return []
+  if (countThatDay >= cfg.maxPerDay) return []
 
-  const durationMs = BOOKING.durationMin * MIN
-  const stepMs = BOOKING.incrementMin * MIN
-  const noticeMs = BOOKING.minNoticeHours * 60 * MIN
-  const bufBefore = BOOKING.bufferBeforeMin * MIN
-  const bufAfter = BOOKING.bufferAfterMin * MIN
+  const durationMs = cfg.durationMin * MIN
+  const stepMs = cfg.incrementMin * MIN
+  const noticeMs = cfg.minNoticeHours * 60 * MIN
+  const bufBefore = cfg.bufferBeforeMin * MIN
+  const bufAfter = cfg.bufferAfterMin * MIN
 
   const out: number[] = []
-  for (const [s, e] of intervalsForDate(dateStr)) {
+  for (const [s, e] of intervalsForDate(cfg, dateStr)) {
     const winEnd = toMs(dateStr, e)
     for (let cur = toMs(dateStr, s); cur + durationMs <= winEnd; cur += stepMs) {
       const start = cur
@@ -101,24 +130,24 @@ export function slotsForDate(
 export type DayAvailability = { date: string; weekday: string; slots: number[] }
 
 /** Build availability for the whole booking window. */
-export function buildAvailability(nowMs: number, busy: Busy[]): DayAvailability[] {
+export function buildAvailability(cfg: BookingConfig, nowMs: number, busy: Busy[]): DayAvailability[] {
   // count existing events per Tokyo day (for maxPerDay)
   const countByDay: Record<string, number> = {}
   for (const b of busy) {
-    const d = new Date(b.start).toLocaleDateString('en-CA', { timeZone: BOOKING.tz })
+    const d = new Date(b.start).toLocaleDateString('en-CA', { timeZone: cfg.tz })
     countByDay[d] = (countByDay[d] ?? 0) + 1
   }
 
   const days: DayAvailability[] = []
   const start = todayTokyo()
-  for (let i = 0; i <= BOOKING.daysAhead; i++) {
+  for (let i = 0; i <= cfg.daysAhead; i++) {
     const date = addDaysTokyo(start, i)
-    const slots = slotsForDate(date, nowMs, busy, countByDay[date] ?? 0)
+    const slots = slotsForDate(cfg, date, nowMs, busy, countByDay[date] ?? 0)
     if (slots.length === 0) continue
     days.push({
       date,
-      weekday: new Date(`${date}T12:00:00${BOOKING.offset}`).toLocaleDateString('en-US', {
-        weekday: 'short', timeZone: BOOKING.tz,
+      weekday: new Date(`${date}T12:00:00${cfg.offset}`).toLocaleDateString('en-US', {
+        weekday: 'short', timeZone: cfg.tz,
       }),
       slots,
     })

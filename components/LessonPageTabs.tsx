@@ -8,16 +8,17 @@ type Recap = any
 type Lesson = { id: string; lessonNumber: number; date: string; title: string; recap: Recap }
 
 const JLPT = ['N5', 'N4', 'N3', 'N2', 'N1'] as const
-const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
-type Tab = typeof TABS[number]
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher',
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string
 }) {
-  const [tab, setTab] = useState<Tab>('Progress')
   const r = lesson.recap
+  const m = r.metrics as any
+  const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
+  type Tab = typeof TABS[number]
+  const [tab, setTab] = useState<Tab>('Progress')
 
   const studentTalk = typeof r.talk_percentage === 'number' ? r.talk_percentage : 40
   const teacherTalk = 100 - studentTalk
@@ -41,30 +42,50 @@ export default function LessonPageTabs({
       {tab === 'Progress' && (
         <div className="lesson-dashboard" role="tabpanel">
           <h3 className="dashboard-title">How this lesson went</h3>
-          <div className="analytics-grid">
-            <div className="analytics-card">
-              <div className="analytics-label">Speaking Balance</div>
-              <div className="analytics-value">{studentTalk}% / {teacherTalk}%</div>
-              <div className="balance-bars">
+          <div className="stat-cards">
+            {/* Speaking balance */}
+            <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
+              <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
+              <div className="stat-card-value">{studentTalk}<span className="stat-unit">%</span> <span className="stat-sep">/</span> {teacherTalk}<span className="stat-unit">%</span></div>
+              <div className="balance-bars" style={{ marginTop: 'auto' }}>
                 <div className="balance-row"><span>{studentFirst}</span><div className="balance-track"><div className="balance-fill student" style={{ width: `${studentTalk}%` }} /></div><span>{studentTalk}%</span></div>
                 <div className="balance-row"><span>{teacherFirst}</span><div className="balance-track"><div className="balance-fill" style={{ width: `${teacherTalk}%` }} /></div><span>{teacherTalk}%</span></div>
               </div>
             </div>
-            <div className="analytics-card">
-              <div className="analytics-label">Score</div>
-              <div className="analytics-value">{r.score}</div>
-              <div className="independence-pill">{r.confidence_label}</div>
+
+            {/* Score */}
+            <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
+              <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
+              <div className="stat-card-value" style={{ color: 'var(--green)' }}>{r.score}<span className="stat-unit">/10</span></div>
+              {r.confidence_label && <span className="stat-chip" style={{ marginTop: 'auto' }}>{r.confidence_label}</span>}
             </div>
-            <div className="analytics-card">
-              <div className="analytics-label">Grammar Density</div>
-              <div className="analytics-value" style={{ fontSize: '1.4rem' }}>{r.grammar_density}</div>
-              <p className="analytics-note">{r.vocab_total_count ? `${r.vocab_total_count} vocabulary items practiced` : ''}</p>
+
+            {/* Grammar density */}
+            <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
+              <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
+              <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>{r.grammar_density}</div>
+              <p className="stat-card-note" style={{ marginTop: 'auto' }}>{r.vocab_total_count ? `${r.vocab_total_count} vocabulary items practiced` : ''}</p>
             </div>
           </div>
+
+          {m && (
+            <div className="corrections-card" style={{ marginBottom: '1rem' }}>
+              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
+              <div className="metric-grid">
+                <div className="metric"><div className="mv">{m.studentWpm ?? '—'}</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
+                <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
+                <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
+                <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
+                <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
+                <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
+              </div>
+            </div>
+          )}
+
           {corrections && (
-            <div className="analytics-card">
-              <div className="analytics-label">{corrections.title.replace(/^\d+\.\s*/, '')}</div>
-              <div style={{ marginTop: '.5rem' }}><FormattedContent content={corrections.content} /></div>
+            <div className="corrections-card" style={{ marginBottom: '1rem' }}>
+              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{corrections.title.replace(/^\d+\.\s*/, '')}</span></div>
+              <FormattedContent content={corrections.content} />
             </div>
           )}
         </div>
@@ -73,7 +94,6 @@ export default function LessonPageTabs({
       {/* ── LESSON ── */}
       {tab === 'Lesson' && (
         <div className="tab-panel" role="tabpanel">
-          <div className="lesson-block"><FormattedContent content={r.recap} /></div>
           {lessonSections.map((s, i) => (
             <div className="lesson-block" key={i}>
               <h3>{s.title}</h3>

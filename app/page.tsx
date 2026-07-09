@@ -1,47 +1,16 @@
 import Link from 'next/link'
 import { getToken, getBots, getRecaps } from '@/lib/store'
-import { isConfigured, listUpcomingLessons, type Lesson } from '@/lib/google'
+import { isConfigured, listUpcomingLessons, listCalendars, type Lesson, type CalendarInfo } from '@/lib/google'
 import { friendlyStatus } from '@/lib/recall'
 import AppNav from '@/components/AppNav'
-import LessonRow from '@/components/LessonRow'
+import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
+import RecapsToReview from '@/components/RecapsToReview'
+import OverviewSync from '@/components/OverviewSync'
+import type { DraftRecap } from '@/components/RecapReview'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { mapEventToStudent } from '@/lib/lesson-link'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
-
-// Compare two instants by their calendar day *in a given timezone*.
-function dayKey(d: Date, tz: string): string {
-  return d.toLocaleDateString('en-CA', { timeZone: tz }) // YYYY-MM-DD
-}
-function fmtDay(iso: string, tz: string): string {
-  const d = new Date(iso)
-  const now = new Date()
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-  if (dayKey(d, tz) === dayKey(now, tz)) return 'Today'
-  if (dayKey(d, tz) === dayKey(tomorrow, tz)) return 'Tomorrow'
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz })
-}
-
-type DayGroup = { key: string; label: string; date: string; items: Lesson[] }
-// Lessons arrive sorted by start time, so we can group sequentially.
-function groupByDay(lessons: Lesson[]): DayGroup[] {
-  const groups: DayGroup[] = []
-  for (const l of lessons) {
-    const key = dayKey(new Date(l.start), l.tz)
-    const last = groups[groups.length - 1]
-    if (last && last.key === key) {
-      last.items.push(l)
-    } else {
-      groups.push({
-        key,
-        label: fmtDay(l.start, l.tz),
-        date: new Date(l.start).toLocaleDateString(undefined, {
-          weekday: 'long', month: 'short', day: 'numeric', timeZone: l.tz,
-        }),
-        items: [l],
-      })
-    }
-  }
-  return groups
-}
 
 function ConnectScreen({ configured }: { configured: boolean }) {
   return (
@@ -105,6 +74,11 @@ export default async function Home() {
     else fetchError = e?.message ?? 'Could not load calendar'
   }
 
+  // Calendars the teacher can pick which one holds their lessons.
+  let calendars: CalendarInfo[] = []
+  if (!needsReconnect) { try { calendars = await listCalendars() } catch { /* ignore */ } }
+  const selectedCalId = token.calendarId || 'primary'
+
   // Existing bot dispatches + recaps, keyed by calendar event id.
   const botRecs = await getBots()
   const recapRecs = await getRecaps()
@@ -115,6 +89,34 @@ export default async function Home() {
     return { botId: rec.botId, status: rec.status, label: f.label, state: f.state }
   }
 
+  const initialLessons: CalEvent[] = lessons.map((l) => ({
+    id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl,
+    attendees: l.attendees, bot: botFor(l.id), recapStatus: recapRecs[l.id]?.status ?? null,
+  }))
+
+  // Draft recaps waiting for the teacher to review, edit, and send. Resolve the
+  // lesson number each will get (existing lesson for the event, else next up).
+  const admin = createAdminClient()
+  const draftList = Object.values(recapRecs)
+    .filter((r) => r.status === 'draft')
+    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+  const draftRecaps: DraftRecap[] = await Promise.all(draftList.map(async (r) => {
+    let lessonNumber: number | null = null
+    try {
+      const linked = await mapEventToStudent(admin, r.eventId, r.attendees ?? [])
+      if (linked) {
+        const { data: ls } = await admin.from('lessons').select('lesson_number, source_event_id, status').eq('student_id', linked.studentId)
+        const existing = (ls || []).find((x: any) => x.source_event_id === r.eventId)
+        if (existing?.lesson_number) lessonNumber = existing.lesson_number
+        else {
+          const maxN = (ls || []).filter((x: any) => x.status === 'published').reduce((m: number, x: any) => Math.max(m, x.lesson_number ?? 0), 0)
+          lessonNumber = maxN + 1
+        }
+      }
+    } catch { /* leave null */ }
+    return { eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle, createdAt: r.createdAt, lessonNumber }
+  }))
+
   return (
     <>
       <AppNav email={token.email} connected />
@@ -122,7 +124,7 @@ export default async function Home() {
         <div className="page-head">
           <div>
             <span className="eyebrow">Overview</span>
-            <h2 className="title">Your teaching day</h2>
+            <h2 className="title">Your teaching calendar</h2>
             <p className="sub">
               Lessons from <strong>{token.calendarName || 'your primary calendar'}</strong>, ready to record and turn into student recaps.
             </p>
@@ -139,6 +141,32 @@ export default async function Home() {
           <div className="summary-stat"><span>Published recaps</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</strong></div>
         </div>
 
+        {calendars.length > 1 && (
+          <div className="analytics-card" style={{ padding: 16, marginBottom: 18 }}>
+            <p className="analytics-label" style={{ margin: '0 0 10px' }}>📅 Lesson calendar <span style={{ color: 'var(--muted)', fontWeight: 400 }}>— which calendar holds your lessons</span></p>
+            <div className="cal-picker">
+              {calendars.map((c) => {
+                const sel = c.id === selectedCalId || (c.primary && selectedCalId === 'primary')
+                return (
+                  <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
+                    <input type="hidden" name="calendarId" value={c.id} />
+                    <input type="hidden" name="calendarName" value={c.name} />
+                    <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>{sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}</button>
+                  </form>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        <OverviewSync />
+
+        {draftRecaps.length > 0 && (
+          <div style={{ marginBottom: 22 }}>
+            <RecapsToReview drafts={draftRecaps} />
+          </div>
+        )}
+
         {needsReconnect ? (
           <div className="empty">
             Your Google connection needs updated permissions.{' '}
@@ -146,25 +174,8 @@ export default async function Home() {
           </div>
         ) : fetchError ? (
           <div className="empty">{fetchError}</div>
-        ) : lessons.length === 0 ? (
-          <div className="empty"><strong>Your agenda is clear.</strong><br />No upcoming lessons are on this calendar. Share your booking page when you are ready.</div>
         ) : (
-          groupByDay(lessons).map((g) => (
-            <div className="day-group" key={g.key}>
-              <div className="day-head">
-                <span className="day-label">{g.label}</span>
-                <span className="day-date">{g.date}</span>
-              </div>
-              {g.items.map((l) => (
-                <LessonRow
-                  key={l.id}
-                  lesson={{ id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl }}
-                  initialBot={botFor(l.id)}
-                  initialRecapStatus={recapRecs[l.id]?.status ?? null}
-                />
-              ))}
-            </div>
-          ))
+          <TeacherCalendar initialLessons={initialLessons} />
         )}
       </main>
     </>

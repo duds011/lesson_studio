@@ -10,6 +10,7 @@ export type LessonView = {
   tz: string
   platform: 'meet' | 'zoom' | 'other'
   meetingUrl: string | null
+  attendees?: string[]
 }
 type Bot = { botId: string; status: string; label: string; state: string } | null
 
@@ -75,7 +76,7 @@ export default function LessonRow({
     try {
       const j = await (await fetch('/api/recall/send-bot', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder' }),
+        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder', attendees: lesson.attendees ?? [], studentName: studentName(lesson.title), lessonTitle: lesson.title, lessonDate: lesson.start }),
       })).json()
       if (!j.ok) { setErr(j.error || 'Failed'); return }
       setBot({ botId: j.botId, status: j.status, label: 'Bot joining…', state: 'joining' })
@@ -106,7 +107,7 @@ export default function LessonRow({
     try {
       const j = await (await fetch('/api/recap/build', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, studentName: studentName(lesson.title) }),
+        body: JSON.stringify({ eventId: lesson.id, studentName: studentName(lesson.title), lessonDate: lesson.start, lessonTitle: lesson.title, attendees: lesson.attendees ?? [] }),
       })).json()
       if (!j.ok) { setErr(j.error || 'Recap failed'); return }
       setRecap(j.recap); setRecapStatus('draft'); setOpen(true)
@@ -152,6 +153,9 @@ export default function LessonRow({
           </div>
         </div>
         <div className="lesson-actions">
+          {lesson.meetingUrl && (
+            <a className="btn btn-primary btn-sm" href={lesson.meetingUrl} target="_blank" rel="noreferrer">Join call ↗</a>
+          )}
           {recapStatus === 'published' ? (
             <button className="btn btn-ghost btn-sm" onClick={openRecap}>View recap</button>
           ) : recapStatus === 'draft' ? (
