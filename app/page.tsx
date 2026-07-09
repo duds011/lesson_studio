@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getToken, getBots, getRecaps } from '@/lib/store'
-import { isConfigured, listUpcomingLessons, type Lesson } from '@/lib/google'
+import { isConfigured, listUpcomingLessons, listCalendars, type Lesson, type CalendarInfo } from '@/lib/google'
 import { friendlyStatus } from '@/lib/recall'
 import AppNav from '@/components/AppNav'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
@@ -74,6 +74,11 @@ export default async function Home() {
     else fetchError = e?.message ?? 'Could not load calendar'
   }
 
+  // Calendars the teacher can pick which one holds their lessons.
+  let calendars: CalendarInfo[] = []
+  if (!needsReconnect) { try { calendars = await listCalendars() } catch { /* ignore */ } }
+  const selectedCalId = token.calendarId || 'primary'
+
   // Existing bot dispatches + recaps, keyed by calendar event id.
   const botRecs = await getBots()
   const recapRecs = await getRecaps()
@@ -135,6 +140,24 @@ export default async function Home() {
           <div className="summary-stat"><span>Drafts to review</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'draft').length}</strong></div>
           <div className="summary-stat"><span>Published recaps</span><strong>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</strong></div>
         </div>
+
+        {calendars.length > 1 && (
+          <div className="analytics-card" style={{ padding: 16, marginBottom: 18 }}>
+            <p className="analytics-label" style={{ margin: '0 0 10px' }}>📅 Lesson calendar <span style={{ color: 'var(--muted)', fontWeight: 400 }}>— which calendar holds your lessons</span></p>
+            <div className="cal-picker">
+              {calendars.map((c) => {
+                const sel = c.id === selectedCalId || (c.primary && selectedCalId === 'primary')
+                return (
+                  <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
+                    <input type="hidden" name="calendarId" value={c.id} />
+                    <input type="hidden" name="calendarName" value={c.name} />
+                    <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>{sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}</button>
+                  </form>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <OverviewSync />
 

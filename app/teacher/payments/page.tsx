@@ -59,7 +59,18 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
         <p className="sub">All student payments in one place — track revenue, lesson packages, and who&rsquo;s running low.</p>
       </div>
       <PaymentsManager students={studentOptions} credits={credits} payments={managed} currency={currency} />
-      <StripeManager connected={stripeConnected} chargesEnabled={chargesEnabled} packages={packages} students={studentOptions} currency={currency} status={stripeStatus} />
+
+      {/* Card payments (Stripe) — coming soon */}
+      <div className="analytics-card" style={{ padding: 22, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h3 style={{ margin: 0 }}>💳 Card payments</h3>
+            <span className="pill" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>Coming soon</span>
+          </div>
+          <p className="sub" style={{ margin: '6px 0 0', maxWidth: 520 }}>Sell lesson packages and take card payments with automatic payouts. For now, record payments manually above and share your payment details below.</p>
+        </div>
+      </div>
+
       <PaymentMethodsManager initial={paymentMethods} />
     </div>
   )

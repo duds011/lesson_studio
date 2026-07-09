@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import AppNav from '@/components/AppNav'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
+import SettingsNav from '@/components/SettingsNav'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,11 +52,7 @@ export default async function SettingsPage() {
         </div>
 
         <div className="settings-layout">
-          <aside className="settings-index" aria-label="Settings sections">
-            <a href="#connections">Connections</a>
-            <a href="#booking">Booking preference</a>
-            <a href="#availability">Availability</a>
-          </aside>
+          <SettingsNav />
           <div className="settings-stack">
         {/* Connectors gallery */}
         <div className="settings-card" id="connections">

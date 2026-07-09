@@ -86,26 +86,13 @@ export default function ConnectorsGallery({ google, zoom, stripe }: ConnectorSta
         </div>
       </div>
 
-      {/* Stripe */}
-      <div className="connector-card">
+      {/* Stripe — coming soon */}
+      <div className="connector-card" style={{ opacity: 0.72 }}>
         <div className="connector-logo"><StripeLogo /></div>
         <div className="connector-name">Stripe</div>
         <div className="connector-desc">Take card payments for lesson packages — payouts go straight to you.</div>
         <div className="connector-foot">
-          {stripe.chargesEnabled ? (
-            <>
-              <ConnectedPill label="Connected" />
-              <div className="connector-sub">Payouts enabled</div>
-              <a className="btn btn-ghost btn-sm" href="/api/stripe/connect/start">Manage</a>
-            </>
-          ) : stripe.connected ? (
-            <>
-              <span className="pill amber" style={{ alignSelf: 'flex-start' }}><span className="dot" />Finish setup</span>
-              <a className="btn btn-primary btn-sm" href="/api/stripe/connect/start">Continue</a>
-            </>
-          ) : (
-            <a className="btn btn-primary btn-sm" href="/api/stripe/connect/start">Connect</a>
-          )}
+          <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--brand-soft)', color: 'var(--brand)' }}>Coming soon</span>
         </div>
       </div>
     </div>
