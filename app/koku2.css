@@ -325,6 +325,9 @@
 .k-thead.slim .k-phead-eyebrow{color:rgba(255,255,255,.55);font-size:9.5px}
 .k-thead.slim h1{font-size:17px;letter-spacing:-.03em;line-height:1.2;margin:0}
 .k-thead.slim .btn{padding:8px 14px;font-size:12px}
+/* Content sits above the drifting geometry behind it. */
+.k-thead.slim .k-thead-title,.k-thead.slim .k-thead-actions{position:relative;z-index:1}
+.k-thead.slim .k-hero-art{width:150px;height:120px}
 
 /* Calendar on the left at full height, the numbers beside it on the right. */
 .k-overview{display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:14px;align-items:start}
@@ -829,3 +832,66 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 .script-opt{border-radius:14px;border-width:1.5px}
 .script-opt.sel{border-color:var(--forest);background:var(--brand-soft);box-shadow:0 0 0 1px var(--forest)}
 .script-opt.sel strong{color:var(--forest)}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOTION — the portal should feel alive, not decorated
+   ═══════════════════════════════════════════════════════════════════
+   Two rules kept throughout:
+
+   1. Only `translate`, `rotate`, `scale` and `opacity` are animated. The
+      individual transform properties matter: the decorative props carry
+      per-instance `transform: rotate(...)` inline, and animations beat inline
+      styles in the cascade — animating `transform` would throw those away.
+      These compose with it instead.
+   2. Entrances use fill-mode `backwards`, never `both`. A finished `both`
+      animation leaves the element a containing block forever, which is what
+      trapped position:fixed modals inside .wrap once already.
+
+   The global prefers-reduced-motion rule in globals.css switches all of it
+   off with `*{animation:none!important}`. */
+
+@keyframes k-float{0%,100%{translate:0 0}50%{translate:0 -11px}}
+@keyframes k-float-wide{0%,100%{translate:0 0}50%{translate:-9px 7px}}
+@keyframes k-sway{0%,100%{rotate:-5deg}50%{rotate:6deg}}
+@keyframes k-breathe{0%,100%{scale:1}50%{scale:1.055}}
+@keyframes k-rise{from{opacity:0;translate:0 14px}}
+@keyframes k-grow{from{transform:scaleX(0)}}
+
+/* ── ambient drift on the decorative geometry ── */
+.k-orb{animation:k-float 7.5s ease-in-out infinite,k-breathe 9s ease-in-out infinite}
+.k-tube{animation:k-float-wide 9.5s ease-in-out infinite,k-sway 12s ease-in-out infinite}
+.k-crystal{animation:k-float 8.5s ease-in-out infinite,k-sway 13.5s ease-in-out infinite}
+.k-ring{animation:k-float-wide 11s ease-in-out infinite,k-breathe 7s ease-in-out infinite}
+/* Negative delays so a cluster never moves in lockstep. A single delay value
+   applies to every animation on the element, which is what we want here. */
+:is(.k-hero-art,.k-preview-props)>*:nth-child(2){animation-delay:-2.6s}
+:is(.k-hero-art,.k-preview-props)>*:nth-child(3){animation-delay:-5.1s}
+:is(.k-hero-art,.k-preview-props)>*:nth-child(4){animation-delay:-7.4s}
+
+/* ── entrances ──
+   Cards arrive in sequence rather than all at once. */
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*{
+  animation:k-rise .5s cubic-bezier(.2,.75,.3,1) backwards;
+}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*:nth-child(2){animation-delay:.06s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*:nth-child(3){animation-delay:.12s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*:nth-child(4){animation-delay:.18s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*:nth-child(5){animation-delay:.24s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*:nth-child(n+6){animation-delay:.3s}
+/* Dragging is a live reorder — re-running entrances mid-drag would fight it. */
+.k-flow.dragging>*{animation:none}
+
+.k-hero,.k-phead,.k-thead{animation:k-rise .55s cubic-bezier(.2,.75,.3,1) backwards}
+
+/* ── bars fill instead of appearing full ── */
+.k-hw-fill,.balance-fill,.vocab-line-bar>div{transform-origin:left center;animation:k-grow .9s cubic-bezier(.2,.8,.25,1) .12s backwards}
+
+/* ── hover life ── */
+.k-stat,.stat-card,.k-preview-stats>div{transition:translate .18s ease,box-shadow .18s ease}
+.k-stat:hover,.stat-card:hover{translate:0 -3px;box-shadow:var(--shadow-lift)}
+.tab{transition:background .16s ease,color .16s ease,translate .16s ease}
+.tab:hover:not(.sel){translate:0 -1px}
+
+/* A number that has just counted up gets a beat of the accent behind it. */
+@keyframes k-tick{from{color:var(--forest)}}
+.k-count.done{animation:k-tick 1.1s ease}

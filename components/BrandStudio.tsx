@@ -10,6 +10,7 @@ import {
   type BlockId, type LessonBlockId, type LessonTab, type Placement,
 } from '@/lib/brand'
 import { MilestoneGauge, MiniTrend, ScoreTrendChart, VocabLevelChart } from './portal/BrandCharts'
+import CountUp from './portal/CountUp'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 /** Must match --g on .k-flow, since span maths is done against it. */
@@ -230,9 +231,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       case 'stats':
         return (
           <div className="k-preview-stats">
-            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span>Lessons</span><b>12</b></div>
-            <div style={{ background: 'var(--c-blue)' }}><span>Avg score</span><b>7.4</b></div>
-            <div style={{ background: 'var(--c-purple)' }}><span>Speaking</span><b>41%</b></div>
+            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span>Lessons</span><b><CountUp value={12} /></b></div>
+            <div style={{ background: 'var(--c-blue)' }}><span>Avg score</span><b><CountUp value={7.4} decimals={1} /></b></div>
+            <div style={{ background: 'var(--c-purple)' }}><span>Speaking</span><b><CountUp value={41} suffix="%" /></b></div>
           </div>
         )
       case 'lessons':
@@ -298,7 +299,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         return (
           <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
             <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
-            <div className="stat-card-value">58<span className="stat-unit">%</span> <span className="stat-sep">/</span> 42<span className="stat-unit">%</span></div>
+            <div className="stat-card-value"><CountUp value={58} /><span className="stat-unit">%</span> <span className="stat-sep">/</span> <CountUp value={42} /><span className="stat-unit">%</span></div>
             <div className="balance-bars" style={{ marginTop: 'auto' }}>
               <div className="balance-row"><span>Derek</span><div className="balance-track"><div className="balance-fill student" style={{ width: '58%' }} /></div><span>58%</span></div>
               <div className="balance-row"><span>{teacherName ? teacherName.split(' ')[0] : 'You'}</span><div className="balance-track"><div className="balance-fill" style={{ width: '42%' }} /></div><span>42%</span></div>
@@ -309,7 +310,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         return (
           <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
             <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
-            <div className="stat-card-value" style={{ color: 'var(--green)' }}>8.3<span className="stat-unit">/10</span></div>
+            <div className="stat-card-value" style={{ color: 'var(--green)' }}><CountUp value={8.3} decimals={1} /><span className="stat-unit">/10</span></div>
             <span className="stat-chip" style={{ marginTop: 'auto' }}>Confident</span>
           </div>
         )

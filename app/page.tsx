@@ -6,6 +6,7 @@ import AppNav from '@/components/AppNav'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
 import OverviewSync from '@/components/OverviewSync'
+import CountUp from '@/components/portal/CountUp'
 import type { DraftRecap } from '@/components/RecapReview'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { mapEventToStudent } from '@/lib/lesson-link'
@@ -124,6 +125,13 @@ export default async function Home() {
         {/* One slim line. The calendar is what this page is for, so the header
             gets a strip and nothing more. */}
         <header className="k-thead slim">
+          {/* First in the DOM so the buttons paint over it, not under. */}
+          <div className="k-hero-art" style={{ right: -14, opacity: .5 }} aria-hidden>
+            <span className="k-orb" style={{ width: 54, height: 54, right: 4, top: 46 }} />
+            <span className="k-tube" style={{ width: 40, height: 40, right: 54, top: 68, borderWidth: 10 }} />
+            <span className="k-ring" style={{ width: 26, height: 26, right: 104, top: 54, borderWidth: 7 }} />
+          </div>
+
           <div className="k-thead-title">
             <span className="k-phead-eyebrow">Overview</span>
             <h1>Your teaching calendar</h1>
@@ -157,17 +165,17 @@ export default async function Home() {
             <div className="k-tstats">
               <div className="k-stat yellow">
                 <div className="k-stat-head"><span>Upcoming lessons</span></div>
-                <div className="k-stat-val"><b>{lessons.length}</b></div>
+                <div className="k-stat-val"><b><CountUp value={lessons.length} /></b></div>
                 <p className="k-stat-sub">on {token.calendarName || 'your calendar'}</p>
               </div>
               <div className="k-stat blue">
                 <div className="k-stat-head"><span>Drafts to review</span></div>
-                <div className="k-stat-val"><b>{Object.values(recapRecs).filter((r) => r.status === 'draft').length}</b></div>
+                <div className="k-stat-val"><b><CountUp value={Object.values(recapRecs).filter((r) => r.status === 'draft').length} /></b></div>
                 <p className="k-stat-sub">recaps waiting on you</p>
               </div>
               <div className="k-stat purple">
                 <div className="k-stat-head"><span>Published recaps</span></div>
-                <div className="k-stat-val"><b>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</b></div>
+                <div className="k-stat-val"><b><CountUp value={Object.values(recapRecs).filter((r) => r.status === 'published').length} /></b></div>
                 <p className="k-stat-sub">sent to students</p>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FormattedContent } from './RecapView'
 import LessonExercises from './LessonExercises'
 import { VocabLevelChart } from './portal/BrandCharts'
+import CountUp from './portal/CountUp'
 import {
   DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_TABS,
   type Brand, type LessonBlockId, type LessonTab,
@@ -11,6 +12,12 @@ import {
 
 type Recap = any
 type Lesson = { id: string; lessonNumber: number; date: string; title: string; recap: Recap }
+
+/** A measured number, or an em dash when the recording didn't yield one. */
+function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: number; suffix?: string }) {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return <>—</>
+  return <CountUp value={v} decimals={decimals} suffix={suffix} />
+}
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND,
@@ -44,7 +51,7 @@ export default function LessonPageTabs({
         return (
           <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
             <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
-            <div className="stat-card-value">{studentTalk}<span className="stat-unit">%</span> <span className="stat-sep">/</span> {teacherTalk}<span className="stat-unit">%</span></div>
+            <div className="stat-card-value"><CountUp value={studentTalk} /><span className="stat-unit">%</span> <span className="stat-sep">/</span> <CountUp value={teacherTalk} /><span className="stat-unit">%</span></div>
             <div className="balance-bars" style={{ marginTop: 'auto' }}>
               <div className="balance-row"><span>{studentFirst}</span><div className="balance-track"><div className="balance-fill student" style={{ width: `${studentTalk}%` }} /></div><span>{studentTalk}%</span></div>
               <div className="balance-row"><span>{teacherFirst}</span><div className="balance-track"><div className="balance-fill" style={{ width: `${teacherTalk}%` }} /></div><span>{teacherTalk}%</span></div>
@@ -56,7 +63,10 @@ export default function LessonPageTabs({
         return (
           <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
             <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
-            <div className="stat-card-value" style={{ color: 'var(--green)' }}>{r.score}<span className="stat-unit">/10</span></div>
+            <div className="stat-card-value" style={{ color: 'var(--green)' }}>
+              <CountUp value={Number(r.score)} decimals={Number.isInteger(Number(r.score)) ? 0 : 1} />
+              <span className="stat-unit">/10</span>
+            </div>
             {r.confidence_label && <span className="stat-chip" style={{ marginTop: 'auto' }}>{r.confidence_label}</span>}
           </div>
         )
@@ -75,12 +85,12 @@ export default function LessonPageTabs({
           <div className="corrections-card">
             <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
             <div className="metric-grid">
-              <div className="metric"><div className="mv">{m.studentWpm ?? '—'}</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
-              <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
-              <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
-              <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
-              <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
-              <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
+              <div className="metric"><div className="mv"><Metric v={m.studentWpm} /></div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
+              <div className="metric"><div className="mv"><Metric v={m.avgResponseSec} decimals={1} suffix="s" /></div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
+              <div className="metric"><div className="mv"><Metric v={m.longestTurnSec} suffix="s" /></div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
+              <div className="metric"><div className="mv"><Metric v={m.avgTurnWords} /></div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
+              <div className="metric"><div className="mv"><Metric v={m.fillerCount} /></div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
+              <div className="metric"><div className="mv"><Metric v={m.longPauseCount} /></div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
             </div>
           </div>
         )
@@ -168,7 +178,9 @@ export default function LessonPageTabs({
         ))}
       </div>
 
-      <div className="k-flow" role="tabpanel">
+      {/* Keyed on the tab so switching remounts the panel and its cards run
+          their entrance again — the page answers the click. */}
+      <div className="k-flow" role="tabpanel" key={tab}>
         {tab === 'Progress' && <h3 className="dashboard-title" style={{ ['--w' as any]: 12 }}>How this lesson went</h3>}
         {placements.map(({ id, w, h }) => {
           const content = section(id, h)

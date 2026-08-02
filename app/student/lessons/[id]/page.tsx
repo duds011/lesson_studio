@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveBrand } from '@/lib/brand'
 import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
+import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
 
 export const dynamic = 'force-dynamic'
@@ -60,7 +61,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         {recap.score != null && (
           <div className="k-pscore">
             <div>
-              <b>{recap.score}</b>
+              <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
               <small>OUT OF 10</small>
             </div>
           </div>

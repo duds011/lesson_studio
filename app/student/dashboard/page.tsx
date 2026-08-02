@@ -7,6 +7,7 @@ import { getTeacherPaymentMethods } from '@/lib/payment-methods'
 import { formatDateShort, getLevelLabel, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import { MilestoneGauge, ScoreTrendChart, VocabLevelChart } from '@/components/portal/BrandCharts'
+import CountUp from '@/components/portal/CountUp'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
 import CalendarCard from '@/components/koku/CalendarCard'
@@ -178,7 +179,7 @@ export default async function StudentDashboard() {
                 <span>Lessons</span>
               </div>
               <div className="k-stat-val">
-                <b>{lessonCount}</b>
+                <b><CountUp value={lessonCount} /></b>
                 {recentCount > 0 && <span className="k-chip">+{recentCount}</span>}
               </div>
               <p className="k-stat-sub">{recentCount > 0 ? `${recentCount} in the last 30 days` : 'Total lessons completed'}</p>
@@ -190,7 +191,7 @@ export default async function StudentDashboard() {
                 <span>Avg score</span>
               </div>
               <div className="k-stat-val">
-                <b>{avgScore != null ? avgScore.toFixed(1) : '—'}</b>
+                <b>{avgScore != null ? <CountUp value={avgScore} decimals={1} /> : '—'}</b>
                 {scoreDeltaNum != null && scoreDeltaNum !== 0 && (
                   <span className="k-chip">{scoreDeltaNum > 0 ? '▲' : '▼'} {Math.abs(scoreDeltaNum).toFixed(1)}</span>
                 )}
@@ -204,7 +205,7 @@ export default async function StudentDashboard() {
                 <span>Speaking</span>
               </div>
               <div className="k-stat-val">
-                <b>{latestTalk ?? '—'}<span style={{ fontSize: 19 }}>%</span></b>
+                <b>{latestTalk != null ? <CountUp value={latestTalk} /> : '—'}<span style={{ fontSize: 19 }}>%</span></b>
                 {talkDelta != null && talkDelta !== 0 && (
                   <span className="k-chip">{talkDelta > 0 ? '▲' : '▼'} {Math.abs(talkDelta)}%</span>
                 )}
