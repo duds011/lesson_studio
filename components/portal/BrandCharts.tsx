@@ -2,9 +2,9 @@
 
 /**
  * Brand-themed charts shared by the real student dashboard and the miniature
- * of it in the branding studio. Each one takes an explicit pixel height so a
- * teacher-resized block (brand.heights) can hand its own space down, and a
- * `compact` flag that strips axes and tooltips for the preview-sized copy.
+ * of it in the branding studio. Each one takes an explicit height so a
+ * teacher-resized block can hand its own space down, and a `compact` flag that
+ * strips axes and tooltips for the preview-sized copy.
  *
  * These replace the plain fill bars the dashboard used to draw for scores,
  * milestone progress and vocabulary.
@@ -37,7 +37,7 @@ export type ScorePoint = { lesson: number; score: number }
  */
 export function ScoreTrendChart({
   points, color, height = 150, compact = false,
-}: { points: ScorePoint[]; color: string; height?: number; compact?: boolean }) {
+}: { points: ScorePoint[]; color: string; height?: number | string; compact?: boolean }) {
   if (points.length === 0) return null
   const last = points.length - 1
 
@@ -67,7 +67,7 @@ export function ScoreTrendChart({
  */
 export function MilestoneGauge({
   pct, color, height = 150, caption, compact = false,
-}: { pct: number; color: string; height?: number; caption?: string; compact?: boolean }) {
+}: { pct: number; color: string; height?: number | string; caption?: string; compact?: boolean }) {
   const value = Math.max(0, Math.min(100, pct))
 
   return (
@@ -100,7 +100,7 @@ const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1']
 /** Vocabulary by JLPT level as bars, one colour per level. */
 export function VocabLevelChart({
   distribution, height = 150, compact = false,
-}: { distribution: Record<string, number>; height?: number; compact?: boolean }) {
+}: { distribution: Record<string, number>; height?: number | string; compact?: boolean }) {
   const data = JLPT_LEVELS
     .map((level) => ({ level, count: distribution[level] ?? 0 }))
     .filter((d) => d.count > 0)
@@ -129,7 +129,7 @@ export function VocabLevelChart({
  */
 export function MiniTrend({
   points, color, height = 62,
-}: { points: { x: number; y: number }[]; color: string; height?: number }) {
+}: { points: { x: number; y: number }[]; color: string; height?: number | string }) {
   const gid = 'k-mini-trend'
   return (
     <ResponsiveContainer width="100%" height={height}>

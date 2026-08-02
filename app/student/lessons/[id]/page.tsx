@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { resolveBrand } from '@/lib/brand'
 import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
 import LessonExchange from '@/components/portal/LessonExchange'
@@ -16,7 +18,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
     .from('lessons')
     .select(`id, lesson_number, lesson_date, title,
       lesson_summaries ( recap_json, score ),
-      students ( full_name )`)
+      students ( full_name, teacher_id )`)
     .eq('id', params.id)
     .single()
 
@@ -25,14 +27,21 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   const l = lesson as any
   const summary = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
   const recap = summary?.recap_json
-  const studentName = (Array.isArray(l.students) ? l.students[0] : l.students)?.full_name ?? ''
+  const student = Array.isArray(l.students) ? l.students[0] : l.students
+  const studentName = student?.full_name ?? ''
 
   if (!recap) notFound()
 
-  const [{ data: files }, { data: audios }] = await Promise.all([
+  // The teacher owns how this page is arranged — same brand the studio edits.
+  const admin = createAdminClient()
+  const [{ data: files }, { data: audios }, { data: teacherProfile }] = await Promise.all([
     supabase.from('lesson_attachments').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     supabase.from('student_audio_submissions').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+    student?.teacher_id
+      ? admin.from('profiles').select('brand').eq('id', student.teacher_id).single()
+      : Promise.resolve({ data: null }),
   ])
+  const brand = resolveBrand((teacherProfile as any)?.brand)
 
   return (
     <div style={{ maxWidth: 900 }}>
@@ -67,6 +76,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         lesson={{ id: l.id, lessonNumber: l.lesson_number, date: l.lesson_date, title: l.title, recap }}
         studentFirst={studentName.split(' ')[0] || 'You'}
         teacherFirst="Noa"
+        brand={brand}
       />
 
       <LessonExchange lessonId={l.id} role="student" files={files || []} audios={audios || []} />

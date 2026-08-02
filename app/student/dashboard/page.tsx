@@ -1,4 +1,3 @@
-import { Fragment } from 'react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -118,15 +117,15 @@ export default async function StudentDashboard() {
     .reverse()
     .map((l) => ({ lesson: l.lesson_number as number, score: Number(summaryOf(l).score) }))
 
-  // A block the teacher resized in the studio (brand.heights) gets that height
-  // here too. A chart block spends it on the plot area — everything else is
-  // wrapped in a fixed-height box and scrolls. CHART_CHROME is the card
-  // padding + heading above the plot, so the block as a whole lands on the
-  // height that was dragged.
+  // Sizes the teacher set in the studio. A chart block spends its height on the
+  // plot area (CHART_CHROME is the card padding + heading above it, so the block
+  // as a whole lands on the height that was dragged); everything else gets the
+  // height on its wrapper and scrolls what doesn't fit.
   const CHART_BLOCKS = new Set<BlockId>(['scores', 'milestone', 'vocab'])
   const CHART_CHROME = 74
+  const sizeOf = (id: BlockId) => brand.layout.find((p) => p.id === id)
   const heightOf = (id: BlockId, fallback: number) => {
-    const h = brand.heights[id]
+    const h = sizeOf(id)?.h
     return h ? Math.max(60, h - CHART_CHROME) : fallback
   }
 
@@ -387,14 +386,20 @@ export default async function StudentDashboard() {
     ),
   }
 
-  const column = (ids: BlockId[]) =>
-    ids.map((id) => {
-      const h = brand.heights[id]
-      // Chart blocks already sized themselves via heightOf, so only the rest
-      // need the fixed-height box.
-      if (!h || CHART_BLOCKS.has(id)) return <Fragment key={id}>{blocks[id]}</Fragment>
-      return <div key={id} className="k-block-sized" style={{ height: h }}>{blocks[id]}</div>
-    })
+  // Whether each block has anything to render — mirrors the conditions inside
+  // the blocks above, and decides whether it takes a slot in the flow at all.
+  const hasContent: Record<BlockId, boolean> = {
+    hero: true,
+    stats: true,
+    lessons: true,
+    progress: brand.showProgress && lessonCount >= 2,
+    vocab: brand.showVocab && totalVocab > 0,
+    calendar: true,
+    milestone: brand.showMilestone,
+    scores: scoreTrend.length > 0,
+    tests: brand.showTests && (tests ?? []).length > 0,
+    speaking: brand.showSpeaking && (avgWpm != null || avgThinkSec != null),
+  }
 
   return (
     <>
@@ -415,19 +420,28 @@ export default async function StudentDashboard() {
         </div>
       </div>
 
-      <div className="k-grid">
-        <div>
-          <div style={{ marginTop: 16 }}>
-            <StudentLessonsBar credits={credits} packages={buyPackages} />
-          </div>
-
+      <div className="k-flow" style={{ marginTop: 16 }}>
+        <div style={{ ['--w' as any]: 12 }}>
+          <StudentLessonsBar credits={credits} packages={buyPackages} />
           <PaymentMethodsPanel methods={paymentMethods} />
-          {column(brand.layout.main)}
         </div>
 
-        <div>
-          {column(brand.layout.rail)}
-        </div>
+        {/* Each block sits where the teacher put it, at the width and height
+            they gave it. A sized block becomes a size container so its own
+            text scales to the box — see .k-fit in koku2.css.
+
+            A block with nothing to show is left out of the flow entirely:
+            emitting an empty one would still take up its share of the row and
+            leave a hole beside its neighbours. */}
+        {brand.layout.filter(({ id }) => hasContent[id]).map(({ id, w, h }) => (
+          <div
+            key={id}
+            style={{ ['--w' as any]: w, ...(h ? { height: h } : null) }}
+            className={h ? 'k-fit' : undefined}
+          >
+            {h ? <div className={`k-fit-body ${CHART_BLOCKS.has(id) ? '' : 'k-block-sized'}`}>{blocks[id]}</div> : blocks[id]}
+          </div>
+        ))}
       </div>
     </>
   )

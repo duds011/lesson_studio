@@ -3,22 +3,23 @@
 import { useState } from 'react'
 import { FormattedContent } from './RecapView'
 import LessonExercises from './LessonExercises'
+import { VocabLevelChart } from './portal/BrandCharts'
+import {
+  DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_TABS,
+  type Brand, type LessonBlockId, type LessonTab,
+} from '@/lib/brand'
 
 type Recap = any
 type Lesson = { id: string; lessonNumber: number; date: string; title: string; recap: Recap }
 
-const JLPT = ['N5', 'N4', 'N3', 'N2', 'N1'] as const
-
 export default function LessonPageTabs({
-  lesson, studentFirst, teacherFirst = 'Your teacher',
+  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND,
 }: {
-  lesson: Lesson; studentFirst: string; teacherFirst?: string
+  lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
 }) {
   const r = lesson.recap
   const m = r.metrics as any
-  const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
-  type Tab = typeof TABS[number]
-  const [tab, setTab] = useState<Tab>('Progress')
+  const [tab, setTab] = useState<LessonTab>('Progress')
 
   const studentTalk = typeof r.talk_percentage === 'number' ? r.talk_percentage : 40
   const teacherTalk = 100 - studentTalk
@@ -28,119 +29,119 @@ export default function LessonPageTabs({
   const lessonSections = allSections.filter((s) => !/main corrections|refinement|takeaway/i.test(s.title))
 
   const dist: Record<string, number> = r.vocab_level_distribution || {}
-  const distMax = Math.max(1, ...JLPT.map((l) => dist[l] ?? 0))
 
-  return (
-    <div>
-      <div className="tabs" role="tablist" aria-label="Lesson recap sections">
-        {TABS.map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} className={`tab ${tab === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{t === 'Homework' ? 'Practice' : t}</button>
-        ))}
-      </div>
+  /** Height a chart gets inside a block the teacher sized (card chrome removed). */
+  const chartH = (h: number | undefined, fallback: number) => (h ? Math.max(60, h - 74) : fallback)
 
-      {/* ── PROGRESS ── */}
-      {tab === 'Progress' && (
-        <div className="lesson-dashboard" role="tabpanel">
-          <h3 className="dashboard-title">How this lesson went</h3>
-          <div className="stat-cards">
-            {/* Speaking balance */}
-            <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
-              <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
-              <div className="stat-card-value">{studentTalk}<span className="stat-unit">%</span> <span className="stat-sep">/</span> {teacherTalk}<span className="stat-unit">%</span></div>
-              <div className="balance-bars" style={{ marginTop: 'auto' }}>
-                <div className="balance-row"><span>{studentFirst}</span><div className="balance-track"><div className="balance-fill student" style={{ width: `${studentTalk}%` }} /></div><span>{studentTalk}%</span></div>
-                <div className="balance-row"><span>{teacherFirst}</span><div className="balance-track"><div className="balance-fill" style={{ width: `${teacherTalk}%` }} /></div><span>{teacherTalk}%</span></div>
-              </div>
-            </div>
-
-            {/* Score */}
-            <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
-              <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
-              <div className="stat-card-value" style={{ color: 'var(--green)' }}>{r.score}<span className="stat-unit">/10</span></div>
-              {r.confidence_label && <span className="stat-chip" style={{ marginTop: 'auto' }}>{r.confidence_label}</span>}
-            </div>
-
-            {/* Grammar density */}
-            <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
-              <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
-              <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>{r.grammar_density}</div>
-              <p className="stat-card-note" style={{ marginTop: 'auto' }}>{r.vocab_total_count ? `${r.vocab_total_count} vocabulary items practiced` : ''}</p>
+  /**
+   * Every arrangeable section of this page, keyed the same way as the studio
+   * preview. A section that has nothing to show returns null and drops out of
+   * the flow entirely.
+   */
+  const section = (id: LessonBlockId, h?: number): React.ReactNode => {
+    switch (id) {
+      case 'balance':
+        return (
+          <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
+            <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
+            <div className="stat-card-value">{studentTalk}<span className="stat-unit">%</span> <span className="stat-sep">/</span> {teacherTalk}<span className="stat-unit">%</span></div>
+            <div className="balance-bars" style={{ marginTop: 'auto' }}>
+              <div className="balance-row"><span>{studentFirst}</span><div className="balance-track"><div className="balance-fill student" style={{ width: `${studentTalk}%` }} /></div><span>{studentTalk}%</span></div>
+              <div className="balance-row"><span>{teacherFirst}</span><div className="balance-track"><div className="balance-fill" style={{ width: `${teacherTalk}%` }} /></div><span>{teacherTalk}%</span></div>
             </div>
           </div>
-
-          {m && (
-            <div className="corrections-card" style={{ marginBottom: '1rem' }}>
-              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
-              <div className="metric-grid">
-                <div className="metric"><div className="mv">{m.studentWpm ?? '—'}</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
-                <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
-                <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
-                <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
-                <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
-                <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
+        )
+      case 'score':
+        if (r.score == null) return null
+        return (
+          <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
+            <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
+            <div className="stat-card-value" style={{ color: 'var(--green)' }}>{r.score}<span className="stat-unit">/10</span></div>
+            {r.confidence_label && <span className="stat-chip" style={{ marginTop: 'auto' }}>{r.confidence_label}</span>}
+          </div>
+        )
+      case 'grammar':
+        if (!r.grammar_density) return null
+        return (
+          <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
+            <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
+            <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>{r.grammar_density}</div>
+            <p className="stat-card-note" style={{ marginTop: 'auto' }}>{r.vocab_total_count ? `${r.vocab_total_count} vocabulary items practiced` : ''}</p>
+          </div>
+        )
+      case 'metrics':
+        if (!m) return null
+        return (
+          <div className="corrections-card">
+            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
+            <div className="metric-grid">
+              <div className="metric"><div className="mv">{m.studentWpm ?? '—'}</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
+              <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
+              <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
+              <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
+              <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
+              <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
+            </div>
+          </div>
+        )
+      case 'corrections':
+        if (!corrections) return null
+        return (
+          <div className="corrections-card">
+            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{corrections.title.replace(/^\d+\.\s*/, '')}</span></div>
+            <FormattedContent content={corrections.content} />
+          </div>
+        )
+      case 'sections':
+        if (lessonSections.length === 0 && !r.audio_script) return null
+        return (
+          <div>
+            {lessonSections.map((s, i) => (
+              <div className="lesson-block" key={i}>
+                <h3>{s.title}</h3>
+                <FormattedContent content={s.content} />
               </div>
-            </div>
-          )}
-
-          {corrections && (
-            <div className="corrections-card" style={{ marginBottom: '1rem' }}>
-              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{corrections.title.replace(/^\d+\.\s*/, '')}</span></div>
-              <FormattedContent content={corrections.content} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── LESSON ── */}
-      {tab === 'Lesson' && (
-        <div className="tab-panel" role="tabpanel">
-          {lessonSections.map((s, i) => (
-            <div className="lesson-block" key={i}>
-              <h3>{s.title}</h3>
-              <FormattedContent content={s.content} />
-            </div>
-          ))}
-          {r.audio_script && (
-            <div className="lesson-block">
-              <h3>Voice memo script</h3>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{r.audio_script}</p>
-            </div>
-          )}
-          {r.teacher_note && (
-            <div className="lesson-block"><h3>Teacher’s Note</h3><p>{r.teacher_note}</p></div>
-          )}
-        </div>
-      )}
-
-      {/* ── HOMEWORK ── */}
-      {tab === 'Homework' && (
-        <div className="tab-panel" role="tabpanel">
+            ))}
+            {r.audio_script && (
+              <div className="lesson-block">
+                <h3>Voice memo script</h3>
+                <p style={{ whiteSpace: 'pre-wrap' }}>{r.audio_script}</p>
+              </div>
+            )}
+          </div>
+        )
+      case 'notes':
+        if (!r.teacher_note) return null
+        return <div className="lesson-block"><h3>Teacher’s Note</h3><p>{r.teacher_note}</p></div>
+      case 'homework':
+        return (
           <div className="lesson-block">
             <h3>Homework</h3>
             {(r.homework?.length ?? 0) === 0 ? <p className="analytics-note">No homework for this lesson.</p> : (
-              <ul>{r.homework.map((h: any, i: number) => <li key={i}>{h.description}</li>)}</ul>
+              <ul>{r.homework.map((hw: any, i: number) => <li key={i}>{hw.description}</li>)}</ul>
             )}
           </div>
+        )
+      case 'exercises':
+        return (
           <div className="lesson-block">
             <h3>Practice exercises</h3>
             <LessonExercises exercises={r.exercises || []} />
           </div>
-        </div>
-      )}
-
-      {/* ── VOCABULARY ── */}
-      {tab === 'Vocabulary' && (
-        <div className="tab-panel" role="tabpanel">
-          <div className="lesson-block">
+        )
+      case 'vocabLevels': {
+        const total = Object.values(dist).reduce((a, b) => a + Number(b || 0), 0)
+        if (!total) return null
+        return (
+          <div className="lesson-block k-chart-card">
             <h3>Vocabulary by JLPT level</h3>
-            {JLPT.map((lv) => (
-              <div className="balance-row" key={lv} style={{ gridTemplateColumns: '40px 1fr 32px' }}>
-                <span>{lv}</span>
-                <div className="balance-track"><div className="balance-fill student" style={{ width: `${((dist[lv] ?? 0) / distMax) * 100}%` }} /></div>
-                <span>{dist[lv] ?? 0}</span>
-              </div>
-            ))}
+            <VocabLevelChart distribution={dist} height={chartH(h, 150)} />
           </div>
+        )
+      }
+      case 'vocabWords':
+        if ((r.vocabulary || []).length === 0) return null
+        return (
           <div className="lesson-block">
             <h3>Words from this lesson</h3>
             {(r.vocabulary || []).map((v: any, i: number) => (
@@ -152,8 +153,37 @@ export default function LessonPageTabs({
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )
+    }
+  }
+
+  // The teacher's arrangement for this tab, in their order and at their sizes.
+  const placements = brand.lessonLayout.filter((p) => LESSON_BLOCK_TAB[p.id] === tab)
+
+  return (
+    <div>
+      <div className="tabs" role="tablist" aria-label="Lesson recap sections">
+        {LESSON_TABS.map((t) => (
+          <button key={t} role="tab" aria-selected={tab === t} className={`tab ${tab === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{t}</button>
+        ))}
+      </div>
+
+      <div className="k-flow" role="tabpanel">
+        {tab === 'Progress' && <h3 className="dashboard-title" style={{ ['--w' as any]: 12 }}>How this lesson went</h3>}
+        {placements.map(({ id, w, h }) => {
+          const content = section(id, h)
+          if (!content) return null
+          return (
+            <div
+              key={id}
+              style={{ ['--w' as any]: w, ...(h ? { height: h } : null) }}
+              className={h ? 'k-fit' : undefined}
+            >
+              {h ? <div className="k-fit-body k-block-sized">{content}</div> : content}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -466,39 +466,99 @@
 .k-shape-chip{height:46px;background:var(--surface-2);border:1.5px solid var(--line-strong)}
 
 
+/* ── the block flow ──
+   Blocks wrap left to right, each `--w` of 12 columns wide. Narrow one and the
+   next block moves up beside it, so there are no columns to keep in sync.
+   Width formula: for a row whose spans total 12 with (k-1) gaps between them,
+   w/12*(100% + gap) - gap sums back to exactly 100%. */
+.k-flow{--g:12px;display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--g)}
+.k-flow>*{width:calc((100% + var(--g)) * var(--w,12) / 12 - var(--g));min-width:0}
+.k-flow.narrow>*{width:100%}
+@media(max-width:760px){.k-flow>*{width:100%}}
+.k-flow-empty{width:100%!important;border:1.5px dashed var(--line-strong);border-radius:11px;padding:14px;text-align:center;font-size:10px;color:var(--muted)}
+
 /* ── directly-draggable preview blocks ── */
-.k-preview-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;align-items:start}
-.k-preview-grid.mobile{grid-template-columns:minmax(0,1fr)}
-/* No `gap` here: the slots between blocks *are* the gap, so they can grow into
-   a landing space while the blocks either side part around them. */
-.k-pcol{display:grid;gap:0;align-content:start;min-height:80px;border-radius:12px;padding:2px;transition:.14s ease}
-.k-pcol-empty{border:1.5px dashed var(--line-strong);border-radius:11px;padding:14px;text-align:center;font-size:10px;color:var(--muted)}
-
-/* A drop slot. 12px at rest (the normal spacing), 0 at either end of a column,
-   and it opens to show where the dragged block would land. */
-.k-pslot{box-sizing:border-box;height:12px;transition:height .16s cubic-bezier(.2,.7,.3,1)}
-.k-pslot.edge{height:0}
-.k-pslot.open{height:66px;padding:6px 0}
-.k-pslot-line{display:block;box-sizing:border-box;height:100%;border-radius:10px;opacity:0;transition:opacity .14s ease}
-.k-pslot.open .k-pslot-line{opacity:1;border:1.5px dashed var(--forest);background:rgba(0,0,0,.035)}
-
 .k-pblock{position:relative;cursor:grab;border-radius:12px;transition:opacity .14s ease}
 .k-pblock:hover{outline:2px solid var(--forest);outline-offset:2px}
 .k-pblock:active{cursor:grabbing}
-.k-pblock.dragging{opacity:.35}
 .k-pblock.off{opacity:.45}
 .k-pblock.resizing{outline:2px solid var(--forest);outline-offset:2px}
+/* The dragged block, shown where it would land. The rest of the flow has
+   already reflowed around it, so the drop target is the layout itself. */
+.k-pblock.ghost{outline:2px dashed var(--forest);outline-offset:2px;opacity:.5}
+.k-pblock.ghost .k-pblock-body{filter:grayscale(.4)}
 .k-pblock>*{pointer-events:none}
 .k-pblock-body{height:100%;min-height:0;display:grid;overflow:hidden;border-radius:12px}
 .k-pblock-body>*{min-height:0}
-.k-pblock-tag{position:absolute;top:-8px;left:6px;z-index:2;background:var(--forest);color:#fff;border-radius:999px;padding:2px 8px;font-size:8.5px;font-weight:800;letter-spacing:.02em;opacity:0;transition:.14s ease;white-space:nowrap}
-.k-pblock:hover .k-pblock-tag,.k-pblock.resizing .k-pblock-tag{opacity:1}
+.k-pblock-tag{position:absolute;top:-8px;left:6px;z-index:4;background:var(--forest);color:#fff;border-radius:999px;padding:2px 8px;font-size:8.5px;font-weight:800;letter-spacing:.02em;opacity:0;transition:.14s ease;white-space:nowrap;pointer-events:none}
+.k-pblock:hover .k-pblock-tag,.k-pblock.resizing .k-pblock-tag,.k-pblock.ghost .k-pblock-tag{opacity:1}
 
-/* Bottom-edge resize grip. Needs pointer events back — the rule above turns
-   them off for every other child so drags land on the block itself. */
-.k-presize{position:absolute;left:0;right:0;bottom:-6px;height:13px;z-index:3;cursor:ns-resize;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
-.k-presize::after{content:"";width:38px;height:4px;border-radius:999px;background:var(--forest);opacity:0;transition:opacity .14s ease}
-.k-pblock:hover .k-presize::after,.k-pblock.resizing .k-presize::after{opacity:.9}
+/* Resize grips: bottom for height, right for width, corner for both. They need
+   pointer events back — the rule above turns them off for every other child so
+   drags land on the block itself. */
+.k-presize,.k-presize-x,.k-presize-xy{position:absolute;z-index:3;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
+.k-presize::after,.k-presize-x::after,.k-presize-xy::after{content:"";border-radius:999px;background:var(--forest);opacity:0;transition:opacity .14s ease}
+.k-presize{left:8px;right:8px;bottom:-6px;height:13px;cursor:ns-resize}
+.k-presize::after{width:38px;height:4px}
+.k-presize-x{top:8px;bottom:8px;right:-6px;width:13px;cursor:ew-resize}
+.k-presize-x::after{width:4px;height:38px}
+.k-presize-xy{right:-7px;bottom:-7px;width:16px;height:16px;cursor:nwse-resize}
+.k-presize-xy::after{width:9px;height:9px;border-radius:3px}
+.k-pblock:hover .k-presize::after,.k-pblock:hover .k-presize-x::after,.k-pblock:hover .k-presize-xy::after,
+.k-pblock.resizing .k-presize::after,.k-pblock.resizing .k-presize-x::after,.k-pblock.resizing .k-presize-xy::after{opacity:.9}
+
+/* ── content that fits its rectangle ──
+   A block the teacher sized becomes a size container, and everything inside is
+   expressed in `em` off a font-size derived from the box. Shrink the block and
+   the numbers, labels and padding shrink with it; the clamp stops a small block
+   from becoming unreadable for the student. */
+/* The size container is the block; the scaling lives on the child, because an
+   element's own styles resolve container units against its *ancestor*
+   container, not itself — putting the clamp on .k-fit pinned it to the max. */
+.k-fit{container-type:size}
+.k-fit>.k-fit-body{height:100%;min-height:0;font-size:clamp(8.5px,min(9cqh,5.5cqw),20px)}
+.k-fit .k-preview-card{padding:1.15em 1.3em;display:flex;flex-direction:column}
+.k-fit .k-preview-row{font-size:1em}
+.k-fit .k-preview-row span{font-size:.85em}
+.k-fit .k-preview-hero{padding:1.9em 2em;min-height:0}
+.k-fit .k-preview-hero strong{font-size:1.75em}
+.k-fit .k-preview-hero p{font-size:.92em;margin:.6em 0 1.1em}
+.k-fit .k-preview-btn{padding:.72em 1.5em;font-size:.88em}
+.k-fit .k-preview-props{width:8em}
+.k-fit .k-preview-stats{gap:.6em}
+.k-fit .k-preview-stats>div{padding:1.05em 1.15em;min-height:0}
+.k-fit .k-preview-stats span{font-size:.8em}
+.k-fit .k-preview-stats b{font-size:1.9em;margin-top:.2em}
+.k-fit .k-preview-lessons{gap:.5em;margin-top:.65em}
+.k-fit .k-preview-lessons>div{font-size:.88em;gap:.7em}
+.k-fit .k-preview-lessons i{width:2em;height:2em;border-radius:.65em}
+.k-fit .k-preview-cal{gap:.22em;margin-top:.6em}
+.k-fit .k-chart-card .recharts-wrapper{margin-top:.5em}
+/* the real portal's own blocks */
+.k-fit .k-card{padding:1.15em 1.25em}
+.k-fit .k-card-head h3{font-size:1.08em}
+.k-fit .k-link,.k-fit .k-chip{font-size:.8em}
+.k-fit .k-stats{gap:.7em}
+.k-fit .k-stat{padding:1.1em 1.2em;min-height:0}
+.k-fit .k-stat-val b{font-size:2em}
+.k-fit .k-stat-sub{font-size:.8em}
+.k-fit .k-sec-head h2{font-size:1.35em}
+.k-fit .k-course{padding:.8em .9em}
+.k-fit .k-course-title{font-size:.95em}
+.k-fit .k-course-meta,.k-fit .k-hw-due{font-size:.8em}
+.k-fit .k-hw-title{font-size:.9em}
+.k-fit .k-hero{padding:1.8em 2em;min-height:0}
+.k-fit .k-hero h2{font-size:2.1em}
+.k-fit .k-hero p{font-size:.95em}
+.k-fit .stat-card{padding:1.1em 1.2em;min-height:0}
+.k-fit .stat-card-value{font-size:1.9em}
+.k-fit .stat-card-label{font-size:.72em}
+.k-fit .lesson-block,.k-fit .corrections-card{padding:1.2em 1.35em;margin-bottom:0}
+.k-fit .lesson-block h3{font-size:1.05em}
+.k-fit .lesson-block p,.k-fit .lesson-block li,.k-fit .example{font-size:.9em}
+.k-fit .metric{padding:.75em .8em}
+.k-fit .metric .mv{font-size:1.4em}
+.k-fit .metric .mk,.k-fit .metric .mn{font-size:.72em}
 .k-preview-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
 .k-preview-cal i{aspect-ratio:1;border-radius:50%;background:var(--surface-2);display:block}
 
@@ -589,6 +649,31 @@
 .k-hchip b{color:var(--ink)}
 
 .k-preview-switches{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ── the teacher's font pairing ──
+   Scoped to the branded surfaces only, so the teacher's own tooling keeps its
+   own type. Both vars come from brandVars(). */
+.k-shell,.k-preview-frame{font-family:var(--font-body,"Plus Jakarta Sans",system-ui,sans-serif)}
+.k-shell :is(h1,h2,h3,h4),.k-preview-frame :is(h1,h2,h3,h4),
+.k-shell :is(.k-name,.k-stat-val,.k-hero-btn,.k-course-title,.k-pscore b,.stat-card-value,.metric .mv),
+.k-preview-frame :is(.k-preview-name,.k-preview-hero strong,.k-preview-stats b,.k-preview-row strong,.k-pscore b,.stat-card-value,.metric .mv,.tab)
+{font-family:var(--font-head,"Outfit",system-ui,sans-serif)}
+
+/* ── full presets ── */
+.k-presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.k-preset-card{position:relative;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:0;overflow:hidden;cursor:pointer;font:inherit;text-align:left;transition:.16s ease}
+.k-preset-card:hover{border-color:var(--forest);transform:translateY(-1px)}
+.k-preset-card.sel{border-color:var(--forest);box-shadow:0 0 0 1px var(--forest)}
+.k-preset-swatch{height:42px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.k-preset-swatch b{position:relative;z-index:1;color:#fff;font-size:15px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.k-preset-swatch i{position:absolute;right:7px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.3)}
+.k-preset-card>span{display:block;padding:7px 9px 8px}
+.k-preset-card strong{display:block;font-size:11px;font-weight:800;letter-spacing:-.01em}
+.k-preset-card small{display:block;font-size:9px;color:var(--muted);line-height:1.35;margin-top:2px}
+
+/* ── recap preview: sections arrange like dashboard blocks ── */
+.k-lpview .k-flow .lesson-block,.k-lpview .k-flow .corrections-card,.k-lpview .k-flow .stat-card{margin-bottom:0;height:100%}
+.k-lpview .k-flow{width:100%}
 
 /* ── lesson-recap preview ──
    Real page classes at preview scale, so the accent, corners and background

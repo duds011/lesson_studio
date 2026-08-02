@@ -1,17 +1,19 @@
 'use client'
 
-import { Fragment, useRef, useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
-  ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, brandVars, backgroundClass,
-  MIN_BLOCK_H, MAX_BLOCK_H,
+  ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_TABS,
+  PRESETS, FONTS, brandVars, backgroundClass, clampSpan, GRID_COLS, MIN_BLOCK_H, MAX_BLOCK_H,
   type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle,
-  type BlockId, type Layout,
+  type BlockId, type LessonBlockId, type LessonTab, type Placement,
 } from '@/lib/brand'
 import { MilestoneGauge, MiniTrend, ScoreTrendChart, VocabLevelChart } from './portal/BrandCharts'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
+/** Must match --g on .k-flow, since span maths is done against it. */
+const GAP = 12
 
 const HERO_STYLES: { value: HeroStyle; label: string; hint: string }[] = [
   { value: 'forest', label: 'Solid', hint: 'Filled accent panel' },
@@ -51,19 +53,19 @@ const SAMPLE_SCORES = [
 const SAMPLE_TREND = SAMPLE_SCORES.map((p) => ({ x: p.lesson, y: p.score }))
 const SAMPLE_VOCAB = { N5: 18, N4: 13, N3: 9, N2: 5 }
 
-/**
- * Card padding + heading above a preview chart. A block resized to H spends
- * H − CHROME on the plot so the block itself lands on the height dragged.
- */
-const CHART_CHROME = 62
+type Scope = 'dash' | 'lesson'
+type Axis = 'x' | 'y' | 'xy'
+type AnyId = BlockId | LessonBlockId
 
-type Col = 'main' | 'rail'
-type Grab = { col: Col; index: number } | null
-/** Where a dragged block would be inserted — an index *between* blocks. */
-type Slot = { col: Col; index: number } | null
-
-const LESSON_TABS = ['Progress', 'Lesson', 'Practice', 'Vocabulary'] as const
-type LessonTab = (typeof LESSON_TABS)[number]
+/** Move `id` to position `to` within a list of placements. */
+function moveTo<T extends string>(list: Placement<T>[], id: T, to: number): Placement<T>[] {
+  const from = list.findIndex((p) => p.id === id)
+  if (from < 0 || from === to) return list
+  const next = list.slice()
+  const [item] = next.splice(from, 1)
+  next.splice(Math.max(0, Math.min(next.length, to)), 0, item)
+  return next
+}
 
 export default function BrandStudio({ initial, teacherName }: { initial: Brand; teacherName: string }) {
   const router = useRouter()
@@ -75,12 +77,14 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const [view, setView] = useState<'dashboard' | 'lesson'>('dashboard')
   const [lessonTab, setLessonTab] = useState<LessonTab>('Progress')
 
-  // Drag state for rearranging blocks directly on the preview.
-  const [grab, setGrab] = useState<Grab>(null)
-  const [over, setOver] = useState<Slot>(null)
-  // Bottom-edge resize.
-  const [resizing, setResizing] = useState<BlockId | null>(null)
-  const blockEls = useRef<Partial<Record<BlockId, HTMLDivElement | null>>>({})
+  /** While dragging, the flow renders this working order so blocks reflow live. */
+  const [dragId, setDragId] = useState<AnyId | null>(null)
+  const [order, setOrder] = useState<Placement<any>[] | null>(null)
+  const [resizing, setResizing] = useState<AnyId | null>(null)
+  const blockEls = useRef<Partial<Record<string, HTMLDivElement | null>>>({})
+  const flowEl = useRef<HTMLDivElement | null>(null)
+
+  const scope: Scope = view === 'dashboard' ? 'dash' : 'lesson'
 
   const set = <K extends keyof Brand>(key: K, value: Brand[K]) => {
     setBrand((b) => ({ ...b, [key]: value }))
@@ -98,51 +102,72 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
   const reset = () => { setBrand(DEFAULT_BRAND); setSaved(false) }
 
-  /** Move a block to a new slot, across columns if needed. */
-  const move = (from: { col: Col; index: number }, to: { col: Col; index: number }) => {
-    const next: Layout = { main: [...brand.layout.main], rail: [...brand.layout.rail] }
-    const [block] = next[from.col].splice(from.index, 1)
-    if (!block) return
-    // Removing an earlier item in the same column shifts the target left.
-    const target = from.col === to.col && from.index < to.index ? to.index - 1 : to.index
-    next[to.col].splice(Math.max(0, Math.min(next[to.col].length, target)), 0, block)
-    set('layout', next)
+  const applyPreset = (id: string) => {
+    const p = PRESETS.find((x) => x.id === id)
+    if (!p) return
+    setBrand((b) => ({ ...b, ...p.brand }))
+    setSaved(false)
   }
+
+  // ── the placements being edited ─────────────────────────────────────────
+  /** Recap blocks belong to a tab; only that tab's blocks are arranged here. */
+  const inScope = (p: Placement<any>) => scope === 'dash' || LESSON_BLOCK_TAB[p.id as LessonBlockId] === lessonTab
+  const stored: Placement<any>[] = scope === 'dash' ? brand.layout : brand.lessonLayout
+  const visible = stored.filter(inScope)
+  const shown = order ?? visible
 
   /**
-   * Which insertion slot the pointer is asking for: above the block it is over,
-   * or below it once past the midpoint.
+   * Write an edited subsequence back into the stored list, leaving the other
+   * tabs' blocks exactly where they were.
    */
-  const slotFor = (e: React.DragEvent, col: Col, index: number): { col: Col; index: number } => {
-    const r = e.currentTarget.getBoundingClientRect()
-    return { col, index: e.clientY > r.top + r.height / 2 ? index + 1 : index }
+  const commit = (next: Placement<any>[]) => {
+    const slots = stored.map((p, i) => (inScope(p) ? i : -1)).filter((i) => i >= 0)
+    const merged = stored.slice()
+    slots.forEach((slotIndex, k) => { if (next[k]) merged[slotIndex] = next[k] })
+    set(scope === 'dash' ? 'layout' : 'lessonLayout', merged as never)
   }
 
-  /** A slot only parts open if dropping there would actually move the block. */
-  const slotOpen = (col: Col, index: number) => {
-    if (!grab || !over) return false
-    if (over.col !== col || over.index !== index) return false
-    if (grab.col === col && (grab.index === index || grab.index + 1 === index)) return false
-    return true
+  const updateBlock = (id: AnyId, patch: Partial<Placement<any>>) =>
+    commit(visible.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+
+  // ── drag to rearrange ───────────────────────────────────────────────────
+  const onBlockDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!dragId) return
+    setOrder((cur) => moveTo(cur ?? visible, dragId as never, index))
   }
 
-  // ── vertical resize ──────────────────────────────────────────────────────
+  const endDrag = (commitIt: boolean) => {
+    if (commitIt && order) commit(order)
+    setDragId(null)
+    setOrder(null)
+  }
+
+  // ── resize ──────────────────────────────────────────────────────────────
   const clampH = (n: number) => Math.max(MIN_BLOCK_H, Math.min(MAX_BLOCK_H, Math.round(n)))
 
-  const startResize = (id: BlockId, e: React.PointerEvent) => {
+  const startResize = (id: AnyId, axis: Axis, e: React.PointerEvent) => {
     // Stops the browser starting an HTML5 drag from inside the draggable block.
     e.preventDefault()
     e.stopPropagation()
     const el = blockEls.current[id]
-    if (!el) return
-    const startY = e.clientY
-    const startH = brand.heights[id] ?? el.getBoundingClientRect().height
+    const flow = flowEl.current
+    if (!el || !flow) return
+    const rect = el.getBoundingClientRect()
+    const startX = e.clientX, startY = e.clientY
+    const startW = rect.width
+    const startH = (visible.find((p) => p.id === id)?.h) ?? rect.height
+    // One column, including the gap that follows it.
+    const colW = (flow.getBoundingClientRect().width + GAP) / GRID_COLS
     setResizing(id)
     setSaved(false)
 
     const onMove = (ev: PointerEvent) => {
-      const h = clampH(startH + (ev.clientY - startY))
-      setBrand((b) => (b.heights[id] === h ? b : { ...b, heights: { ...b.heights, [id]: h } }))
+      const patch: Partial<Placement<any>> = {}
+      if (axis !== 'y') patch.w = clampSpan(Math.round((startW + (ev.clientX - startX) + GAP) / colW))
+      if (axis !== 'x') patch.h = clampH(startH + (ev.clientY - startY))
+      updateBlock(id, patch)
     }
     const onUp = () => {
       window.removeEventListener('pointermove', onMove)
@@ -153,22 +178,19 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     window.addEventListener('pointerup', onUp)
   }
 
-  /** Double-clicking the handle hands the block back to its content height. */
-  const clearHeight = (id: BlockId) => {
-    setBrand((b) => {
-      if (b.heights[id] == null) return b
-      const heights = { ...b.heights }
-      delete heights[id]
-      return { ...b, heights }
+  /** Double-clicking a grip hands that dimension back to the content. */
+  const clearSize = (id: AnyId, axis: Axis) => {
+    if (axis === 'x') { updateBlock(id, { w: GRID_COLS }); return }
+    const next = visible.map((p) => {
+      if (p.id !== id) return p
+      const { h, ...rest } = p
+      return axis === 'xy' ? { ...rest, w: GRID_COLS } : rest
     })
-    setSaved(false)
+    commit(next)
   }
 
-  /** Height left for a chart inside a block the teacher has resized. */
-  const chartH = (id: BlockId, fallback: number) => {
-    const h = brand.heights[id]
-    return h ? Math.max(52, h - CHART_CHROME) : fallback
-  }
+  /** Height left for a chart inside a block the teacher has sized. */
+  const chartH = (h: number | undefined, fallback: number) => (h ? Math.max(52, h - 62) : fallback)
 
   const hidden = new Set<BlockId>()
   if (!brand.showMilestone) hidden.add('milestone')
@@ -185,8 +207,8 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const heroInk = brand.heroStyle === 'light' ? 'var(--ink)' : '#fff'
   const heroSub = brand.heroStyle === 'light' ? 'var(--muted)' : 'rgba(255,255,255,.72)'
 
-  /** The miniature of each block, as it appears in the student view. */
-  const preview = (id: BlockId): React.ReactNode => {
+  /** The miniature of each dashboard block, as it appears in the student view. */
+  const dashPreview = (id: BlockId, h?: number): React.ReactNode => {
     switch (id) {
       case 'hero':
         return (
@@ -227,14 +249,14 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         return (
           <div className="k-preview-card k-chart-card">
             <div className="k-preview-row"><strong>Your progress</strong><span>Score</span></div>
-            <MiniTrend points={SAMPLE_TREND} color={brand.accent} height={chartH('progress', 62)} />
+            <MiniTrend points={SAMPLE_TREND} color={brand.accent} height={chartH(h, 62)} />
           </div>
         )
       case 'vocab':
         return (
           <div className="k-preview-card k-chart-card">
             <div className="k-preview-row"><strong>Vocabulary</strong><span>45 words</span></div>
-            <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH('vocab', 72)} compact />
+            <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH(h, 72)} compact />
           </div>
         )
       case 'calendar':
@@ -252,14 +274,14 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         return (
           <div className="k-preview-card k-chart-card">
             <div className="k-preview-row"><strong>Next milestone</strong><span>Level 3</span></div>
-            <MilestoneGauge pct={60} color={brand.accent} height={chartH('milestone', 92)} compact />
+            <MilestoneGauge pct={60} color={brand.accent} height={chartH(h, 92)} compact />
           </div>
         )
       case 'scores':
         return (
           <div className="k-preview-card k-chart-card">
             <div className="k-preview-row"><strong>Recent scores</strong><span>Last 5</span></div>
-            <ScoreTrendChart points={SAMPLE_SCORES} color={brand.accent} height={chartH('scores', 74)} compact />
+            <ScoreTrendChart points={SAMPLE_SCORES} color={brand.accent} height={chartH(h, 74)} compact />
           </div>
         )
       case 'tests':
@@ -269,148 +291,38 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     }
   }
 
-  /** The gap that opens between two blocks to show where a drop would land. */
-  const slot = (col: Col, index: number, edge: boolean) => (
-    <div
-      key={`slot-${col}-${index}`}
-      aria-hidden
-      className={['k-pslot', edge ? 'edge' : '', slotOpen(col, index) ? 'open' : ''].join(' ')}
-      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setOver({ col, index }) }}
-      onDrop={(e) => {
-        e.preventDefault(); e.stopPropagation()
-        if (grab) move(grab, { col, index })
-        setGrab(null); setOver(null)
-      }}
-    >
-      <span className="k-pslot-line" />
-    </div>
-  )
-
-  /** A preview block wrapped so it can be picked up, dropped and resized. */
-  const block = (id: BlockId, col: Col, index: number) => {
-    const h = brand.heights[id]
-    return (
-      <div
-        key={id}
-        ref={(el) => { blockEls.current[id] = el }}
-        draggable={resizing !== id}
-        style={h ? { height: h } : undefined}
-        className={[
-          'k-pblock',
-          hidden.has(id) ? 'off' : '',
-          grab?.col === col && grab.index === index ? 'dragging' : '',
-          resizing === id ? 'resizing' : '',
-        ].join(' ')}
-        title={`Drag to move ${BLOCK_LABELS[id]}`}
-        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setGrab({ col, index }) }}
-        onDragEnd={() => { setGrab(null); setOver(null) }}
-        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setOver(slotFor(e, col, index)) }}
-        onDrop={(e) => {
-          e.preventDefault(); e.stopPropagation()
-          if (grab) move(grab, slotFor(e, col, index))
-          setGrab(null); setOver(null)
-        }}
-      >
-        <span className="k-pblock-tag">
-          {BLOCK_LABELS[id]}{hidden.has(id) ? ' · hidden' : ''}{h ? ` · ${h}px` : ''}
-        </span>
-        <div className="k-pblock-body">{preview(id)}</div>
-        <span
-          className="k-presize"
-          role="separator"
-          aria-orientation="horizontal"
-          aria-label={`Resize ${BLOCK_LABELS[id]}`}
-          title={`Drag to resize${h ? ` (${h}px) — double-click to fit content` : ''}`}
-          draggable={false}
-          onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-          onPointerDown={(e) => startResize(id, e)}
-          onDoubleClick={(e) => { e.stopPropagation(); clearHeight(id) }}
-        />
-      </div>
-    )
-  }
-
-  /** A column of blocks, with a drop slot above, between and below them. */
-  const column = (col: Col) => {
-    const ids = brand.layout[col]
-    return (
-      <div
-        className="k-pcol"
-        onDragOver={(e) => { e.preventDefault(); setOver({ col, index: ids.length }) }}
-        onDrop={(e) => {
-          e.preventDefault()
-          if (grab) move(grab, { col, index: ids.length })
-          setGrab(null); setOver(null)
-        }}
-      >
-        {ids.map((id, i) => (
-          <Fragment key={id}>
-            {slot(col, i, i === 0)}
-            {block(id, col, i)}
-          </Fragment>
-        ))}
-        {slot(col, ids.length, true)}
-        {ids.length === 0 && <div className="k-pcol-empty">Drop here</div>}
-      </div>
-    )
-  }
-
-  /** Miniature of the student's lesson recap page, themed by the same brand. */
-  const lessonPreview = () => (
-    <div className="k-lpview" key={device}>
-      <span className="k-back">← Dashboard</span>
-
-      <header className="k-phead">
-        <div>
-          <div className="k-phead-eyebrow">Lesson 12 · Recap</div>
-          <h1>Contrasting ideas with けど</h1>
-          <div className="k-pmeta">
-            <span>12th lesson</span>
-            <span>2 Aug</span>
-            <span>Confident</span>
-          </div>
-        </div>
-        <div className="k-pscore"><div><b>8.3</b><small>OUT OF 10</small></div></div>
-        {brand.props !== 'none' && (
-          <div className="k-hero-art" style={{ right: -20, opacity: .5 }} aria-hidden>
-            <span className="k-orb" style={{ width: 60, height: 60, right: 8, top: 8 }} />
-            <span className="k-tube" style={{ width: 46, height: 46, right: 56, top: 54, transform: 'rotate(40deg)' }} />
-          </div>
-        )}
-      </header>
-
-      <div className="tabs" role="tablist" aria-label="Lesson recap sections">
-        {LESSON_TABS.map((t) => (
-          <button key={t} type="button" role="tab" aria-selected={lessonTab === t} className={`tab ${lessonTab === t ? 'sel' : ''}`} onClick={() => setLessonTab(t)}>{t}</button>
-        ))}
-      </div>
-
-      {lessonTab === 'Progress' && (
-        <div role="tabpanel">
-          <h3 className="dashboard-title">How this lesson went</h3>
-          <div className="stat-cards">
-            <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
-              <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
-              <div className="stat-card-value">58<span className="stat-unit">%</span> <span className="stat-sep">/</span> 42<span className="stat-unit">%</span></div>
-              <div className="balance-bars" style={{ marginTop: 'auto' }}>
-                <div className="balance-row"><span>Derek</span><div className="balance-track"><div className="balance-fill student" style={{ width: '58%' }} /></div><span>58%</span></div>
-                <div className="balance-row"><span>{teacherName ? teacherName.split(' ')[0] : 'You'}</span><div className="balance-track"><div className="balance-fill" style={{ width: '42%' }} /></div><span>42%</span></div>
-              </div>
-            </div>
-
-            <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
-              <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
-              <div className="stat-card-value" style={{ color: 'var(--green)' }}>8.3<span className="stat-unit">/10</span></div>
-              <span className="stat-chip" style={{ marginTop: 'auto' }}>Confident</span>
-            </div>
-
-            <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
-              <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
-              <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>Rich</div>
-              <p className="stat-card-note" style={{ marginTop: 'auto' }}>18 vocabulary items practiced</p>
+  /** The miniature of each lesson-recap section. */
+  const lessonPreview = (id: LessonBlockId, h?: number): React.ReactNode => {
+    switch (id) {
+      case 'balance':
+        return (
+          <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
+            <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
+            <div className="stat-card-value">58<span className="stat-unit">%</span> <span className="stat-sep">/</span> 42<span className="stat-unit">%</span></div>
+            <div className="balance-bars" style={{ marginTop: 'auto' }}>
+              <div className="balance-row"><span>Derek</span><div className="balance-track"><div className="balance-fill student" style={{ width: '58%' }} /></div><span>58%</span></div>
+              <div className="balance-row"><span>{teacherName ? teacherName.split(' ')[0] : 'You'}</span><div className="balance-track"><div className="balance-fill" style={{ width: '42%' }} /></div><span>42%</span></div>
             </div>
           </div>
-
+        )
+      case 'score':
+        return (
+          <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
+            <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
+            <div className="stat-card-value" style={{ color: 'var(--green)' }}>8.3<span className="stat-unit">/10</span></div>
+            <span className="stat-chip" style={{ marginTop: 'auto' }}>Confident</span>
+          </div>
+        )
+      case 'grammar':
+        return (
+          <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
+            <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
+            <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>Rich</div>
+            <p className="stat-card-note" style={{ marginTop: 'auto' }}>18 vocabulary items practiced</p>
+          </div>
+        )
+      case 'metrics':
+        return (
           <div className="corrections-card">
             <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
             <div className="metric-grid">
@@ -420,24 +332,30 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               <div className="metric"><div className="mv">9</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
             </div>
           </div>
-        </div>
-      )}
-
-      {lessonTab === 'Lesson' && (
-        <div className="tab-panel" role="tabpanel">
+        )
+      case 'corrections':
+        return (
+          <div className="corrections-card">
+            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">Main corrections</span></div>
+            <p>「〜だけど」→「〜ですけど」 when you are being polite. You caught this yourself twice.</p>
+          </div>
+        )
+      case 'sections':
+        return (
           <div className="lesson-block">
             <h3>What you practised</h3>
             <p>You used けど to contrast two ideas in the same sentence, and kept the polite form all the way through.</p>
           </div>
+        )
+      case 'notes':
+        return (
           <div className="lesson-block">
             <h3>Teacher&rsquo;s Note</h3>
             <p>Lovely progress on longer answers — next time try linking three clauses before pausing.</p>
           </div>
-        </div>
-      )}
-
-      {lessonTab === 'Practice' && (
-        <div className="tab-panel" role="tabpanel">
+        )
+      case 'homework':
+        return (
           <div className="lesson-block">
             <h3>Homework</h3>
             <ul>
@@ -445,19 +363,23 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               <li>Record a 60-second voice memo about your weekend.</li>
             </ul>
           </div>
+        )
+      case 'exercises':
+        return (
           <div className="lesson-block">
             <h3>Practice exercises</h3>
             <p className="analytics-note">Fill in the blank, multiple choice and translation — marked as they answer.</p>
           </div>
-        </div>
-      )}
-
-      {lessonTab === 'Vocabulary' && (
-        <div className="tab-panel" role="tabpanel">
+        )
+      case 'vocabLevels':
+        return (
           <div className="lesson-block k-chart-card">
             <h3>Vocabulary by JLPT level</h3>
-            <VocabLevelChart distribution={SAMPLE_VOCAB} height={132} />
+            <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH(h, 120)} />
           </div>
+        )
+      case 'vocabWords':
+        return (
           <div className="lesson-block">
             <h3>Words from this lesson</h3>
             <div className="example">
@@ -465,9 +387,73 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               <br />practice
             </div>
           </div>
+        )
+    }
+  }
+
+  const labelOf = (id: AnyId) =>
+    scope === 'dash' ? BLOCK_LABELS[id as BlockId] : LESSON_BLOCK_LABELS[id as LessonBlockId]
+
+  /** A preview block: draggable to rearrange, with grips on two edges. */
+  const block = (p: Placement<any>, index: number) => {
+    const id = p.id as AnyId
+    const off = scope === 'dash' && hidden.has(id as BlockId)
+    const isGhost = dragId === id
+    return (
+      <div
+        key={id}
+        ref={(el) => { blockEls.current[id] = el }}
+        draggable={resizing !== id}
+        style={{ ['--w' as any]: p.w, ...(p.h ? { height: p.h } : null) }}
+        className={['k-pblock', p.h ? 'k-fit' : '', off ? 'off' : '', isGhost ? 'ghost' : '', resizing === id ? 'resizing' : ''].join(' ')}
+        title={`Drag to move ${labelOf(id)}`}
+        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragId(id) }}
+        onDragEnd={() => endDrag(true)}
+        onDragOver={(e) => onBlockDragOver(e, index)}
+        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); endDrag(true) }}
+      >
+        <span className="k-pblock-tag">
+          {labelOf(id)}{off ? ' · hidden' : ''} · {p.w}/{GRID_COLS}{p.h ? ` · ${p.h}px` : ''}
+        </span>
+        <div className="k-pblock-body k-fit-body">
+          {scope === 'dash' ? dashPreview(id as BlockId, p.h) : lessonPreview(id as LessonBlockId, p.h)}
         </div>
-      )}
+        {(['y', 'x', 'xy'] as Axis[]).map((axis) => (
+          <span
+            key={axis}
+            className={axis === 'y' ? 'k-presize' : axis === 'x' ? 'k-presize-x' : 'k-presize-xy'}
+            role="separator"
+            aria-label={`Resize ${labelOf(id)} ${axis === 'y' ? 'height' : axis === 'x' ? 'width' : 'both'}`}
+            title={axis === 'y' ? 'Drag to change height — double-click to fit content'
+              : axis === 'x' ? 'Drag to change width — double-click for full width'
+              : 'Drag to resize — double-click to reset'}
+            draggable={false}
+            onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+            onPointerDown={(e) => startResize(id, axis, e)}
+            onDoubleClick={(e) => { e.stopPropagation(); clearSize(id, axis) }}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  /** The arrangeable canvas — shared by the dashboard and the recap preview. */
+  const flow = () => (
+    <div
+      ref={flowEl}
+      key={`${scope}-${lessonTab}-${device}`}
+      className={`k-flow ${device === 'mobile' ? 'narrow' : ''}`}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); endDrag(true) }}
+    >
+      {shown.map((p, i) => block(p, i))}
+      {shown.length === 0 && <div className="k-flow-empty">Nothing on this tab</div>}
     </div>
+  )
+
+  const activePreset = PRESETS.find(
+    (p) => p.brand.accent.toLowerCase() === brand.accent.toLowerCase()
+      && p.brand.font === brand.font && p.brand.shape === brand.shape && p.brand.background === brand.background,
   )
 
   return (
@@ -476,10 +462,44 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       <div className="k-studio-controls">
         <section className="k-sec">
           <div className="k-sec-head">
+            <span className="k-sec-icon" aria-hidden>✨</span>
+            <div>
+              <h3>Presets</h3>
+              <p className="desc">A complete look — colour, type, texture and how the blocks are arranged.</p>
+            </div>
+          </div>
+
+          <div className="k-presets">
+            {PRESETS.map((p) => {
+              const font = FONTS.find((f) => f.value === p.brand.font) ?? FONTS[0]
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`k-preset-card ${activePreset?.id === p.id ? 'sel' : ''}`}
+                  onClick={() => applyPreset(p.id)}
+                  title={p.hint}
+                >
+                  <span className={`k-preset-swatch k-bg-${p.brand.background}`} style={{ background: p.brand.accent, ['--bg-ink' as any]: 'rgba(255,255,255,.28)', ['--bg-tint' as any]: 'rgba(255,255,255,.2)' }}>
+                    <b style={{ fontFamily: `${font.head}, system-ui, sans-serif` }}>Aa</b>
+                    <i />
+                  </span>
+                  <span>
+                    <strong>{p.name}</strong>
+                    <small>{p.hint}</small>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="k-sec">
+          <div className="k-sec-head">
             <span className="k-sec-icon" aria-hidden>🎨</span>
             <div>
-              <h3>Colour</h3>
-              <p className="desc">Used for buttons, active states and progress bars.</p>
+              <h3>Colour &amp; type</h3>
+              <p className="desc">Used for buttons, active states and headings.</p>
             </div>
           </div>
 
@@ -507,6 +527,16 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               spellCheck={false}
             />
           </label>
+
+          <span className="k-field-label">Font pairing</span>
+          <div className="k-choices">
+            {FONTS.map((f) => (
+              <button key={f.value} type="button" className={`k-choice ${brand.font === f.value ? 'sel' : ''}`} onClick={() => set('font', f.value)}>
+                <span className="k-choice-tick" aria-hidden>✓</span>
+                <span style={{ fontFamily: `${f.head}, system-ui, sans-serif` }}>{f.label}<small style={{ fontFamily: 'inherit' }}>{f.hint}</small></span>
+              </button>
+            ))}
+          </div>
 
           <span className="k-field-label">Hero style</span>
           <div className="k-choices">
@@ -616,19 +646,6 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               </div>
             ))}
           </div>
-
-          {Object.keys(brand.heights).length > 0 && (
-            <>
-              <span className="k-field-label">Block heights</span>
-              <div className="k-hlist">
-                {Object.entries(brand.heights).map(([id, h]) => (
-                  <button key={id} type="button" className="k-hchip" onClick={() => clearHeight(id as BlockId)} title="Reset to fit content">
-                    {BLOCK_LABELS[id as BlockId]} <b>{h}px</b> <span aria-hidden>×</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
         </section>
 
         {error && <p className="k-error">{error}</p>}
@@ -646,7 +663,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       <div className="k-studio-preview">
         <div className="k-preview-bar">
           <span className="k-preview-label">
-            {view === 'dashboard' ? 'Student view · drag to rearrange' : 'Student view · lesson recap'}
+            {view === 'dashboard' ? 'Student dashboard' : 'Lesson recap'} · drag to arrange, pull an edge to resize
           </span>
           <div className="k-preview-switches">
             <div className="k-seg" style={{ margin: 0, width: 210 }}>
@@ -670,30 +687,44 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                   <div className="k-preview-name">Derek</div>
                 </div>
               </div>
-
-              {/* Keyed on `device`: the charts measure their container once on
-                  mount, so switching width has to remount them or they keep
-                  drawing at the old size. */}
-              <div key={device} className={`k-preview-grid ${device} ${grab ? 'dragging' : ''}`}>
-                {column('main')}
-                {column('rail')}
-              </div>
+              {flow()}
             </>
           ) : (
-            lessonPreview()
+            <div className="k-lpview">
+              <span className="k-back">← Dashboard</span>
+
+              <header className="k-phead">
+                <div>
+                  <div className="k-phead-eyebrow">Lesson 12 · Recap</div>
+                  <h1>Contrasting ideas with けど</h1>
+                  <div className="k-pmeta"><span>12th lesson</span><span>2 Aug</span><span>Confident</span></div>
+                </div>
+                <div className="k-pscore"><div><b>8.3</b><small>OUT OF 10</small></div></div>
+                {brand.props !== 'none' && (
+                  <div className="k-hero-art" style={{ right: -20, opacity: .5 }} aria-hidden>
+                    <span className="k-orb" style={{ width: 60, height: 60, right: 8, top: 8 }} />
+                    <span className="k-tube" style={{ width: 46, height: 46, right: 56, top: 54, transform: 'rotate(40deg)' }} />
+                  </div>
+                )}
+              </header>
+
+              <div className="tabs" role="tablist" aria-label="Lesson recap sections">
+                {LESSON_TABS.map((t) => (
+                  <button key={t} type="button" role="tab" aria-selected={lessonTab === t} className={`tab ${lessonTab === t ? 'sel' : ''}`} onClick={() => setLessonTab(t)}>{t}</button>
+                ))}
+              </div>
+
+              {flow()}
+            </div>
           )}
         </div>
 
         <p className="k-fine" style={{ textAlign: 'left' }}>
-          {view === 'dashboard' ? (
-            <>
-              Grab any block and drop it where you want — including across the two columns. Drag a block&rsquo;s
-              bottom edge to change its height, or double-click that edge to fit its content again.
-              This is {teacherName ? `${teacherName}'s` : 'your'} student dashboard; save to publish it.
-            </>
-          ) : (
-            <>The recap page every lesson opens into. Its layout is fixed, but your colour, corners and background carry across — switch tabs to check them all.</>
-          )}
+          Drag any block to move it. Pull its bottom edge for height, its right edge for width, the corner for
+          both — the text inside scales to whatever size you give it, and blocks slide up beside each other when
+          there is room. Double-click an edge to hand that dimension back to the content.
+          {view === 'lesson' && ' Each recap tab is arranged separately.'}
+          {' '}This is {teacherName ? `${teacherName}'s` : 'your'} student portal; save to publish it.
         </p>
       </div>
     </div>
