@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
-import { ACCENT_PRESETS, DEFAULT_BRAND, brandVars, type Brand, type HeroStyle } from '@/lib/brand'
+import { ACCENT_PRESETS, DEFAULT_BRAND, brandVars, backgroundClass, type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle } from '@/lib/brand'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -11,6 +11,30 @@ const HERO_STYLES: { value: HeroStyle; label: string; hint: string }[] = [
   { value: 'forest', label: 'Solid', hint: 'Filled accent panel' },
   { value: 'accent', label: 'Gradient', hint: 'Accent fading to light' },
   { value: 'light', label: 'Light', hint: 'Soft tint, dark text' },
+]
+
+const BACKGROUNDS: { value: BackgroundStyle; label: string }[] = [
+  { value: 'plain', label: 'Plain' },
+  { value: 'dots', label: 'Dots' },
+  { value: 'grid', label: 'Grid' },
+  { value: 'blobs', label: 'Blobs' },
+  { value: 'rings', label: 'Rings' },
+  { value: 'waves', label: 'Waves' },
+  { value: 'wash', label: 'Wash' },
+]
+
+const SHAPES: { value: ShapeStyle; label: string; radius: number }[] = [
+  { value: 'rounded', label: 'Rounded', radius: 16 },
+  { value: 'soft', label: 'Soft', radius: 10 },
+  { value: 'sharp', label: 'Sharp', radius: 3 },
+  { value: 'pill', label: 'Pill', radius: 23 },
+]
+
+const PROPS: { value: PropStyle; label: string }[] = [
+  { value: 'orbs', label: 'Orbs' },
+  { value: 'geometric', label: 'Geometric' },
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'none', label: 'None' },
 ]
 
 const TOGGLES: { key: keyof Brand; label: string; hint: string }[] = [
@@ -148,6 +172,46 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
         <section className="k-sec">
           <div className="k-sec-head">
+            <span className="k-sec-icon b" aria-hidden>🖼️</span>
+            <div>
+              <h3>Background &amp; shape</h3>
+              <p className="desc">The texture behind the portal and how round everything is.</p>
+            </div>
+          </div>
+
+          <span className="k-field-label" style={{ marginTop: 0 }}>Background</span>
+          <div className="k-preset-grid">
+            {BACKGROUNDS.map((b) => (
+              <button key={b.value} type="button" className={`k-preset ${brand.background === b.value ? 'sel' : ''}`} onClick={() => set('background', b.value)}>
+                <span className={`k-bg-chip k-bg-${b.value}`} style={{ display: 'block' }} aria-hidden />
+                <span>{b.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <span className="k-field-label">Corners</span>
+          <div className="k-preset-grid">
+            {SHAPES.map((sh) => (
+              <button key={sh.value} type="button" className={`k-preset ${brand.shape === sh.value ? 'sel' : ''}`} onClick={() => set('shape', sh.value)}>
+                <span className="k-bg-chip k-shape-chip" style={{ borderRadius: sh.radius }} aria-hidden />
+                <span>{sh.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <span className="k-field-label">Hero decoration</span>
+          <div className="k-choices">
+            {PROPS.map((pr) => (
+              <button key={pr.value} type="button" className={`k-choice ${brand.props === pr.value ? 'sel' : ''}`} onClick={() => set('props', pr.value)}>
+                <span className="k-choice-tick" aria-hidden>✓</span>
+                <span>{pr.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="k-sec">
+          <div className="k-sec-head">
             <span className="k-sec-icon p" aria-hidden>🧩</span>
             <div>
               <h3>Sections</h3>
@@ -196,7 +260,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </div>
         </div>
 
-        <div className={`k-preview-frame ${device}`} style={vars}>
+        <div className={`k-preview-frame ${device} ${backgroundClass(brand)}`} style={vars}>
           <div className="k-preview-top">
             <span className="k-preview-mark" style={{ background: `${brand.accent}22`, color: brand.accent }}>{brand.logoText || '📚'}</span>
             <div>
@@ -211,6 +275,13 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             <span className="k-preview-btn" style={{ background: brand.heroStyle === 'light' ? brand.accent : '#fff', color: brand.heroStyle === 'light' ? '#fff' : brand.accent }}>
               Book a lesson
             </span>
+            {brand.props !== 'none' && (
+              <div className="k-preview-props" aria-hidden>
+                {brand.props === 'orbs' && <><span className="k-orb" style={{ width: 44, height: 44, right: 8, top: 6 }} /><span className="k-tube" style={{ width: 34, height: 34, right: 46, top: 40, borderWidth: 8 }} /></>}
+                {brand.props === 'geometric' && <><span className="k-crystal" style={{ width: 30, height: 36, right: 12, top: 8 }} /><span className="k-ring" style={{ width: 30, height: 30, right: 50, top: 34, borderWidth: 7 }} /></>}
+                {brand.props === 'minimal' && <span className="k-ring" style={{ width: 40, height: 40, right: 12, top: 14, borderWidth: 6 }} />}
+              </div>
+            )}
           </div>
 
           <div className="k-preview-stats">

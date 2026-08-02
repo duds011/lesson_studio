@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { brandVars, resolveBrand } from '@/lib/brand'
+import { backgroundClass, brandVars, resolveBrand } from '@/lib/brand'
 import StudentRail from '@/components/koku/StudentRail'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
   const brand = resolveBrand((teacher as any)?.brand)
 
   return (
-    <div className="k-shell" style={brandVars(brand)}>
+    <div className={`k-shell ${backgroundClass(brand)}`} style={brandVars(brand)}>
       <StudentRail mark={brand.logoText} />
       <main className="k-main page-fade">{children}</main>
     </div>

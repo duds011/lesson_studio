@@ -22,6 +22,9 @@ const KV_TOKEN =
 export const kvEnabled = Boolean(KV_URL && KV_TOKEN)
 
 const DATA_DIR = path.join(process.cwd(), '.data')
+// Doc names are namespaced with a colon (`bots:<teacherId>`), which is a legal
+// KV key but an illegal Windows filename — swap it for the local file path.
+const fileName = (name: string) => `${name.replace(/:/g, '__')}.json`
 const SEED_DATA_DIR = path.join(process.cwd(), 'content', 'runtime-data')
 
 async function kvCommand(args: (string | number)[]): Promise<any> {
@@ -41,10 +44,10 @@ export async function readDoc<T = any>(name: string): Promise<T | null> {
     return v ? (JSON.parse(v) as T) : null
   }
   try {
-    return JSON.parse(await fs.readFile(path.join(DATA_DIR, `${name}.json`), 'utf-8')) as T
+    return JSON.parse(await fs.readFile(path.join(DATA_DIR, fileName(name)), 'utf-8')) as T
   } catch {
     try {
-      return JSON.parse(await fs.readFile(path.join(SEED_DATA_DIR, `${name}.json`), 'utf-8')) as T
+      return JSON.parse(await fs.readFile(path.join(SEED_DATA_DIR, fileName(name)), 'utf-8')) as T
     } catch {
       return null
     }
@@ -57,7 +60,7 @@ export async function writeDoc(name: string, obj: unknown): Promise<void> {
     return
   }
   await fs.mkdir(DATA_DIR, { recursive: true })
-  await fs.writeFile(path.join(DATA_DIR, `${name}.json`), JSON.stringify(obj, null, 2), 'utf-8')
+  await fs.writeFile(path.join(DATA_DIR, fileName(name)), JSON.stringify(obj, null, 2), 'utf-8')
 }
 
 export async function delDoc(name: string): Promise<void> {
@@ -66,7 +69,7 @@ export async function delDoc(name: string): Promise<void> {
     return
   }
   try {
-    await fs.unlink(path.join(DATA_DIR, `${name}.json`))
+    await fs.unlink(path.join(DATA_DIR, fileName(name)))
   } catch {
     /* already gone */
   }

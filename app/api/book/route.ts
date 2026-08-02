@@ -3,18 +3,31 @@ import { createBookingEvent, getBusyIntervals } from '@/lib/google'
 import { getBookingConfig } from '@/lib/booking'
 import { getSettings } from '@/lib/settings'
 import { createZoomMeeting, isZoomConfigured } from '@/lib/zoom'
+import { resolveBookingTeacherId } from '@/lib/current-teacher'
+import { runAsTeacher } from '@/lib/teacher-scope'
 
 export const dynamic = 'force-dynamic'
 
 // Public: student submits a booking. Validates the slot is still free, then
 // creates the event (with Meet link) on the teacher's calendar.
+//
+// No session, so the teacher is resolved the same way as /api/book/slots and
+// the whole booking runs inside their scope.
 export async function POST(req: NextRequest) {
   try {
-    const { start, name, email } = await req.json()
+    const { start, name, email, teacherId: bodyTeacherId } = await req.json()
     if (!start || !name || !email) {
       return NextResponse.json({ ok: false, error: 'Missing name, email, or time.' }, { status: 400 })
     }
 
+    const teacherId = await resolveBookingTeacherId(bodyTeacherId ?? req.nextUrl.searchParams.get('t'))
+    if (!teacherId) {
+      return NextResponse.json(
+        { ok: false, error: 'This booking link needs a teacher. Ask your teacher for their personal booking link.' },
+        { status: 400 },
+      )
+    }
+    return await runAsTeacher(teacherId, async () => {
     const cfg = await getBookingConfig()
     const startMs = new Date(start).getTime()
     const endMs = startMs + cfg.durationMin * 60_000
@@ -68,6 +81,7 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ ok: true, platform, ...result })
+    })
   } catch (e: any) {
     if (e?.message === 'SCOPE') {
       return NextResponse.json(

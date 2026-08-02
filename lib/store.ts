@@ -1,8 +1,18 @@
 /**
  * Runtime state store. Backed by Vercel KV in production, local files in dev
  * (see lib/docstore). Holds OAuth tokens, bot tracking, recaps, settings.
+ *
+ * Every doc is namespaced per teacher (`bots:<teacherId>`), so two teachers
+ * never share a calendar connection, a bot queue or a recap draft. The id is
+ * resolved from the session; jobs without one wrap in runAsTeacher().
  */
 import { readDoc, writeDoc, delDoc } from './docstore'
+import { requireTeacherId } from './current-teacher'
+
+/** Namespaced doc name for the teacher in scope. */
+async function key(name: string, teacherId?: string): Promise<string> {
+  return `${name}:${teacherId ?? (await requireTeacherId())}`
+}
 
 export type GoogleToken = {
   email: string
@@ -13,12 +23,12 @@ export type GoogleToken = {
   calendarName?: string
 }
 
-export async function saveToken(token: GoogleToken): Promise<void> {
-  await writeDoc('google-token', token)
+export async function saveToken(token: GoogleToken, teacherId?: string): Promise<void> {
+  await writeDoc(await key('google-token', teacherId), token)
 }
 
-export async function getToken(): Promise<GoogleToken | null> {
-  return readDoc<GoogleToken>('google-token')
+export async function getToken(teacherId?: string): Promise<GoogleToken | null> {
+  return readDoc<GoogleToken>(await key('google-token', teacherId))
 }
 
 export async function setSelectedCalendar(calendarId: string, calendarName: string): Promise<void> {
@@ -27,8 +37,8 @@ export async function setSelectedCalendar(calendarId: string, calendarName: stri
   await saveToken({ ...token, calendarId, calendarName })
 }
 
-export async function clearToken(): Promise<void> {
-  await delDoc('google-token')
+export async function clearToken(teacherId?: string): Promise<void> {
+  await delDoc(await key('google-token', teacherId))
 }
 
 // ── Zoom OAuth token (refresh token rotates on every use — always re-save) ──
@@ -39,16 +49,16 @@ export type ZoomToken = {
   expiry_date: number
 }
 
-export async function getZoomToken(): Promise<ZoomToken | null> {
-  return readDoc<ZoomToken>('zoom-token')
+export async function getZoomToken(teacherId?: string): Promise<ZoomToken | null> {
+  return readDoc<ZoomToken>(await key('zoom-token', teacherId))
 }
 
-export async function saveZoomToken(token: ZoomToken): Promise<void> {
-  await writeDoc('zoom-token', token)
+export async function saveZoomToken(token: ZoomToken, teacherId?: string): Promise<void> {
+  await writeDoc(await key('zoom-token', teacherId), token)
 }
 
-export async function clearZoomToken(): Promise<void> {
-  await delDoc('zoom-token')
+export async function clearZoomToken(teacherId?: string): Promise<void> {
+  await delDoc(await key('zoom-token', teacherId))
 }
 
 // ── Bot tracking: which Recall bot is attached to which calendar event ──
@@ -66,21 +76,21 @@ export type BotRec = {
   attendees?: string[]
 }
 
-export async function getBots(): Promise<Record<string, BotRec>> {
-  return (await readDoc<Record<string, BotRec>>('bots')) ?? {}
+export async function getBots(teacherId?: string): Promise<Record<string, BotRec>> {
+  return (await readDoc<Record<string, BotRec>>(await key('bots', teacherId))) ?? {}
 }
 
 export async function saveBot(rec: BotRec): Promise<void> {
   const all = await getBots()
   all[rec.eventId] = rec
-  await writeDoc('bots', all)
+  await writeDoc(await key('bots'), all)
 }
 
 export async function updateBotStatus(eventId: string, status: string): Promise<void> {
   const all = await getBots()
   if (all[eventId]) {
     all[eventId].status = status
-    await writeDoc('bots', all)
+    await writeDoc(await key('bots'), all)
   }
 }
 
@@ -89,7 +99,7 @@ export async function deleteBot(eventId: string): Promise<void> {
   const all = await getBots()
   if (!all[eventId]) return
   delete all[eventId]
-  await writeDoc('bots', all)
+  await writeDoc(await key('bots'), all)
 }
 
 // ── Recaps: AI-generated draft per calendar event ──
@@ -107,25 +117,25 @@ export type RecapRec = {
   attendees?: string[]
 }
 
-export async function getRecaps(): Promise<Record<string, RecapRec>> {
-  return (await readDoc<Record<string, RecapRec>>('recaps')) ?? {}
+export async function getRecaps(teacherId?: string): Promise<Record<string, RecapRec>> {
+  return (await readDoc<Record<string, RecapRec>>(await key('recaps', teacherId))) ?? {}
 }
 
-export async function getDismissedRecaps(): Promise<Record<string, number>> {
-  return (await readDoc<Record<string, number>>('dismissed-recaps')) ?? {}
+export async function getDismissedRecaps(teacherId?: string): Promise<Record<string, number>> {
+  return (await readDoc<Record<string, number>>(await key('dismissed-recaps', teacherId))) ?? {}
 }
 
 export async function saveRecap(rec: RecapRec): Promise<void> {
   const all = await getRecaps()
   all[rec.eventId] = rec
-  await writeDoc('recaps', all)
+  await writeDoc(await key('recaps'), all)
 }
 
 export async function setRecapStatus(eventId: string, status: 'draft' | 'published'): Promise<void> {
   const all = await getRecaps()
   if (all[eventId]) {
     all[eventId].status = status
-    await writeDoc('recaps', all)
+    await writeDoc(await key('recaps'), all)
   }
 }
 
@@ -133,12 +143,12 @@ export async function deleteRecap(eventId: string): Promise<boolean> {
   const all = await getRecaps()
   if (!all[eventId]) return false
   delete all[eventId]
-  await writeDoc('recaps', all)
+  await writeDoc(await key('recaps'), all)
   return true
 }
 
 export async function dismissRecap(eventId: string): Promise<void> {
   const dismissed = await getDismissedRecaps()
   dismissed[eventId] = Date.now()
-  await writeDoc('dismissed-recaps', dismissed)
+  await writeDoc(await key('dismissed-recaps'), dismissed)
 }

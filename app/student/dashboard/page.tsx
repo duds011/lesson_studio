@@ -144,12 +144,28 @@ export default async function StudentDashboard() {
             </p>
             <Link href="/student/book" className="k-hero-btn">Book a lesson</Link>
 
-            <div className="k-hero-art" aria-hidden>
-              <span className="k-orb" style={{ width: 104, height: 104, right: 34, top: 26 }} />
-              <span className="k-tube" style={{ width: 88, height: 88, right: 0, top: 74, transform: 'rotate(28deg)' }} />
-              <span className="k-crystal" style={{ width: 52, height: 60, right: 128, top: 96 }} />
-              <span className="k-ring" style={{ width: 44, height: 44, right: 150, top: 4 }} />
-            </div>
+            {brand.props !== 'none' && (
+              <div className="k-hero-art" aria-hidden>
+                {brand.props === 'orbs' && (
+                  <>
+                    <span className="k-orb" style={{ width: 104, height: 104, right: 34, top: 26 }} />
+                    <span className="k-tube" style={{ width: 88, height: 88, right: 0, top: 74, transform: 'rotate(28deg)' }} />
+                    <span className="k-crystal" style={{ width: 52, height: 60, right: 128, top: 96 }} />
+                    <span className="k-ring" style={{ width: 44, height: 44, right: 150, top: 4 }} />
+                  </>
+                )}
+                {brand.props === 'geometric' && (
+                  <>
+                    <span className="k-crystal" style={{ width: 74, height: 88, right: 30, top: 20 }} />
+                    <span className="k-ring" style={{ width: 60, height: 60, right: 118, top: 76 }} />
+                    <span className="k-crystal" style={{ width: 44, height: 52, right: 132, top: 8, opacity: .8 }} />
+                  </>
+                )}
+                {brand.props === 'minimal' && (
+                  <span className="k-ring" style={{ width: 86, height: 86, right: 44, top: 42 }} />
+                )}
+              </div>
+            )}
           </section>
 
           {/* ── colour-blocked stats ── */}

@@ -6,6 +6,7 @@ import { createBookingEvent, getBusyIntervals } from '@/lib/google'
 import { getBookingConfig } from '@/lib/booking'
 import { getSettings } from '@/lib/settings'
 import { createZoomMeeting, isZoomConfigured } from '@/lib/zoom'
+import { runAsTeacher } from '@/lib/teacher-scope'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,9 @@ export async function POST(req: Request) {
     const { data: student } = await admin.from('students').select('id, teacher_id, full_name, email').eq('profile_id', user.id).single()
     if (!student) return NextResponse.json({ ok: false, error: 'No student profile linked to your account.' }, { status: 403 })
 
+    // The session here belongs to the STUDENT, so the teacher whose calendar
+    // and availability we touch has to be named explicitly.
+    return await runAsTeacher(student.teacher_id, async () => {
     const cfg = await getBookingConfig()
     const { start } = await req.json()
     const startMs = new Date(start).getTime()
@@ -67,6 +71,7 @@ export async function POST(req: Request) {
 
     const credits = await getStudentCredits(admin, student.id)
     return NextResponse.json({ ok: true, platform, meetUrl: result.meetUrl, remaining: credits.remaining, warnOutOfCredits: credits.remaining <= 0 })
+    })
   } catch (e: any) {
     if (e?.message === 'SCOPE') return NextResponse.json({ ok: false, error: 'Your teacher needs to reconnect their calendar to enable bookings.' }, { status: 403 })
     return NextResponse.json({ ok: false, error: e?.message ?? 'Booking failed' }, { status: 500 })

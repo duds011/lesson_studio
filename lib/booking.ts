@@ -6,6 +6,7 @@
  * doc (see getBookingConfig / saveBookingOverrides) from Settings → Availability.
  */
 import { readDoc, writeDoc } from './docstore'
+import { requireTeacherId } from './current-teacher'
 
 export type Range = [string, string] // ['HH:MM','HH:MM']
 
@@ -55,9 +56,12 @@ export const BOOKING = DEFAULT_BOOKING
 // The teacher may edit everything except the timezone (fixed +09:00 Tokyo).
 export type BookingOverrides = Partial<Omit<BookingConfig, 'tz' | 'offset'>>
 
+const availabilityKey = async (teacherId?: string) =>
+  `availability:${teacherId ?? (await requireTeacherId())}`
+
 /** Current effective booking config: stored overrides merged over defaults. */
-export async function getBookingConfig(): Promise<BookingConfig> {
-  const stored = await readDoc<BookingOverrides>('availability')
+export async function getBookingConfig(teacherId?: string): Promise<BookingConfig> {
+  const stored = await readDoc<BookingOverrides>(await availabilityKey(teacherId))
   return {
     ...DEFAULT_BOOKING,
     ...(stored ?? {}),
@@ -66,8 +70,8 @@ export async function getBookingConfig(): Promise<BookingConfig> {
   }
 }
 
-export async function saveBookingOverrides(o: BookingOverrides): Promise<void> {
-  await writeDoc('availability', o)
+export async function saveBookingOverrides(o: BookingOverrides, teacherId?: string): Promise<void> {
+  await writeDoc(await availabilityKey(teacherId), o)
 }
 
 const MIN = 60_000

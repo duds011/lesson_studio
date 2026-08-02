@@ -8,6 +8,12 @@
  */
 
 export type HeroStyle = 'forest' | 'accent' | 'light'
+/** Page background pattern behind the student portal. All CSS, no assets. */
+export type BackgroundStyle = 'plain' | 'dots' | 'grid' | 'blobs' | 'rings' | 'waves' | 'wash'
+/** How round everything is — cards, buttons, inputs. */
+export type ShapeStyle = 'rounded' | 'soft' | 'sharp' | 'pill'
+/** Decorative 3D props on the hero. */
+export type PropStyle = 'orbs' | 'geometric' | 'minimal' | 'none'
 
 export type Brand = {
   /** Primary colour — buttons, active states, progress fills. */
@@ -21,6 +27,9 @@ export type Brand = {
   /** What the student portal is called. */
   portalName: string
   heroStyle: HeroStyle
+  background: BackgroundStyle
+  shape: ShapeStyle
+  props: PropStyle
   showMilestone: boolean
   showProgress: boolean
   showVocab: boolean
@@ -35,6 +44,9 @@ export const DEFAULT_BRAND: Brand = {
   logoText: '📚',
   portalName: 'Lesson Studio',
   heroStyle: 'forest',
+  background: 'plain',
+  shape: 'rounded',
+  props: 'orbs',
   showMilestone: true,
   showProgress: true,
   showVocab: true,
@@ -54,6 +66,18 @@ export const ACCENT_PRESETS = [
   { name: 'Teal', value: '#0f766e' },
 ] as const
 
+export const BACKGROUNDS = ['plain', 'dots', 'grid', 'blobs', 'rings', 'waves', 'wash'] as const
+export const SHAPES = ['rounded', 'soft', 'sharp', 'pill'] as const
+export const PROPS = ['orbs', 'geometric', 'minimal', 'none'] as const
+
+/** Corner radii per shape, mapped onto the tokens the whole UI already uses. */
+const SHAPE_RADII: Record<ShapeStyle, { md: string; lg: string; xl: string }> = {
+  rounded: { md: '16px', lg: '22px', xl: '28px' },
+  soft:    { md: '12px', lg: '16px', xl: '20px' },
+  sharp:   { md: '4px',  lg: '6px',  xl: '8px'  },
+  pill:    { md: '20px', lg: '28px', xl: '36px' },
+}
+
 const HEX = /^#[0-9a-fA-F]{6}$/
 
 /** Merge a stored (possibly partial or malformed) brand onto the defaults. */
@@ -70,6 +94,9 @@ export function resolveBrand(raw: unknown): Brand {
     logoText: str(b.logoText, DEFAULT_BRAND.logoText, 4),
     portalName: str(b.portalName, DEFAULT_BRAND.portalName, 40),
     heroStyle: b.heroStyle === 'accent' || b.heroStyle === 'light' ? b.heroStyle : DEFAULT_BRAND.heroStyle,
+    background: (BACKGROUNDS as readonly string[]).includes(b.background as string) ? (b.background as BackgroundStyle) : DEFAULT_BRAND.background,
+    shape: (SHAPES as readonly string[]).includes(b.shape as string) ? (b.shape as ShapeStyle) : DEFAULT_BRAND.shape,
+    props: (PROPS as readonly string[]).includes(b.props as string) ? (b.props as PropStyle) : DEFAULT_BRAND.props,
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
@@ -95,10 +122,22 @@ export function shade(hex: string, amount = -0.18): string {
  * the live preview in the branding toolkit.
  */
 export function brandVars(brand: Brand): React.CSSProperties {
+  const r = SHAPE_RADII[brand.shape] ?? SHAPE_RADII.rounded
   return {
     ['--forest' as any]: brand.accent,
     ['--forest-deep' as any]: shade(brand.accent, -0.22),
     ['--brand' as any]: brand.accent,
     ['--brand-soft' as any]: shade(brand.accent, 0.88),
+    ['--r-md' as any]: r.md,
+    ['--r-lg' as any]: r.lg,
+    ['--r-xl' as any]: r.xl,
+    // Consumed by the .k-bg-* background rules.
+    ['--bg-ink' as any]: shade(brand.accent, 0.72),
+    ['--bg-tint' as any]: shade(brand.accent, 0.93),
   }
+}
+
+/** Class that paints the page background for a brand. */
+export function backgroundClass(brand: Brand): string {
+  return `k-bg-${brand.background}`
 }
