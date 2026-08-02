@@ -6,6 +6,7 @@ import { getStudentCredits } from '@/lib/credits'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
+import GenerateTestButton from '@/components/portal/GenerateTestButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +53,17 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
   }
   const totalVocab = Object.values(vocabDistribution).reduce((sum, n) => sum + n, 0)
   const credits = await getStudentCredits(supabase, student.id)
+
+  const { data: tests } = await supabase
+    .from('tests')
+    .select('id, title, level, status, created_at, lessons ( lesson_number )')
+    .eq('student_id', student.id)
+    .order('created_at', { ascending: false })
+
+  // Lessons a test can be generated from (needs a recap to work with).
+  const testableLessons = rows
+    .filter((l) => summaryOf(l)?.recap_json)
+    .map((l) => ({ id: l.id, label: `Lesson ${l.lesson_number} — ${lessonDisplayTitle(summaryOf(l)?.recap_json, l.title, l.lesson_number)}` }))
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -116,6 +128,37 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
                     <span className={`status-pill ${lesson.status === 'published' ? 'published' : 'draft'}`}>{lesson.status}</span>
                     {s?.score != null && <span className="lc-score" style={{ color: 'var(--brand)' }}>{s.score}<span style={{ fontSize: 10, color: 'var(--muted)' }}>/10</span></span>}
                   </div>
+                  <span className="lc-arrow">→</span>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, margin: '30px 0 11px' }}>
+          <h2 className="section-heading" style={{ margin: 0 }}>Practice tests</h2>
+          <GenerateTestButton studentId={student.id} lessons={testableLessons} />
+        </div>
+        {(tests ?? []).length === 0 ? (
+          <div className="empty" style={{ padding: 26 }}>
+            <strong style={{ color: 'var(--ink)' }}>No tests yet</strong>
+            <br />
+            Generate an N5-style practice test from any lesson recap. You review it before the student sees it.
+          </div>
+        ) : (
+          <div>
+            {(tests as any[]).map((t) => {
+              const lesson = Array.isArray(t.lessons) ? t.lessons[0] : t.lessons
+              return (
+                <Link key={t.id} href={`/teacher/students/${student.id}/tests/${t.id}`} className="lesson-card">
+                  <div className="lc-num" style={{ background: 'var(--amber-soft)', color: 'var(--amber)' }}>{t.level}</div>
+                  <div>
+                    <div className="lc-title">{t.title}</div>
+                    <div className="lc-meta">{lesson ? `From lesson ${lesson.lesson_number} · ` : ''}{formatDateShort(t.created_at)}</div>
+                  </div>
+                  <span className={`status-pill ${t.status === 'published' ? 'published' : 'draft'}`}>{t.status}</span>
                   <span className="lc-arrow">→</span>
                 </Link>
               )

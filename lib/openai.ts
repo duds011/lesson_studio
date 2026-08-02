@@ -140,6 +140,136 @@ Anchor: N5: です、行く、食べる | N4: 帰る、困る、準備する | N
 Transcript:
 {{TRANSCRIPT}}`
 
+// ── Test generation ─────────────────────────────────────────────────────────
+
+export type TestMCQuestion = { type: 'multiple_choice'; question: string; options: string[]; answer: number; explanation?: string }
+export type TestGapQuestion = { type: 'fill_blank'; before: string; after: string; options: string[]; answer: string; en?: string }
+export type TestReadingPassage = { passage: string; passage_en?: string; questions: TestMCQuestion[] }
+export type TestSpeakingPrompt = { prompt_jp: string; prompt_en: string; hint: string }
+export type TestPart =
+  | { key: 'vocabulary'; title: string; instructions: string; questions: TestMCQuestion[] }
+  | { key: 'grammar'; title: string; instructions: string; questions: (TestMCQuestion | TestGapQuestion)[] }
+  | { key: 'reading'; title: string; instructions: string; passages: TestReadingPassage[] }
+  | { key: 'speaking'; title: string; instructions: string; prompts: TestSpeakingPrompt[] }
+export type TestJson = {
+  title: string
+  level: string
+  intro: string
+  parts: TestPart[]
+  script?: TestScript
+}
+
+// How Japanese is written in the test — some students can't read kana yet,
+// others are past it and need kanji practice.
+export type TestScript = 'beginner' | 'hiragana' | 'kanji'
+
+export const TEST_SCRIPTS: Record<TestScript, { label: string; sub: string }> = {
+  beginner: { label: 'Beginner', sub: 'Hiragana + romaji' },
+  hiragana: { label: 'Hiragana', sub: 'Kana, no romaji' },
+  kanji: { label: 'Kanji + kana', sub: 'Kanji with readings' },
+}
+
+const SCRIPT_RULES: Record<TestScript, string> = {
+  beginner: `- Write ALL Japanese in hiragana/katakana ONLY — NEVER kanji.
+- IMMEDIATELY after EVERY piece of Japanese, add its romaji in parentheses. This applies everywhere: questions, every multiple-choice option that contains Japanese, fill_blank "before"/"after"/options/answer text, reading passages (romaji after each sentence), and speaking prompts. Example: 「たべます (tabemasu)」. The student cannot read kana confidently yet — Japanese without romaji is useless to them.
+- fill_blank options and "answer" must each be "かな (romaji)" so the answer still matches an option exactly.`,
+  hiragana: `- Write ALL Japanese in hiragana/katakana ONLY — NEVER kanji, and do NOT add romaji anywhere. The student reads kana fluently.`,
+  kanji: `- Write Japanese naturally WITH kanji, as in a real JLPT paper.
+- The FIRST time each kanji word appears in a question, option, or prompt, add its hiragana reading in parentheses right after it, e.g. 漢字（かんじ）. In reading passages, add the reading after each kanji word on first appearance in that passage.
+- No romaji anywhere.`,
+}
+
+
+
+const TEST_PROMPT = `You are creating a JLPT-N5-style practice test for a Japanese student, based on ONE specific lesson they took. Return ONLY valid JSON.
+
+Student: {{STUDENT}}
+Lesson title: {{LESSON_TITLE}}
+Lesson content (recap of what was taught — base EVERY question on this material):
+{{LESSON_CONTENT}}
+
+Build a LONG, thorough test in classic JLPT exam style, testing ONLY grammar, vocabulary, and patterns that appear in the lesson content above (plus basic N5 fundamentals needed to form the sentences). Difficulty: N5 exam style unless the lesson content is clearly higher level — then match the lesson.
+
+Return this exact structure:
+{
+  "title": "[short test title based on the lesson, e.g. 'Practice Test — Contrasting Ideas & Giving Reasons']",
+  "level": "N5",
+  "intro": "[2 warm sentences telling the student what the test covers and encouraging them]",
+  "parts": [
+    {
+      "key": "vocabulary",
+      "title": "Part 1 · Vocabulary (ごい)",
+      "instructions": "Choose the best meaning or word.",
+      "questions": [ {"type": "multiple_choice", "question": "...", "options": ["...","...","...","..."], "answer": 0, "explanation": "..."} ]
+    },
+    {
+      "key": "grammar",
+      "title": "Part 2 · Grammar (ぶんぽう)",
+      "instructions": "Choose the correct form, or fill the gap.",
+      "questions": [
+        {"type": "multiple_choice", "question": "...", "options": ["...","...","...","..."], "answer": 0, "explanation": "..."},
+        {"type": "fill_blank", "before": "[Japanese before gap]", "after": "[Japanese after gap]", "options": ["...","...","..."], "answer": "[must exactly match one option]", "en": "[English translation of full sentence]"}
+      ]
+    },
+    {
+      "key": "reading",
+      "title": "Part 3 · Reading (どっかい)",
+      "instructions": "Read each passage, then answer the questions.",
+      "passages": [
+        {"passage": "[4-6 sentence passage using the lesson's grammar]", "passage_en": "[English translation]", "questions": [ {"type": "multiple_choice", "question": "...", "options": ["...","...","...","..."], "answer": 0, "explanation": "..."} ]}
+      ]
+    },
+    {
+      "key": "speaking",
+      "title": "Part 4 · Speaking (かいわ)",
+      "instructions": "Answer each prompt out loud in Japanese. Record or practice with your teacher.",
+      "prompts": [ {"prompt_jp": "[question in Japanese]", "prompt_en": "[English]", "hint": "[which grammar/vocab from the lesson to use]"} ]
+    }
+  ]
+}
+
+REQUIRED LENGTH — this is a full practice exam, not a quiz:
+- Part 1 vocabulary: exactly 10 multiple_choice questions.
+- Part 2 grammar: exactly 10 multiple_choice + 8 fill_blank questions (18 total), covering EVERY distinct grammar point in the lesson content.
+- Part 3 reading: exactly 2 passages, each with 3-4 multiple_choice questions.
+- Part 4 speaking: exactly 6 prompts.
+
+JAPANESE SCRIPT — the teacher chose how this student reads Japanese. Follow these rules for EVERY piece of Japanese in the test:
+{{SCRIPT_RULES}}
+
+STRICT RULES:
+- multiple_choice: exactly 4 options, exactly one correct, "answer" is the 0-based index of the correct option. Vary the correct index — do not cluster on 0.
+- Wrong options must be plausible (common learner mistakes), not silly.
+- fill_blank: exactly 3 options; "answer" must match one option character-for-character.
+- "explanation": ONE short English sentence saying why the answer is right (shown to the teacher, and to the student after they answer).
+- Question style like the real JLPT: meaning selection, correct-particle choice, correct-conjugation choice, sentence completion, ordering by meaning.
+- Base questions on the lesson content — vocabulary from its vocab list, grammar from its sections. Do not invent unrelated advanced material.`
+
+export async function generateTest(opts: { studentName: string; lessonTitle: string; lessonContent: string; script?: TestScript }): Promise<TestJson> {
+  const key = process.env.OPENAI_API_KEY
+  if (!key) throw new Error('Missing OPENAI_API_KEY')
+
+  const content = TEST_PROMPT
+    .replace('{{STUDENT}}', opts.studentName)
+    .replace('{{LESSON_TITLE}}', opts.lessonTitle)
+    .replace('{{LESSON_CONTENT}}', opts.lessonContent)
+    .replace('{{SCRIPT_RULES}}', SCRIPT_RULES[opts.script ?? 'hiragana'])
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      max_tokens: 32000, // ~40 questions of JP text is token-heavy
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content }],
+    }),
+  })
+  if (!res.ok) throw new Error(`OpenAI failed (${res.status}): ${await res.text()}`)
+  const j = await res.json()
+  return JSON.parse(j.choices[0].message.content) as TestJson
+}
+
 export async function generateRecap(opts: { studentName: string; transcript: string }): Promise<Recap> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
