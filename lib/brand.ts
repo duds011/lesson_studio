@@ -15,6 +15,27 @@ export type ShapeStyle = 'rounded' | 'soft' | 'sharp' | 'pill'
 /** Decorative 3D props on the hero. */
 export type PropStyle = 'orbs' | 'geometric' | 'minimal' | 'none'
 
+/** Blocks a teacher can arrange on the student dashboard. */
+export const MAIN_BLOCKS = ['hero', 'stats', 'lessons', 'progress', 'vocab'] as const
+export const RAIL_BLOCKS = ['calendar', 'milestone', 'scores', 'tests', 'speaking'] as const
+export type BlockId = (typeof MAIN_BLOCKS)[number] | (typeof RAIL_BLOCKS)[number]
+
+export const BLOCK_LABELS: Record<BlockId, string> = {
+  hero: 'Welcome banner',
+  stats: 'Stat cards',
+  lessons: 'Lesson cards',
+  progress: 'Progress charts',
+  vocab: 'Vocabulary',
+  calendar: 'Calendar',
+  milestone: 'Milestone',
+  scores: 'Recent scores',
+  tests: 'Practice tests',
+  speaking: 'Speaking habits',
+}
+
+/** Which blocks sit in the wide column and which in the side rail, in order. */
+export type Layout = { main: BlockId[]; rail: BlockId[] }
+
 export type Brand = {
   /** Primary colour — buttons, active states, progress fills. */
   accent: string
@@ -30,6 +51,7 @@ export type Brand = {
   background: BackgroundStyle
   shape: ShapeStyle
   props: PropStyle
+  layout: Layout
   showMilestone: boolean
   showProgress: boolean
   showVocab: boolean
@@ -47,6 +69,7 @@ export const DEFAULT_BRAND: Brand = {
   background: 'plain',
   shape: 'rounded',
   props: 'orbs',
+  layout: { main: [...MAIN_BLOCKS], rail: [...RAIL_BLOCKS] },
   showMilestone: true,
   showProgress: true,
   showVocab: true,
@@ -97,12 +120,44 @@ export function resolveBrand(raw: unknown): Brand {
     background: (BACKGROUNDS as readonly string[]).includes(b.background as string) ? (b.background as BackgroundStyle) : DEFAULT_BRAND.background,
     shape: (SHAPES as readonly string[]).includes(b.shape as string) ? (b.shape as ShapeStyle) : DEFAULT_BRAND.shape,
     props: (PROPS as readonly string[]).includes(b.props as string) ? (b.props as PropStyle) : DEFAULT_BRAND.props,
+    layout: resolveLayout(b.layout),
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
     showTests: bool(b.showTests, DEFAULT_BRAND.showTests),
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
   }
+}
+
+/**
+ * Normalise a stored layout: drop unknown ids, drop duplicates, and append any
+ * block the teacher has never positioned so new features still appear. A block
+ * may live in either column, so both lists are validated against the full set.
+ */
+export function resolveLayout(raw: unknown): Layout {
+  const known = new Set<string>([...MAIN_BLOCKS, ...RAIL_BLOCKS])
+  const seen = new Set<string>()
+  const clean = (list: unknown): BlockId[] => {
+    if (!Array.isArray(list)) return []
+    const out: BlockId[] = []
+    for (const id of list) {
+      if (typeof id === 'string' && known.has(id) && !seen.has(id)) {
+        seen.add(id)
+        out.push(id as BlockId)
+      }
+    }
+    return out
+  }
+
+  const l = (raw && typeof raw === 'object' ? raw : {}) as Partial<Layout>
+  const main = clean(l.main)
+  const rail = clean(l.rail)
+
+  // Anything never placed keeps its default home.
+  for (const id of MAIN_BLOCKS) if (!seen.has(id)) { seen.add(id); main.push(id) }
+  for (const id of RAIL_BLOCKS) if (!seen.has(id)) { seen.add(id); rail.push(id) }
+
+  return { main, rail }
 }
 
 /** Darken a hex colour for hover/pressed states. */

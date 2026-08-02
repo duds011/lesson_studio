@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -10,7 +11,7 @@ import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
 import CalendarCard from '@/components/koku/CalendarCard'
-import { resolveBrand } from '@/lib/brand'
+import { resolveBrand, type BlockId } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
 
@@ -113,28 +114,12 @@ export default async function StudentDashboard() {
   // Most recent lessons that carry a score — shown as bars in the right rail.
   const scoredRecent = rows.filter((l) => summaryOf(l)?.score != null).slice(0, 4)
 
-  return (
-    <>
-      {/* ── top bar ── */}
-      <div className="k-top">
-        <div>
-          <p className="k-hello">Welcome back,</p>
-          <h1 className="k-name">{firstName}</h1>
-        </div>
-        <div className="k-top-tools">
-          <label className="k-search">
-            <Icon d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4" />
-            <input placeholder="Search lessons" aria-label="Search lessons" />
-          </label>
-          <button className="k-bell" aria-label="Notifications">
-            <Icon d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16zM10 22h4" />
-          </button>
-        </div>
-      </div>
 
-      <div className="k-grid">
-        {/* ── left column ── */}
-        <div>
+  // Each arrangeable block, keyed by id. The teacher's layout decides which
+  // column each one sits in and in what order — see lib/brand.ts.
+  const blocks: Partial<Record<BlockId, React.ReactNode>> = {
+    hero: (
+      <>
           <section className="k-hero">
             <h2 style={{ whiteSpace: 'pre-line' }}>{brand.headline}</h2>
             <p>
@@ -167,8 +152,10 @@ export default async function StudentDashboard() {
               </div>
             )}
           </section>
-
-          {/* ── colour-blocked stats ── */}
+      </>
+    ),
+    stats: (
+      <>
           <div className="k-stats">
             <div className="k-stat yellow">
               <div className="k-stat-head">
@@ -210,14 +197,10 @@ export default async function StudentDashboard() {
               <p className="k-stat-sub">of the last lesson was you talking</p>
             </div>
           </div>
-
-          <div style={{ marginTop: 16 }}>
-            <StudentLessonsBar credits={credits} packages={buyPackages} />
-          </div>
-
-          <PaymentMethodsPanel methods={paymentMethods} />
-
-          {/* ── lessons ── */}
+      </>
+    ),
+    lessons: (
+      <>
           <div className="k-sec-head">
             <h2>Your lessons</h2>
             {rows.length > 4 && <span className="k-link">{rows.length} total</span>}
@@ -259,8 +242,10 @@ export default async function StudentDashboard() {
               })}
             </div>
           )}
-
-          {/* ── charts ── */}
+      </>
+    ),
+    progress: (
+      <>
           {brand.showProgress && lessonCount >= 2 && (
             <>
               <div className="k-sec-head"><h2>Your progress</h2></div>
@@ -285,18 +270,24 @@ export default async function StudentDashboard() {
               </div>
             </>
           )}
-
+      </>
+    ),
+    vocab: (
+      <>
           {brand.showVocab && totalVocab > 0 && (
             <div style={{ marginTop: 14 }}>
               <VocabLevelBreakdown distribution={vocabDistribution} totalCount={totalVocab} />
             </div>
           )}
-        </div>
-
-        {/* ── right rail ── */}
-        <div>
+      </>
+    ),
+    calendar: (
+      <>
           <CalendarCard lessonDates={rows.map((l) => l.lesson_date).filter(Boolean)} />
-
+      </>
+    ),
+    milestone: (
+      <>
           {brand.showMilestone && <div className="k-card">
             <div className="k-card-head">
               <h3>Next milestone</h3>
@@ -310,7 +301,10 @@ export default async function StudentDashboard() {
               {lessonCount} of {nextMilestone} lessons towards {getLevelLabel(nextMilestone)}
             </p>
           </div>}
-
+      </>
+    ),
+    scores: (
+      <>
           {scoredRecent.length > 0 && (
             <div className="k-card">
               <div className="k-card-head">
@@ -340,7 +334,10 @@ export default async function StudentDashboard() {
               </div>
             </div>
           )}
-
+      </>
+    ),
+    tests: (
+      <>
           {brand.showTests && (tests ?? []).length > 0 && (
             <div className="k-card">
               <div className="k-card-head">
@@ -367,7 +364,10 @@ export default async function StudentDashboard() {
               </div>
             </div>
           )}
-
+      </>
+    ),
+    speaking: (
+      <>
           {brand.showSpeaking && (avgWpm != null || avgThinkSec != null) && (
             <div className="k-card">
               <div className="k-card-head"><h3>Speaking habits</h3></div>
@@ -387,6 +387,43 @@ export default async function StudentDashboard() {
               </div>
             </div>
           )}
+      </>
+    ),
+  }
+
+  const column = (ids: BlockId[]) => ids.map((id) => <Fragment key={id}>{blocks[id]}</Fragment>)
+
+  return (
+    <>
+      {/* ── top bar ── */}
+      <div className="k-top">
+        <div>
+          <p className="k-hello">Welcome back,</p>
+          <h1 className="k-name">{firstName}</h1>
+        </div>
+        <div className="k-top-tools">
+          <label className="k-search">
+            <Icon d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4" />
+            <input placeholder="Search lessons" aria-label="Search lessons" />
+          </label>
+          <button className="k-bell" aria-label="Notifications">
+            <Icon d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16zM10 22h4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="k-grid">
+        <div>
+          <div style={{ marginTop: 16 }}>
+            <StudentLessonsBar credits={credits} packages={buyPackages} />
+          </div>
+
+          <PaymentMethodsPanel methods={paymentMethods} />
+          {column(brand.layout.main)}
+        </div>
+
+        <div>
+          {column(brand.layout.rail)}
         </div>
       </div>
     </>

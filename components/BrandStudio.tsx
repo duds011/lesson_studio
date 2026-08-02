@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
-import { ACCENT_PRESETS, DEFAULT_BRAND, brandVars, backgroundClass, type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle } from '@/lib/brand'
+import { ACCENT_PRESETS, DEFAULT_BRAND, brandVars, backgroundClass, type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle, type BlockId, type Layout } from '@/lib/brand'
+import LayoutEditor from './LayoutEditor'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -68,6 +69,15 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     })
 
   const reset = () => { setBrand(DEFAULT_BRAND); setSaved(false) }
+
+  // Section toggles and layout are two views of the same thing: a block that is
+  // switched off still has a position, it just does not render.
+  const hiddenBlocks = new Set<BlockId>()
+  if (!brand.showMilestone) hiddenBlocks.add('milestone')
+  if (!brand.showProgress) hiddenBlocks.add('progress')
+  if (!brand.showVocab) hiddenBlocks.add('vocab')
+  if (!brand.showTests) hiddenBlocks.add('tests')
+  if (!brand.showSpeaking) hiddenBlocks.add('speaking')
 
   const vars = brandVars(brand)
   const heroBg =
@@ -208,6 +218,21 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="k-sec">
+          <div className="k-sec-head">
+            <span className="k-sec-icon" aria-hidden>🧱</span>
+            <div>
+              <h3>Layout</h3>
+              <p className="desc">Drag blocks to reorder them, or between the two columns. Arrows work too.</p>
+            </div>
+          </div>
+          <LayoutEditor
+            layout={brand.layout}
+            hidden={hiddenBlocks}
+            onChange={(layout: Layout) => set('layout', layout)}
+          />
         </section>
 
         <section className="k-sec">
