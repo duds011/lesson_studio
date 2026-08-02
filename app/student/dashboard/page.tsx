@@ -10,6 +10,7 @@ import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
 import CalendarCard from '@/components/koku/CalendarCard'
+import { resolveBrand } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,11 +98,13 @@ export default async function StudentDashboard() {
     .order('published_at', { ascending: false })
 
   const admin = createAdminClient()
-  const [credits, paymentMethods, { data: pkgRows }] = await Promise.all([
+  const [credits, paymentMethods, { data: pkgRows }, { data: teacherProfile }] = await Promise.all([
     getStudentCredits(admin, student.id),
     getTeacherPaymentMethods(admin, student.teacher_id),
     admin.from('lesson_packages').select('id, name, lessons_count, amount, currency').eq('teacher_id', student.teacher_id).eq('active', true).order('amount', { ascending: true }),
+    admin.from('profiles').select('brand').eq('id', student.teacher_id).single(),
   ])
+  const brand = resolveBrand((teacherProfile as any)?.brand)
   const buyPackages: BuyPkg[] = (pkgRows ?? []).map((p: any) => ({
     id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency,
   }))
@@ -133,11 +136,11 @@ export default async function StudentDashboard() {
         {/* ── left column ── */}
         <div>
           <section className="k-hero">
-            <h2>Learn today,<br />succeed tomorrow!</h2>
+            <h2 style={{ whiteSpace: 'pre-line' }}>{brand.headline}</h2>
             <p>
               {lessonCount > 0
                 ? `You're ${nextMilestone - lessonCount} lesson${nextMilestone - lessonCount === 1 ? '' : 's'} away from ${getLevelLabel(nextMilestone)}. Keep the streak going.`
-                : 'Book your first lesson and start building your Japanese, one recap at a time.'}
+                : brand.welcome}
             </p>
             <Link href="/student/book" className="k-hero-btn">Book a lesson</Link>
 
@@ -242,7 +245,7 @@ export default async function StudentDashboard() {
           )}
 
           {/* ── charts ── */}
-          {lessonCount >= 2 && (
+          {brand.showProgress && lessonCount >= 2 && (
             <>
               <div className="k-sec-head"><h2>Your progress</h2></div>
               <div className="k-card">
@@ -267,7 +270,7 @@ export default async function StudentDashboard() {
             </>
           )}
 
-          {totalVocab > 0 && (
+          {brand.showVocab && totalVocab > 0 && (
             <div style={{ marginTop: 14 }}>
               <VocabLevelBreakdown distribution={vocabDistribution} totalCount={totalVocab} />
             </div>
@@ -278,7 +281,7 @@ export default async function StudentDashboard() {
         <div>
           <CalendarCard lessonDates={rows.map((l) => l.lesson_date).filter(Boolean)} />
 
-          <div className="k-card">
+          {brand.showMilestone && <div className="k-card">
             <div className="k-card-head">
               <h3>Next milestone</h3>
               <span className="k-link">{getLevelLabel(nextMilestone)}</span>
@@ -290,7 +293,7 @@ export default async function StudentDashboard() {
             <p className="k-course-meta" style={{ marginTop: 9 }}>
               {lessonCount} of {nextMilestone} lessons towards {getLevelLabel(nextMilestone)}
             </p>
-          </div>
+          </div>}
 
           {scoredRecent.length > 0 && (
             <div className="k-card">
@@ -322,7 +325,7 @@ export default async function StudentDashboard() {
             </div>
           )}
 
-          {(tests ?? []).length > 0 && (
+          {brand.showTests && (tests ?? []).length > 0 && (
             <div className="k-card">
               <div className="k-card-head">
                 <h3>Practice tests</h3>
@@ -349,7 +352,7 @@ export default async function StudentDashboard() {
             </div>
           )}
 
-          {(avgWpm != null || avgThinkSec != null) && (
+          {brand.showSpeaking && (avgWpm != null || avgThinkSec != null) && (
             <div className="k-card">
               <div className="k-card-head"><h3>Speaking habits</h3></div>
               <div style={{ display: 'grid', gap: 11 }}>

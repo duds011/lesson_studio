@@ -27,6 +27,7 @@ export function LogoMark() {
 const LINKS = [
   { href: '/', label: 'Overview', icon: 'home' as IconName },
   { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName },
+  { href: '/teacher/branding', label: 'Student view', icon: 'book' as IconName },
   { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName },
 ]
 

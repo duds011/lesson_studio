@@ -38,11 +38,20 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
-  const roleOf = async () => {
-    if (!user) return null
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    return profile?.role ?? null
+  // Cached per request — several checks below need the same row.
+  let profileCache: { role: string | null; onboarded: boolean } | null | undefined
+  const profileOf = async () => {
+    if (profileCache !== undefined) return profileCache
+    if (!user) return (profileCache = null)
+    const { data } = await supabase
+      .from('profiles')
+      .select('role, onboarding_completed_at')
+      .eq('id', user.id)
+      .single()
+    profileCache = { role: data?.role ?? null, onboarded: Boolean(data?.onboarding_completed_at) }
+    return profileCache
   }
+  const roleOf = async () => (await profileOf())?.role ?? null
 
   // Teacher-only API routes that previously relied only on the login wall.
   // Guarded here so they stay locked once production is public.
@@ -64,29 +73,46 @@ export async function middleware(request: NextRequest) {
   // Route buckets. The student PORTAL is /student/* (note: /students is the
   // teacher's student list, so match /student/ with a trailing slash).
   const isStudentPortal = path === '/student' || path.startsWith('/student/')
+  const isOnboarding = path === '/onboarding'
   const isTeacherArea =
     path === '/' ||
     path.startsWith('/settings') ||
     path.startsWith('/students') ||
     path.startsWith('/teacher')
   // Not logged in → send to login for any gated route.
-  if (!user && (isTeacherArea || isStudentPortal)) {
+  if (!user && (isTeacherArea || isStudentPortal || isOnboarding)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   if (user) {
+    const profile = await profileOf()
+
     // Already authed and hitting the login page → route to the right home.
     if (path === '/login') {
-      const role = await roleOf()
-      const dest = role === 'teacher' ? '/' : '/student/dashboard'
+      const dest = profile?.role === 'teacher'
+        ? (profile.onboarded ? '/' : '/onboarding')
+        : '/student/dashboard'
       return NextResponse.redirect(new URL(dest, request.url))
     }
 
     // Keep teachers and students in their own areas.
-    if (isTeacherArea && (await roleOf()) !== 'teacher') {
+    if (isTeacherArea && profile?.role !== 'teacher') {
       return NextResponse.redirect(new URL('/student/dashboard', request.url))
     }
-    if (isStudentPortal && (await roleOf()) !== 'student') {
+    if (isStudentPortal && profile?.role !== 'student') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+    if (isOnboarding && profile?.role !== 'teacher') {
+      return NextResponse.redirect(new URL('/student/dashboard', request.url))
+    }
+
+    // A teacher who hasn't finished setup gets sent through it first. The
+    // Google OAuth callback returns to /settings, so that stays reachable.
+    if (profile?.role === 'teacher' && !profile.onboarded && isTeacherArea) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
+    // …and once done, /onboarding is no longer a place to be.
+    if (profile?.role === 'teacher' && profile.onboarded && isOnboarding) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
@@ -99,7 +125,7 @@ export const config = {
   // /api/portal, /api/cron) are deliberately NOT matched. Only the teacher-only
   // API routes below are gated (they had no auth of their own).
   matcher: [
-    '/', '/login', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*',
+    '/', '/login', '/onboarding', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*',
     '/api/recall/:path*', '/api/recap', '/api/recap/:path*',
     '/api/settings', '/api/google/disconnect', '/api/google/select-calendar',
     '/api/zoom/disconnect', '/api/zoom/status',

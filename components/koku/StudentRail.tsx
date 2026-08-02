@@ -27,15 +27,19 @@ const LINKS = [
   { href: '/student/book', label: 'Book a lesson', icon: ICONS.book },
 ]
 
-export default function StudentRail() {
+export default function StudentRail({ mark }: { mark?: string }) {
   const pathname = usePathname()
 
   return (
     <aside className="k-rail">
       <div className="k-rail-mark" aria-hidden>
-        <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 5h7v14H4zM13 5h7v9h-7z" />
-        </svg>
+        {mark ? (
+          <span style={{ fontSize: mark.length > 2 ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{mark}</span>
+        ) : (
+          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 5h7v14H4zM13 5h7v9h-7z" />
+          </svg>
+        )}
       </div>
 
       {LINKS.map((l) => {
