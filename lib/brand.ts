@@ -36,6 +36,13 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
 /** Which blocks sit in the wide column and which in the side rail, in order. */
 export type Layout = { main: BlockId[]; rail: BlockId[] }
 
+/** Optional per-block height in px, set by dragging a block's bottom edge. */
+export type Heights = Partial<Record<BlockId, number>>
+
+/** A block left unset sizes to its content; these bound a deliberate resize. */
+export const MIN_BLOCK_H = 90
+export const MAX_BLOCK_H = 560
+
 export type Brand = {
   /** Primary colour — buttons, active states, progress fills. */
   accent: string
@@ -52,6 +59,7 @@ export type Brand = {
   shape: ShapeStyle
   props: PropStyle
   layout: Layout
+  heights: Heights
   showMilestone: boolean
   showProgress: boolean
   showVocab: boolean
@@ -70,6 +78,7 @@ export const DEFAULT_BRAND: Brand = {
   shape: 'rounded',
   props: 'orbs',
   layout: { main: [...MAIN_BLOCKS], rail: [...RAIL_BLOCKS] },
+  heights: {},
   showMilestone: true,
   showProgress: true,
   showVocab: true,
@@ -121,6 +130,7 @@ export function resolveBrand(raw: unknown): Brand {
     shape: (SHAPES as readonly string[]).includes(b.shape as string) ? (b.shape as ShapeStyle) : DEFAULT_BRAND.shape,
     props: (PROPS as readonly string[]).includes(b.props as string) ? (b.props as PropStyle) : DEFAULT_BRAND.props,
     layout: resolveLayout(b.layout),
+    heights: resolveHeights(b.heights),
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
@@ -158,6 +168,19 @@ export function resolveLayout(raw: unknown): Layout {
   for (const id of RAIL_BLOCKS) if (!seen.has(id)) { seen.add(id); rail.push(id) }
 
   return { main, rail }
+}
+
+/** Keep only known blocks with a sane pixel height. */
+export function resolveHeights(raw: unknown): Heights {
+  const known = new Set<string>([...MAIN_BLOCKS, ...RAIL_BLOCKS])
+  const out: Heights = {}
+  if (!raw || typeof raw !== 'object') return out
+  for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!known.has(id)) continue
+    const n = Math.round(Number(v))
+    if (Number.isFinite(n) && n >= MIN_BLOCK_H && n <= MAX_BLOCK_H) out[id as BlockId] = n
+  }
+  return out
 }
 
 /** Darken a hex colour for hover/pressed states. */

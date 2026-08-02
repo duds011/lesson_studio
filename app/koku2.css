@@ -469,18 +469,36 @@
 /* ── directly-draggable preview blocks ── */
 .k-preview-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;align-items:start}
 .k-preview-grid.mobile{grid-template-columns:minmax(0,1fr)}
-.k-pcol{display:grid;gap:12px;align-content:start;min-height:80px;border-radius:12px;padding:2px;transition:.14s ease}
-.k-pcol.over-end{background:rgba(0,0,0,.04);box-shadow:inset 0 -3px 0 -1px var(--forest)}
+/* No `gap` here: the slots between blocks *are* the gap, so they can grow into
+   a landing space while the blocks either side part around them. */
+.k-pcol{display:grid;gap:0;align-content:start;min-height:80px;border-radius:12px;padding:2px;transition:.14s ease}
 .k-pcol-empty{border:1.5px dashed var(--line-strong);border-radius:11px;padding:14px;text-align:center;font-size:10px;color:var(--muted)}
-.k-pblock{position:relative;cursor:grab;border-radius:12px;transition:.14s ease}
+
+/* A drop slot. 12px at rest (the normal spacing), 0 at either end of a column,
+   and it opens to show where the dragged block would land. */
+.k-pslot{box-sizing:border-box;height:12px;transition:height .16s cubic-bezier(.2,.7,.3,1)}
+.k-pslot.edge{height:0}
+.k-pslot.open{height:66px;padding:6px 0}
+.k-pslot-line{display:block;box-sizing:border-box;height:100%;border-radius:10px;opacity:0;transition:opacity .14s ease}
+.k-pslot.open .k-pslot-line{opacity:1;border:1.5px dashed var(--forest);background:rgba(0,0,0,.035)}
+
+.k-pblock{position:relative;cursor:grab;border-radius:12px;transition:opacity .14s ease}
 .k-pblock:hover{outline:2px solid var(--forest);outline-offset:2px}
 .k-pblock:active{cursor:grabbing}
 .k-pblock.dragging{opacity:.35}
-.k-pblock.over{box-shadow:0 -3px 0 -1px var(--forest)}
 .k-pblock.off{opacity:.45}
+.k-pblock.resizing{outline:2px solid var(--forest);outline-offset:2px}
 .k-pblock>*{pointer-events:none}
+.k-pblock-body{height:100%;min-height:0;display:grid;overflow:hidden;border-radius:12px}
+.k-pblock-body>*{min-height:0}
 .k-pblock-tag{position:absolute;top:-8px;left:6px;z-index:2;background:var(--forest);color:#fff;border-radius:999px;padding:2px 8px;font-size:8.5px;font-weight:800;letter-spacing:.02em;opacity:0;transition:.14s ease;white-space:nowrap}
-.k-pblock:hover .k-pblock-tag{opacity:1}
+.k-pblock:hover .k-pblock-tag,.k-pblock.resizing .k-pblock-tag{opacity:1}
+
+/* Bottom-edge resize grip. Needs pointer events back — the rule above turns
+   them off for every other child so drags land on the block itself. */
+.k-presize{position:absolute;left:0;right:0;bottom:-6px;height:13px;z-index:3;cursor:ns-resize;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
+.k-presize::after{content:"";width:38px;height:4px;border-radius:999px;background:var(--forest);opacity:0;transition:opacity .14s ease}
+.k-pblock:hover .k-presize::after,.k-pblock.resizing .k-presize::after{opacity:.9}
 .k-preview-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
 .k-preview-cal i{aspect-ratio:1;border-radius:50%;background:var(--surface-2);display:block}
 
@@ -550,6 +568,66 @@
 .k-preview-lessons span{margin-left:auto;font-weight:800;color:var(--muted)}
 .k-preview-spark{display:flex;align-items:flex-end;gap:6px;height:62px;margin-top:12px}
 .k-preview-spark i{flex:1;height:34%;border-radius:5px 5px 0 0;opacity:.85}
+
+/* ── charts ── */
+/* Recharts measures its parent, so every chart host has to be allowed to
+   shrink below its content width or it never gives width back on a phone. */
+.k-chart-card{min-width:0}
+.k-chart-card .recharts-wrapper{margin-top:8px}
+.k-gauge{position:relative;min-width:0}
+.k-gauge-mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;line-height:1.1}
+.k-gauge-mid b{font-size:22px;font-weight:800;letter-spacing:-.035em}
+.k-gauge-mid small{display:block;font-size:9.5px;font-weight:700;color:var(--muted);margin-top:3px}
+.k-pblock .k-gauge-mid b{font-size:16px}
+/* A block the teacher gave a fixed height keeps it and scrolls its overflow. */
+.k-block-sized{overflow:auto;min-width:0}
+
+/* Height chips — a resized block is listed so it can be handed back. */
+.k-hlist{display:flex;flex-wrap:wrap;gap:6px}
+.k-hchip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 10px;font:inherit;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;transition:.14s ease}
+.k-hchip:hover{border-color:var(--forest);color:var(--forest)}
+.k-hchip b{color:var(--ink)}
+
+.k-preview-switches{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ── lesson-recap preview ──
+   Real page classes at preview scale, so the accent, corners and background
+   are whatever the student would actually see. */
+.k-lpview .k-back{display:inline-block;font-size:11px;margin:0 0 10px}
+.k-lpview .k-phead{padding:18px 20px;margin-bottom:12px;gap:14px}
+.k-lpview .k-phead-eyebrow{font-size:9px}
+.k-lpview .k-phead h1{font-size:19px;margin:6px 0 10px;max-width:20ch}
+.k-lpview .k-pmeta{gap:6px}
+.k-lpview .k-pmeta span{padding:4px 9px;font-size:9.5px}
+.k-lpview .k-pscore{width:64px;height:64px}
+.k-lpview .k-pscore b{font-size:21px}
+.k-lpview .k-pscore small{font-size:7px;letter-spacing:.08em;margin-top:3px}
+.k-lpview .tabs{padding:4px;margin-bottom:12px}
+.k-lpview .tab{padding:7px 13px;font-size:11px}
+.k-lpview .dashboard-title{font-size:13px;margin:0 0 10px}
+.k-lpview .stat-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:10px}
+.k-lpview .stat-card{padding:12px 13px;min-height:0;gap:8px}
+.k-lpview .stat-card-head{margin-bottom:7px;gap:6px}
+.k-lpview .stat-card-label{font-size:8.5px;letter-spacing:.05em}
+.k-lpview .stat-card-value{font-size:18px}
+.k-lpview .stat-card-note{font-size:9.5px}
+.k-lpview .stat-chip{font-size:9px;padding:3px 8px}
+.k-lpview .balance-bars{gap:6px}
+.k-lpview .balance-row{grid-template-columns:44px minmax(0,1fr) 26px;gap:6px;font-size:9px}
+.k-lpview .balance-track{height:5px}
+.k-lpview .lesson-block,.k-lpview .corrections-card{padding:14px 16px;margin-bottom:10px}
+.k-lpview .lesson-block h3{font-size:12.5px;margin-bottom:8px}
+.k-lpview .lesson-block p,.k-lpview .lesson-block li,.k-lpview .analytics-note{font-size:11px;line-height:1.6;margin:0}
+.k-lpview .lesson-block li{margin-bottom:5px}
+.k-lpview .metric-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.k-lpview .metric{padding:9px 10px}
+.k-lpview .metric .mv{font-size:15px}
+.k-lpview .metric .mk{font-size:8px;margin-top:4px}
+.k-lpview .metric .mn{font-size:8px}
+.k-lpview .example{font-size:11px;line-height:1.6}
+.k-preview-frame.mobile .k-lpview .stat-cards{grid-template-columns:minmax(0,1fr)}
+.k-preview-frame.mobile .k-lpview .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.k-preview-frame.mobile .k-lpview .k-phead{flex-wrap:wrap}
 
 /* ═══════════════════════════════════════════════════════════════════
    Public booking — real month calendar, times on the right

@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { Fragment, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
   ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, brandVars, backgroundClass,
+  MIN_BLOCK_H, MAX_BLOCK_H,
   type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle,
   type BlockId, type Layout,
 } from '@/lib/brand'
+import { MilestoneGauge, MiniTrend, ScoreTrendChart, VocabLevelChart } from './portal/BrandCharts'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -41,8 +43,27 @@ const TOGGLES: { key: keyof Brand; label: string; hint: string }[] = [
   { key: 'showSpeaking', label: 'Speaking habits', hint: 'Pace and thinking time' },
 ]
 
+/** Stand-in data so the preview charts look like a real student's. */
+const SAMPLE_SCORES = [
+  { lesson: 8, score: 6.4 }, { lesson: 9, score: 7.1 }, { lesson: 10, score: 6.9 },
+  { lesson: 11, score: 7.8 }, { lesson: 12, score: 8.3 },
+]
+const SAMPLE_TREND = SAMPLE_SCORES.map((p) => ({ x: p.lesson, y: p.score }))
+const SAMPLE_VOCAB = { N5: 18, N4: 13, N3: 9, N2: 5 }
+
+/**
+ * Card padding + heading above a preview chart. A block resized to H spends
+ * H − CHROME on the plot so the block itself lands on the height dragged.
+ */
+const CHART_CHROME = 62
+
 type Col = 'main' | 'rail'
 type Grab = { col: Col; index: number } | null
+/** Where a dragged block would be inserted — an index *between* blocks. */
+type Slot = { col: Col; index: number } | null
+
+const LESSON_TABS = ['Progress', 'Lesson', 'Practice', 'Vocabulary'] as const
+type LessonTab = (typeof LESSON_TABS)[number]
 
 export default function BrandStudio({ initial, teacherName }: { initial: Brand; teacherName: string }) {
   const router = useRouter()
@@ -51,10 +72,15 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [view, setView] = useState<'dashboard' | 'lesson'>('dashboard')
+  const [lessonTab, setLessonTab] = useState<LessonTab>('Progress')
 
   // Drag state for rearranging blocks directly on the preview.
   const [grab, setGrab] = useState<Grab>(null)
-  const [over, setOver] = useState<{ col: Col; index: number } | null>(null)
+  const [over, setOver] = useState<Slot>(null)
+  // Bottom-edge resize.
+  const [resizing, setResizing] = useState<BlockId | null>(null)
+  const blockEls = useRef<Partial<Record<BlockId, HTMLDivElement | null>>>({})
 
   const set = <K extends keyof Brand>(key: K, value: Brand[K]) => {
     setBrand((b) => ({ ...b, [key]: value }))
@@ -81,6 +107,67 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     const target = from.col === to.col && from.index < to.index ? to.index - 1 : to.index
     next[to.col].splice(Math.max(0, Math.min(next[to.col].length, target)), 0, block)
     set('layout', next)
+  }
+
+  /**
+   * Which insertion slot the pointer is asking for: above the block it is over,
+   * or below it once past the midpoint.
+   */
+  const slotFor = (e: React.DragEvent, col: Col, index: number): { col: Col; index: number } => {
+    const r = e.currentTarget.getBoundingClientRect()
+    return { col, index: e.clientY > r.top + r.height / 2 ? index + 1 : index }
+  }
+
+  /** A slot only parts open if dropping there would actually move the block. */
+  const slotOpen = (col: Col, index: number) => {
+    if (!grab || !over) return false
+    if (over.col !== col || over.index !== index) return false
+    if (grab.col === col && (grab.index === index || grab.index + 1 === index)) return false
+    return true
+  }
+
+  // ── vertical resize ──────────────────────────────────────────────────────
+  const clampH = (n: number) => Math.max(MIN_BLOCK_H, Math.min(MAX_BLOCK_H, Math.round(n)))
+
+  const startResize = (id: BlockId, e: React.PointerEvent) => {
+    // Stops the browser starting an HTML5 drag from inside the draggable block.
+    e.preventDefault()
+    e.stopPropagation()
+    const el = blockEls.current[id]
+    if (!el) return
+    const startY = e.clientY
+    const startH = brand.heights[id] ?? el.getBoundingClientRect().height
+    setResizing(id)
+    setSaved(false)
+
+    const onMove = (ev: PointerEvent) => {
+      const h = clampH(startH + (ev.clientY - startY))
+      setBrand((b) => (b.heights[id] === h ? b : { ...b, heights: { ...b.heights, [id]: h } }))
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      setResizing(null)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  /** Double-clicking the handle hands the block back to its content height. */
+  const clearHeight = (id: BlockId) => {
+    setBrand((b) => {
+      if (b.heights[id] == null) return b
+      const heights = { ...b.heights }
+      delete heights[id]
+      return { ...b, heights }
+    })
+    setSaved(false)
+  }
+
+  /** Height left for a chart inside a block the teacher has resized. */
+  const chartH = (id: BlockId, fallback: number) => {
+    const h = brand.heights[id]
+    return h ? Math.max(52, h - CHART_CHROME) : fallback
   }
 
   const hidden = new Set<BlockId>()
@@ -138,18 +225,18 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         )
       case 'progress':
         return (
-          <div className="k-preview-card">
-            <div className="k-preview-row"><strong>Your progress</strong></div>
-            <div className="k-preview-spark">
-              <i style={{ background: brand.accent }} />
-              <i style={{ background: brand.accent, height: '55%' }} />
-              <i style={{ background: brand.accent, height: '78%' }} />
-              <i style={{ background: brand.accent, height: '92%' }} />
-            </div>
+          <div className="k-preview-card k-chart-card">
+            <div className="k-preview-row"><strong>Your progress</strong><span>Score</span></div>
+            <MiniTrend points={SAMPLE_TREND} color={brand.accent} height={chartH('progress', 62)} />
           </div>
         )
       case 'vocab':
-        return <div className="k-preview-card"><div className="k-preview-row"><strong>Vocabulary</strong><span>45 words</span></div></div>
+        return (
+          <div className="k-preview-card k-chart-card">
+            <div className="k-preview-row"><strong>Vocabulary</strong><span>45 words</span></div>
+            <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH('vocab', 72)} compact />
+          </div>
+        )
       case 'calendar':
         return (
           <div className="k-preview-card">
@@ -163,17 +250,16 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         )
       case 'milestone':
         return (
-          <div className="k-preview-card">
-            <div className="k-preview-row"><strong>Next milestone</strong><span>60%</span></div>
-            <div className="k-hw-track" style={{ marginTop: 8 }}><div className="k-hw-fill" style={{ width: '60%', background: brand.accent }} /></div>
+          <div className="k-preview-card k-chart-card">
+            <div className="k-preview-row"><strong>Next milestone</strong><span>Level 3</span></div>
+            <MilestoneGauge pct={60} color={brand.accent} height={chartH('milestone', 92)} compact />
           </div>
         )
       case 'scores':
         return (
-          <div className="k-preview-card">
-            <div className="k-preview-row"><strong>Recent scores</strong><span>Last 2</span></div>
-            <div className="k-hw-track" style={{ marginTop: 8 }}><div className="k-hw-fill" style={{ width: '72%', background: brand.accent }} /></div>
-            <div className="k-hw-track" style={{ marginTop: 5 }}><div className="k-hw-fill" style={{ width: '62%', background: `${brand.accent}88` }} /></div>
+          <div className="k-preview-card k-chart-card">
+            <div className="k-preview-row"><strong>Recent scores</strong><span>Last 5</span></div>
+            <ScoreTrendChart points={SAMPLE_SCORES} color={brand.accent} height={chartH('scores', 74)} compact />
           </div>
         )
       case 'tests':
@@ -183,45 +269,204 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     }
   }
 
-  /** A preview block wrapped so it can be picked up and dropped with the mouse. */
-  const block = (id: BlockId, col: Col, index: number) => (
+  /** The gap that opens between two blocks to show where a drop would land. */
+  const slot = (col: Col, index: number, edge: boolean) => (
     <div
-      key={id}
-      draggable
-      className={[
-        'k-pblock',
-        hidden.has(id) ? 'off' : '',
-        grab?.col === col && grab.index === index ? 'dragging' : '',
-        over?.col === col && over.index === index && !(grab?.col === col && grab.index === index) ? 'over' : '',
-      ].join(' ')}
-      title={`Drag to move ${BLOCK_LABELS[id]}`}
-      onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setGrab({ col, index }) }}
-      onDragEnd={() => { setGrab(null); setOver(null) }}
-      onDragOver={(e) => { e.preventDefault(); setOver({ col, index }) }}
+      key={`slot-${col}-${index}`}
+      aria-hidden
+      className={['k-pslot', edge ? 'edge' : '', slotOpen(col, index) ? 'open' : ''].join(' ')}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setOver({ col, index }) }}
       onDrop={(e) => {
         e.preventDefault(); e.stopPropagation()
         if (grab) move(grab, { col, index })
         setGrab(null); setOver(null)
       }}
     >
-      <span className="k-pblock-tag">{BLOCK_LABELS[id]}{hidden.has(id) ? ' · hidden' : ''}</span>
-      {preview(id)}
+      <span className="k-pslot-line" />
     </div>
   )
 
-  /** A column, droppable at its end so a block can be appended. */
-  const column = (col: Col) => (
-    <div
-      className={`k-pcol ${over?.col === col && over.index >= brand.layout[col].length ? 'over-end' : ''}`}
-      onDragOver={(e) => { e.preventDefault(); setOver({ col, index: brand.layout[col].length }) }}
-      onDrop={(e) => {
-        e.preventDefault()
-        if (grab) move(grab, { col, index: brand.layout[col].length })
-        setGrab(null); setOver(null)
-      }}
-    >
-      {brand.layout[col].map((id, i) => block(id, col, i))}
-      {brand.layout[col].length === 0 && <div className="k-pcol-empty">Drop here</div>}
+  /** A preview block wrapped so it can be picked up, dropped and resized. */
+  const block = (id: BlockId, col: Col, index: number) => {
+    const h = brand.heights[id]
+    return (
+      <div
+        key={id}
+        ref={(el) => { blockEls.current[id] = el }}
+        draggable={resizing !== id}
+        style={h ? { height: h } : undefined}
+        className={[
+          'k-pblock',
+          hidden.has(id) ? 'off' : '',
+          grab?.col === col && grab.index === index ? 'dragging' : '',
+          resizing === id ? 'resizing' : '',
+        ].join(' ')}
+        title={`Drag to move ${BLOCK_LABELS[id]}`}
+        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setGrab({ col, index }) }}
+        onDragEnd={() => { setGrab(null); setOver(null) }}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setOver(slotFor(e, col, index)) }}
+        onDrop={(e) => {
+          e.preventDefault(); e.stopPropagation()
+          if (grab) move(grab, slotFor(e, col, index))
+          setGrab(null); setOver(null)
+        }}
+      >
+        <span className="k-pblock-tag">
+          {BLOCK_LABELS[id]}{hidden.has(id) ? ' · hidden' : ''}{h ? ` · ${h}px` : ''}
+        </span>
+        <div className="k-pblock-body">{preview(id)}</div>
+        <span
+          className="k-presize"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label={`Resize ${BLOCK_LABELS[id]}`}
+          title={`Drag to resize${h ? ` (${h}px) — double-click to fit content` : ''}`}
+          draggable={false}
+          onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
+          onPointerDown={(e) => startResize(id, e)}
+          onDoubleClick={(e) => { e.stopPropagation(); clearHeight(id) }}
+        />
+      </div>
+    )
+  }
+
+  /** A column of blocks, with a drop slot above, between and below them. */
+  const column = (col: Col) => {
+    const ids = brand.layout[col]
+    return (
+      <div
+        className="k-pcol"
+        onDragOver={(e) => { e.preventDefault(); setOver({ col, index: ids.length }) }}
+        onDrop={(e) => {
+          e.preventDefault()
+          if (grab) move(grab, { col, index: ids.length })
+          setGrab(null); setOver(null)
+        }}
+      >
+        {ids.map((id, i) => (
+          <Fragment key={id}>
+            {slot(col, i, i === 0)}
+            {block(id, col, i)}
+          </Fragment>
+        ))}
+        {slot(col, ids.length, true)}
+        {ids.length === 0 && <div className="k-pcol-empty">Drop here</div>}
+      </div>
+    )
+  }
+
+  /** Miniature of the student's lesson recap page, themed by the same brand. */
+  const lessonPreview = () => (
+    <div className="k-lpview" key={device}>
+      <span className="k-back">← Dashboard</span>
+
+      <header className="k-phead">
+        <div>
+          <div className="k-phead-eyebrow">Lesson 12 · Recap</div>
+          <h1>Contrasting ideas with けど</h1>
+          <div className="k-pmeta">
+            <span>12th lesson</span>
+            <span>2 Aug</span>
+            <span>Confident</span>
+          </div>
+        </div>
+        <div className="k-pscore"><div><b>8.3</b><small>OUT OF 10</small></div></div>
+        {brand.props !== 'none' && (
+          <div className="k-hero-art" style={{ right: -20, opacity: .5 }} aria-hidden>
+            <span className="k-orb" style={{ width: 60, height: 60, right: 8, top: 8 }} />
+            <span className="k-tube" style={{ width: 46, height: 46, right: 56, top: 54, transform: 'rotate(40deg)' }} />
+          </div>
+        )}
+      </header>
+
+      <div className="tabs" role="tablist" aria-label="Lesson recap sections">
+        {LESSON_TABS.map((t) => (
+          <button key={t} type="button" role="tab" aria-selected={lessonTab === t} className={`tab ${lessonTab === t ? 'sel' : ''}`} onClick={() => setLessonTab(t)}>{t}</button>
+        ))}
+      </div>
+
+      {lessonTab === 'Progress' && (
+        <div role="tabpanel">
+          <h3 className="dashboard-title">How this lesson went</h3>
+          <div className="stat-cards">
+            <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
+              <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
+              <div className="stat-card-value">58<span className="stat-unit">%</span> <span className="stat-sep">/</span> 42<span className="stat-unit">%</span></div>
+              <div className="balance-bars" style={{ marginTop: 'auto' }}>
+                <div className="balance-row"><span>Derek</span><div className="balance-track"><div className="balance-fill student" style={{ width: '58%' }} /></div><span>58%</span></div>
+                <div className="balance-row"><span>{teacherName ? teacherName.split(' ')[0] : 'You'}</span><div className="balance-track"><div className="balance-fill" style={{ width: '42%' }} /></div><span>42%</span></div>
+              </div>
+            </div>
+
+            <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
+              <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
+              <div className="stat-card-value" style={{ color: 'var(--green)' }}>8.3<span className="stat-unit">/10</span></div>
+              <span className="stat-chip" style={{ marginTop: 'auto' }}>Confident</span>
+            </div>
+
+            <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
+              <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
+              <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>Rich</div>
+              <p className="stat-card-note" style={{ marginTop: 'auto' }}>18 vocabulary items practiced</p>
+            </div>
+          </div>
+
+          <div className="corrections-card">
+            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
+            <div className="metric-grid">
+              <div className="metric"><div className="mv">54</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
+              <div className="metric"><div className="mv">2.1s</div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
+              <div className="metric"><div className="mv">41s</div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
+              <div className="metric"><div className="mv">9</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {lessonTab === 'Lesson' && (
+        <div className="tab-panel" role="tabpanel">
+          <div className="lesson-block">
+            <h3>What you practised</h3>
+            <p>You used けど to contrast two ideas in the same sentence, and kept the polite form all the way through.</p>
+          </div>
+          <div className="lesson-block">
+            <h3>Teacher&rsquo;s Note</h3>
+            <p>Lovely progress on longer answers — next time try linking three clauses before pausing.</p>
+          </div>
+        </div>
+      )}
+
+      {lessonTab === 'Practice' && (
+        <div className="tab-panel" role="tabpanel">
+          <div className="lesson-block">
+            <h3>Homework</h3>
+            <ul>
+              <li>Write five sentences contrasting two habits.</li>
+              <li>Record a 60-second voice memo about your weekend.</li>
+            </ul>
+          </div>
+          <div className="lesson-block">
+            <h3>Practice exercises</h3>
+            <p className="analytics-note">Fill in the blank, multiple choice and translation — marked as they answer.</p>
+          </div>
+        </div>
+      )}
+
+      {lessonTab === 'Vocabulary' && (
+        <div className="tab-panel" role="tabpanel">
+          <div className="lesson-block k-chart-card">
+            <h3>Vocabulary by JLPT level</h3>
+            <VocabLevelChart distribution={SAMPLE_VOCAB} height={132} />
+          </div>
+          <div className="lesson-block">
+            <h3>Words from this lesson</h3>
+            <div className="example">
+              <span className="jp">練習</span> <span className="romaji">renshuu</span><span className="jlpt sm"> N4</span>
+              <br />practice
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 
@@ -371,6 +616,19 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               </div>
             ))}
           </div>
+
+          {Object.keys(brand.heights).length > 0 && (
+            <>
+              <span className="k-field-label">Block heights</span>
+              <div className="k-hlist">
+                {Object.entries(brand.heights).map(([id, h]) => (
+                  <button key={id} type="button" className="k-hchip" onClick={() => clearHeight(id as BlockId)} title="Reset to fit content">
+                    {BLOCK_LABELS[id as BlockId]} <b>{h}px</b> <span aria-hidden>×</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </section>
 
         {error && <p className="k-error">{error}</p>}
@@ -387,31 +645,55 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       {/* ── live, directly-editable preview ── */}
       <div className="k-studio-preview">
         <div className="k-preview-bar">
-          <span className="k-preview-label">Student view · drag to rearrange</span>
-          <div className="k-seg" style={{ margin: 0, width: 168 }}>
-            <button className={device === 'desktop' ? 'on' : ''} onClick={() => setDevice('desktop')}>Desktop</button>
-            <button className={device === 'mobile' ? 'on' : ''} onClick={() => setDevice('mobile')}>Phone</button>
+          <span className="k-preview-label">
+            {view === 'dashboard' ? 'Student view · drag to rearrange' : 'Student view · lesson recap'}
+          </span>
+          <div className="k-preview-switches">
+            <div className="k-seg" style={{ margin: 0, width: 210 }}>
+              <button className={view === 'dashboard' ? 'on' : ''} onClick={() => setView('dashboard')}>Dashboard</button>
+              <button className={view === 'lesson' ? 'on' : ''} onClick={() => setView('lesson')}>Lesson recap</button>
+            </div>
+            <div className="k-seg" style={{ margin: 0, width: 168 }}>
+              <button className={device === 'desktop' ? 'on' : ''} onClick={() => setDevice('desktop')}>Desktop</button>
+              <button className={device === 'mobile' ? 'on' : ''} onClick={() => setDevice('mobile')}>Phone</button>
+            </div>
           </div>
         </div>
 
         <div className={`k-preview-frame ${device} ${backgroundClass(brand)}`} style={vars}>
-          <div className="k-preview-top">
-            <span className="k-preview-mark" style={{ background: `${brand.accent}22`, color: brand.accent }}>{brand.logoText || '📚'}</span>
-            <div>
-              <div className="k-preview-hello">Welcome back,</div>
-              <div className="k-preview-name">Derek</div>
-            </div>
-          </div>
+          {view === 'dashboard' ? (
+            <>
+              <div className="k-preview-top">
+                <span className="k-preview-mark" style={{ background: `${brand.accent}22`, color: brand.accent }}>{brand.logoText || '📚'}</span>
+                <div>
+                  <div className="k-preview-hello">Welcome back,</div>
+                  <div className="k-preview-name">Derek</div>
+                </div>
+              </div>
 
-          <div className={`k-preview-grid ${device}`}>
-            {column('main')}
-            {column('rail')}
-          </div>
+              {/* Keyed on `device`: the charts measure their container once on
+                  mount, so switching width has to remount them or they keep
+                  drawing at the old size. */}
+              <div key={device} className={`k-preview-grid ${device} ${grab ? 'dragging' : ''}`}>
+                {column('main')}
+                {column('rail')}
+              </div>
+            </>
+          ) : (
+            lessonPreview()
+          )}
         </div>
 
         <p className="k-fine" style={{ textAlign: 'left' }}>
-          Grab any block and drop it where you want — including across the two columns.
-          This is {teacherName ? `${teacherName}'s` : 'your'} student dashboard; save to publish it.
+          {view === 'dashboard' ? (
+            <>
+              Grab any block and drop it where you want — including across the two columns. Drag a block&rsquo;s
+              bottom edge to change its height, or double-click that edge to fit its content again.
+              This is {teacherName ? `${teacherName}'s` : 'your'} student dashboard; save to publish it.
+            </>
+          ) : (
+            <>The recap page every lesson opens into. Its layout is fixed, but your colour, corners and background carry across — switch tabs to check them all.</>
+          )}
         </p>
       </div>
     </div>

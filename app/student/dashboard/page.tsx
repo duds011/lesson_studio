@@ -7,7 +7,7 @@ import { getStudentCredits } from '@/lib/credits'
 import { getTeacherPaymentMethods } from '@/lib/payment-methods'
 import { formatDateShort, getLevelLabel, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import ProgressCharts from '@/components/portal/ProgressCharts'
-import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
+import { MilestoneGauge, ScoreTrendChart, VocabLevelChart } from '@/components/portal/BrandCharts'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
 import CalendarCard from '@/components/koku/CalendarCard'
@@ -111,8 +111,24 @@ export default async function StudentDashboard() {
   }))
 
   const firstName = student.full_name.split(' ')[0]
-  // Most recent lessons that carry a score — shown as bars in the right rail.
-  const scoredRecent = rows.filter((l) => summaryOf(l)?.score != null).slice(0, 4)
+  // Most recent scored lessons, oldest-first so the chart reads left to right.
+  const scoreTrend = rows
+    .filter((l) => summaryOf(l)?.score != null)
+    .slice(0, 6)
+    .reverse()
+    .map((l) => ({ lesson: l.lesson_number as number, score: Number(summaryOf(l).score) }))
+
+  // A block the teacher resized in the studio (brand.heights) gets that height
+  // here too. A chart block spends it on the plot area — everything else is
+  // wrapped in a fixed-height box and scrolls. CHART_CHROME is the card
+  // padding + heading above the plot, so the block as a whole lands on the
+  // height that was dragged.
+  const CHART_BLOCKS = new Set<BlockId>(['scores', 'milestone', 'vocab'])
+  const CHART_CHROME = 74
+  const heightOf = (id: BlockId, fallback: number) => {
+    const h = brand.heights[id]
+    return h ? Math.max(60, h - CHART_CHROME) : fallback
+  }
 
 
   // Each arrangeable block, keyed by id. The teacher's layout decides which
@@ -276,7 +292,10 @@ export default async function StudentDashboard() {
       <>
           {brand.showVocab && totalVocab > 0 && (
             <div style={{ marginTop: 14 }}>
-              <VocabLevelBreakdown distribution={vocabDistribution} totalCount={totalVocab} />
+              <div className="k-sec-head"><h2>Vocabulary</h2><span className="k-link">{totalVocab} words</span></div>
+              <div className="k-card k-chart-card">
+                <VocabLevelChart distribution={vocabDistribution} height={heightOf('vocab', 170)} />
+              </div>
             </div>
           )}
       </>
@@ -288,15 +307,12 @@ export default async function StudentDashboard() {
     ),
     milestone: (
       <>
-          {brand.showMilestone && <div className="k-card">
+          {brand.showMilestone && <div className="k-card k-chart-card">
             <div className="k-card-head">
               <h3>Next milestone</h3>
               <span className="k-link">{getLevelLabel(nextMilestone)}</span>
             </div>
-            <div className="k-hw-bar" style={{ marginTop: 0 }}>
-              <div className="k-hw-track"><div className="k-hw-fill" style={{ width: `${milestonePct}%` }} /></div>
-              <span className="k-hw-pct">{milestonePct}%</span>
-            </div>
+            <MilestoneGauge pct={milestonePct} color={brand.accent} height={heightOf('milestone', 150)} caption={`to ${getLevelLabel(nextMilestone)}`} />
             <p className="k-course-meta" style={{ marginTop: 9 }}>
               {lessonCount} of {nextMilestone} lessons towards {getLevelLabel(nextMilestone)}
             </p>
@@ -305,33 +321,13 @@ export default async function StudentDashboard() {
     ),
     scores: (
       <>
-          {scoredRecent.length > 0 && (
-            <div className="k-card">
+          {scoreTrend.length > 0 && (
+            <div className="k-card k-chart-card">
               <div className="k-card-head">
                 <h3>Recent scores</h3>
-                <span className="k-link">Last {scoredRecent.length}</span>
+                <span className="k-link">Last {scoreTrend.length}</span>
               </div>
-              <div className="k-hw">
-                {scoredRecent.map((l) => {
-                  const s = summaryOf(l)
-                  const pct = Math.round((s.score / 10) * 100)
-                  return (
-                    <Link key={l.id} href={`/student/lessons/${l.id}`} className="k-hw-row">
-                      <div className="k-hw-top">
-                        <div>
-                          <div className="k-hw-title">{lessonDisplayTitle(s?.recap_json, l.title, l.lesson_number)}</div>
-                          <div className="k-hw-due">{formatDateShort(l.lesson_date)}</div>
-                        </div>
-                        <span className="k-hw-arrow">↗</span>
-                      </div>
-                      <div className="k-hw-bar">
-                        <div className="k-hw-track"><div className="k-hw-fill" style={{ width: `${pct}%` }} /></div>
-                        <span className="k-hw-pct">{s.score}/10</span>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
+              <ScoreTrendChart points={scoreTrend} color={brand.accent} height={heightOf('scores', 150)} />
             </div>
           )}
       </>
@@ -391,7 +387,14 @@ export default async function StudentDashboard() {
     ),
   }
 
-  const column = (ids: BlockId[]) => ids.map((id) => <Fragment key={id}>{blocks[id]}</Fragment>)
+  const column = (ids: BlockId[]) =>
+    ids.map((id) => {
+      const h = brand.heights[id]
+      // Chart blocks already sized themselves via heightOf, so only the rest
+      // need the fixed-height box.
+      if (!h || CHART_BLOCKS.has(id)) return <Fragment key={id}>{blocks[id]}</Fragment>
+      return <div key={id} className="k-block-sized" style={{ height: h }}>{blocks[id]}</div>
+    })
 
   return (
     <>
