@@ -121,79 +121,76 @@ export default async function Home() {
     <>
       <AppNav email={token.email} connected />
       <main className="wrap page-fade">
-        <header className="k-thead">
-          <div>
+        {/* One slim line. The calendar is what this page is for, so the header
+            gets a strip and nothing more. */}
+        <header className="k-thead slim">
+          <div className="k-thead-title">
             <span className="k-phead-eyebrow">Overview</span>
             <h1>Your teaching calendar</h1>
-            <p>
-              Lessons from <strong>{token.calendarName || 'your primary calendar'}</strong>, ready to record and turn into student recaps.
-            </p>
           </div>
           <div className="k-thead-actions">
             <Link className="btn btn-ghost" href="/settings">Manage connections</Link>
             <Link className="btn btn-primary" href="/book" target="_blank">Open booking page ↗</Link>
           </div>
-
-          <div className="k-hero-art" style={{ right: -34, opacity: .45 }} aria-hidden>
-            <span className="k-orb" style={{ width: 92, height: 92, right: 20, top: 8 }} />
-            <span className="k-tube" style={{ width: 74, height: 74, right: 86, top: 78, transform: 'rotate(34deg)' }} />
-          </div>
         </header>
-
-        <div className="k-tstats" aria-label="Lesson summary">
-          <div className="k-stat yellow">
-            <div className="k-stat-head"><span>Upcoming lessons</span></div>
-            <div className="k-stat-val"><b>{lessons.length}</b></div>
-            <p className="k-stat-sub">on {token.calendarName || 'your calendar'}</p>
-          </div>
-          <div className="k-stat blue">
-            <div className="k-stat-head"><span>Drafts to review</span></div>
-            <div className="k-stat-val"><b>{Object.values(recapRecs).filter((r) => r.status === 'draft').length}</b></div>
-            <p className="k-stat-sub">recaps waiting on you</p>
-          </div>
-          <div className="k-stat purple">
-            <div className="k-stat-head"><span>Published recaps</span></div>
-            <div className="k-stat-val"><b>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</b></div>
-            <p className="k-stat-sub">sent to students</p>
-          </div>
-        </div>
-
-        {calendars.length > 1 && (
-          <div className="analytics-card" style={{ padding: 16, marginBottom: 18 }}>
-            <p className="analytics-label" style={{ margin: '0 0 10px' }}>📅 Lesson calendar <span style={{ color: 'var(--muted)', fontWeight: 400 }}>— which calendar holds your lessons</span></p>
-            <div className="cal-picker">
-              {calendars.map((c) => {
-                const sel = c.id === selectedCalId || (c.primary && selectedCalId === 'primary')
-                return (
-                  <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
-                    <input type="hidden" name="calendarId" value={c.id} />
-                    <input type="hidden" name="calendarName" value={c.name} />
-                    <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>{sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}</button>
-                  </form>
-                )
-              })}
-            </div>
-          </div>
-        )}
 
         <OverviewSync />
 
-        {draftRecaps.length > 0 && (
-          <div style={{ marginBottom: 22 }}>
-            <RecapsToReview drafts={draftRecaps} />
-          </div>
-        )}
+        <div className="k-overview">
+          {/* Calendar first, at the top, before anything else. */}
+          <div className="k-overview-main">
+            {needsReconnect ? (
+              <div className="empty">
+                Your Google connection needs updated permissions.{' '}
+                <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>
+              </div>
+            ) : fetchError ? (
+              <div className="empty">{fetchError}</div>
+            ) : (
+              <TeacherCalendar initialLessons={initialLessons} />
+            )}
 
-        {needsReconnect ? (
-          <div className="empty">
-            Your Google connection needs updated permissions.{' '}
-            <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>
+            {draftRecaps.length > 0 && <RecapsToReview drafts={draftRecaps} />}
           </div>
-        ) : fetchError ? (
-          <div className="empty">{fetchError}</div>
-        ) : (
-          <TeacherCalendar initialLessons={initialLessons} />
-        )}
+
+          <aside className="k-overview-rail" aria-label="Lesson summary">
+            <div className="k-tstats">
+              <div className="k-stat yellow">
+                <div className="k-stat-head"><span>Upcoming lessons</span></div>
+                <div className="k-stat-val"><b>{lessons.length}</b></div>
+                <p className="k-stat-sub">on {token.calendarName || 'your calendar'}</p>
+              </div>
+              <div className="k-stat blue">
+                <div className="k-stat-head"><span>Drafts to review</span></div>
+                <div className="k-stat-val"><b>{Object.values(recapRecs).filter((r) => r.status === 'draft').length}</b></div>
+                <p className="k-stat-sub">recaps waiting on you</p>
+              </div>
+              <div className="k-stat purple">
+                <div className="k-stat-head"><span>Published recaps</span></div>
+                <div className="k-stat-val"><b>{Object.values(recapRecs).filter((r) => r.status === 'published').length}</b></div>
+                <p className="k-stat-sub">sent to students</p>
+              </div>
+            </div>
+
+            {calendars.length > 1 && (
+              <div className="analytics-card k-rail-card">
+                <p className="analytics-label">📅 Lesson calendar</p>
+                <div className="cal-picker">
+                  {calendars.map((c) => {
+                    const sel = c.id === selectedCalId || (c.primary && selectedCalId === 'primary')
+                    return (
+                      <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
+                        <input type="hidden" name="calendarId" value={c.id} />
+                        <input type="hidden" name="calendarName" value={c.name} />
+                        <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>{sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}</button>
+                      </form>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
       </main>
     </>
   )

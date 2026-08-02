@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'arrow' | 'external' | 'wallet' | 'clock'
+type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse'
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -16,6 +17,7 @@ function Icon({ name }: { name: IconName }) {
     external: <><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h7"/></>,
     wallet: <><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M21 12a2 2 0 0 0-2-2h-5a2 2 0 0 0 0 4h5a2 2 0 0 0 2-2Z"/></>,
     clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    collapse: <><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></>,
   }
   return <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
@@ -31,10 +33,30 @@ const LINKS = [
   { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName },
 ]
 
+/** Remembered per browser, and read straight off the root element so the
+ *  --sidebar width the whole layout is built on collapses with it. */
+const NAV_KEY = 'nav-collapsed'
+
 export default function AppNav({ email, connected }: { email?: string | null; connected?: boolean }) {
   const pathname = usePathname()
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
   const accountLabel = email?.split('@')[0] || 'Teacher workspace'
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(NAV_KEY) === '1'
+    setCollapsed(saved)
+    document.documentElement.dataset.nav = saved ? 'collapsed' : ''
+  }, [])
+
+  const toggleNav = () => {
+    setCollapsed((was) => {
+      const next = !was
+      localStorage.setItem(NAV_KEY, next ? '1' : '0')
+      document.documentElement.dataset.nav = next ? 'collapsed' : ''
+      return next
+    })
+  }
 
   return (
     <aside className="app-sidebar" aria-label="Teacher workspace navigation">
@@ -43,6 +65,16 @@ export default function AppNav({ email, connected }: { email?: string | null; co
           <LogoMark />
           <span><span className="brand-word">Lesson Studio</span><small>Teacher workspace</small></span>
         </Link>
+        <button
+          type="button"
+          className="nav-toggle"
+          onClick={toggleNav}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+        >
+          <Icon name="collapse" />
+        </button>
       </div>
 
       <div className="sidebar-scroll">

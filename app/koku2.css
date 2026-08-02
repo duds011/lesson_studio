@@ -317,11 +317,71 @@
 .k-thead h1{font-size:clamp(23px,2.6vw,32px);letter-spacing:-.042em;line-height:1.16;margin:8px 0 8px;font-weight:700}
 .k-thead p{margin:0;color:rgba(255,255,255,.72);font-size:13px;line-height:1.6;max-width:56ch}
 .k-thead-actions{display:flex;gap:9px;flex-wrap:wrap}
+
+/* …but on a page whose whole job is the thing underneath it, the header is a
+   strip. One line, no description, so the calendar starts above the fold. */
+.k-thead.slim{padding:12px 20px;border-radius:var(--r-lg);margin-bottom:14px;align-items:center;gap:16px}
+.k-thead.slim .k-thead-title{display:flex;align-items:baseline;gap:11px;min-width:0}
+.k-thead.slim .k-phead-eyebrow{color:rgba(255,255,255,.55);font-size:9.5px}
+.k-thead.slim h1{font-size:17px;letter-spacing:-.03em;line-height:1.2;margin:0}
+.k-thead.slim .btn{padding:8px 14px;font-size:12px}
+
+/* Calendar on the left at full height, the numbers beside it on the right. */
+.k-overview{display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:14px;align-items:start}
+@media(max-width:1100px){.k-overview{grid-template-columns:minmax(0,1fr)}}
+.k-overview-main{min-width:0;display:grid;gap:16px}
+.k-overview-rail{min-width:0;display:grid;gap:12px;position:sticky;top:14px}
+@media(max-width:1100px){.k-overview-rail{position:static}}
+/* Stacked in the rail, so the three stats read as a column of numbers. */
+.k-overview-rail .k-tstats{grid-template-columns:minmax(0,1fr);gap:10px;margin-bottom:0}
+.k-overview-rail .k-stat{padding:14px 16px;min-height:0}
+.k-overview-rail .k-stat-val b{font-size:26px}
+.k-overview-rail .k-stat-sub{font-size:11px}
+.k-rail-card{padding:14px 16px}
+.k-rail-card .analytics-label{margin:0 0 9px}
+@media(max-width:1100px){
+  .k-overview-rail .k-tstats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .k-overview-rail .k-tstats{grid-template-columns:minmax(0,1fr)}
+}
 .k-thead .btn{border-radius:999px;font-size:12.5px;padding:11px 18px;border:0}
 .k-thead .btn-ghost{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
 .k-thead .btn-ghost:hover{background:rgba(255,255,255,.24);color:#fff}
 .k-thead .btn-primary{background:#fff;color:var(--forest-deep)}
 .k-thead .btn-primary:hover{background:#f2f2ec}
+
+/* ── sidebar collapse ──
+   Same shape as the <=900px responsive rules, but driven by the toggle in the
+   sidebar header. It sets data-nav on <html> because --sidebar lives on :root
+   and the whole layout's left margin is built on it. */
+.sidebar-top{display:flex;align-items:center;gap:10px}
+.sidebar-top .logo{flex:1 1 auto;min-width:0}
+.nav-toggle{flex:0 0 auto;width:28px;height:28px;border:0;border-radius:9px;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:.15s ease}
+.nav-toggle:hover{background:var(--brand-soft);color:var(--forest)}
+.nav-toggle .ui-icon{width:15px;height:15px;transition:transform .2s ease}
+
+html[data-nav="collapsed"]{--sidebar:76px}
+/* The KOKU shell floats the sidebar as an inset card and pins .wrap to a
+   literal margin, so collapsing has to move both — setting --sidebar alone
+   shrinks the rail and leaves the content where it was. */
+html[data-nav="collapsed"] .app-sidebar{width:76px}
+html[data-nav="collapsed"] .wrap{margin-left:104px}
+.app-sidebar,.wrap{transition:width .18s ease,margin-left .18s ease}
+html[data-nav="collapsed"] .sidebar-top{flex-direction:column;gap:8px;padding:16px 0}
+html[data-nav="collapsed"] .sidebar-top .logo{flex:0 0 auto}
+html[data-nav="collapsed"] .nav-toggle .ui-icon{transform:rotate(180deg)}
+html[data-nav="collapsed"] .logo>span:not(.mark),
+html[data-nav="collapsed"] .nav-section-label,
+html[data-nav="collapsed"] .side-link span,
+html[data-nav="collapsed"] .sidebar-account .account-copy,
+html[data-nav="collapsed"] .sidebar-account .btn,
+html[data-nav="collapsed"] .side-link>.ui-icon:last-child:not(:first-child){display:none}
+html[data-nav="collapsed"] .side-link{justify-content:center;padding:11px}
+html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
+/* Below 900px the sidebar is already a rail, and under 680px it becomes a top
+   bar — the toggle has nothing to collapse there. */
+@media(max-width:900px){.nav-toggle{display:none}}
 
 /* teacher primitives — same treatment the student shell gets */
 .wrap .btn{border-radius:999px;padding:10px 17px;font-size:12.5px;box-shadow:none}
