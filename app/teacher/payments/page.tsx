@@ -52,24 +52,34 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
   for (const s of studentOptions) credits[s.id] = creditMap.get(s.id) ?? { purchased: 0, used: 0, remaining: 0, low: true }
 
   return (
-    <div style={{ display: 'grid', gap: 22 }}>
-      <div>
-        <span className="eyebrow">Teacher</span>
-        <h1 className="title" style={{ margin: '6px 0 4px' }}>Payments</h1>
-        <p className="sub">All student payments in one place — track revenue, lesson packages, and who&rsquo;s running low.</p>
-      </div>
+    <div style={{ display: 'grid', gap: 16 }}>
+      <header className="k-thead">
+        <div>
+          <span className="k-phead-eyebrow">Teacher</span>
+          <h1>Payments</h1>
+          <p>All student payments in one place — track revenue, lesson packages, and who&rsquo;s running low.</p>
+        </div>
+        <div className="k-hero-art" style={{ right: -30, opacity: .45 }} aria-hidden>
+          <span className="k-orb" style={{ width: 84, height: 84, right: 18, top: 12 }} />
+          <span className="k-tube" style={{ width: 62, height: 62, right: 92, top: 82, transform: 'rotate(38deg)' }} />
+        </div>
+      </header>
+
       <PaymentsManager students={studentOptions} credits={credits} payments={managed} currency={currency} />
 
       {/* Card payments (Stripe) — coming soon */}
-      <div className="analytics-card" style={{ padding: 22, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h3 style={{ margin: 0 }}>💳 Card payments</h3>
-            <span className="pill" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>Coming soon</span>
+      <section className="k-sec">
+        <div className="k-sec-head" style={{ marginBottom: 0 }}>
+          <span className="k-sec-icon b" aria-hidden>💳</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <h3>Card payments</h3>
+              <span className="pill" style={{ background: 'var(--brand-soft)', color: 'var(--forest)' }}>Coming soon</span>
+            </div>
+            <p className="desc">Sell lesson packages and take card payments with automatic payouts. For now, record payments manually above and share your payment details below.</p>
           </div>
-          <p className="sub" style={{ margin: '6px 0 0', maxWidth: 520 }}>Sell lesson packages and take card payments with automatic payouts. For now, record payments manually above and share your payment details below.</p>
         </div>
-      </div>
+      </section>
 
       <PaymentMethodsManager initial={paymentMethods} />
     </div>

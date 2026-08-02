@@ -74,10 +74,12 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
   const RangeEditor = ({ ranges, onEdit, onRemove, onAdd }: { ranges: Range[]; onEdit: (ri: number, w: 0 | 1, v: string) => void; onRemove: (ri: number) => void; onAdd: () => void }) => (
     <div style={{ display: 'grid', gap: 6 }}>
       {ranges.map((r, ri) => (
-        <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <input type="time" value={r[0]} step={300} onChange={(e) => onEdit(ri, 0, e.target.value)} style={timeStyle} />
-          <span style={{ color: 'var(--muted)' }}>–</span>
-          <input type="time" value={r[1]} step={300} onChange={(e) => onEdit(ri, 1, e.target.value)} style={timeStyle} />
+        <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span className="k-time-chip">
+            <input type="time" value={r[0]} step={300} onChange={(e) => onEdit(ri, 0, e.target.value)} aria-label="Start time" />
+            <span style={{ color: 'var(--muted)' }}>–</span>
+            <input type="time" value={r[1]} step={300} onChange={(e) => onEdit(ri, 1, e.target.value)} aria-label="End time" />
+          </span>
           <button className="btn btn-danger-ghost btn-sm" onClick={() => onRemove(ri)} aria-label="Remove range">✕</button>
         </div>
       ))}
@@ -86,12 +88,17 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
   )
 
   return (
-    <div className="settings-card" id="availability">
-      <h3>Availability & booking</h3>
-      <p className="desc">Control when students can book, how long lessons are, and your working hours. Applies to your booking page and the student portal.</p>
+    <section className="k-sec" id="availability">
+      <div className="k-sec-head">
+        <span className="k-sec-icon p" aria-hidden>🕒</span>
+        <div>
+          <h3>Availability &amp; booking</h3>
+          <p className="desc">Control when students can book, how long lessons are, and your working hours. Applies to your booking page and the student portal.</p>
+        </div>
+      </div>
 
       {/* General */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(150px, 100%), 1fr))', gap: 12, marginBottom: 20 }}>
+      <div className="k-avail-grid">
         <div className="field" style={{ gridColumn: '1 / -1' }}><label>Lesson name</label><input value={title} onChange={(e) => { dirty(); setTitle(e.target.value) }} placeholder="Language lesson" style={inputStyle} /></div>
         <div className="field"><label>Lesson length (min)</label><input type="number" min="5" step="5" value={durationMin} onChange={(e) => { dirty(); setDuration(e.target.value) }} style={inputStyle} /></div>
         <div className="field"><label>Slot interval (min)</label><input type="number" min="5" step="5" value={incrementMin} onChange={(e) => { dirty(); setIncrement(e.target.value) }} style={inputStyle} /></div>
@@ -113,15 +120,22 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
           const ranges = weekly[idx]
           const on = ranges.length > 0
           return (
-            <div key={idx} className="avail-row" style={{ display: 'grid', gap: 12, alignItems: 'start', padding: '10px 0', borderTop: '1px solid var(--line)' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 13, paddingTop: 6 }}>
-                <input type="checkbox" checked={on} onChange={(e) => toggleDay(idx, e.target.checked)} />
+            <div key={idx} className="avail-row" style={{ display: 'grid', gap: 12, alignItems: 'start' }}>
+              <div className="k-day-toggle">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={on}
+                  aria-label={`${label} availability`}
+                  className={`k-switch ${on ? 'on' : ''}`}
+                  onClick={() => toggleDay(idx, !on)}
+                />
                 {label}
-              </label>
+              </div>
               {on ? (
                 <RangeEditor ranges={ranges} onEdit={(ri, w, v) => editRange(idx, ri, w, v)} onRemove={(ri) => removeRange(idx, ri)} onAdd={() => addRange(idx)} />
               ) : (
-                <span style={{ fontSize: 12, color: 'var(--muted)', paddingTop: 8 }}>Unavailable</span>
+                <span className="k-unavail">Unavailable</span>
               )}
             </div>
           )
@@ -166,6 +180,6 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
         {saved && <span style={{ fontSize: 12, color: 'var(--green)' }}>✓ Saved — your booking page is updated</span>}
         <button className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }} disabled={pending} onClick={save}>{pending ? 'Saving…' : 'Save availability'}</button>
       </div>
-    </div>
+    </section>
   )
 }

@@ -94,19 +94,31 @@ export default function PaymentsManager({
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       {/* Summary */}
-      <div className="analytics-grid" style={{ gridTemplateColumns: 'repeat(3,minmax(0,1fr))' }}>
-        <div className="analytics-card"><span className="analytics-label">This month</span><div className="analytics-value" style={{ color: 'var(--green)' }}>{formatMoney(thisMonth, currency)}</div></div>
-        <div className="analytics-card"><span className="analytics-label">Received all-time</span><div className="analytics-value">{formatMoney(totalReceived, currency)}</div></div>
-        <div className="analytics-card"><span className="analytics-label">Outstanding</span><div className="analytics-value" style={{ color: totalOutstanding > 0 ? 'var(--amber)' : undefined }}>{formatMoney(totalOutstanding, currency)}</div></div>
+      <div className="k-pay-stats">
+        <div className="k-stat yellow">
+          <div className="k-stat-head"><span>This month</span></div>
+          <div className="k-stat-val"><b>{formatMoney(thisMonth, currency)}</b></div>
+          <p className="k-stat-sub">received since the 1st</p>
+        </div>
+        <div className="k-stat blue">
+          <div className="k-stat-head"><span>Received all-time</span></div>
+          <div className="k-stat-val"><b>{formatMoney(totalReceived, currency)}</b></div>
+          <p className="k-stat-sub">across every student</p>
+        </div>
+        <div className="k-stat purple">
+          <div className="k-stat-head"><span>Outstanding</span></div>
+          <div className="k-stat-val"><b>{formatMoney(totalOutstanding, currency)}</b></div>
+          <p className="k-stat-sub">{totalOutstanding > 0 ? 'still to collect' : 'nothing owed — nice'}</p>
+        </div>
       </div>
 
       {/* Revenue chart */}
       {hasRevenue && (
-        <div className="analytics-card" style={{ padding: 18 }}>
+        <div className="k-sec" style={{ padding: 22 }}>
           <p className="analytics-label" style={{ marginBottom: 12 }}>💰 Revenue — last 12 months</p>
           <ResponsiveContainer width="100%" height={170}>
             <BarChart data={buckets} margin={{ top: 4, right: 4, left: -18, bottom: 0 }} barSize={20}>
-              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6259e8" /><stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.7} /></linearGradient></defs>
+              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#234f3c" /><stop offset="100%" stopColor="#3fbfa0" stopOpacity={0.75} /></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={44} tickFormatter={(v) => `${currencySymbol(currency)}${v}`} />
@@ -130,18 +142,18 @@ export default function PaymentsManager({
       </div>
 
       {/* Per-student table */}
-      <div className="directory">
-        <div className="directory-head" style={{ gridTemplateColumns: 'minmax(160px,1.6fr) 110px 150px 110px' }}>
+      <div className="k-table">
+        <div className="k-table-head" style={{ gridTemplateColumns: 'minmax(160px,1.6fr) 110px 150px 110px' }}>
           <span>Student</span><span>Paid</span><span>Lessons</span><span></span>
         </div>
         {sortedStudents.map(s => {
           const c = credits[s.id] ?? { purchased: 0, used: 0, remaining: 0, low: true }
           return (
-            <div key={s.id} className="student-card" style={{ gridTemplateColumns: 'minmax(160px,1.6fr) 110px 150px 110px' }}>
+            <div key={s.id} className="k-row" style={{ gridTemplateColumns: 'minmax(160px,1.6fr) 110px 150px 110px' }}>
               <Link href={`/teacher/students/${s.id}`} className="sc-name" style={{ color: 'inherit' }}>{s.fullName}</Link>
               <span style={{ fontWeight: 700 }}>{formatMoney(paidByStudent.get(s.id) ?? 0, currency)}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <strong style={{ color: c.remaining <= 0 ? 'var(--red)' : c.low ? 'var(--amber)' : 'var(--brand)' }}>{c.remaining}</strong>
+                <strong style={{ color: c.remaining <= 0 ? 'var(--red)' : c.low ? 'var(--amber)' : 'var(--forest)' }}>{c.remaining}</strong>
                 <span style={{ fontSize: 11, color: 'var(--muted)' }}>left / {c.purchased} bought</span>
                 {c.low && <span className="pill" style={{ background: c.remaining <= 0 ? 'var(--red-soft)' : 'var(--amber-soft)', color: c.remaining <= 0 ? 'var(--red)' : 'var(--amber)' }}>⚠️</span>}
               </span>
@@ -149,16 +161,16 @@ export default function PaymentsManager({
             </div>
           )
         })}
-        {sortedStudents.length === 0 && <div className="student-card" style={{ color: 'var(--muted)' }}>No students yet.</div>}
+        {sortedStudents.length === 0 && <div className="k-row" style={{ color: 'var(--muted)' }}>No students yet.</div>}
       </div>
 
       {/* Recent payments */}
       {recent.length > 0 && (
         <div>
           <h2 className="section-heading">Recent payments</h2>
-          <div className="directory">
+          <div className="k-table">
             {recent.map(p => (
-              <button key={p.id} className="student-card" style={{ gridTemplateColumns: '92px minmax(120px,1.4fr) 100px 90px 1fr', textAlign: 'left', background: 'none', border: 0, borderTop: '1px solid var(--line)', cursor: 'pointer', width: '100%' }} onClick={() => openEdit(p)}>
+              <button key={p.id} className="k-row" style={{ gridTemplateColumns: '92px minmax(120px,1.4fr) 100px 90px 1fr', textAlign: 'left', background: 'none', border: 0, borderTop: '1px solid var(--line)', cursor: 'pointer', width: '100%' }} onClick={() => openEdit(p)}>
                 <span style={{ fontSize: 11, color: 'var(--muted)' }}>{(p.payment_date || p.due_date || p.created_at).slice(0, 10)}</span>
                 <span style={{ fontWeight: 600 }}>{p.studentName}</span>
                 <span style={{ fontWeight: 700 }}>{formatMoney(p.amount, p.currency ?? currency)}</span>
