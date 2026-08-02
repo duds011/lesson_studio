@@ -128,13 +128,14 @@
 
 /* — split auth screen — */
 .k-auth{min-height:100vh;background:var(--bg);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:900px){.k-auth{grid-template-columns:1fr}.k-auth-side{display:none}}
 .k-auth-side{position:relative;background:var(--forest);border-radius:var(--r-xl);overflow:hidden;padding:46px;display:flex;flex-direction:column;justify-content:flex-end;color:#fff}
 .k-auth-side h2{font-size:clamp(26px,3vw,38px);line-height:1.14;letter-spacing:-.04em;margin:0 0 12px;max-width:15ch;font-weight:700}
 .k-auth-side p{margin:0;color:rgba(255,255,255,.68);font-size:13.5px;line-height:1.6;max-width:38ch}
 .k-auth-art{position:absolute;top:8%;left:0;right:0;height:52%;pointer-events:none}
 .k-auth-main{display:grid;place-items:center;padding:20px}
 .k-auth-card{width:min(410px,100%)}
+/* Must come AFTER .k-auth-side, or the base display:flex wins the tie. */
+@media(max-width:900px){.k-auth{grid-template-columns:1fr}.k-auth-side{display:none}}
 .k-auth-mark{width:52px;height:52px;border-radius:17px;background:var(--brand-soft);color:var(--forest);display:grid;place-items:center;font-size:23px;margin-bottom:22px}
 .k-auth-card h1{font-size:31px;letter-spacing:-.04em;margin:0 0 7px;font-weight:700}
 .k-auth-card>p{margin:0 0 26px;color:var(--muted);font-size:13.5px;line-height:1.6}
@@ -167,6 +168,8 @@
 .tab{border:0;background:transparent;border-radius:999px;padding:10px 20px;font-weight:700;font-size:12.5px;color:var(--muted);cursor:pointer;white-space:nowrap;transition:.16s ease}
 .tab:hover{color:var(--ink)}
 .tab.sel{background:var(--forest);color:#fff}
+/* All four tabs fit a 375px phone without sideways scrolling. */
+@media(max-width:430px){.tabs{gap:3px;padding:4px}.tab{padding:10px 11px;font-size:11.5px}}
 
 /* — content blocks on lesson pages — */
 .lesson-block,.corrections-card,.ex-card{background:var(--surface);border:0;border-radius:var(--r-lg);padding:24px 26px;box-shadow:var(--shadow-soft);margin-bottom:14px}
@@ -271,8 +274,41 @@
 .status-dot.online{background:var(--green)}
 .wrap{margin-left:264px;padding:30px clamp(20px,3vw,42px) 70px}
 @media(max-width:860px){
-  .app-sidebar{position:static;width:auto;inset:auto;margin:14px 14px 0;border-radius:var(--r-lg)}
+  /* Sidebar becomes a compact horizontal bar. Without laying the children
+     out explicitly the account row (and its Sign out button) overflows the
+     card and gets clipped by overflow:hidden. */
+  .app-sidebar{position:static;width:auto;inset:auto;margin:14px 14px 0;border-radius:var(--r-lg);flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;height:auto}
+  .sidebar-top{flex:1 1 100%;padding:0 0 4px}
+  .sidebar-scroll{flex:1 1 100%;padding:0;display:flex;gap:6px;overflow-x:auto}
+  .nav-section-label{display:none}
+  .side-nav{display:flex;gap:6px}
+  .side-link{white-space:nowrap;padding:9px 12px}
+  .sidebar-account{flex:1 1 100%;margin-top:4px;padding:10px 0 0}
   .wrap{margin-left:0;padding:20px 16px 60px}
+  .k-thead{padding:24px 22px}
+}
+/* .settings-stack is display:grid with no explicit columns, so its implicit
+   track sizes to the widest child's max-content and overflows narrow screens.
+   Pin it to the container instead. */
+.settings-stack{grid-template-columns:minmax(0,1fr)}
+/* Availability day rows: label + time ranges, stacking on narrow screens. */
+.avail-row{grid-template-columns:minmax(0,150px) minmax(0,1fr)}
+@media(max-width:560px){.avail-row{grid-template-columns:minmax(0,1fr)}}
+
+/* Teacher student rows. These columns used to be an inline style on the
+   element, which no media query could override — hence the class. */
+.student-card.sc-cols{grid-template-columns:minmax(170px,1.3fr) 70px 70px 96px minmax(150px,1fr)}
+
+/* The student directory is a 5-column table (~736px min) — stack it. */
+@media(max-width:760px){
+  .directory-head{display:none}
+  .student-card,.student-card.sc-cols{grid-template-columns:minmax(0,1fr);gap:9px}
+  .profile-layout{grid-template-columns:minmax(0,1fr)}
+  .profile-rail{position:static}
+  .analytics-grid,.mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .page-head{gap:12px}
+  .page-actions{flex-wrap:wrap}
+  .connector-grid{grid-template-columns:minmax(0,1fr)}
 }
 
 /* teacher page header — matches the student hero */

@@ -86,7 +86,7 @@ export default async function TeacherDashboard() {
             const avg = st.scores.length ? (st.scores.reduce((a, b) => a + b, 0) / st.scores.length).toFixed(1) : '—'
             const c = creditMap.get(s.id) ?? { purchased: 0, used: 0, remaining: 0, low: false }
             return (
-              <div key={s.id} className="student-card" style={{ gridTemplateColumns: 'minmax(170px,1.3fr) 70px 70px 96px minmax(150px,1fr)' }}>
+              <div key={s.id} className="student-card sc-cols">
                 <Link href={`/teacher/students/${s.id}`} className="student-identity" style={{ color: 'inherit' }} title="View progress & recaps">
                   <div className="avatar">{s.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>
                   <div>

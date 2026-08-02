@@ -91,7 +91,7 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
       <p className="desc">Control when students can book, how long lessons are, and your working hours. Applies to your booking page and the student portal.</p>
 
       {/* General */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(150px, 100%), 1fr))', gap: 12, marginBottom: 20 }}>
         <div className="field" style={{ gridColumn: '1 / -1' }}><label>Lesson name</label><input value={title} onChange={(e) => { dirty(); setTitle(e.target.value) }} placeholder="Language lesson" style={inputStyle} /></div>
         <div className="field"><label>Lesson length (min)</label><input type="number" min="5" step="5" value={durationMin} onChange={(e) => { dirty(); setDuration(e.target.value) }} style={inputStyle} /></div>
         <div className="field"><label>Slot interval (min)</label><input type="number" min="5" step="5" value={incrementMin} onChange={(e) => { dirty(); setIncrement(e.target.value) }} style={inputStyle} /></div>
@@ -108,12 +108,12 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
         <span style={{ fontSize: 11, color: 'var(--muted)' }}>Times are {config.tz.replace('_', ' ')}</span>
         <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={copyMondayToWeekdays} title="Copy Monday's hours to Tue–Fri">Copy Mon → weekdays</button>
       </div>
-      <div style={{ display: 'grid', gap: 8, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8, marginBottom: 20 }}>
         {WEEK.map(({ idx, label }) => {
           const ranges = weekly[idx]
           const on = ranges.length > 0
           return (
-            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 12, alignItems: 'start', padding: '10px 0', borderTop: '1px solid var(--line)' }}>
+            <div key={idx} className="avail-row" style={{ display: 'grid', gap: 12, alignItems: 'start', padding: '10px 0', borderTop: '1px solid var(--line)' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 13, paddingTop: 6 }}>
                 <input type="checkbox" checked={on} onChange={(e) => toggleDay(idx, e.target.checked)} />
                 {label}
