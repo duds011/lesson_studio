@@ -467,9 +467,9 @@
 
 
 /* ── directly-draggable preview blocks ── */
-.k-preview-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:8px;align-items:start}
+.k-preview-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;align-items:start}
 .k-preview-grid.mobile{grid-template-columns:minmax(0,1fr)}
-.k-pcol{display:grid;gap:8px;align-content:start;min-height:60px;border-radius:12px;padding:2px;transition:.14s ease}
+.k-pcol{display:grid;gap:12px;align-content:start;min-height:80px;border-radius:12px;padding:2px;transition:.14s ease}
 .k-pcol.over-end{background:rgba(0,0,0,.04);box-shadow:inset 0 -3px 0 -1px var(--forest)}
 .k-pcol-empty{border:1.5px dashed var(--line-strong);border-radius:11px;padding:14px;text-align:center;font-size:10px;color:var(--muted)}
 .k-pblock{position:relative;cursor:grab;border-radius:12px;transition:.14s ease}
@@ -485,9 +485,33 @@
 .k-preview-cal i{aspect-ratio:1;border-radius:50%;background:var(--surface-2);display:block}
 
 /* studio: controls + live preview */
-.k-studio{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,440px);gap:16px;align-items:start}
+/* The student view is the subject of this page: it takes the stage, and the
+   options sit in a narrow menu on the right. DOM order stays controls-then-
+   preview; grid `order` puts the preview first visually. */
+.k-studio{display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:16px;align-items:start}
 @media(max-width:1080px){.k-studio{grid-template-columns:minmax(0,1fr)}}
-.k-studio-controls{display:grid;gap:14px;min-width:0}
+.k-studio-preview{order:1}
+.k-studio-controls{order:2;display:grid;gap:10px;min-width:0;position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;padding-right:2px}
+@media(max-width:1080px){.k-studio-controls{position:static;max-height:none;overflow:visible}}
+/* Compact the options menu — it is secondary to the preview. */
+.k-studio-controls .k-sec{padding:16px}
+.k-studio-controls .k-sec-head{gap:10px;margin-bottom:12px}
+.k-studio-controls .k-sec-icon{width:34px;height:34px;border-radius:11px;font-size:15px}
+.k-studio-controls .k-sec h3{font-size:14px}
+.k-studio-controls .k-sec .desc{font-size:11px;line-height:1.5}
+.k-studio-controls .k-field{margin-bottom:10px}
+.k-studio-controls .k-field span{font-size:10.5px;margin-bottom:5px}
+.k-studio-controls .k-field input,.k-studio-controls .k-input{padding:9px 11px;font-size:12.5px;border-radius:11px}
+.k-studio-controls .k-field-label{font-size:10.5px;margin:12px 0 7px}
+.k-studio-controls .k-choice{padding:10px 12px;font-size:12px;border-radius:12px}
+.k-studio-controls .k-choices{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px}
+.k-studio-controls .k-swatch{width:30px;height:30px;border-radius:10px}
+.k-studio-controls .k-preset-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:7px}
+.k-studio-controls .k-bg-chip{height:34px}
+.k-studio-controls .k-preset span{font-size:9.5px;margin-top:4px}
+.k-studio-controls .k-toggle-row{padding:9px 0}
+.k-studio-controls .k-hw-title{font-size:12px}
+.k-studio-controls .k-hw-due{font-size:10px}
 .k-studio-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .k-saved{font-size:12px;font-weight:700;color:var(--green)}
 .k-toggles{display:grid;gap:4px}
@@ -495,36 +519,36 @@
 .k-toggle-row:first-child{border-top:0}
 
 .k-studio-preview{position:sticky;top:14px;min-width:0}
-.k-preview-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px}
-.k-preview-label{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.k-preview-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.k-preview-label{font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
 /* No transition on max-width. React re-renders this node on every device
    toggle, so the transition never settles and the frame stays stuck at the
    desktop width — verified: removing it snaps correctly to 290px. */
-.k-preview-frame{border-radius:var(--r-xl);padding:16px;box-shadow:var(--shadow-soft);display:grid;gap:11px;width:100%;max-width:560px;margin:0 auto;overflow:hidden}
-.k-preview-frame.mobile{max-width:290px}
+.k-preview-frame{border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-soft);display:grid;gap:14px;width:100%;max-width:none;margin:0 auto;overflow:hidden}
+.k-preview-frame.mobile{max-width:390px}
 .k-preview-top{display:flex;align-items:center;gap:11px}
-.k-preview-mark{width:34px;height:34px;border-radius:var(--r-md);display:grid;place-items:center;font-size:15px;font-weight:800}
-.k-preview-hello{font-size:10px;color:var(--muted);font-weight:600}
-.k-preview-name{font-size:17px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
-.k-preview-hero{border-radius:var(--r-lg);padding:18px}
+.k-preview-mark{width:42px;height:42px;border-radius:var(--r-md);display:grid;place-items:center;font-size:18px;font-weight:800}
+.k-preview-hello{font-size:12px;color:var(--muted);font-weight:600}
+.k-preview-name{font-size:24px;font-weight:700;letter-spacing:-.035em;line-height:1.1}
+.k-preview-hero{border-radius:var(--r-lg);padding:26px 28px;min-height:150px;display:flex;flex-direction:column;justify-content:center}
 .k-preview-hero{position:relative;overflow:hidden}
 .k-preview-props{position:absolute;right:0;top:0;bottom:0;width:110px;pointer-events:none}
-.k-preview-hero strong{display:block;font-size:16px;line-height:1.2;letter-spacing:-.03em;position:relative;z-index:1}
-.k-preview-hero p{margin:7px 0 12px;font-size:10.5px;line-height:1.55}
-.k-preview-btn{display:inline-block;border-radius:999px;padding:7px 15px;font-size:10.5px;font-weight:800}
+.k-preview-hero strong{display:block;font-size:24px;line-height:1.18;letter-spacing:-.035em;position:relative;z-index:1;max-width:60%}
+.k-preview-hero p{margin:9px 0 16px;font-size:12.5px;line-height:1.55;max-width:56%;position:relative;z-index:1}
+.k-preview-btn{display:inline-block;align-self:flex-start;border-radius:999px;padding:10px 20px;font-size:12px;font-weight:800;position:relative;z-index:1}
 .k-preview-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.k-preview-stats>div{border-radius:var(--r-md);padding:11px;color:#fff;min-width:0}
-.k-preview-stats span{display:block;font-size:9px;font-weight:700;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.k-preview-stats b{display:block;font-size:17px;font-weight:800;letter-spacing:-.03em;margin-top:3px}
-.k-preview-card{background:var(--surface);border-radius:var(--r-md);padding:12px 14px}
-.k-preview-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11.5px}
+.k-preview-stats>div{border-radius:var(--r-md);padding:15px 16px;color:#fff;min-width:0;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+.k-preview-stats span{display:block;font-size:11px;font-weight:700;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k-preview-stats b{display:block;font-size:26px;font-weight:800;letter-spacing:-.035em;margin-top:5px}
+.k-preview-card{background:var(--surface);border-radius:var(--r-md);padding:16px 18px}
+.k-preview-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px}
 .k-preview-row strong{font-weight:700}
-.k-preview-row span{color:var(--muted);font-size:10.5px;font-weight:700}
+.k-preview-row span{color:var(--muted);font-size:11.5px;font-weight:700}
 .k-preview-lessons{display:grid;gap:7px;margin-top:9px}
-.k-preview-lessons>div{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:600}
-.k-preview-lessons i{width:22px;height:22px;border-radius:7px;flex:0 0 auto}
+.k-preview-lessons>div{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600}
+.k-preview-lessons i{width:28px;height:28px;border-radius:9px;flex:0 0 auto}
 .k-preview-lessons span{margin-left:auto;font-weight:800;color:var(--muted)}
-.k-preview-spark{display:flex;align-items:flex-end;gap:5px;height:44px;margin-top:10px}
+.k-preview-spark{display:flex;align-items:flex-end;gap:6px;height:62px;margin-top:12px}
 .k-preview-spark i{flex:1;height:34%;border-radius:5px 5px 0 0;opacity:.85}
 
 /* — test page — */
