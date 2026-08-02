@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { signUpTeacher } from '@/app/actions/signup'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -14,37 +15,37 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
+  /**
+   * Create the account server-side (already confirmed, no email sent), then
+   * sign straight in. Nothing here depends on Supabase's built-in mailer.
+   */
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
     setNotice('')
 
-    const supabase = createClient()
-    const origin = window.location.origin
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${origin}/teacher/dashboard`,
-        data: { role: 'teacher', full_name: fullName.trim() },
-      },
-    })
-
-    if (authError) {
-      setError(authError.message)
+    const created = await signUpTeacher({ fullName, email, password })
+    if (!created.success) {
+      setError(created.error || 'Could not create your account.')
       setLoading(false)
       return
     }
 
-    if (data.session) {
-      router.push('/teacher/dashboard')
-      router.refresh()
+    const supabase = createClient()
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    })
+
+    if (signInError) {
+      setNotice('Account created — please sign in.')
+      setLoading(false)
       return
     }
 
-    setNotice('Check your email to confirm your account, then sign in.')
-    setLoading(false)
+    router.push('/onboarding')
+    router.refresh()
   }
 
   return (
