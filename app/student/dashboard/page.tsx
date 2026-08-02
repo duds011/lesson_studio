@@ -9,27 +9,29 @@ import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
+import CalendarCard from '@/components/koku/CalendarCard'
 
 export const dynamic = 'force-dynamic'
 
 const MILESTONES = [1, 5, 10, 25, 50]
-const MILESTONE_EMOJIS = ['🌱', '🌸', '🌿', '⭐', '🏆']
+
+const Icon = ({ d }: { d: string }) => (
+  <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d={d} />
+  </svg>
+)
 
 export default async function StudentDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: student } = await supabase
-    .from('students')
-    .select('*')
-    .eq('profile_id', user.id)
-    .single()
+  const { data: student } = await supabase.from('students').select('*').eq('profile_id', user.id).single()
 
   if (!student) {
     return (
-      <div className="empty" style={{ marginTop: 40 }}>
-        <p style={{ fontSize: 34, margin: 0 }}>⏳</p>
+      <div className="k-empty">
+        <p style={{ fontSize: 34, margin: '0 0 8px' }}>⏳</p>
         <strong style={{ color: 'var(--ink)' }}>Account not linked yet</strong>
         <br />
         Ask your teacher to link your account.
@@ -56,25 +58,24 @@ export default async function StudentDashboard() {
   const latestScore = scores[0] ?? null
   const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null
   const firstScore = scores[scores.length - 1]
-  const scoreDelta = latestScore != null && firstScore != null
-    ? (latestScore - firstScore >= 0 ? '+' : '') + (latestScore - firstScore).toFixed(1)
-    : '+0.0'
+  const scoreDeltaNum = latestScore != null && firstScore != null ? latestScore - firstScore : null
 
   const talks = rows.map((l) => summaryOf(l)?.talk_percentage).filter((t) => t != null) as number[]
   const latestTalk = talks[0] ?? null
   const firstTalk = talks[talks.length - 1] ?? null
   const talkDelta = latestTalk != null && firstTalk != null ? latestTalk - firstTalk : null
 
-  // Speaking metrics averaged across all lessons (from recap_json.metrics).
+  // Lessons in the last 30 days — drives the "new lessons" chip.
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000
+  const recentCount = rows.filter((l) => l.lesson_date && new Date(l.lesson_date).getTime() >= cutoff).length
+
   const metricAvg = (key: string) => {
     const vals = rows.map((l) => summaryOf(l)?.recap_json?.metrics?.[key]).filter((v) => typeof v === 'number') as number[]
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
   }
-  const avgThinkSec = metricAvg('avgResponseSec')
   const avgWpm = metricAvg('studentWpm')
-  const avgTurnWords = metricAvg('avgTurnWords')
+  const avgThinkSec = metricAvg('avgResponseSec')
 
-  // Aggregate the full GPT-detected vocab distribution across lessons.
   const vocabDistribution: Record<string, number> = {}
   for (const l of rows) {
     const dist = summaryOf(l)?.vocab_level_distribution
@@ -87,155 +88,288 @@ export default async function StudentDashboard() {
   const totalVocab = Object.values(vocabDistribution).reduce((sum, n) => sum + n, 0)
 
   const nextMilestone = MILESTONES.find((m) => m > lessonCount) ?? 50
-  const levelLabel = getLevelLabel(lessonCount)
+  const milestonePct = Math.min(Math.round((lessonCount / nextMilestone) * 100), 100)
 
-  // Payments are teacher-only under RLS, so read the credit totals with admin
-  // and surface only the resulting count to the student.
+  const { data: tests } = await supabase
+    .from('tests')
+    .select('id, title, level, published_at, lessons ( lesson_number )')
+    .eq('student_id', student.id)
+    .order('published_at', { ascending: false })
+
   const admin = createAdminClient()
   const [credits, paymentMethods, { data: pkgRows }] = await Promise.all([
     getStudentCredits(admin, student.id),
     getTeacherPaymentMethods(admin, student.teacher_id),
     admin.from('lesson_packages').select('id, name, lessons_count, amount, currency').eq('teacher_id', student.teacher_id).eq('active', true).order('amount', { ascending: true }),
   ])
-  const buyPackages: BuyPkg[] = (pkgRows ?? []).map((p: any) => ({ id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency }))
+  const buyPackages: BuyPkg[] = (pkgRows ?? []).map((p: any) => ({
+    id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency,
+  }))
+
+  const firstName = student.full_name.split(' ')[0]
+  // Most recent lessons that carry a score — shown as bars in the right rail.
+  const scoredRecent = rows.filter((l) => summaryOf(l)?.score != null).slice(0, 4)
 
   return (
-    <div style={{ display: 'grid', gap: 22 }}>
-      {/* Header */}
-      <div>
-        <span className="eyebrow">Student View</span>
-        <h1 className="title" style={{ margin: '6px 0 4px' }}>Welcome back, {student.full_name.split(' ')[0]}</h1>
-        <p className="sub">Your lessons, progress, and recaps — all in one place.</p>
-      </div>
-
-      {/* Compact lessons-remaining + book + buy-more (modal) */}
-      <StudentLessonsBar credits={credits} packages={buyPackages} />
-
-      {/* How to pay the teacher (manual methods) */}
-      <PaymentMethodsPanel methods={paymentMethods} />
-
-      {/* Snapshot: stat strip + slim milestone footer */}
-      <div className="analytics-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="stat-strip">
-          <div className="stat-cell">
-            <span className="k">Lessons</span>
-            <div className="v" style={{ color: 'var(--brand)' }}>{lessonCount}</div>
-          </div>
-          <div className="stat-cell">
-            <span className="k">Latest Score</span>
-            <div className="v">{latestScore ?? '—'}<span className="u">/10</span></div>
-            <span className={`d ${scoreDelta.startsWith('+') && scoreDelta !== '+0.0' ? 'up' : ''}`}>{scoreDelta} since L1</span>
-          </div>
-          <div className="stat-cell">
-            <span className="k">Avg Score</span>
-            <div className="v">{avgScore != null ? avgScore.toFixed(1) : '—'}<span className="u">/10</span></div>
-          </div>
-          <div className="stat-cell">
-            <span className="k">You Talk</span>
-            <div className="v">{latestTalk ?? '—'}<span className="u">%</span></div>
-            {talkDelta !== null && <span className={`d ${talkDelta > 0 ? 'up' : ''}`}>{talkDelta >= 0 ? '+' : ''}{talkDelta}% since L1</span>}
-          </div>
-          <div className="stat-cell">
-            <span className="k">Thinking</span>
-            <div className="v">{avgThinkSec != null ? avgThinkSec.toFixed(1) : '—'}<span className="u">s</span></div>
-            <span className="d">avg before reply</span>
-          </div>
-          <div className="stat-cell">
-            <span className="k">Pace</span>
-            <div className="v">{avgWpm != null ? Math.round(avgWpm) : '—'}<span className="u">wpm</span></div>
-            <span className="d">avg words / min</span>
-          </div>
-          <div className="stat-cell">
-            <span className="k">Answers</span>
-            <div className="v">{avgTurnWords != null ? Math.round(avgTurnWords) : '—'}<span className="u">words</span></div>
-            <span className="d">avg per answer</span>
-          </div>
+    <>
+      {/* ── top bar ── */}
+      <div className="k-top">
+        <div>
+          <p className="k-hello">Welcome back,</p>
+          <h1 className="k-name">{firstName}</h1>
         </div>
-
-        <div className="milestone-slim">
-          <span className="milestone-now" title={levelLabel}>
-            {MILESTONE_EMOJIS[Math.max(0, MILESTONES.filter((m) => lessonCount >= m).length - 1)]}
-          </span>
-          <div className="milestone-track">
-            <div className="milestone-fill" style={{ width: `${Math.min((lessonCount / 50) * 100, 100)}%` }} />
-            {MILESTONES.map((m, i) => (
-              <span
-                key={m}
-                className={`milestone-dot ${lessonCount >= m ? 'hit' : ''}`}
-                style={{ left: `${(m / 50) * 100}%` }}
-                title={`${MILESTONE_EMOJIS[i]} ${m} lessons`}
-              />
-            ))}
-          </div>
-          <span className="milestone-next">
-            {nextMilestone > lessonCount
-              ? `${nextMilestone - lessonCount} more to ${MILESTONE_EMOJIS[MILESTONES.indexOf(nextMilestone)]} ${getLevelLabel(nextMilestone)}`
-              : '🏆 Max milestone reached'}
-          </span>
+        <div className="k-top-tools">
+          <label className="k-search">
+            <Icon d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4" />
+            <input placeholder="Search lessons" aria-label="Search lessons" />
+          </label>
+          <button className="k-bell" aria-label="Notifications">
+            <Icon d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16zM10 22h4" />
+          </button>
         </div>
       </div>
 
-      {/* Vocabulary breakdown */}
-      {totalVocab > 0 && <VocabLevelBreakdown distribution={vocabDistribution} totalCount={totalVocab} />}
+      <div className="k-grid">
+        {/* ── left column ── */}
+        <div>
+          <section className="k-hero">
+            <h2>Learn today,<br />succeed tomorrow!</h2>
+            <p>
+              {lessonCount > 0
+                ? `You're ${nextMilestone - lessonCount} lesson${nextMilestone - lessonCount === 1 ? '' : 's'} away from ${getLevelLabel(nextMilestone)}. Keep the streak going.`
+                : 'Book your first lesson and start building your Japanese, one recap at a time.'}
+            </p>
+            <Link href="/student/book" className="k-hero-btn">Book a lesson</Link>
 
-      {/* Progress sparklines (need ≥2 lessons) */}
-      {lessonCount >= 2 && (
-        <section>
-          <h2 className="section-heading" style={{ margin: '4px 0 11px' }}>Your progress</h2>
-          <ProgressCharts
-            lessons={rows.map((l) => {
-              const s = summaryOf(l)
-              const dist = s?.vocab_level_distribution
-              const distSum = dist && typeof dist === 'object' ? Object.values(dist).reduce((a: number, b: any) => a + Number(b), 0) : 0
-              const vocabCount = s?.vocab_total_count ?? (distSum > 0 ? distSum : (l.vocabulary_items?.length ?? 0))
-              const metrics = s?.recap_json?.metrics || {}
-              return {
-                lessonNumber: l.lesson_number,
-                score: s?.score ?? null,
-                talkPct: s?.talk_percentage ?? null,
-                vocabCount,
-                wpm: metrics.studentWpm ?? null,
-                responseSec: metrics.avgResponseSec ?? null,
-              }
-            })}
-          />
-        </section>
-      )}
+            <div className="k-hero-art" aria-hidden>
+              <span className="k-orb" style={{ width: 104, height: 104, right: 34, top: 26 }} />
+              <span className="k-tube" style={{ width: 88, height: 88, right: 0, top: 74, transform: 'rotate(28deg)' }} />
+              <span className="k-crystal" style={{ width: 52, height: 60, right: 128, top: 96 }} />
+              <span className="k-ring" style={{ width: 44, height: 44, right: 150, top: 4 }} />
+            </div>
+          </section>
 
-      {/* Lessons */}
-      <section>
-        <h2 className="section-heading">Your lessons</h2>
-        {rows.length === 0 ? (
-          <div className="empty">
-            <strong style={{ color: 'var(--ink)' }}>No lessons yet</strong>
-            <br />
-            Your lessons will appear here once your teacher publishes them.
+          {/* ── colour-blocked stats ── */}
+          <div className="k-stats">
+            <div className="k-stat yellow">
+              <div className="k-stat-head">
+                <Icon d="M4 5h16v14H4zM4 9h16M9 9v10" />
+                <span>Lessons</span>
+              </div>
+              <div className="k-stat-val">
+                <b>{lessonCount}</b>
+                {recentCount > 0 && <span className="k-chip">+{recentCount}</span>}
+              </div>
+              <p className="k-stat-sub">{recentCount > 0 ? `${recentCount} in the last 30 days` : 'Total lessons completed'}</p>
+            </div>
+
+            <div className="k-stat blue">
+              <div className="k-stat-head">
+                <Icon d="M12 3v18M5 10l7-7 7 7" />
+                <span>Avg score</span>
+              </div>
+              <div className="k-stat-val">
+                <b>{avgScore != null ? avgScore.toFixed(1) : '—'}</b>
+                {scoreDeltaNum != null && scoreDeltaNum !== 0 && (
+                  <span className="k-chip">{scoreDeltaNum > 0 ? '▲' : '▼'} {Math.abs(scoreDeltaNum).toFixed(1)}</span>
+                )}
+              </div>
+              <p className="k-stat-sub">out of 10 across {scores.length} scored lesson{scores.length === 1 ? '' : 's'}</p>
+            </div>
+
+            <div className="k-stat purple">
+              <div className="k-stat-head">
+                <Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" />
+                <span>Speaking</span>
+              </div>
+              <div className="k-stat-val">
+                <b>{latestTalk ?? '—'}<span style={{ fontSize: 19 }}>%</span></b>
+                {talkDelta != null && talkDelta !== 0 && (
+                  <span className="k-chip">{talkDelta > 0 ? '▲' : '▼'} {Math.abs(talkDelta)}%</span>
+                )}
+              </div>
+              <p className="k-stat-sub">of the last lesson was you talking</p>
+            </div>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
-            {rows.map((lesson, idx) => {
-              const s = summaryOf(lesson)
-              const preview = s?.recap ? String(s.recap).replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120) + '…' : ''
-              return (
-                <Link key={lesson.id} href={`/student/lessons/${lesson.id}`} className="surface" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                    <span className="pill" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>
-                      Lesson {lesson.lesson_number}{idx === 0 ? ' · Latest' : ''}
-                    </span>
-                    {s?.score != null && <span style={{ fontWeight: 800, color: 'var(--brand)', fontSize: 12 }}>{s.score}/10</span>}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 750, fontSize: 15, lineHeight: 1.3 }}>{lessonDisplayTitle(s?.recap_json, lesson.title, lesson.lesson_number)}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{ordinal(lesson.lesson_number)} lesson · {formatDateShort(lesson.lesson_date)}</div>
-                  </div>
-                  {preview && <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>{preview}</p>}
-                  <span className="btn btn-primary" style={{ marginTop: 'auto', justifyContent: 'center', width: '100%' }}>Open Lesson →</span>
-                </Link>
-              )
-            })}
+
+          <div style={{ marginTop: 16 }}>
+            <StudentLessonsBar credits={credits} packages={buyPackages} />
           </div>
-        )}
-      </section>
-    </div>
+
+          <PaymentMethodsPanel methods={paymentMethods} />
+
+          {/* ── lessons ── */}
+          <div className="k-sec-head">
+            <h2>Your lessons</h2>
+            {rows.length > 4 && <span className="k-link">{rows.length} total</span>}
+          </div>
+
+          {rows.length === 0 ? (
+            <div className="k-empty">
+              <strong style={{ color: 'var(--ink)' }}>No lessons yet</strong>
+              <br />
+              Your lessons will appear here once your teacher publishes them.
+            </div>
+          ) : (
+            <div className="k-courses">
+              {rows.map((lesson, idx) => {
+                const s = summaryOf(lesson)
+                const pct = s?.score != null ? Math.round((s.score / 10) * 100) : null
+                return (
+                  <Link key={lesson.id} href={`/student/lessons/${lesson.id}`} className="k-course">
+                    <div className={`k-course-thumb c${(idx % 4) + 1}`}>
+                      <span className="k-course-tag">Lesson {lesson.lesson_number}</span>
+                      <span aria-hidden>{['📗', '📘', '📙', '📒'][idx % 4]}</span>
+                    </div>
+                    <div>
+                      <div className="k-course-title">{lessonDisplayTitle(s?.recap_json, lesson.title, lesson.lesson_number)}</div>
+                      <div className="k-course-meta">{ordinal(lesson.lesson_number)} lesson · {formatDateShort(lesson.lesson_date)}</div>
+                    </div>
+                    <div className="k-course-foot">
+                      {pct != null ? (
+                        <>
+                          <div className="k-hw-track"><div className="k-hw-fill" style={{ width: `${pct}%` }} /></div>
+                          <span className="k-score">{s.score}/10</span>
+                        </>
+                      ) : (
+                        <span className="k-course-meta">Recap ready →</span>
+                      )}
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
+          {/* ── charts ── */}
+          {lessonCount >= 2 && (
+            <>
+              <div className="k-sec-head"><h2>Your progress</h2></div>
+              <div className="k-card">
+                <ProgressCharts
+                  lessons={rows.map((l) => {
+                    const s = summaryOf(l)
+                    const dist = s?.vocab_level_distribution
+                    const distSum = dist && typeof dist === 'object' ? Object.values(dist).reduce((a: number, b: any) => a + Number(b), 0) : 0
+                    const vocabCount = s?.vocab_total_count ?? (distSum > 0 ? distSum : (l.vocabulary_items?.length ?? 0))
+                    const metrics = s?.recap_json?.metrics || {}
+                    return {
+                      lessonNumber: l.lesson_number,
+                      score: s?.score ?? null,
+                      talkPct: s?.talk_percentage ?? null,
+                      vocabCount,
+                      wpm: metrics.studentWpm ?? null,
+                      responseSec: metrics.avgResponseSec ?? null,
+                    }
+                  })}
+                />
+              </div>
+            </>
+          )}
+
+          {totalVocab > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <VocabLevelBreakdown distribution={vocabDistribution} totalCount={totalVocab} />
+            </div>
+          )}
+        </div>
+
+        {/* ── right rail ── */}
+        <div>
+          <CalendarCard lessonDates={rows.map((l) => l.lesson_date).filter(Boolean)} />
+
+          <div className="k-card">
+            <div className="k-card-head">
+              <h3>Next milestone</h3>
+              <span className="k-link">{getLevelLabel(nextMilestone)}</span>
+            </div>
+            <div className="k-hw-bar" style={{ marginTop: 0 }}>
+              <div className="k-hw-track"><div className="k-hw-fill" style={{ width: `${milestonePct}%` }} /></div>
+              <span className="k-hw-pct">{milestonePct}%</span>
+            </div>
+            <p className="k-course-meta" style={{ marginTop: 9 }}>
+              {lessonCount} of {nextMilestone} lessons towards {getLevelLabel(nextMilestone)}
+            </p>
+          </div>
+
+          {scoredRecent.length > 0 && (
+            <div className="k-card">
+              <div className="k-card-head">
+                <h3>Recent scores</h3>
+                <span className="k-link">Last {scoredRecent.length}</span>
+              </div>
+              <div className="k-hw">
+                {scoredRecent.map((l) => {
+                  const s = summaryOf(l)
+                  const pct = Math.round((s.score / 10) * 100)
+                  return (
+                    <Link key={l.id} href={`/student/lessons/${l.id}`} className="k-hw-row">
+                      <div className="k-hw-top">
+                        <div>
+                          <div className="k-hw-title">{lessonDisplayTitle(s?.recap_json, l.title, l.lesson_number)}</div>
+                          <div className="k-hw-due">{formatDateShort(l.lesson_date)}</div>
+                        </div>
+                        <span className="k-hw-arrow">↗</span>
+                      </div>
+                      <div className="k-hw-bar">
+                        <div className="k-hw-track"><div className="k-hw-fill" style={{ width: `${pct}%` }} /></div>
+                        <span className="k-hw-pct">{s.score}/10</span>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {(tests ?? []).length > 0 && (
+            <div className="k-card">
+              <div className="k-card-head">
+                <h3>Practice tests</h3>
+                <span className="k-link">{(tests as any[]).length}</span>
+              </div>
+              <div className="k-hw">
+                {(tests as any[]).map((t) => {
+                  const lesson = Array.isArray(t.lessons) ? t.lessons[0] : t.lessons
+                  return (
+                    <Link key={t.id} href={`/student/tests/${t.id}`} className="k-hw-row">
+                      <div className="k-hw-top">
+                        <div>
+                          <div className="k-hw-title">{t.title}</div>
+                          <div className="k-hw-due">
+                            {lesson ? `From lesson ${lesson.lesson_number} · ` : ''}{formatDateShort(t.published_at)}
+                          </div>
+                        </div>
+                        <span className="k-btn-pill">Start</span>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {(avgWpm != null || avgThinkSec != null) && (
+            <div className="k-card">
+              <div className="k-card-head"><h3>Speaking habits</h3></div>
+              <div style={{ display: 'grid', gap: 11 }}>
+                {avgWpm != null && (
+                  <div className="k-hw-top">
+                    <div className="k-hw-title">Pace</div>
+                    <div className="k-score">{Math.round(avgWpm)} wpm</div>
+                  </div>
+                )}
+                {avgThinkSec != null && (
+                  <div className="k-hw-top">
+                    <div className="k-hw-title">Thinking time</div>
+                    <div className="k-score">{avgThinkSec.toFixed(1)}s</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   )
 }

@@ -55,13 +55,15 @@ export default function BookPage() {
     }
   }
 
-  const activeDay = data?.days.find((d) => d.date === activeDate)
+  // `days` is absent on an error response, so guard it — otherwise a failed
+  // slots fetch crashes the page instead of showing the fallback below.
+  const activeDay = data?.days?.find((d) => d.date === activeDate)
 
   return (
     <>
       <PublicNav />
 
-      <main className="booking-shell page-fade">
+      <main className="booking-shell page-fade k-scope">
         <div className="booking-intro">
           <div>
             <span className="eyebrow">Schedule a lesson</span>

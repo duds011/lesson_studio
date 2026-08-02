@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import PortalNav from '@/components/portal/PortalNav'
+import StudentRail from '@/components/koku/StudentRail'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,16 +10,9 @@ export default async function StudentLayout({ children }: { children: React.Reac
   if (!user) redirect('/login')
 
   return (
-    <>
-      <PortalNav
-        brand="Lesson Studio"
-        email={user.email ?? ''}
-        links={[
-          { href: '/student/dashboard', label: 'Dashboard' },
-          { href: '/student/book', label: 'Book a lesson' },
-        ]}
-      />
-      <main className="main-wrap page-fade">{children}</main>
-    </>
+    <div className="k-shell">
+      <StudentRail />
+      <main className="k-main page-fade">{children}</main>
+    </div>
   )
 }

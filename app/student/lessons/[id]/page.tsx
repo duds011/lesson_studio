@@ -35,19 +35,33 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   ])
 
   return (
-    <div className="page-fade" style={{ maxWidth: 860 }}>
-      <Link href="/student/dashboard" className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }}>← Dashboard</Link>
-      <div className="lesson-hero">
+    <div style={{ maxWidth: 900 }}>
+      <Link href="/student/dashboard" className="k-back">← Dashboard</Link>
+
+      <header className="k-phead">
         <div>
-          <div className="eyebrow">Lesson {l.lesson_number} · Recap</div>
+          <div className="k-phead-eyebrow">Lesson {l.lesson_number} · Recap</div>
           <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
-          <div className="lesson-meta">
-            <div className="meta-box"><div className="meta-label">Lesson</div><div className="meta-value">{ordinal(l.lesson_number)}</div></div>
-            <div className="meta-box"><div className="meta-label">Date</div><div className="meta-value">{formatDateShort(l.lesson_date)}</div></div>
+          <div className="k-pmeta">
+            <span>{ordinal(l.lesson_number)} lesson</span>
+            <span>{formatDateShort(l.lesson_date)}</span>
+            {recap.confidence_label && <span>{recap.confidence_label}</span>}
           </div>
         </div>
-        {recap.score != null && <div className="lesson-score"><div><strong>{recap.score}</strong><span>OUT OF 10</span></div></div>}
-      </div>
+        {recap.score != null && (
+          <div className="k-pscore">
+            <div>
+              <b>{recap.score}</b>
+              <small>OUT OF 10</small>
+            </div>
+          </div>
+        )}
+
+        <div className="k-hero-art" style={{ right: -30, opacity: .5 }} aria-hidden>
+          <span className="k-orb" style={{ width: 84, height: 84, right: 10, top: 12 }} />
+          <span className="k-tube" style={{ width: 66, height: 66, right: 74, top: 76, transform: 'rotate(40deg)' }} />
+        </div>
+      </header>
 
       <LessonPageTabs
         lesson={{ id: l.id, lessonNumber: l.lesson_number, date: l.lesson_date, title: l.title, recap }}
