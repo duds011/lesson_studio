@@ -3,8 +3,11 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
-import { ACCENT_PRESETS, DEFAULT_BRAND, brandVars, backgroundClass, type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle, type BlockId, type Layout } from '@/lib/brand'
-import LayoutEditor from './LayoutEditor'
+import {
+  ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, brandVars, backgroundClass,
+  type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle,
+  type BlockId, type Layout,
+} from '@/lib/brand'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
@@ -15,36 +18,31 @@ const HERO_STYLES: { value: HeroStyle; label: string; hint: string }[] = [
 ]
 
 const BACKGROUNDS: { value: BackgroundStyle; label: string }[] = [
-  { value: 'plain', label: 'Plain' },
-  { value: 'dots', label: 'Dots' },
-  { value: 'grid', label: 'Grid' },
-  { value: 'blobs', label: 'Blobs' },
-  { value: 'rings', label: 'Rings' },
-  { value: 'waves', label: 'Waves' },
+  { value: 'plain', label: 'Plain' }, { value: 'dots', label: 'Dots' }, { value: 'grid', label: 'Grid' },
+  { value: 'blobs', label: 'Blobs' }, { value: 'rings', label: 'Rings' }, { value: 'waves', label: 'Waves' },
   { value: 'wash', label: 'Wash' },
 ]
 
 const SHAPES: { value: ShapeStyle; label: string; radius: number }[] = [
-  { value: 'rounded', label: 'Rounded', radius: 16 },
-  { value: 'soft', label: 'Soft', radius: 10 },
-  { value: 'sharp', label: 'Sharp', radius: 3 },
-  { value: 'pill', label: 'Pill', radius: 23 },
+  { value: 'rounded', label: 'Rounded', radius: 16 }, { value: 'soft', label: 'Soft', radius: 10 },
+  { value: 'sharp', label: 'Sharp', radius: 3 }, { value: 'pill', label: 'Pill', radius: 23 },
 ]
 
 const PROPS: { value: PropStyle; label: string }[] = [
-  { value: 'orbs', label: 'Orbs' },
-  { value: 'geometric', label: 'Geometric' },
-  { value: 'minimal', label: 'Minimal' },
-  { value: 'none', label: 'None' },
+  { value: 'orbs', label: 'Orbs' }, { value: 'geometric', label: 'Geometric' },
+  { value: 'minimal', label: 'Minimal' }, { value: 'none', label: 'None' },
 ]
 
 const TOGGLES: { key: keyof Brand; label: string; hint: string }[] = [
   { key: 'showMilestone', label: 'Milestone tracker', hint: 'Progress toward their next level' },
   { key: 'showProgress', label: 'Progress charts', hint: 'Score, talk-time and vocabulary trends' },
-  { key: 'showVocab', label: 'Vocabulary breakdown', hint: 'Words learned split by JLPT level' },
+  { key: 'showVocab', label: 'Vocabulary breakdown', hint: 'Words learned by level' },
   { key: 'showTests', label: 'Practice tests', hint: 'Tests you publish to them' },
   { key: 'showSpeaking', label: 'Speaking habits', hint: 'Pace and thinking time' },
 ]
+
+type Col = 'main' | 'rail'
+type Grab = { col: Col; index: number } | null
 
 export default function BrandStudio({ initial, teacherName }: { initial: Brand; teacherName: string }) {
   const router = useRouter()
@@ -53,6 +51,10 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
+
+  // Drag state for rearranging blocks directly on the preview.
+  const [grab, setGrab] = useState<Grab>(null)
+  const [over, setOver] = useState<{ col: Col; index: number } | null>(null)
 
   const set = <K extends keyof Brand>(key: K, value: Brand[K]) => {
     setBrand((b) => ({ ...b, [key]: value }))
@@ -70,14 +72,23 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
   const reset = () => { setBrand(DEFAULT_BRAND); setSaved(false) }
 
-  // Section toggles and layout are two views of the same thing: a block that is
-  // switched off still has a position, it just does not render.
-  const hiddenBlocks = new Set<BlockId>()
-  if (!brand.showMilestone) hiddenBlocks.add('milestone')
-  if (!brand.showProgress) hiddenBlocks.add('progress')
-  if (!brand.showVocab) hiddenBlocks.add('vocab')
-  if (!brand.showTests) hiddenBlocks.add('tests')
-  if (!brand.showSpeaking) hiddenBlocks.add('speaking')
+  /** Move a block to a new slot, across columns if needed. */
+  const move = (from: { col: Col; index: number }, to: { col: Col; index: number }) => {
+    const next: Layout = { main: [...brand.layout.main], rail: [...brand.layout.rail] }
+    const [block] = next[from.col].splice(from.index, 1)
+    if (!block) return
+    // Removing an earlier item in the same column shifts the target left.
+    const target = from.col === to.col && from.index < to.index ? to.index - 1 : to.index
+    next[to.col].splice(Math.max(0, Math.min(next[to.col].length, target)), 0, block)
+    set('layout', next)
+  }
+
+  const hidden = new Set<BlockId>()
+  if (!brand.showMilestone) hidden.add('milestone')
+  if (!brand.showProgress) hidden.add('progress')
+  if (!brand.showVocab) hidden.add('vocab')
+  if (!brand.showTests) hidden.add('tests')
+  if (!brand.showSpeaking) hidden.add('speaking')
 
   const vars = brandVars(brand)
   const heroBg =
@@ -86,6 +97,133 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     : brand.accent
   const heroInk = brand.heroStyle === 'light' ? 'var(--ink)' : '#fff'
   const heroSub = brand.heroStyle === 'light' ? 'var(--muted)' : 'rgba(255,255,255,.72)'
+
+  /** The miniature of each block, as it appears in the student view. */
+  const preview = (id: BlockId): React.ReactNode => {
+    switch (id) {
+      case 'hero':
+        return (
+          <div className="k-preview-hero" style={{ background: heroBg, color: heroInk }}>
+            <strong style={{ whiteSpace: 'pre-line' }}>{brand.headline || DEFAULT_BRAND.headline}</strong>
+            <p style={{ color: heroSub }}>{brand.welcome || DEFAULT_BRAND.welcome}</p>
+            <span className="k-preview-btn" style={{ background: brand.heroStyle === 'light' ? brand.accent : '#fff', color: brand.heroStyle === 'light' ? '#fff' : brand.accent }}>
+              Book a lesson
+            </span>
+            {brand.props !== 'none' && (
+              <div className="k-preview-props" aria-hidden>
+                {brand.props === 'orbs' && <><span className="k-orb" style={{ width: 40, height: 40, right: 8, top: 6 }} /><span className="k-tube" style={{ width: 30, height: 30, right: 44, top: 38, borderWidth: 7 }} /></>}
+                {brand.props === 'geometric' && <><span className="k-crystal" style={{ width: 28, height: 34, right: 12, top: 8 }} /><span className="k-ring" style={{ width: 26, height: 26, right: 46, top: 34, borderWidth: 6 }} /></>}
+                {brand.props === 'minimal' && <span className="k-ring" style={{ width: 34, height: 34, right: 12, top: 14, borderWidth: 6 }} />}
+              </div>
+            )}
+          </div>
+        )
+      case 'stats':
+        return (
+          <div className="k-preview-stats">
+            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span>Lessons</span><b>12</b></div>
+            <div style={{ background: 'var(--c-blue)' }}><span>Avg score</span><b>7.4</b></div>
+            <div style={{ background: 'var(--c-purple)' }}><span>Speaking</span><b>41%</b></div>
+          </div>
+        )
+      case 'lessons':
+        return (
+          <div className="k-preview-card">
+            <div className="k-preview-row"><strong>Your lessons</strong><span>12</span></div>
+            <div className="k-preview-lessons">
+              <div><i style={{ background: brand.accent }} />Contrasting ideas<span>7.2</span></div>
+              <div><i style={{ background: `${brand.accent}66` }} />Giving reasons<span>6.8</span></div>
+            </div>
+          </div>
+        )
+      case 'progress':
+        return (
+          <div className="k-preview-card">
+            <div className="k-preview-row"><strong>Your progress</strong></div>
+            <div className="k-preview-spark">
+              <i style={{ background: brand.accent }} />
+              <i style={{ background: brand.accent, height: '55%' }} />
+              <i style={{ background: brand.accent, height: '78%' }} />
+              <i style={{ background: brand.accent, height: '92%' }} />
+            </div>
+          </div>
+        )
+      case 'vocab':
+        return <div className="k-preview-card"><div className="k-preview-row"><strong>Vocabulary</strong><span>45 words</span></div></div>
+      case 'calendar':
+        return (
+          <div className="k-preview-card">
+            <div className="k-preview-row"><strong>August</strong><span>22</span></div>
+            <div className="k-preview-cal" aria-hidden>
+              {Array.from({ length: 14 }).map((_, i) => (
+                <i key={i} style={i === 4 ? { background: brand.accent } : undefined} />
+              ))}
+            </div>
+          </div>
+        )
+      case 'milestone':
+        return (
+          <div className="k-preview-card">
+            <div className="k-preview-row"><strong>Next milestone</strong><span>60%</span></div>
+            <div className="k-hw-track" style={{ marginTop: 8 }}><div className="k-hw-fill" style={{ width: '60%', background: brand.accent }} /></div>
+          </div>
+        )
+      case 'scores':
+        return (
+          <div className="k-preview-card">
+            <div className="k-preview-row"><strong>Recent scores</strong><span>Last 2</span></div>
+            <div className="k-hw-track" style={{ marginTop: 8 }}><div className="k-hw-fill" style={{ width: '72%', background: brand.accent }} /></div>
+            <div className="k-hw-track" style={{ marginTop: 5 }}><div className="k-hw-fill" style={{ width: '62%', background: `${brand.accent}88` }} /></div>
+          </div>
+        )
+      case 'tests':
+        return <div className="k-preview-card"><div className="k-preview-row"><strong>Practice tests</strong><span>2</span></div></div>
+      case 'speaking':
+        return <div className="k-preview-card"><div className="k-preview-row"><strong>Speaking habits</strong><span>54 wpm</span></div></div>
+    }
+  }
+
+  /** A preview block wrapped so it can be picked up and dropped with the mouse. */
+  const block = (id: BlockId, col: Col, index: number) => (
+    <div
+      key={id}
+      draggable
+      className={[
+        'k-pblock',
+        hidden.has(id) ? 'off' : '',
+        grab?.col === col && grab.index === index ? 'dragging' : '',
+        over?.col === col && over.index === index && !(grab?.col === col && grab.index === index) ? 'over' : '',
+      ].join(' ')}
+      title={`Drag to move ${BLOCK_LABELS[id]}`}
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setGrab({ col, index }) }}
+      onDragEnd={() => { setGrab(null); setOver(null) }}
+      onDragOver={(e) => { e.preventDefault(); setOver({ col, index }) }}
+      onDrop={(e) => {
+        e.preventDefault(); e.stopPropagation()
+        if (grab) move(grab, { col, index })
+        setGrab(null); setOver(null)
+      }}
+    >
+      <span className="k-pblock-tag">{BLOCK_LABELS[id]}{hidden.has(id) ? ' · hidden' : ''}</span>
+      {preview(id)}
+    </div>
+  )
+
+  /** A column, droppable at its end so a block can be appended. */
+  const column = (col: Col) => (
+    <div
+      className={`k-pcol ${over?.col === col && over.index >= brand.layout[col].length ? 'over-end' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); setOver({ col, index: brand.layout[col].length }) }}
+      onDrop={(e) => {
+        e.preventDefault()
+        if (grab) move(grab, { col, index: brand.layout[col].length })
+        setGrab(null); setOver(null)
+      }}
+    >
+      {brand.layout[col].map((id, i) => block(id, col, i))}
+      {brand.layout[col].length === 0 && <div className="k-pcol-empty">Drop here</div>}
+    </div>
+  )
 
   return (
     <div className="k-studio">
@@ -157,26 +295,12 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
           <label className="k-field">
             <span>Hero headline</span>
-            <textarea
-              className="k-input"
-              rows={2}
-              value={brand.headline}
-              onChange={(e) => set('headline', e.target.value)}
-              maxLength={90}
-              placeholder={DEFAULT_BRAND.headline}
-            />
+            <textarea className="k-input" rows={2} value={brand.headline} onChange={(e) => set('headline', e.target.value)} maxLength={90} placeholder={DEFAULT_BRAND.headline} />
           </label>
 
           <label className="k-field">
             <span>Hero subtext</span>
-            <textarea
-              className="k-input"
-              rows={3}
-              value={brand.welcome}
-              onChange={(e) => set('welcome', e.target.value)}
-              maxLength={200}
-              placeholder={DEFAULT_BRAND.welcome}
-            />
+            <textarea className="k-input" rows={3} value={brand.welcome} onChange={(e) => set('welcome', e.target.value)} maxLength={200} placeholder={DEFAULT_BRAND.welcome} />
           </label>
         </section>
 
@@ -222,25 +346,10 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
         <section className="k-sec">
           <div className="k-sec-head">
-            <span className="k-sec-icon" aria-hidden>🧱</span>
-            <div>
-              <h3>Layout</h3>
-              <p className="desc">Drag blocks to reorder them, or between the two columns. Arrows work too.</p>
-            </div>
-          </div>
-          <LayoutEditor
-            layout={brand.layout}
-            hidden={hiddenBlocks}
-            onChange={(layout: Layout) => set('layout', layout)}
-          />
-        </section>
-
-        <section className="k-sec">
-          <div className="k-sec-head">
             <span className="k-sec-icon p" aria-hidden>🧩</span>
             <div>
               <h3>Sections</h3>
-              <p className="desc">Hide anything that doesn&rsquo;t fit how you teach.</p>
+              <p className="desc">Hide anything that doesn&rsquo;t fit how you teach. Hidden blocks keep their place in the layout.</p>
             </div>
           </div>
 
@@ -275,10 +384,10 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         </div>
       </div>
 
-      {/* ── live preview ── */}
+      {/* ── live, directly-editable preview ── */}
       <div className="k-studio-preview">
         <div className="k-preview-bar">
-          <span className="k-preview-label">Student view</span>
+          <span className="k-preview-label">Student view · drag to rearrange</span>
           <div className="k-seg" style={{ margin: 0, width: 168 }}>
             <button className={device === 'desktop' ? 'on' : ''} onClick={() => setDevice('desktop')}>Desktop</button>
             <button className={device === 'mobile' ? 'on' : ''} onClick={() => setDevice('mobile')}>Phone</button>
@@ -294,50 +403,15 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             </div>
           </div>
 
-          <div className="k-preview-hero" style={{ background: heroBg, color: heroInk }}>
-            <strong style={{ whiteSpace: 'pre-line' }}>{brand.headline || DEFAULT_BRAND.headline}</strong>
-            <p style={{ color: heroSub }}>{brand.welcome || DEFAULT_BRAND.welcome}</p>
-            <span className="k-preview-btn" style={{ background: brand.heroStyle === 'light' ? brand.accent : '#fff', color: brand.heroStyle === 'light' ? '#fff' : brand.accent }}>
-              Book a lesson
-            </span>
-            {brand.props !== 'none' && (
-              <div className="k-preview-props" aria-hidden>
-                {brand.props === 'orbs' && <><span className="k-orb" style={{ width: 44, height: 44, right: 8, top: 6 }} /><span className="k-tube" style={{ width: 34, height: 34, right: 46, top: 40, borderWidth: 8 }} /></>}
-                {brand.props === 'geometric' && <><span className="k-crystal" style={{ width: 30, height: 36, right: 12, top: 8 }} /><span className="k-ring" style={{ width: 30, height: 30, right: 50, top: 34, borderWidth: 7 }} /></>}
-                {brand.props === 'minimal' && <span className="k-ring" style={{ width: 40, height: 40, right: 12, top: 14, borderWidth: 6 }} />}
-              </div>
-            )}
+          <div className={`k-preview-grid ${device}`}>
+            {column('main')}
+            {column('rail')}
           </div>
-
-          <div className="k-preview-stats">
-            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span>Lessons</span><b>12</b></div>
-            <div style={{ background: 'var(--c-blue)' }}><span>Avg score</span><b>7.4</b></div>
-            <div style={{ background: 'var(--c-purple)' }}><span>Speaking</span><b>41%</b></div>
-          </div>
-
-          {brand.showMilestone && (
-            <div className="k-preview-card">
-              <div className="k-preview-row"><strong>Next milestone</strong><span>60%</span></div>
-              <div className="k-hw-track"><div className="k-hw-fill" style={{ width: '60%', background: brand.accent }} /></div>
-            </div>
-          )}
-
-          <div className="k-preview-card">
-            <div className="k-preview-row"><strong>Your lessons</strong><span>12</span></div>
-            <div className="k-preview-lessons">
-              <div><i style={{ background: brand.accent }} />Contrasting ideas<span>7.2</span></div>
-              <div><i style={{ background: `${brand.accent}66` }} />Giving reasons<span>6.8</span></div>
-            </div>
-          </div>
-
-          {brand.showProgress && <div className="k-preview-card"><div className="k-preview-row"><strong>Your progress</strong></div><div className="k-preview-spark"><i style={{ background: brand.accent }} /><i style={{ background: brand.accent, height: '55%' }} /><i style={{ background: brand.accent, height: '78%' }} /><i style={{ background: brand.accent, height: '92%' }} /></div></div>}
-          {brand.showVocab && <div className="k-preview-card"><div className="k-preview-row"><strong>Vocabulary</strong><span>45 words</span></div></div>}
-          {brand.showTests && <div className="k-preview-card"><div className="k-preview-row"><strong>Practice tests</strong><span>2</span></div></div>}
-          {brand.showSpeaking && <div className="k-preview-card"><div className="k-preview-row"><strong>Speaking habits</strong><span>54 wpm</span></div></div>}
         </div>
 
         <p className="k-fine" style={{ textAlign: 'left' }}>
-          A live approximation of {teacherName ? `${teacherName}'s` : 'your'} student dashboard. Save to publish it — students see the change on their next load.
+          Grab any block and drop it where you want — including across the two columns.
+          This is {teacherName ? `${teacherName}'s` : 'your'} student dashboard; save to publish it.
         </p>
       </div>
     </div>
