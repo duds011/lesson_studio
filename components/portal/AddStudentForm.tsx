@@ -77,8 +77,18 @@ export default function AddStudentForm({ currency = 'USD' }: { currency?: string
 
   const inputStyle: React.CSSProperties = { border: '1px solid var(--line)', borderRadius: 9, padding: '11px 12px', background: '#fff' }
 
+  // Rendered as a centred dialog, not inline. `.page-head` is a flex row on
+  // desktop, so an inline card here became a tall right-hand item and dragged
+  // the page title down to align with its bottom edge.
   return (
-    <div className="settings-card" style={{ padding: 22, maxWidth: 460 }}>
+    <div
+      className="k-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="New student"
+      onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
+    >
+      <div className="k-modal-card">
       <div className="settings-row" style={{ marginBottom: 14 }}>
         <h3 style={{ margin: 0 }}>New student</h3>
         <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Close</button>
@@ -150,6 +160,7 @@ export default function AddStudentForm({ currency = 'USD' }: { currency?: string
           </button>
         </form>
       )}
+      </div>
     </div>
   )
 }
