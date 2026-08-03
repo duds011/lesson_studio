@@ -181,13 +181,35 @@ function dropEcho(segments: any[]): any[] {
  * Both tracks start at the same instant, so their relative timestamps align.
  */
 export async function transcribeTracks(tracks: TrackInput[], language?: string): Promise<any[]> {
+  return (await transcribeTracksDetailed(tracks, language)).filtered
+}
+
+/**
+ * Same work, but keeps the intermediate stages so they can be inspected —
+ * what each track heard on its own, and what the echo filter then removed.
+ * Without this, a transcript problem and a filter problem look identical.
+ */
+export async function transcribeTracksDetailed(tracks: TrackInput[], language?: string) {
   const perTrack = await Promise.all(
-    tracks.map(async (t) => toSegments(await transcribeOne(t.blob, language), t.speaker, t.isHost)),
+    tracks.map(async (t) => ({
+      speaker: t.speaker,
+      isHost: t.isHost,
+      segments: toSegments(await transcribeOne(t.blob, language), t.speaker, t.isHost),
+    })),
   )
   const all = perTrack
+    .map((p) => p.segments)
     .flat()
     .sort((a, b) => (a.words[0]?.start_timestamp.relative ?? 0) - (b.words[0]?.start_timestamp.relative ?? 0))
-  return dropEcho(all)
+  return { perTrack, all, filtered: dropEcho(all) }
+}
+
+/** "12.3s Speaker: words" — for reading a transcript back. */
+export function renderLines(segments: any[]): string[] {
+  return segments.map((s) => {
+    const at = (s.words[0]?.start_timestamp.relative ?? 0).toFixed(1)
+    return `${at}s ${s.participant.name}: ${s.words.map((w: any) => w.text).join(' ')}`
+  })
 }
 
 /** Exported for testing the echo filter without calling Whisper. */
