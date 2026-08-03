@@ -105,8 +105,19 @@ export async function getTranscript(botId: string): Promise<TranscriptResult> {
   if (!url) throw new Error('Transcript not ready yet — try again in a moment.')
 
   const data = await (await fetch(url)).json() // array of { participant, words[] }
-  const segments: any[] = Array.isArray(data) ? data : []
+  return normalizeSegments(Array.isArray(data) ? data : [])
+}
 
+/**
+ * Turn speaker-attributed word segments into lines, talk time and metrics.
+ *
+ * Split out from the Recall fetch so any source of the same shape can reuse it
+ * — the browser-extension recorder transcribes its two tracks with Whisper and
+ * hands the segments straight in here, so both paths measure identically.
+ * Shape: [{ participant: { name, is_host }, words: [{ text, start_timestamp:
+ * { relative }, end_timestamp: { relative } }] }]
+ */
+export function normalizeSegments(segments: any[]): TranscriptResult {
   const lines: string[] = []
   const secByName: Record<string, number> = {}
   const hostByName: Record<string, boolean> = {}
