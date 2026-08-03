@@ -5,6 +5,7 @@ import { transcribeTracks } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/recall'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
+import { runAsTeacher } from '@/lib/teacher-scope'
 import { RECORDING_BUCKET, trackPath } from '@/lib/ext-storage'
 
 export const dynamic = 'force-dynamic'
@@ -62,16 +63,21 @@ export async function POST(req: Request) {
       { onConflict: 'event_id' },
     )
 
-    await saveRecap({
-      eventId,
-      studentName: student.full_name,
-      recap,
-      talk: t.talk,
-      studentTalkPct: t.studentTalkPct,
-      status: 'draft',
-      createdAt: Date.now(),
-      lessonDate: lessonDate || new Date().toISOString().slice(0, 10),
-      lessonTitle: recap.title || 'Recorded lesson',
+    // Recaps are runtime docs namespaced per teacher, and a bearer-token
+    // request carries no session for the store to resolve one from — so say
+    // explicitly whose data this is.
+    await runAsTeacher(caller.teacherId, async () => {
+      await saveRecap({
+        eventId,
+        studentName: student.full_name,
+        recap,
+        talk: t.talk,
+        studentTalkPct: t.studentTalkPct,
+        status: 'draft',
+        createdAt: Date.now(),
+        lessonDate: lessonDate || new Date().toISOString().slice(0, 10),
+        lessonTitle: recap.title || 'Recorded lesson',
+      })
     })
 
     return NextResponse.json({
