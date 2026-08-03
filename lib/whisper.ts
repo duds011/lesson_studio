@@ -49,9 +49,39 @@ async function transcribeOne(blob: Blob, language?: string): Promise<Word[]> {
 
   const json = await res.json()
   const words: any[] = Array.isArray(json.words) ? json.words : []
-  return words
+  const all = words
     .map((w) => ({ text: String(w.word ?? w.text ?? '').trim(), start: Number(w.start) || 0, end: Number(w.end) || 0 }))
     .filter((w) => w.text)
+
+  return keepConfidentWords(all, Array.isArray(json.segments) ? json.segments : [])
+}
+
+/**
+ * Drops words Whisper made up.
+ *
+ * Given silence or room tone it does not return nothing — it invents fluent
+ * text, often in the wrong language entirely. A near-silent laptop mic in an
+ * empty room produced a paragraph of Japanese, which then went to the model as
+ * if the student had said it.
+ *
+ * It does flag its own uncertainty per segment, so trust that: a high
+ * no_speech_prob means it heard no speech, and a very low avg_logprob means it
+ * had to reach. Words outside a trustworthy segment are discarded.
+ */
+const NO_SPEECH_MAX = 0.6
+const AVG_LOGPROB_MIN = -1.0
+
+function keepConfidentWords(words: { text: string; start: number; end: number }[], segments: any[]) {
+  if (!segments.length) return words // nothing to judge against — keep as-is
+
+  const trusted = segments.filter(
+    (s) => (Number(s.no_speech_prob) || 0) < NO_SPEECH_MAX && (Number(s.avg_logprob) || 0) > AVG_LOGPROB_MIN,
+  )
+  if (!trusted.length) return [] // the whole track was silence or noise
+
+  return words.filter((w) =>
+    trusted.some((s) => w.start >= (Number(s.start) || 0) - 0.05 && w.start <= (Number(s.end) || 0) + 0.05),
+  )
 }
 
 /** Group one speaker's words into turns, breaking on silence. */
