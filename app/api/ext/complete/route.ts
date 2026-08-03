@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const caller = await authenticateExtension(req)
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { recordingId, studentId, micIs, seconds, lessonDate } = await req.json().catch(() => ({}))
+  const { recordingId, studentId, micIs, seconds, lessonDate, heard } = await req.json().catch(() => ({}))
   if (!recordingId || !studentId) return NextResponse.json({ error: 'Missing recordingId or studentId' }, { status: 400 })
 
   const admin = createAdminClient()
@@ -40,8 +40,15 @@ export async function POST(req: Request) {
       { track: 'tab', speaker: micIsTeacher ? student.full_name : 'Teacher', isHost: !micIsTeacher },
     ]
 
+    // Seconds of real sound the recorder measured per track. A track that heard
+    // essentially nothing is skipped: transcribing silence does not yield an
+    // empty result, it yields invented speech.
+    const MIN_HEARD_SEC = 1.5
     const tracks = []
     for (const w of wanted) {
+      const loud = heard && typeof heard[w.track] === 'number' ? heard[w.track] : null
+      if (loud !== null && loud < MIN_HEARD_SEC) continue
+
       const { data, error } = await admin.storage.from(RECORDING_BUCKET).download(trackPath(recordingId, w.track))
       if (error || !data) return NextResponse.json({ error: `Missing ${w.track} track: ${error?.message ?? 'not found'}` }, { status: 404 })
       if (data.size > 0) tracks.push({ blob: data, speaker: w.speaker, isHost: w.isHost })

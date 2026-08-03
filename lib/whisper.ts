@@ -84,6 +84,24 @@ function keepConfidentWords(words: { text: string; start: number; end: number }[
   )
 }
 
+/**
+ * A turn that is mostly the same token over and over.
+ *
+ * Whisper's other failure on near-silence is a repetition loop — it latches
+ * onto a phrase and repeats it, confidently, so no_speech_prob and avg_logprob
+ * both look healthy. Real speech does not reuse the same handful of tokens for
+ * a dozen words straight; the threshold is deliberately generous so a student
+ * drilling a phrase survives.
+ */
+const MIN_WORDS_TO_JUDGE = 12
+const MIN_UNIQUE_RATIO = 0.35
+
+function isRepetitionLoop(words: Word[]): boolean {
+  if (words.length < MIN_WORDS_TO_JUDGE) return false
+  const unique = new Set(words.map((w) => w.text.toLowerCase())).size
+  return unique / words.length < MIN_UNIQUE_RATIO
+}
+
 /** Group one speaker's words into turns, breaking on silence. */
 function toSegments(words: Word[], speaker: string, isHost: boolean) {
   const segments: any[] = []
@@ -91,6 +109,7 @@ function toSegments(words: Word[], speaker: string, isHost: boolean) {
 
   const flush = () => {
     if (!current.length) return
+    if (isRepetitionLoop(current)) { current = []; return }
     segments.push({
       participant: { name: speaker, is_host: isHost },
       words: current.map((w) => ({
