@@ -270,11 +270,77 @@ export async function generateTest(opts: { studentName: string; lessonTitle: str
   return JSON.parse(j.choices[0].message.content) as TestJson
 }
 
-export async function generateRecap(opts: { studentName: string; transcript: string }): Promise<Recap> {
+/**
+ * The same recap, for a lesson in any language.
+ *
+ * The prompt above is built for Japanese: it asks for romaji readings, JLPT
+ * levels and hiragana-only output, and scores "Japanese output" as part of the
+ * grade. Given a French lesson it does not degrade gracefully — it invents
+ * Japanese. This keeps the identical JSON shape so every page renders
+ * unchanged, and swaps JLPT for CEFR.
+ */
+const GENERIC_PROMPT = `Analyze this {{LANGUAGE}} lesson transcript and return ONLY valid JSON.
+
+The transcript comes from two separate microphones, so each line is already attributed to the right speaker. It may contain mis-heard words — work from what is clearly legible and ignore obvious garble. The meeting host is the teacher; the other speaker is the student.
+
+The target language of this lesson is {{LANGUAGE}}. Write explanations, definitions and notes in English. Write vocabulary and example sentences in {{LANGUAGE}}.
+
+Student: {{STUDENT}}
+
+Return this exact structure. Replace ALL bracketed placeholders with real values — never copy placeholder text:
+{
+  "lesson_title": "[3-7 words, English, Title Case, like a textbook chapter heading. No names, dates or lesson numbers.]",
+  "recap": "[2-3 sentences, max ~55 words, warm and student-facing. No title line, no bullets, no vocab list.]",
+  "score": [0.0-10.0, one decimal — accuracy, grammar, fluency, engagement],
+  "talk_percentage": [integer 0-100 — the student's share of speaking time],
+  "grammar_density": "[Low or Medium or Medium-High or High]",
+  "confidence_label": "[Developing | Building | Strong Foundation | Confident]",
+  "teacher_note": "[warm 2-3 sentence personal note to this student]",
+  "audio_script": "[short voice-memo script the teacher could read aloud: greeting, a paragraph per topic, a homework line, a warm closing]",
+  "vocab_total_count": [integer — distinct vocabulary items practiced],
+  "vocab_level_distribution": {"A1": [count], "A2": [count], "B1": [count], "B2": [count], "C1": [count], "C2": [count]},
+  "vocabulary": [{"word": "[word or phrase in {{LANGUAGE}}]", "reading": "[pronunciation guide, or the word itself where the spelling is already phonetic]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[sentence in {{LANGUAGE}}]"}],
+  "homework": [{"description": "[task]"}],
+  "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
+  "sections": [{"title": "1. Target Phrase: English Meaning", "content": "[see SECTION FORMAT]"}]
+}
+
+CONFIDENCE — weighted formula:
+Self-correction (30%) + Response independence (25%) + Grammar recognition (20%) + Target-language output (15%) + Difficulty handled (10%)
+0.0-3.9 = Developing | 4.0-5.9 = Building | 6.0-7.9 = Strong Foundation | 8.0-10.0 = Confident
+
+VOCABULARY:
+- Count every distinct item practiced — words, phrases, grammar patterns, set expressions.
+- "jlpt_level" carries the CEFR level here (A1 easiest, C2 hardest). The field keeps its name so the rest of the app is unchanged.
+- vocab_level_distribution: include all six CEFR levels even where the count is 0.
+- 8-12 vocabulary items, all drawn from what was actually said.
+
+SECTION FORMAT — one section per teaching point with clear evidence in the transcript:
+- Title: "1. Target Phrase: English Meaning"
+- A short explanation in English, an example sentence in {{LANGUAGE}} with its English meaning, and when to use it.
+- 3-6 sections. A point clearly taught but missing is a failure.
+
+IF THIS TRANSCRIPT IS NOT A LESSON:
+Say so plainly. Set score to 0, leave vocabulary, sections, homework and exercises empty, and use "recap" to state in one sentence what the recording actually contains. Never invent teaching that did not happen.
+
+TRANSCRIPT:
+{{TRANSCRIPT}}`
+
+export async function generateRecap(opts: {
+  studentName: string
+  transcript: string
+  /** Target language. Anything but Japanese uses the CEFR prompt. */
+  language?: string
+}): Promise<Recap> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
 
-  const content = PROMPT.replace('{{STUDENT}}', opts.studentName).replace('{{TRANSCRIPT}}', opts.transcript)
+  const lang = (opts.language || '').trim()
+  // Absent language keeps the existing behaviour, so the bot path is untouched.
+  const isJapanese = !lang || /^(ja|jp|japanese|日本語)$/i.test(lang)
+  const content = (isJapanese ? PROMPT : GENERIC_PROMPT.replace(/\{\{LANGUAGE\}\}/g, lang))
+    .replace('{{STUDENT}}', opts.studentName)
+    .replace('{{TRANSCRIPT}}', opts.transcript)
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

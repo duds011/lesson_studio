@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const caller = await authenticateExtension(req)
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { recordingId, studentId, micIs, seconds, lessonDate, heard } = await req.json().catch(() => ({}))
+  const { recordingId, studentId, micIs, seconds, lessonDate, heard, language } = await req.json().catch(() => ({}))
   if (!recordingId || !studentId) return NextResponse.json({ error: 'Missing recordingId or studentId' }, { status: 400 })
 
   const admin = createAdminClient()
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     const t = normalizeSegments(segments)
     if (!t.plain.trim()) return NextResponse.json({ error: 'Nothing was said on either track.' }, { status: 422 })
 
-    const recap: any = await generateRecap({ studentName: student.full_name, transcript: t.plain })
+    const recap: any = await generateRecap({ studentName: student.full_name, transcript: t.plain, language })
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics
 
