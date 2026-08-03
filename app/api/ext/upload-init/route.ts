@@ -35,9 +35,12 @@ export async function POST(req: Request) {
     const path = trackPath(recordingId, track)
     const { data, error } = await admin.storage.from(RECORDING_BUCKET).createSignedUploadUrl(path)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    // createSignedUploadUrl returns a storage-relative path; the extension needs
-    // somewhere absolute to PUT to.
-    uploads[track] = { path, url: `${base}/storage/v1${data.signedUrl}` }
+    // This client already hands back an absolute URL; older ones return a
+    // storage-relative path. Only prefix when it needs it — prefixing blindly
+    // produced ".../storage/v1https://.../storage/v1/object/..." and every
+    // upload would have failed.
+    const signed = String(data.signedUrl)
+    uploads[track] = { path, url: signed.startsWith('http') ? signed : `${base}/storage/v1${signed}` }
   }
 
   return NextResponse.json({ recordingId, bucket: RECORDING_BUCKET, uploads })
