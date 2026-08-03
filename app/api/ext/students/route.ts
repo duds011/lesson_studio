@@ -17,16 +17,5 @@ export async function GET(req: Request) {
     .order('full_name')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  if (new URL(req.url).searchParams.get('debug') === '1') {
-    const all = await admin.from('students').select('id, full_name, teacher_id')
-    return NextResponse.json({
-      students: data ?? [],
-      teacherId: caller.teacherId,
-      allStudents: all.data ?? [],
-      allError: all.error?.message ?? null,
-    })
-  }
-
   return NextResponse.json({ students: data ?? [] })
 }
