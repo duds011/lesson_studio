@@ -65,10 +65,14 @@ export async function POST(req: Request) {
 
     const eventId = `ext:${recordingId}`
     // Link first, so publishing resolves the student without a calendar event.
-    await admin.from('lesson_event_links').upsert(
-      { event_id: eventId, student_id: student.id },
+    // Without this row the publish bridge cannot find the student, silently
+    // delivers nothing, and still reports success — so a failure here has to
+    // be loud rather than swallowed.
+    const { error: linkError } = await admin.from('lesson_event_links').upsert(
+      { event_id: eventId, student_id: student.id, teacher_id: caller.teacherId },
       { onConflict: 'event_id' },
     )
+    if (linkError) throw new Error(`Could not link the recording to the student: ${linkError.message}`)
 
     // Recaps are runtime docs namespaced per teacher, and a bearer-token
     // request carries no session for the store to resolve one from — so say
