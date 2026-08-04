@@ -66,9 +66,9 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
     .map((l) => ({ id: l.id, label: `Lesson ${l.lesson_number} — ${lessonDisplayTitle(summaryOf(l)?.recap_json, l.title, l.lesson_number)}` }))
 
   return (
-    <div style={{ display: 'grid', gap: 22 }}>
+    <div className="k-page" style={{ display: 'grid', gap: 16 }}>
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
           <Link href="/teacher/dashboard" className="btn btn-ghost btn-sm">← All students</Link>
           <StudentAdminActions studentId={student.id} hasLogin={!!student.profile_id} />
         </div>
@@ -137,7 +137,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
       </section>
 
       <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, margin: '30px 0 11px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, margin: '0 0 11px' }}>
           <h2 className="section-heading" style={{ margin: 0 }}>Practice tests</h2>
           <GenerateTestButton studentId={student.id} lessons={testableLessons} />
         </div>

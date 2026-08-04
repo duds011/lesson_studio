@@ -291,12 +291,12 @@ export default async function StudentDashboard() {
     vocab: (
       <>
           {brand.showVocab && totalVocab > 0 && (
-            <div style={{ marginTop: 14 }}>
+            <>
               <div className="k-sec-head"><h2>Vocabulary</h2><span className="k-link">{totalVocab} words</span></div>
               <div className="k-card k-chart-card">
                 <VocabLevelChart distribution={vocabDistribution} height={heightOf('vocab', 170)} />
               </div>
-            </div>
+            </>
           )}
       </>
     ),

@@ -1,4 +1,6 @@
-const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1']
+/** Easiest to hardest. Japanese lessons report JLPT, every other language CEFR. */
+export const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1']
+export const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 export const JLPT_COLORS: Record<string, string> = {
   N5: '#22c55e',
@@ -7,6 +9,17 @@ export const JLPT_COLORS: Record<string, string> = {
   N2: '#a855f7',
   N1: '#ec4899',
 }
+
+export const CEFR_COLORS: Record<string, string> = {
+  A1: '#22c55e', A2: '#3b82f6', B1: '#6259e8', B2: '#a855f7', C1: '#ec4899', C2: '#f97316',
+}
+
+/** Whichever scale the recap actually used — assuming JLPT charts a French
+ *  student as empty. */
+export const levelScale = (distribution: Record<string, number>) =>
+  CEFR_LEVELS.some((l) => (distribution[l] ?? 0) > 0) ? CEFR_LEVELS : JLPT_LEVELS
+
+export const levelColor = (level: string) => JLPT_COLORS[level] ?? CEFR_COLORS[level] ?? 'var(--brand)'
 
 export default function VocabLevelBreakdown({
   distribution,
@@ -17,26 +30,28 @@ export default function VocabLevelBreakdown({
 }) {
   if (!totalCount) return null
 
-  const levels = JLPT_LEVELS.map((level) => ({
+  const levels = levelScale(distribution).map((level) => ({
     level,
     count: distribution[level] ?? 0,
     pct: totalCount ? ((distribution[level] ?? 0) / totalCount) * 100 : 0,
   })).filter((l) => l.count > 0)
+
+  if (levels.length === 0) return null
 
   return (
     <div className="vocab-line analytics-card">
       <span className="vocab-line-label">
         Vocabulary <strong>{totalCount}</strong>
       </span>
-      <div className="vocab-line-bar" role="img" aria-label={`Vocabulary by JLPT level: ${levels.map((l) => `${l.level} ${l.count}`).join(', ')}`}>
+      <div className="vocab-line-bar" role="img" aria-label={`Vocabulary by level: ${levels.map((l) => `${l.level} ${l.count}`).join(', ')}`}>
         {levels.map((l) => (
-          <div key={l.level} style={{ width: `${l.pct}%`, background: JLPT_COLORS[l.level] }} title={`${l.level}: ${l.count}`} />
+          <div key={l.level} style={{ width: `${l.pct}%`, background: levelColor(l.level) }} title={`${l.level}: ${l.count}`} />
         ))}
       </div>
       <div className="vocab-line-chips">
         {levels.map((l) => (
-          <span key={l.level} className="vocab-chip" style={{ color: JLPT_COLORS[l.level] }}>
-            <i style={{ background: JLPT_COLORS[l.level] }} />{l.level} {l.count}
+          <span key={l.level} className="vocab-chip" style={{ color: levelColor(l.level) }}>
+            <i style={{ background: levelColor(l.level) }} />{l.level} {l.count}
           </span>
         ))}
       </div>

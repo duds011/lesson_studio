@@ -14,7 +14,7 @@ import {
   Area, AreaChart, Bar, BarChart, Cell, PolarAngleAxis, RadialBar, RadialBarChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
-import { JLPT_COLORS } from './VocabLevelBreakdown'
+import { levelColor, levelScale } from './VocabLevelBreakdown'
 
 const AXIS = { fontSize: 10, fill: 'var(--muted)', fontWeight: 700 }
 
@@ -95,23 +95,11 @@ export function MilestoneGauge({
   )
 }
 
-/** Easiest to hardest. Japanese lessons report JLPT, every other language CEFR. */
-const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1']
-const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
-const CEFR_COLORS: Record<string, string> = {
-  A1: '#22c55e', A2: '#3b82f6', B1: '#6259e8', B2: '#a855f7', C1: '#ec4899', C2: '#f97316',
-}
-
 /** Vocabulary by level as bars, one colour per level. */
 export function VocabLevelChart({
   distribution, height = 150, compact = false,
 }: { distribution: Record<string, number>; height?: number | string; compact?: boolean }) {
-  // Order by whichever scale the recap used, rather than assuming JLPT — a
-  // French lesson reports A1–C2 and would otherwise chart as empty.
-  const scale = CEFR_LEVELS.some((l) => (distribution[l] ?? 0) > 0) ? CEFR_LEVELS : JLPT_LEVELS
-  const colorFor = (level: string) => JLPT_COLORS[level] ?? CEFR_COLORS[level] ?? 'var(--brand)'
-
-  const data = scale
+  const data = levelScale(distribution)
     .map((level) => ({ level, count: distribution[level] ?? 0 }))
     .filter((d) => d.count > 0)
   if (data.length === 0) return null
@@ -124,7 +112,7 @@ export function VocabLevelChart({
         {!compact && <Tooltip cursor={{ fill: 'rgba(0,0,0,.04)' }} content={<ChartTip suffix=" words" />} />}
         <Bar dataKey="count" radius={[5, 5, 2, 2]} maxBarSize={compact ? 14 : 38} isAnimationActive={!compact}>
           {data.map((d) => (
-            <Cell key={d.level} fill={colorFor(d.level)} />
+            <Cell key={d.level} fill={levelColor(d.level)} />
           ))}
         </Bar>
       </BarChart>

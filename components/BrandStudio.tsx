@@ -116,6 +116,10 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const stored: Placement<any>[] = scope === 'dash' ? brand.layout : brand.lessonLayout
   const visible = stored.filter(inScope)
   const shown = order ?? visible
+  /** The order on screen right now. The pointer handlers are registered once
+   *  per drag, so they read the live list from here rather than a closure. */
+  const listRef = useRef<Placement<any>[]>(shown)
+  listRef.current = shown
 
   /**
    * Write an edited subsequence back into the stored list, leaving the other
@@ -132,17 +136,73 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     commit(visible.map((p) => (p.id === id ? { ...p, ...patch } : p)))
 
   // ── drag to rearrange ───────────────────────────────────────────────────
-  const onBlockDragOver = (e: React.DragEvent, index: number) => {
+  /**
+   * Pointer events, not HTML5 drag-and-drop. The native API fires `dragover`
+   * continuously over a block that has just reflowed under the cursor, so
+   * blocks kept swapping themselves the moment two of them touched. Here a
+   * swap costs one deliberate crossing of the target's midline.
+   */
+  const startDrag = (id: AnyId, e: React.PointerEvent) => {
+    if (e.button !== 0 || resizing) return
     e.preventDefault()
-    e.stopPropagation()
-    if (!dragId) return
-    setOrder((cur) => moveTo(cur ?? visible, dragId as never, index))
-  }
+    const originX = e.clientX, originY = e.clientY
+    let active = false
 
-  const endDrag = (commitIt: boolean) => {
-    if (commitIt && order) commit(order)
-    setDragId(null)
-    setOrder(null)
+    const onMove = (ev: PointerEvent) => {
+      if (!active) {
+        // A few pixels of slop so a click on a block is not a drag.
+        if (Math.abs(ev.clientX - originX) + Math.abs(ev.clientY - originY) < 5) return
+        active = true
+        setDragId(id)
+      }
+
+      const cur = listRef.current
+      const from = cur.findIndex((p) => p.id === id)
+      const dragEl = blockEls.current[id]
+      if (from < 0 || !dragEl) return
+
+      // The block under the pointer, the dragged one aside.
+      let to = -1
+      let target: DOMRect | undefined
+      for (let i = 0; i < cur.length; i++) {
+        if (i === from) continue
+        const r = blockEls.current[cur[i].id]?.getBoundingClientRect()
+        if (!r) continue
+        if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) {
+          to = i
+          target = r
+          break
+        }
+      }
+      if (to < 0 || !target) return
+
+      // Only swap once the pointer is past that block's middle, measured along
+      // the axis they meet on. Reacting to the edge instead makes a wide block
+      // and a narrow one trade places every few pixels.
+      const drag = dragEl.getBoundingClientRect()
+      const forward = from < to
+      const sameRow = Math.abs(target.top - drag.top) < Math.min(target.height, drag.height) * 0.6
+      const mid = sameRow ? target.left + target.width / 2 : target.top + target.height / 2
+      const at = sameRow ? ev.clientX : ev.clientY
+      if (forward ? at < mid : at > mid) return
+
+      const next = moveTo(cur, id, to)
+      listRef.current = next
+      setOrder(next)
+    }
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      if (active) commit(listRef.current)
+      setDragId(null)
+      setOrder(null)
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
   }
 
   // ── resize ──────────────────────────────────────────────────────────────
@@ -396,7 +456,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     scope === 'dash' ? BLOCK_LABELS[id as BlockId] : LESSON_BLOCK_LABELS[id as LessonBlockId]
 
   /** A preview block: draggable to rearrange, with grips on two edges. */
-  const block = (p: Placement<any>, index: number) => {
+  const block = (p: Placement<any>) => {
     const id = p.id as AnyId
     const off = scope === 'dash' && hidden.has(id as BlockId)
     const isGhost = dragId === id
@@ -404,14 +464,10 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       <div
         key={id}
         ref={(el) => { blockEls.current[id] = el }}
-        draggable={resizing !== id}
         style={{ ['--w' as any]: p.w, ...(p.h ? { height: p.h } : null) }}
         className={['k-pblock', p.h ? 'k-fit' : '', off ? 'off' : '', isGhost ? 'ghost' : '', resizing === id ? 'resizing' : ''].join(' ')}
         title={`Drag to move ${labelOf(id)}`}
-        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragId(id) }}
-        onDragEnd={() => endDrag(true)}
-        onDragOver={(e) => onBlockDragOver(e, index)}
-        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); endDrag(true) }}
+        onPointerDown={(e) => startDrag(id, e)}
       >
         <span className="k-pblock-tag">
           {labelOf(id)}{off ? ' · hidden' : ''} · {p.w}/{GRID_COLS}{p.h ? ` · ${p.h}px` : ''}
@@ -443,11 +499,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     <div
       ref={flowEl}
       key={`${scope}-${lessonTab}-${device}`}
-      className={`k-flow ${device === 'mobile' ? 'narrow' : ''}`}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => { e.preventDefault(); endDrag(true) }}
+      className={`k-flow ${device === 'mobile' ? 'narrow' : ''} ${dragId ? 'dragging' : ''}`}
     >
-      {shown.map((p, i) => block(p, i))}
+      {shown.map((p) => block(p))}
       {shown.length === 0 && <div className="k-flow-empty">Nothing on this tab</div>}
     </div>
   )

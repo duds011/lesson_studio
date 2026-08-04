@@ -16,7 +16,9 @@
 .k-rail-spacer{flex:1}
 
 /* — top bar — */
-.k-main{min-width:0}
+/* Capped and centred: stretched full-bleed across a wide monitor, every row
+   turns into a long thin band with dead space in it. */
+.k-main{min-width:0;width:100%;max-width:1240px;margin:0 auto}
 .k-top{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin-bottom:20px}
 .k-hello{color:var(--muted);font-size:13px;font-weight:600;margin:0}
 .k-name{font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-.045em;line-height:1.1;margin:2px 0 0}
@@ -415,6 +417,15 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
    KOKU 2.0 — settings, availability, payments
    ═══════════════════════════════════════════════════════════════════ */
 
+/* A single column of cards, capped and centred. Full-bleed on a wide monitor
+   stretches every card into a band of empty space. */
+.k-page{max-width:1160px;margin:0 auto}
+/* The stack's own gap does the spacing — section headings need no run-up. */
+.k-page .section-heading{margin:0 0 10px}
+.k-page .analytics-card{padding:15px 16px}
+.k-page .analytics-value{font-size:22px;margin-top:4px}
+.k-page .empty{padding:24px}
+
 /* Settings is one view at a time: a rail of tabs beside the active panel.
    Capped width — full-bleed cards on a wide monitor read as empty space. */
 .settings-wrap{max-width:1080px}
@@ -557,8 +568,15 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
    next block moves up beside it, so there are no columns to keep in sync.
    Width formula: for a row whose spans total 12 with (k-1) gaps between them,
    w/12*(100% + gap) - gap sums back to exactly 100%. */
-.k-flow{--g:12px;display:flex;flex-wrap:wrap;align-items:flex-start;gap:var(--g)}
+.k-flow{--g:12px;display:flex;flex-wrap:wrap;align-items:stretch;gap:var(--g)}
 .k-flow>*{width:calc((100% + var(--g)) * var(--w,12) / 12 - var(--g));min-width:0}
+/* Blocks on the same row share its height. Left to itself a short block beside
+   a tall one leaves a hole underneath it — the row is as tall as its tallest
+   block either way, so the short one may as well fill it. The studio's own
+   .k-pblock is excluded: its last child is a resize grip, not content. */
+.k-flow>*:not(.k-pblock){display:flex;flex-direction:column}
+.k-flow>*:not(.k-pblock)>:only-child,
+.k-flow>*:not(.k-pblock)>:last-child:not(:only-child){flex:1 1 auto;min-height:0}
 .k-flow.narrow>*{width:100%}
 @media(max-width:760px){.k-flow>*{width:100%}}
 .k-flow-empty{width:100%!important;border:1.5px dashed var(--line-strong);border-radius:11px;padding:14px;text-align:center;font-size:10px;color:var(--muted)}
@@ -652,7 +670,7 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 /* The student view is the subject of this page: it takes the stage, and the
    options sit in a narrow menu on the right. DOM order stays controls-then-
    preview; grid `order` puts the preview first visually. */
-.k-studio{display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:16px;align-items:start}
+.k-studio{display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:16px;align-items:start;max-width:1360px;margin:0 auto}
 @media(max-width:1080px){.k-studio{grid-template-columns:minmax(0,1fr)}}
 .k-studio-preview{order:1}
 .k-studio-controls{order:2;display:grid;gap:10px;min-width:0;position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;padding-right:2px}
@@ -902,7 +920,8 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 :is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*:nth-child(5){animation-delay:.24s}
 :is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.spark-grid,.k-hw,.k-preview-stats)>*:nth-child(n+6){animation-delay:.3s}
 /* Dragging is a live reorder — re-running entrances mid-drag would fight it. */
-.k-flow.dragging>*{animation:none}
+.k-flow.dragging{user-select:none}
+.k-flow.dragging>*{animation:none;cursor:grabbing}
 
 .k-hero,.k-phead,.k-thead{animation:k-rise .55s cubic-bezier(.2,.75,.3,1) backwards}
 
