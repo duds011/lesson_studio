@@ -35,6 +35,70 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   speaking: 'Speaking habits',
 }
 
+/** The student dashboard is tabbed; each block belongs to one tab. */
+export const DASH_TABS = ['Overview', 'Lessons', 'Progress'] as const
+export type DashTab = (typeof DASH_TABS)[number]
+
+export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
+  hero: 'Overview', stats: 'Overview', calendar: 'Overview', milestone: 'Overview',
+  lessons: 'Lessons', scores: 'Lessons', tests: 'Lessons',
+  progress: 'Progress', vocab: 'Progress', speaking: 'Progress',
+}
+
+/** Every block a teacher can switch off, and the field that switches it. */
+export const BLOCK_TOGGLE: Record<BlockId, keyof Brand> = {
+  hero: 'showHero',
+  stats: 'showStats',
+  lessons: 'showLessons',
+  calendar: 'showCalendar',
+  milestone: 'showMilestone',
+  scores: 'showScores',
+  progress: 'showProgress',
+  vocab: 'showVocab',
+  tests: 'showTests',
+  speaking: 'showSpeaking',
+}
+
+/**
+ * Every fixed string on the student portal, and what it says out of the box.
+ * The teacher edits these on the canvas; anything they haven't touched falls
+ * back to the default here, so adding a slot never leaves a blank on a page.
+ */
+export const TEXT_SLOTS = {
+  greeting: 'Welcome back,',
+  tabOverview: 'Overview',
+  tabLessons: 'Lessons',
+  tabProgress: 'Progress',
+  statLessons: 'Lessons',
+  statScore: 'Avg score',
+  statSpeaking: 'Speaking',
+  heroButton: 'Book a lesson',
+  lessonsTitle: 'Your lessons',
+  progressTitle: 'Your progress',
+  vocabTitle: 'Vocabulary',
+  milestoneTitle: 'Next milestone',
+  scoresTitle: 'Recent scores',
+  testsTitle: 'Practice tests',
+  speakingTitle: 'Speaking habits',
+  calendarTitle: 'Calendar',
+} as const
+export type TextSlot = keyof typeof TEXT_SLOTS
+export const TEXT_SLOT_IDS = Object.keys(TEXT_SLOTS) as TextSlot[]
+
+/** Which slots belong to which block — the studio groups them that way. */
+export const BLOCK_TEXT_SLOTS: Partial<Record<BlockId, TextSlot[]>> = {
+  hero: ['heroButton'],
+  stats: ['statLessons', 'statScore', 'statSpeaking'],
+  lessons: ['lessonsTitle'],
+  progress: ['progressTitle'],
+  vocab: ['vocabTitle'],
+  calendar: ['calendarTitle'],
+  milestone: ['milestoneTitle'],
+  scores: ['scoresTitle'],
+  tests: ['testsTitle'],
+  speaking: ['speakingTitle'],
+}
+
 /** Tabs on the student's lesson recap page. */
 export const LESSON_TABS = ['Progress', 'Lesson', 'Practice', 'Vocabulary'] as const
 export type LessonTab = (typeof LESSON_TABS)[number]
@@ -158,6 +222,13 @@ export type Brand = {
   lessonLayout: LessonLayout
   /** Milestone ladder, easiest first. */
   levels: Level[]
+  /** Every fixed string on the portal, defaults filled in. */
+  labels: Record<TextSlot, string>
+  showHero: boolean
+  showStats: boolean
+  showLessons: boolean
+  showCalendar: boolean
+  showScores: boolean
   showMilestone: boolean
   showProgress: boolean
   showVocab: boolean
@@ -196,6 +267,12 @@ export const DEFAULT_BRAND: Brand = {
   layout: DEFAULT_LAYOUT,
   lessonLayout: DEFAULT_LESSON_LAYOUT,
   levels: DEFAULT_LEVELS,
+  labels: { ...TEXT_SLOTS },
+  showHero: true,
+  showStats: true,
+  showLessons: true,
+  showCalendar: true,
+  showScores: true,
   showMilestone: true,
   showProgress: true,
   showVocab: true,
@@ -367,6 +444,12 @@ export function resolveBrand(raw: unknown): Brand {
     layout: resolveLayout(b.layout, b.heights),
     lessonLayout: resolveLessonLayout(b.lessonLayout),
     levels: resolveLevels(b.levels),
+    labels: resolveLabels(b.labels),
+    showHero: bool(b.showHero, DEFAULT_BRAND.showHero),
+    showStats: bool(b.showStats, DEFAULT_BRAND.showStats),
+    showLessons: bool(b.showLessons, DEFAULT_BRAND.showLessons),
+    showCalendar: bool(b.showCalendar, DEFAULT_BRAND.showCalendar),
+    showScores: bool(b.showScores, DEFAULT_BRAND.showScores),
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
@@ -436,6 +519,18 @@ function resolvePlacements<T extends string>(
   // Anything never placed keeps its default size, appended in default order.
   for (const p of defaults) if (!seen.has(p.id)) { seen.add(p.id); out.push({ ...p, ...(clampHeight(heights[p.id]) ? { h: clampHeight(heights[p.id]) } : {}) }) }
 
+  return out
+}
+
+/** Stored overrides merged onto the default wording, unknown slots dropped. */
+export function resolveLabels(raw: unknown): Record<TextSlot, string> {
+  const out = { ...TEXT_SLOTS } as Record<TextSlot, string>
+  if (raw && typeof raw === 'object') {
+    for (const slot of TEXT_SLOT_IDS) {
+      const v = (raw as any)[slot]
+      if (typeof v === 'string' && v.trim()) out[slot] = v.trim().slice(0, 40)
+    }
+  }
   return out
 }
 

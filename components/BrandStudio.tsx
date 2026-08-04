@@ -4,11 +4,13 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
-  ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_TABS,
-  PRESETS, FONTS, brandVars, backgroundClass, clampSpan, GRID_COLS, MIN_BLOCK_H, MAX_BLOCK_H,
+  ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
+  DASHBOARD_BLOCKS, DASH_BLOCK_TAB, DASH_TABS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_TABS,
+  PRESETS, FONTS, TEXT_SLOTS, brandVars, backgroundClass, clampSpan, GRID_COLS, MIN_BLOCK_H, MAX_BLOCK_H,
   MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
   type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle,
-  type BlockId, type LessonBlockId, type LessonTab, type Level, type Placement,
+  type BlockId, type DashTab, type LessonBlockId, type LessonTab, type Level, type Placement,
+  type TextSlot,
 } from '@/lib/brand'
 import { MilestoneTrack, MiniTrend, ScoreTrendChart, VocabLevelChart } from './portal/BrandCharts'
 import CountUp from './portal/CountUp'
@@ -17,12 +19,16 @@ const HEX = /^#[0-9a-fA-F]{6}$/
 /** Must match --g on .k-flow, since span maths is done against it. */
 const GAP = 12
 
-const BRAND_TEXT_LABELS = {
+const BRAND_TEXT_LABELS: Record<string, string> = {
   headline: 'Hero headline',
   welcome: 'Hero subtext',
   logoText: 'Portal mark',
   portalName: 'Portal name',
-} as const
+}
+
+/** Human name for whichever piece of text is being edited. */
+const textLabel = (key: string) =>
+  key.startsWith('label:') ? `“${TEXT_SLOTS[key.slice(6) as TextSlot]}”` : BRAND_TEXT_LABELS[key] ?? 'Text'
 
 const HERO_STYLES: { value: HeroStyle; label: string; hint: string }[] = [
   { value: 'forest', label: 'Solid', hint: 'Filled accent panel' },
@@ -46,12 +52,18 @@ const PROPS: { value: PropStyle; label: string }[] = [
   { value: 'minimal', label: 'Minimal' }, { value: 'none', label: 'None' },
 ]
 
-const TOGGLES: { key: keyof Brand; label: string; hint: string }[] = [
-  { key: 'showMilestone', label: 'Milestone tracker', hint: 'Progress toward their next level' },
-  { key: 'showProgress', label: 'Progress charts', hint: 'Score, talk-time and vocabulary trends' },
-  { key: 'showVocab', label: 'Vocabulary breakdown', hint: 'Words learned by level' },
-  { key: 'showTests', label: 'Practice tests', hint: 'Tests you publish to them' },
-  { key: 'showSpeaking', label: 'Speaking habits', hint: 'Pace and thinking time' },
+/** One row per block: the switch, and whatever that block can be told. */
+const TOGGLES: { id: BlockId; hint: string }[] = [
+  { id: 'hero', hint: 'The headline panel at the top' },
+  { id: 'stats', hint: 'Lessons, average score, speaking share' },
+  { id: 'lessons', hint: 'The rolling list of their lessons' },
+  { id: 'calendar', hint: 'The month, with lesson days marked' },
+  { id: 'milestone', hint: 'Progress toward their next level' },
+  { id: 'scores', hint: 'The last few lesson scores' },
+  { id: 'progress', hint: 'Score, talk-time and vocabulary trends' },
+  { id: 'vocab', hint: 'Words learned by level' },
+  { id: 'tests', hint: 'Tests you publish to them' },
+  { id: 'speaking', hint: 'Pace and thinking time' },
 ]
 
 /** Stand-in data so the preview charts look like a real student's. */
@@ -76,6 +88,32 @@ function moveTo<T extends string>(list: Placement<T>[], id: T, to: number): Plac
   return next
 }
 
+/**
+ * One tool drawer in the studio menu: a header that opens its body. Defined at
+ * module scope on purpose — a component declared inside BrandStudio would be a
+ * new type on every render, and React would remount the open drawer (and drop
+ * the caret out of whatever field was being typed in) on every keystroke.
+ */
+function Tool({ id, icon, tone = '', title, desc, openId, onOpen, children }: {
+  id: string; icon: string; tone?: string; title: string; desc: string
+  openId: string | null; onOpen: (id: string | null) => void; children: React.ReactNode
+}) {
+  const open = openId === id
+  return (
+    <section className={`k-sec k-tool ${open ? 'open' : ''}`}>
+      <button type="button" className="k-tool-head" aria-expanded={open} onClick={() => onOpen(open ? null : id)}>
+        <span className={`k-sec-icon ${tone}`} aria-hidden>{icon}</span>
+        <span className="k-tool-title">
+          <strong>{title}</strong>
+          {open && <span className="desc">{desc}</span>}
+        </span>
+        <span className="k-tool-chev" aria-hidden>▾</span>
+      </button>
+      {open && <div className="k-tool-body">{children}</div>}
+    </section>
+  )
+}
+
 export default function BrandStudio({ initial, teacherName }: { initial: Brand; teacherName: string }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -85,6 +123,11 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [view, setView] = useState<'dashboard' | 'lesson'>('dashboard')
   const [lessonTab, setLessonTab] = useState<LessonTab>('Progress')
+  const [dashTab, setDashTab] = useState<DashTab>('Overview')
+  /** One tool open at a time — the menu is a stack of drawers, not a page. */
+  const [tool, setTool] = useState<string | null>('presets')
+  /** Which block's options are unfolded under its switch. */
+  const [openOptions, setOpenOptions] = useState<BlockId | null>(null)
 
   /** While dragging, the flow renders this working order so blocks reflow live. */
   const [dragId, setDragId] = useState<AnyId | null>(null)
@@ -119,8 +162,19 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   }
 
   // ── the placements being edited ─────────────────────────────────────────
-  /** Recap blocks belong to a tab; only that tab's blocks are arranged here. */
-  const inScope = (p: Placement<any>) => scope === 'dash' || LESSON_BLOCK_TAB[p.id as LessonBlockId] === lessonTab
+  /** Blocks the student won't see: switched off here, gone from the canvas. */
+  const hidden = new Set<BlockId>(DASHBOARD_BLOCKS.filter((id) => !brand[BLOCK_TOGGLE[id]]))
+
+  /**
+   * Both views are tabbed, and each tab is arranged on its own. A block that
+   * is switched off is out of scope entirely — the student's page drops it, so
+   * the canvas has to as well, or the teacher is arranging something nobody
+   * will ever see.
+   */
+  const inScope = (p: Placement<any>) =>
+    scope === 'dash'
+      ? DASH_BLOCK_TAB[p.id as BlockId] === dashTab && !hidden.has(p.id as BlockId)
+      : LESSON_BLOCK_TAB[p.id as LessonBlockId] === lessonTab
   const stored: Placement<any>[] = scope === 'dash' ? brand.layout : brand.lessonLayout
   const visible = stored.filter(inScope)
   const shown = order ?? visible
@@ -270,17 +324,28 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
    * effect below only writes when the value changes from somewhere else (a
    * preset, or Reset).
    */
-  type TextKey = 'headline' | 'welcome' | 'logoText' | 'portalName'
+  type TextKey = 'headline' | 'welcome' | 'logoText' | 'portalName' | `label:${TextSlot}`
+  const valueOf = (key: TextKey) =>
+    key.startsWith('label:') ? brand.labels[key.slice(6) as TextSlot] : (brand as any)[key] as string
+  const writeText = (key: TextKey, text: string) => {
+    if (key.startsWith('label:')) {
+      const slot = key.slice(6) as TextSlot
+      set('labels', { ...brand.labels, [slot]: text.trim() || TEXT_SLOTS[slot] })
+    } else {
+      set(key as 'headline', text as never)
+    }
+  }
   const textEls = useRef<Partial<Record<TextKey, HTMLElement | null>>>({})
   const mounted = useRef<Partial<Record<TextKey, string>>>({})
-  const pin = (key: TextKey) => (mounted.current[key] ??= brand[key])
+  const pin = (key: TextKey) => (mounted.current[key] ??= valueOf(key))
 
   useEffect(() => {
     for (const key of Object.keys(textEls.current) as TextKey[]) {
       const el = textEls.current[key]
-      if (el && el.innerText !== brand[key]) el.innerText = brand[key]
+      const v = valueOf(key)
+      if (el && v !== undefined && el.innerText !== v) el.innerText = v
     }
-  }, [brand.headline, brand.welcome, brand.logoText, brand.portalName])
+  })
 
   const editable = (key: TextKey, { multiline = false, max = 120 }: { multiline?: boolean; max?: number } = {}) => ({
     ref: (el: HTMLElement | null) => { textEls.current[key] = el },
@@ -288,8 +353,8 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     suppressContentEditableWarning: true,
     spellCheck: false,
     role: 'textbox',
-    'aria-label': BRAND_TEXT_LABELS[key],
-    title: `Click to edit — ${BRAND_TEXT_LABELS[key]}`,
+    'aria-label': textLabel(key),
+    title: `Click to edit — ${textLabel(key)}`,
     className: 'k-inline',
     // Editing beats dragging: this text must take the pointer, and the block
     // underneath must not read the click as the start of a move.
@@ -319,7 +384,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         sel?.removeAllRanges()
         sel?.addRange(range)
       }
-      set(key, text as never)
+      writeText(key, text)
     },
   })
 
@@ -334,13 +399,6 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const removeLevel = (i: number) => setLevels(brand.levels.filter((_, k) => k !== i))
   /** Re-order and de-duplicate once the teacher has stopped typing numbers. */
   const settleLevels = () => setLevels(resolveLevels(brand.levels))
-
-  const hidden = new Set<BlockId>()
-  if (!brand.showMilestone) hidden.add('milestone')
-  if (!brand.showProgress) hidden.add('progress')
-  if (!brand.showVocab) hidden.add('vocab')
-  if (!brand.showTests) hidden.add('tests')
-  if (!brand.showSpeaking) hidden.add('speaking')
 
   const vars = brandVars(brand)
   const heroBg =
@@ -359,7 +417,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             <strong {...editable('headline', { multiline: true, max: 90 })} style={{ whiteSpace: 'pre-line' }}>{pin('headline')}</strong>
             <p {...editable('welcome', { multiline: true, max: 200 })} style={{ color: heroSub }}>{pin('welcome')}</p>
             <span className="k-preview-btn" style={{ background: brand.heroStyle === 'light' ? brand.accent : '#fff', color: brand.heroStyle === 'light' ? '#fff' : brand.accent }}>
-              Book a lesson
+              <span {...editable('label:heroButton', { max: 40 })}>{pin('label:heroButton')}</span>
             </span>
             {brand.props !== 'none' && (
               <div className="k-preview-props" aria-hidden>
@@ -373,15 +431,15 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       case 'stats':
         return (
           <div className="k-preview-stats">
-            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span>Lessons</span><b><CountUp value={12} /></b></div>
-            <div style={{ background: 'var(--c-blue)' }}><span>Avg score</span><b><CountUp value={7.4} decimals={1} /></b></div>
-            <div style={{ background: 'var(--c-purple)' }}><span>Speaking</span><b><CountUp value={41} suffix="%" /></b></div>
+            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span {...editable('label:statLessons', { max: 24 })}>{pin('label:statLessons')}</span><b><CountUp value={12} /></b></div>
+            <div style={{ background: 'var(--c-blue)' }}><span {...editable('label:statScore', { max: 24 })}>{pin('label:statScore')}</span><b><CountUp value={7.4} decimals={1} /></b></div>
+            <div style={{ background: 'var(--c-purple)' }}><span {...editable('label:statSpeaking', { max: 24 })}>{pin('label:statSpeaking')}</span><b><CountUp value={41} suffix="%" /></b></div>
           </div>
         )
       case 'lessons':
         return (
           <div className="k-preview-card">
-            <div className="k-preview-row"><strong>Your lessons</strong><span>12</span></div>
+            <div className="k-preview-row"><strong {...editable('label:lessonsTitle', { max: 40 })}>{pin('label:lessonsTitle')}</strong><span>12</span></div>
             <div className="k-preview-lessons">
               <div><i style={{ background: brand.accent }} />Contrasting ideas<span>7.2</span></div>
               <div><i style={{ background: `${brand.accent}66` }} />Giving reasons<span>6.8</span></div>
@@ -391,21 +449,21 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       case 'progress':
         return (
           <div className="k-preview-card k-chart-card">
-            <div className="k-preview-row"><strong>Your progress</strong><span>Score</span></div>
+            <div className="k-preview-row"><strong {...editable('label:progressTitle', { max: 40 })}>{pin('label:progressTitle')}</strong><span>Score</span></div>
             <MiniTrend points={SAMPLE_TREND} color={brand.accent} height={chartH(h, 62)} />
           </div>
         )
       case 'vocab':
         return (
           <div className="k-preview-card k-chart-card">
-            <div className="k-preview-row"><strong>Vocabulary</strong><span>45 words</span></div>
+            <div className="k-preview-row"><strong {...editable('label:vocabTitle', { max: 40 })}>{pin('label:vocabTitle')}</strong><span>45 words</span></div>
             <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH(h, 72)} compact />
           </div>
         )
       case 'calendar':
         return (
           <div className="k-preview-card">
-            <div className="k-preview-row"><strong>August</strong><span>22</span></div>
+            <div className="k-preview-row"><strong {...editable('label:calendarTitle', { max: 40 })}>{pin('label:calendarTitle')}</strong><span>22</span></div>
             <div className="k-preview-cal" aria-hidden>
               {Array.from({ length: 14 }).map((_, i) => (
                 <i key={i} style={i === 4 ? { background: brand.accent } : undefined} />
@@ -417,7 +475,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         const sample = Math.max(1, Math.round((brand.levels[brand.levels.length - 1]?.lessons ?? 10) * 0.45))
         return (
           <div className="k-preview-card">
-            <div className="k-preview-row"><strong>Next milestone</strong><span>{brand.levels.find((l) => l.lessons > sample)?.name ?? brand.levels[brand.levels.length - 1]?.name}</span></div>
+            <div className="k-preview-row"><strong {...editable('label:milestoneTitle', { max: 40 })}>{pin('label:milestoneTitle')}</strong><span>{brand.levels.find((l) => l.lessons > sample)?.name ?? brand.levels[brand.levels.length - 1]?.name}</span></div>
             <div style={{ marginTop: 10 }}>
               <MilestoneTrack levels={brand.levels} lessonCount={sample} color={brand.accent} />
             </div>
@@ -427,14 +485,14 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       case 'scores':
         return (
           <div className="k-preview-card k-chart-card">
-            <div className="k-preview-row"><strong>Recent scores</strong><span>Last 5</span></div>
+            <div className="k-preview-row"><strong {...editable('label:scoresTitle', { max: 40 })}>{pin('label:scoresTitle')}</strong><span>Last 5</span></div>
             <ScoreTrendChart points={SAMPLE_SCORES} color={brand.accent} height={chartH(h, 74)} compact />
           </div>
         )
       case 'tests':
-        return <div className="k-preview-card"><div className="k-preview-row"><strong>Practice tests</strong><span>2</span></div></div>
+        return <div className="k-preview-card"><div className="k-preview-row"><strong {...editable('label:testsTitle', { max: 40 })}>{pin('label:testsTitle')}</strong><span>2</span></div></div>
       case 'speaking':
-        return <div className="k-preview-card"><div className="k-preview-row"><strong>Speaking habits</strong><span>54 wpm</span></div></div>
+        return <div className="k-preview-card"><div className="k-preview-row"><strong {...editable('label:speakingTitle', { max: 40 })}>{pin('label:speakingTitle')}</strong><span>54 wpm</span></div></div>
     }
   }
 
@@ -601,14 +659,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     <div className="k-studio">
       {/* ── controls ── */}
       <div className="k-studio-controls">
-        <section className="k-sec">
-          <div className="k-sec-head">
-            <span className="k-sec-icon" aria-hidden>✨</span>
-            <div>
-              <h3>Presets</h3>
-              <p className="desc">A complete look — colour, type, texture and how the blocks are arranged.</p>
-            </div>
-          </div>
+        <Tool id="presets" icon="✨" tone="" title="Presets" desc="A complete look — colour, type, texture and how the blocks are arranged." openId={tool} onOpen={setTool}>
 
           <div className="k-presets">
             {PRESETS.map((p) => {
@@ -633,16 +684,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               )
             })}
           </div>
-        </section>
+        </Tool>
 
-        <section className="k-sec">
-          <div className="k-sec-head">
-            <span className="k-sec-icon" aria-hidden>🎨</span>
-            <div>
-              <h3>Colour &amp; type</h3>
-              <p className="desc">Used for buttons, active states and headings.</p>
-            </div>
-          </div>
+        <Tool id="colour" icon="🎨" tone="" title="Colour &amp; type" desc="Used for buttons, active states and headings." openId={tool} onOpen={setTool}>
 
           <div className="k-swatches">
             {ACCENT_PRESETS.map((p) => (
@@ -688,16 +732,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               </button>
             ))}
           </div>
-        </section>
+        </Tool>
 
-        <section className="k-sec">
-          <div className="k-sec-head">
-            <span className="k-sec-icon y" aria-hidden>✍️</span>
-            <div>
-              <h3>Words</h3>
-              <p className="desc">What your students read when they sign in — or click the text on the preview and type there.</p>
-            </div>
-          </div>
+        <Tool id="words" icon="✍️" tone="y" title="Words" desc="The hero lines and the portal name — or click them on the preview and type there." openId={tool} onOpen={setTool}>
 
           <label className="k-field">
             <span>Portal name</span>
@@ -718,16 +755,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             <span>Hero subtext</span>
             <textarea className="k-input" rows={3} value={brand.welcome} onChange={(e) => set('welcome', e.target.value)} maxLength={200} placeholder={DEFAULT_BRAND.welcome} />
           </label>
-        </section>
+        </Tool>
 
-        <section className="k-sec">
-          <div className="k-sec-head">
-            <span className="k-sec-icon b" aria-hidden>🖼️</span>
-            <div>
-              <h3>Background &amp; shape</h3>
-              <p className="desc">The texture behind the portal and how round everything is.</p>
-            </div>
-          </div>
+        <Tool id="texture" icon="🖼️" tone="b" title="Background &amp; shape" desc="The texture behind the portal and how round everything is." openId={tool} onOpen={setTool}>
 
           <span className="k-field-label" style={{ marginTop: 0 }}>Background</span>
           <div className="k-preset-grid">
@@ -758,82 +788,128 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               </button>
             ))}
           </div>
-        </section>
+        </Tool>
 
-        <section className="k-sec">
-          <div className="k-sec-head">
-            <span className="k-sec-icon p" aria-hidden>🧩</span>
-            <div>
-              <h3>Sections</h3>
-              <p className="desc">Hide anything that doesn&rsquo;t fit how you teach. Hidden blocks keep their place in the layout.</p>
-            </div>
-          </div>
-
+        <Tool id="sections" icon="🧩" tone="p" title="Sections" desc="Switch off anything that doesn't fit how you teach — it leaves the canvas and the student's page together. Each one keeps its own settings under Options." openId={tool} onOpen={setTool}>
           <div className="k-toggles">
-            {TOGGLES.map((t) => (
-              <div className="k-toggle-row" key={t.key}>
-                <div>
-                  <div className="k-hw-title">{t.label}</div>
-                  <div className="k-hw-due">{t.hint}</div>
+            {TOGGLES.map((t) => {
+              const key = BLOCK_TOGGLE[t.id]
+              const on = Boolean(brand[key])
+              const slots = BLOCK_TEXT_SLOTS[t.id] ?? []
+              const hasOptions = slots.length > 0 || t.id === 'milestone'
+              const unfolded = openOptions === t.id
+              return (
+                <div className={`k-toggle-block ${unfolded ? 'open' : ''}`} key={t.id}>
+                  <div className="k-toggle-row">
+                    <div>
+                      <div className="k-hw-title">{BLOCK_LABELS[t.id]}</div>
+                      <div className="k-hw-due">{t.hint}</div>
+                    </div>
+                    {hasOptions && (
+                      <button
+                        type="button"
+                        className="k-opt-btn"
+                        aria-expanded={unfolded}
+                        onClick={() => setOpenOptions(unfolded ? null : t.id)}
+                      >
+                        Options <span aria-hidden>▾</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={on}
+                      aria-label={BLOCK_LABELS[t.id]}
+                      className={`k-switch ${on ? 'on' : ''}`}
+                      onClick={() => set(key, !on as never)}
+                    />
+                  </div>
+
+                  {hasOptions && unfolded && (
+                    <div className="k-toggle-opts">
+                      {slots.map((slot) => (
+                        <label className="k-field" key={slot}>
+                          <span>{TEXT_SLOTS[slot]}</span>
+                          <input
+                            value={brand.labels[slot]}
+                            onChange={(e) => set('labels', { ...brand.labels, [slot]: e.target.value.slice(0, 40) })}
+                            onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...brand.labels, [slot]: TEXT_SLOTS[slot] }) }}
+                            placeholder={TEXT_SLOTS[slot]}
+                          />
+                        </label>
+                      ))}
+
+                      {t.id === 'milestone' && (
+                        <>
+                          <span className="k-field-label">Levels</span>
+                          <p className="desc" style={{ marginBottom: 8 }}>What each level is called and how many lessons it takes. The bar fills as they get there.</p>
+                          <div className="k-levels">
+                            {brand.levels.map((lvl, i) => (
+                              <div className="k-level-row" key={i}>
+                                <input
+                                  value={lvl.name}
+                                  onChange={(e) => patchLevel(i, { name: e.target.value.slice(0, 24) })}
+                                  placeholder="Level name"
+                                  aria-label={`Level ${i + 1} name`}
+                                />
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={MAX_LEVEL_LESSONS}
+                                  value={lvl.lessons}
+                                  onChange={(e) => patchLevel(i, { lessons: Number(e.target.value) })}
+                                  onBlur={settleLevels}
+                                  aria-label={`Lessons to reach ${lvl.name || `level ${i + 1}`}`}
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-danger-ghost btn-sm"
+                                  onClick={() => removeLevel(i)}
+                                  disabled={brand.levels.length <= 1}
+                                  aria-label={`Remove ${lvl.name || `level ${i + 1}`}`}
+                                >✕</button>
+                              </div>
+                            ))}
+                          </div>
+                          <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 9 }} onClick={addLevel} disabled={brand.levels.length >= MAX_LEVELS}>
+                            + Add level
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={Boolean(brand[t.key])}
-                  aria-label={t.label}
-                  className={`k-switch ${brand[t.key] ? 'on' : ''}`}
-                  onClick={() => set(t.key, !brand[t.key] as never)}
-                />
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </section>
 
-        <section className="k-sec">
-          <div className="k-sec-head">
-            <span className="k-sec-icon y" aria-hidden>🏆</span>
-            <div>
-              <h3>Milestones</h3>
-              <p className="desc">The ladder behind the milestone block: what each level is called and how many lessons it takes. The bar fills as they get there.</p>
+          <div className="k-toggle-block" style={{ marginTop: 4 }}>
+            <div className="k-toggle-row">
+              <div>
+                <div className="k-hw-title">Tab names</div>
+                <div className="k-hw-due">What the three tabs are called</div>
+              </div>
+              <button type="button" className="k-opt-btn" aria-expanded={openOptions === ('tabs' as any)} onClick={() => setOpenOptions(openOptions === ('tabs' as any) ? null : ('tabs' as any))}>
+                Options <span aria-hidden>▾</span>
+              </button>
             </div>
-          </div>
-
-          <div className="k-levels">
-            {brand.levels.map((lvl, i) => (
-              <div className="k-level-row" key={i}>
-                <input
-                  value={lvl.name}
-                  onChange={(e) => patchLevel(i, { name: e.target.value.slice(0, 24) })}
-                  placeholder="Level name"
-                  aria-label={`Level ${i + 1} name`}
-                />
-                <input
-                  type="number"
-                  min={1}
-                  max={MAX_LEVEL_LESSONS}
-                  value={lvl.lessons}
-                  onChange={(e) => patchLevel(i, { lessons: Number(e.target.value) })}
-                  onBlur={settleLevels}
-                  aria-label={`Lessons to reach ${lvl.name || `level ${i + 1}`}`}
-                />
-                <button
-                  type="button"
-                  className="btn btn-danger-ghost btn-sm"
-                  onClick={() => removeLevel(i)}
-                  disabled={brand.levels.length <= 1}
-                  aria-label={`Remove ${lvl.name || `level ${i + 1}`}`}
-                >✕</button>
+            {openOptions === ('tabs' as any) && (
+              <div className="k-toggle-opts">
+                {(['tabOverview', 'tabLessons', 'tabProgress'] as TextSlot[]).map((slot) => (
+                  <label className="k-field" key={slot}>
+                    <span>{TEXT_SLOTS[slot]}</span>
+                    <input
+                      value={brand.labels[slot]}
+                      onChange={(e) => set('labels', { ...brand.labels, [slot]: e.target.value.slice(0, 40) })}
+                      onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...brand.labels, [slot]: TEXT_SLOTS[slot] }) }}
+                      placeholder={TEXT_SLOTS[slot]}
+                    />
+                  </label>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-
-          <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 9 }} onClick={addLevel} disabled={brand.levels.length >= MAX_LEVELS}>
-            + Add level
-          </button>
-          {!brand.showMilestone && (
-            <p className="desc" style={{ marginTop: 9 }}>The milestone block is hidden right now — turn it back on under Sections.</p>
-          )}
-        </section>
+        </Tool>
 
         {error && <p className="k-error">{error}</p>}
 
@@ -870,10 +946,20 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               <div className="k-preview-top">
                 <span {...editable('logoText', { max: 4 })} className="k-preview-mark k-inline" style={{ background: `${brand.accent}22`, color: brand.accent }}>{pin('logoText')}</span>
                 <div>
-                  <div className="k-preview-hello">Welcome back,</div>
+                  <div {...editable('label:greeting', { max: 40 })} className="k-inline k-preview-hello">{pin('label:greeting')}</div>
                   <div className="k-preview-name">Derek</div>
                 </div>
                 <span {...editable('portalName', { max: 40 })} className="k-inline k-preview-portal">{pin('portalName')}</span>
+              </div>
+              <div className="k-dtabs">
+                {DASH_TABS.map((t) => {
+                  const slot = `tab${t}` as TextSlot
+                  return (
+                    <button key={t} type="button" className={dashTab === t ? 'on' : ''} onClick={() => setDashTab(t)}>
+                      <span {...editable(`label:${slot}`, { max: 24 })} onPointerDown={(e) => { e.stopPropagation() }}>{pin(`label:${slot}`)}</span>
+                    </button>
+                  )
+                })}
               </div>
               {flow()}
             </>

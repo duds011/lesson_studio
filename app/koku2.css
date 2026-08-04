@@ -70,6 +70,14 @@
 .k-stat.yellow .k-chip{background:rgba(91,67,2,.16)}
 .k-stat-sub{font-size:12px;margin:7px 0 0;opacity:.82;line-height:1.45}
 
+/* — student dashboard tabs — */
+.k-dtabs{display:flex;gap:5px;background:var(--surface);border-radius:999px;padding:5px;box-shadow:var(--shadow-soft);margin:16px 0 14px;overflow-x:auto;scrollbar-width:none}
+.k-dtabs::-webkit-scrollbar{display:none}
+.k-dtabs button{border:0;background:transparent;border-radius:999px;padding:10px 20px;font:inherit;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:.16s ease}
+.k-dtabs button:hover{color:var(--ink)}
+.k-dtabs button.on{background:var(--forest);color:#fff}
+.k-flow[hidden]{display:none}
+
 /* — lesson pillar —
    Closed: one button. Open: a column that rolls under a reading line, the card
    on the line proud of the rest. The size change is transform-only so the
@@ -666,6 +674,29 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 .k-inline:focus{box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 0 3px var(--forest);background:rgba(255,255,255,.1)}
 .k-inline:empty::before{content:attr(data-placeholder);opacity:.5}
 .k-preview-portal{margin-left:auto;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:-.01em;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── the studio menu: one drawer at a time ── */
+.k-tool{padding:0;overflow:hidden}
+.k-tool-head{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;background:transparent;font:inherit;color:inherit;cursor:pointer;padding:13px 14px}
+.k-tool-head:hover{background:var(--surface-2)}
+.k-tool.open .k-tool-head{background:transparent;padding-bottom:6px}
+.k-tool-title{display:grid;gap:2px;min-width:0}
+.k-tool-title strong{font-size:13.5px;font-weight:700;letter-spacing:-.02em}
+.k-tool-title .desc{font-size:11px;line-height:1.45;color:var(--muted)}
+.k-tool-chev{margin-left:auto;color:var(--muted);font-size:12px;transition:transform .2s ease}
+.k-tool.open .k-tool-chev{transform:rotate(180deg)}
+.k-tool-body{padding:2px 14px 15px}
+.k-studio-controls .k-tool .k-sec-icon{width:30px;height:30px;border-radius:10px;font-size:14px;flex:0 0 auto}
+
+/* ── a block's own settings, folded under its switch ── */
+.k-toggle-block{border-top:1px solid var(--line)}
+.k-toggle-block:first-child{border-top:0}
+.k-toggle-block .k-toggle-row{border-top:0}
+.k-opt-btn{border:0;background:var(--surface-2);border-radius:999px;padding:5px 10px;font:inherit;font-size:10.5px;font-weight:800;color:var(--muted);cursor:pointer;white-space:nowrap;transition:.14s ease}
+.k-opt-btn:hover{color:var(--ink)}
+.k-toggle-block.open .k-opt-btn{background:var(--brand-soft);color:var(--forest)}
+.k-toggle-block.open .k-opt-btn span{display:inline-block;transform:rotate(180deg)}
+.k-toggle-opts{padding:2px 0 12px;display:grid;gap:2px}
 
 /* ── milestone ladder editor ── */
 .k-levels{display:grid;gap:7px}

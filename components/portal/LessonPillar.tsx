@@ -13,16 +13,15 @@ export type PillarLesson = {
 }
 
 /**
- * The lesson list as a drum. Closed it is one button; open it is a column of
- * cards that scrolls under a fixed reading line — the card at that line is at
- * full size, and the ones above and below shrink and tilt away as they roll
- * past. Scroll-snap parks a card on the line rather than between two.
+ * The lesson list as a drum: a column of cards, earliest first, rolling under
+ * a reading line. The card on the line is at full size; the ones that pass
+ * above it shrink, fade and tip away. Scroll-snap parks a card on the line
+ * rather than between two.
  *
  * The transform is recomputed from the scroll position rather than toggled by
  * an observer: a card halfway past should look halfway past.
  */
-export default function LessonPillar({ lessons, open: openInitially = false }: { lessons: PillarLesson[]; open?: boolean }) {
-  const [open, setOpen] = useState(openInitially)
+export default function LessonPillar({ lessons }: { lessons: PillarLesson[] }) {
   const [active, setActive] = useState(0)
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
@@ -58,7 +57,6 @@ export default function LessonPillar({ lessons, open: openInitially = false }: {
   }, [])
 
   useEffect(() => {
-    if (!open) return
     const scroller = scrollerRef.current
     if (!scroller) return
     // Painted straight from the scroll event rather than through rAF: scroll
@@ -71,7 +69,7 @@ export default function LessonPillar({ lessons, open: openInitially = false }: {
       scroller.removeEventListener('scroll', paint)
       window.removeEventListener('resize', paint)
     }
-  }, [open, paint, lessons.length])
+  }, [paint, lessons.length])
 
   if (lessons.length === 0) {
     return (
@@ -84,53 +82,28 @@ export default function LessonPillar({ lessons, open: openInitially = false }: {
   }
 
   return (
-    <div className={`k-pillar ${open ? 'open' : ''}`}>
-      <button type="button" className="k-pillar-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className="k-pillar-btn-head">
-          <span className="k-pillar-btn-mark" aria-hidden>📚</span>
-          <span className="k-pillar-btn-copy">
-            <strong>Your lessons</strong>
-            <small>{lessons.length} lesson{lessons.length === 1 ? '' : 's'} · earliest first</small>
-          </span>
-          <span className="k-pillar-chev" aria-hidden>▾</span>
-        </span>
-
-        {/* Closed, the button is the whole card: a peek at the top of the
-            stack, so the block reads as a deck waiting to be opened. */}
-        {!open && (
-          <span className="k-pillar-peek" aria-hidden>
-            {lessons.slice(-3).reverse().map((l, i) => (
-              <span key={l.id} className="k-pillar-peek-row" style={{ ['--i' as any]: i }}>
-                <b>{l.tag}</b>{l.title}
+    <div className="k-pillar">
+      <div className="k-pillar-scroll" ref={scrollerRef}>
+        {lessons.map((l, i) => (
+          <Link
+            key={l.id}
+            href={`/student/lessons/${l.id}`}
+            className={`k-pillar-card ${i === active ? 'on' : ''}`}
+            onFocus={() => setActive(i)}
+          >
+            <span className="k-pillar-num">{l.tag}</span>
+            <span className="k-pillar-title">{l.title}</span>
+            <span className="k-pillar-meta">{l.meta}</span>
+            {l.score != null && (
+              <span className="k-pillar-foot">
+                <span className="k-hw-track"><i style={{ width: `${Math.round((l.score / 10) * 100)}%` }} /></span>
+                <b>{l.score}/10</b>
               </span>
-            ))}
-          </span>
-        )}
-      </button>
-
-      {open && (
-        <div className="k-pillar-scroll" ref={scrollerRef}>
-          {lessons.map((l, i) => (
-            <Link
-              key={l.id}
-              href={`/student/lessons/${l.id}`}
-              className={`k-pillar-card ${i === active ? 'on' : ''}`}
-              onFocus={() => setActive(i)}
-            >
-              <span className="k-pillar-num">{l.tag}</span>
-              <span className="k-pillar-title">{l.title}</span>
-              <span className="k-pillar-meta">{l.meta}</span>
-              {l.score != null && (
-                <span className="k-pillar-foot">
-                  <span className="k-hw-track"><i style={{ width: `${Math.round((l.score / 10) * 100)}%` }} /></span>
-                  <b>{l.score}/10</b>
-                </span>
-              )}
-              <span className="k-pillar-go">Open recap →</span>
-            </Link>
-          ))}
-        </div>
-      )}
+            )}
+            <span className="k-pillar-go">Open recap →</span>
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }

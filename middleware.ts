@@ -38,6 +38,21 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
+  /**
+   * Redirect, keeping whatever cookies the refresh above just set.
+   *
+   * getUser() rotates the refresh token. A plain NextResponse.redirect is a
+   * new response, so the rotated token never reaches the browser: it keeps
+   * the one that has just been spent, and the next request that needs a
+   * refresh fails — the student is bounced to /login mid-session, usually
+   * from a link they clicked an hour after signing in.
+   */
+  const goTo = (to: string) => {
+    const res = NextResponse.redirect(new URL(to, request.url))
+    supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c))
+    return res
+  }
+
   // Cached per request — several checks below need the same row.
   let profileCache: { role: string | null; onboarded: boolean } | null | undefined
   const profileOf = async () => {
@@ -65,7 +80,9 @@ export async function middleware(request: NextRequest) {
     path === '/api/zoom/status'
   if (isProtectedApi) {
     if ((await roleOf()) !== 'teacher') {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+      const res = NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+      supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c))
+      return res
     }
     return supabaseResponse
   }
@@ -81,7 +98,7 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/teacher')
   // Not logged in → send to login for any gated route.
   if (!user && (isTeacherArea || isStudentPortal || isOnboarding)) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return goTo('/login')
   }
 
   if (user) {
@@ -92,28 +109,28 @@ export async function middleware(request: NextRequest) {
       const dest = profile?.role === 'teacher'
         ? (profile.onboarded ? '/' : '/onboarding')
         : '/student/dashboard'
-      return NextResponse.redirect(new URL(dest, request.url))
+      return goTo(dest)
     }
 
     // Keep teachers and students in their own areas.
     if (isTeacherArea && profile?.role !== 'teacher') {
-      return NextResponse.redirect(new URL('/student/dashboard', request.url))
+      return goTo('/student/dashboard')
     }
     if (isStudentPortal && profile?.role !== 'student') {
-      return NextResponse.redirect(new URL('/', request.url))
+      return goTo('/')
     }
     if (isOnboarding && profile?.role !== 'teacher') {
-      return NextResponse.redirect(new URL('/student/dashboard', request.url))
+      return goTo('/student/dashboard')
     }
 
     // A teacher who hasn't finished setup gets sent through it first. The
     // Google OAuth callback returns to /settings, so that stays reachable.
     if (profile?.role === 'teacher' && !profile.onboarded && isTeacherArea) {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+      return goTo('/onboarding')
     }
     // …and once done, /onboarding is no longer a place to be.
     if (profile?.role === 'teacher' && profile.onboarded && isOnboarding) {
-      return NextResponse.redirect(new URL('/', request.url))
+      return goTo('/')
     }
   }
 

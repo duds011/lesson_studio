@@ -12,7 +12,8 @@ import LessonPillar, { PillarLesson } from '@/components/portal/LessonPillar'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
 import CalendarCard from '@/components/koku/CalendarCard'
-import { levelProgress, resolveBrand, type BlockId } from '@/lib/brand'
+import DashboardTabs from '@/components/portal/DashboardTabs'
+import { DASH_BLOCK_TAB, DASH_TABS, levelProgress, resolveBrand, type BlockId, type DashTab } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
 
@@ -146,6 +147,9 @@ export default async function StudentDashboard() {
   }
 
 
+  /** Every fixed string on this page is the teacher's to change. */
+  const L = brand.labels
+
   // Each arrangeable block, keyed by id. The teacher's layout decides which
   // column each one sits in and in what order — see lib/brand.ts.
   const blocks: Partial<Record<BlockId, React.ReactNode>> = {
@@ -158,7 +162,7 @@ export default async function StudentDashboard() {
                 ? `You're ${milestone.remaining} lesson${milestone.remaining === 1 ? '' : 's'} away from ${milestone.label}. Keep the streak going.`
                 : brand.welcome}
             </p>
-            <Link href="/student/book" className="k-hero-btn">Book a lesson</Link>
+            <Link href="/student/book" className="k-hero-btn">{L.heroButton}</Link>
 
             {brand.props !== 'none' && (
               <div className="k-hero-art" aria-hidden>
@@ -191,7 +195,7 @@ export default async function StudentDashboard() {
             <div className="k-stat yellow">
               <div className="k-stat-head">
                 <Icon d="M4 5h16v14H4zM4 9h16M9 9v10" />
-                <span>Lessons</span>
+                <span>{L.statLessons}</span>
               </div>
               <div className="k-stat-val">
                 <b><CountUp value={lessonCount} /></b>
@@ -203,7 +207,7 @@ export default async function StudentDashboard() {
             <div className="k-stat blue">
               <div className="k-stat-head">
                 <Icon d="M12 3v18M5 10l7-7 7 7" />
-                <span>Avg score</span>
+                <span>{L.statScore}</span>
               </div>
               <div className="k-stat-val">
                 <b>{avgScore != null ? <CountUp value={avgScore} decimals={1} /> : '—'}</b>
@@ -217,7 +221,7 @@ export default async function StudentDashboard() {
             <div className="k-stat purple">
               <div className="k-stat-head">
                 <Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" />
-                <span>Speaking</span>
+                <span>{L.statSpeaking}</span>
               </div>
               <div className="k-stat-val">
                 <b>{latestTalk != null ? <CountUp value={latestTalk} /> : '—'}<span style={{ fontSize: 19 }}>%</span></b>
@@ -230,12 +234,17 @@ export default async function StudentDashboard() {
           </div>
       </>
     ),
-    lessons: <LessonPillar lessons={pillarLessons} />,
+    lessons: (
+      <>
+          <div className="k-sec-head"><h2>{L.lessonsTitle}</h2><span className="k-link">{pillarLessons.length} in all</span></div>
+          <LessonPillar lessons={pillarLessons} />
+      </>
+    ),
     progress: (
       <>
           {brand.showProgress && lessonCount >= 2 && (
             <>
-              <div className="k-sec-head"><h2>Your progress</h2></div>
+              <div className="k-sec-head"><h2>{L.progressTitle}</h2></div>
               <div className="k-card">
                 <ProgressCharts
                   lessons={rows.map((l) => {
@@ -263,7 +272,7 @@ export default async function StudentDashboard() {
       <>
           {brand.showVocab && totalVocab > 0 && (
             <>
-              <div className="k-sec-head"><h2>Vocabulary</h2><span className="k-link">{totalVocab} words</span></div>
+              <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{totalVocab} words</span></div>
               <div className="k-card k-chart-card">
                 <VocabLevelChart distribution={vocabDistribution} height={heightOf('vocab', 170)} />
               </div>
@@ -280,7 +289,7 @@ export default async function StudentDashboard() {
       <>
           {brand.showMilestone && <div className="k-card">
             <div className="k-card-head">
-              <h3>Next milestone</h3>
+              <h3>{L.milestoneTitle}</h3>
               <span className="k-link">{milestone.label}</span>
             </div>
             <MilestoneTrack levels={brand.levels} lessonCount={lessonCount} color={brand.accent} />
@@ -297,7 +306,7 @@ export default async function StudentDashboard() {
           {scoreTrend.length > 0 && (
             <div className="k-card k-chart-card">
               <div className="k-card-head">
-                <h3>Recent scores</h3>
+                <h3>{L.scoresTitle}</h3>
                 <span className="k-link">Last {scoreTrend.length}</span>
               </div>
               <ScoreTrendChart points={scoreTrend} color={brand.accent} height={heightOf('scores', 150)} />
@@ -310,7 +319,7 @@ export default async function StudentDashboard() {
           {brand.showTests && (tests ?? []).length > 0 && (
             <div className="k-card">
               <div className="k-card-head">
-                <h3>Practice tests</h3>
+                <h3>{L.testsTitle}</h3>
                 <span className="k-link">{(tests as any[]).length}</span>
               </div>
               <div className="k-hw">
@@ -339,7 +348,7 @@ export default async function StudentDashboard() {
       <>
           {brand.showSpeaking && (avgWpm != null || avgThinkSec != null) && (
             <div className="k-card">
-              <div className="k-card-head"><h3>Speaking habits</h3></div>
+              <div className="k-card-head"><h3>{L.speakingTitle}</h3></div>
               <div style={{ display: 'grid', gap: 11 }}>
                 {avgWpm != null && (
                   <div className="k-hw-top">
@@ -363,24 +372,34 @@ export default async function StudentDashboard() {
   // Whether each block has anything to render — mirrors the conditions inside
   // the blocks above, and decides whether it takes a slot in the flow at all.
   const hasContent: Record<BlockId, boolean> = {
-    hero: true,
-    stats: true,
-    lessons: true,
+    hero: brand.showHero,
+    stats: brand.showStats,
+    lessons: brand.showLessons,
     progress: brand.showProgress && lessonCount >= 2,
     vocab: brand.showVocab && totalVocab > 0,
-    calendar: true,
+    calendar: brand.showCalendar,
     milestone: brand.showMilestone,
-    scores: scoreTrend.length > 0,
+    scores: brand.showScores && scoreTrend.length > 0,
     tests: brand.showTests && (tests ?? []).length > 0,
     speaking: brand.showSpeaking && (avgWpm != null || avgThinkSec != null),
   }
+
+  /** The teacher's order, minus anything switched off or with nothing to say. */
+  const placed = brand.layout.filter(({ id }) => hasContent[id])
+  const tabs = DASH_TABS
+    .map((tab) => ({
+      id: tab as DashTab,
+      label: L[`tab${tab}` as 'tabOverview' | 'tabLessons' | 'tabProgress'],
+      blocks: placed.filter(({ id }) => DASH_BLOCK_TAB[id] === tab),
+    }))
+    .filter((t) => t.blocks.length > 0)
 
   return (
     <>
       {/* ── top bar ── */}
       <div className="k-top">
         <div>
-          <p className="k-hello">Welcome back,</p>
+          <p className="k-hello">{L.greeting}</p>
           <h1 className="k-name">{firstName}</h1>
         </div>
         <div className="k-top-tools">
@@ -399,24 +418,27 @@ export default async function StudentDashboard() {
           <StudentLessonsBar credits={credits} packages={buyPackages} />
           <PaymentMethodsPanel methods={paymentMethods} />
         </div>
-
-        {/* Each block sits where the teacher put it, at the width and height
-            they gave it. A sized block becomes a size container so its own
-            text scales to the box — see .k-fit in koku2.css.
-
-            A block with nothing to show is left out of the flow entirely:
-            emitting an empty one would still take up its share of the row and
-            leave a hole beside its neighbours. */}
-        {brand.layout.filter(({ id }) => hasContent[id]).map(({ id, w, h }) => (
-          <div
-            key={id}
-            style={{ ['--w' as any]: w, ...(h ? { height: h } : null) }}
-            className={h ? 'k-fit' : undefined}
-          >
-            {h ? <div className={`k-fit-body ${CHART_BLOCKS.has(id) ? '' : 'k-block-sized'}`}>{blocks[id]}</div> : blocks[id]}
-          </div>
-        ))}
       </div>
+
+      {/* One tab at a time, so the page is a screen rather than a scroll.
+          Inside a tab each block sits where the teacher put it, at the width
+          and height they gave it; a sized block becomes a size container so
+          its text scales to the box — see .k-fit in koku2.css. */}
+      <DashboardTabs
+        tabs={tabs.map(({ id, label, blocks: placements }) => ({
+          id,
+          label,
+          content: placements.map(({ id: blockId, w, h }) => (
+            <div
+              key={blockId}
+              style={{ ['--w' as any]: w, ...(h ? { height: h } : null) }}
+              className={h ? 'k-fit' : undefined}
+            >
+              {h ? <div className={`k-fit-body ${CHART_BLOCKS.has(blockId) ? '' : 'k-block-sized'}`}>{blocks[blockId]}</div> : blocks[blockId]}
+            </div>
+          )),
+        }))}
+      />
     </>
   )
 }
