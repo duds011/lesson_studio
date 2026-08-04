@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { saveAvailability } from '@/app/actions/availability'
+import { SettingsPanel } from '@/components/SettingsTabs'
 import type { BookingConfig, Range } from '@/lib/booking'
 
 // Monday-first display order mapped to weekday indices (0=Sun … 6=Sat).
@@ -11,10 +12,31 @@ const WEEK: { idx: number; label: string }[] = [
 ]
 
 const inputStyle: React.CSSProperties = { border: '1px solid var(--line)', borderRadius: 8, padding: '8px 10px', background: '#fff', width: '100%', font: 'inherit' }
-const timeStyle: React.CSSProperties = { ...inputStyle, width: 'auto', padding: '6px 8px' }
 
 type OverrideRow = { id: string; date: string; ranges: Range[] }
 const uid = () => Math.random().toString(36).slice(2, 9)
+
+/** Time ranges for one day, laid out inline so a day is a single row. */
+function RangeEditor({ ranges, onEdit, onRemove, onAdd }: {
+  ranges: Range[]
+  onEdit: (ri: number, w: 0 | 1, v: string) => void
+  onRemove: (ri: number) => void
+  onAdd: () => void
+}) {
+  return (
+    <div className="k-ranges">
+      {ranges.map((r, ri) => (
+        <span className="k-time-chip" key={ri}>
+          <input type="time" value={r[0]} step={300} onChange={(e) => onEdit(ri, 0, e.target.value)} aria-label="Start time" />
+          <span style={{ color: 'var(--muted)' }}>–</span>
+          <input type="time" value={r[1]} step={300} onChange={(e) => onEdit(ri, 1, e.target.value)} aria-label="End time" />
+          <button className="k-chip-x" onClick={() => onRemove(ri)} aria-label="Remove range">✕</button>
+        </span>
+      ))}
+      <button className="btn btn-ghost btn-sm" onClick={onAdd}>+ Add</button>
+    </div>
+  )
+}
 
 export default function AvailabilityEditor({ config }: { config: BookingConfig }) {
   const [pending, startTransition] = useTransition()
@@ -71,115 +93,118 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
     })
   }
 
-  const RangeEditor = ({ ranges, onEdit, onRemove, onAdd }: { ranges: Range[]; onEdit: (ri: number, w: 0 | 1, v: string) => void; onRemove: (ri: number) => void; onAdd: () => void }) => (
-    <div style={{ display: 'grid', gap: 6 }}>
-      {ranges.map((r, ri) => (
-        <div key={ri} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span className="k-time-chip">
-            <input type="time" value={r[0]} step={300} onChange={(e) => onEdit(ri, 0, e.target.value)} aria-label="Start time" />
-            <span style={{ color: 'var(--muted)' }}>–</span>
-            <input type="time" value={r[1]} step={300} onChange={(e) => onEdit(ri, 1, e.target.value)} aria-label="End time" />
-          </span>
-          <button className="btn btn-danger-ghost btn-sm" onClick={() => onRemove(ri)} aria-label="Remove range">✕</button>
-        </div>
-      ))}
-      <button className="btn btn-ghost btn-sm" onClick={onAdd} style={{ justifySelf: 'start' }}>+ Add time range</button>
+  /* Both views edit the same config, so each carries the same save bar. */
+  const SaveBar = (
+    <div className="k-save-bar">
+      {error && <span style={{ color: 'var(--red)', fontSize: 12 }}>{error}</span>}
+      {saved && <span style={{ fontSize: 12, color: 'var(--green)' }}>✓ Saved — your booking page is updated</span>}
+      <button className="btn btn-primary btn-sm" disabled={pending} onClick={save}>{pending ? 'Saving…' : 'Save changes'}</button>
     </div>
   )
 
   return (
-    <section className="k-sec" id="availability">
-      <div className="k-sec-head">
-        <span className="k-sec-icon p" aria-hidden>🕒</span>
-        <div>
-          <h3>Availability &amp; booking</h3>
-          <p className="desc">Control when students can book, how long lessons are, and your working hours. Applies to your booking page and the student portal.</p>
-        </div>
-      </div>
-
-      {/* General */}
-      <div className="k-avail-grid">
-        <div className="field" style={{ gridColumn: '1 / -1' }}><label>Lesson name</label><input value={title} onChange={(e) => { dirty(); setTitle(e.target.value) }} placeholder="Language lesson" style={inputStyle} /></div>
-        <div className="field"><label>Lesson length (min)</label><input type="number" min="5" step="5" value={durationMin} onChange={(e) => { dirty(); setDuration(e.target.value) }} style={inputStyle} /></div>
-        <div className="field"><label>Slot interval (min)</label><input type="number" min="5" step="5" value={incrementMin} onChange={(e) => { dirty(); setIncrement(e.target.value) }} style={inputStyle} /></div>
-        <div className="field"><label>Min notice (hours)</label><input type="number" min="0" step="1" value={minNoticeHours} onChange={(e) => { dirty(); setNotice(e.target.value) }} style={inputStyle} /></div>
-        <div className="field"><label>Buffer before (min)</label><input type="number" min="0" step="5" value={bufferBeforeMin} onChange={(e) => { dirty(); setBufBefore(e.target.value) }} style={inputStyle} /></div>
-        <div className="field"><label>Buffer after (min)</label><input type="number" min="0" step="5" value={bufferAfterMin} onChange={(e) => { dirty(); setBufAfter(e.target.value) }} style={inputStyle} /></div>
-        <div className="field"><label>Max lessons / day</label><input type="number" min="1" step="1" value={maxPerDay} onChange={(e) => { dirty(); setMaxPerDay(e.target.value) }} style={inputStyle} /></div>
-        <div className="field"><label>Booking window (days)</label><input type="number" min="1" step="1" value={daysAhead} onChange={(e) => { dirty(); setDaysAhead(e.target.value) }} style={inputStyle} /></div>
-      </div>
-
-      {/* Weekly hours */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <h4 style={{ margin: 0, fontSize: 14 }}>Weekly hours</h4>
-        <span style={{ fontSize: 11, color: 'var(--muted)' }}>Times are {config.tz.replace('_', ' ')}</span>
-        <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={copyMondayToWeekdays} title="Copy Monday's hours to Tue–Fri">Copy Mon → weekdays</button>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8, marginBottom: 20 }}>
-        {WEEK.map(({ idx, label }) => {
-          const ranges = weekly[idx]
-          const on = ranges.length > 0
-          return (
-            <div key={idx} className="avail-row" style={{ display: 'grid', gap: 12, alignItems: 'start' }}>
-              <div className="k-day-toggle">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={on}
-                  aria-label={`${label} availability`}
-                  className={`k-switch ${on ? 'on' : ''}`}
-                  onClick={() => toggleDay(idx, !on)}
-                />
-                {label}
-              </div>
-              {on ? (
-                <RangeEditor ranges={ranges} onEdit={(ri, w, v) => editRange(idx, ri, w, v)} onRemove={(ri) => removeRange(idx, ri)} onAdd={() => addRange(idx)} />
-              ) : (
-                <span className="k-unavail">Unavailable</span>
-              )}
+    <>
+      {/* ── Booking preference ─────────────────────────────────────── */}
+      <SettingsPanel id="booking">
+        <section className="k-sec">
+          <div className="k-sec-head">
+            <span className="k-sec-icon p" aria-hidden>⚙️</span>
+            <div>
+              <h3>Lesson defaults</h3>
+              <p className="desc">How long lessons are and how far ahead students can book you.</p>
             </div>
-          )
-        })}
-      </div>
+          </div>
 
-      {/* Date overrides */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-        <h4 style={{ margin: 0, fontSize: 14 }}>Date overrides</h4>
-        <span style={{ fontSize: 11, color: 'var(--muted)' }}>Days off or one-off hours that replace the weekly schedule.</span>
-        <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={addOverride}>+ Add date</button>
-      </div>
-      <div style={{ display: 'grid', gap: 10, marginBottom: 8 }}>
-        {overrides.length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>No overrides. Add a date to block a day off or set special hours.</p>}
-        {overrides.map((o) => {
-          const off = o.ranges.length === 0
-          return (
-            <div key={o.id} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 12, display: 'grid', gap: 10, background: 'var(--surface)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <input type="date" value={o.date} onChange={(e) => setOverride(o.id, { date: e.target.value })} style={{ ...inputStyle, width: 'auto' }} />
-                <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', padding: 3, borderRadius: 8 }}>
-                  <button className="btn btn-sm" style={{ border: 0, background: off ? '#fff' : 'transparent', color: off ? 'var(--red)' : 'var(--muted)' }} onClick={() => setOverride(o.id, { ranges: [] })}>Day off</button>
-                  <button className="btn btn-sm" style={{ border: 0, background: !off ? '#fff' : 'transparent', color: !off ? 'var(--ink)' : 'var(--muted)' }} onClick={() => { if (off) setOverride(o.id, { ranges: [['09:00', '17:00']] }) }}>Custom hours</button>
+          <div className="k-avail-grid">
+            <div className="field" style={{ gridColumn: '1 / -1' }}><label>Lesson name</label><input value={title} onChange={(e) => { dirty(); setTitle(e.target.value) }} placeholder="Language lesson" style={inputStyle} /></div>
+            <div className="field"><label>Lesson length (min)</label><input type="number" min="5" step="5" value={durationMin} onChange={(e) => { dirty(); setDuration(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>Slot interval (min)</label><input type="number" min="5" step="5" value={incrementMin} onChange={(e) => { dirty(); setIncrement(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>Min notice (hours)</label><input type="number" min="0" step="1" value={minNoticeHours} onChange={(e) => { dirty(); setNotice(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>Buffer before (min)</label><input type="number" min="0" step="5" value={bufferBeforeMin} onChange={(e) => { dirty(); setBufBefore(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>Buffer after (min)</label><input type="number" min="0" step="5" value={bufferAfterMin} onChange={(e) => { dirty(); setBufAfter(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>Max lessons / day</label><input type="number" min="1" step="1" value={maxPerDay} onChange={(e) => { dirty(); setMaxPerDay(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>Booking window (days)</label><input type="number" min="1" step="1" value={daysAhead} onChange={(e) => { dirty(); setDaysAhead(e.target.value) }} style={inputStyle} /></div>
+          </div>
+
+          {SaveBar}
+        </section>
+      </SettingsPanel>
+
+      {/* ── Availability ───────────────────────────────────────────── */}
+      <SettingsPanel id="availability">
+        <section className="k-sec">
+          <div className="k-sec-head">
+            <span className="k-sec-icon p" aria-hidden>🕒</span>
+            <div>
+              <h3>Availability</h3>
+              <p className="desc">When students can book you. Times are {config.tz.replace('_', ' ')}.</p>
+            </div>
+            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto', flex: '0 0 auto' }} onClick={copyMondayToWeekdays} title="Copy Monday's hours to Tue–Fri">Copy Mon → weekdays</button>
+          </div>
+
+          <div className="k-week">
+            {WEEK.map(({ idx, label }) => {
+              const ranges = weekly[idx]
+              const on = ranges.length > 0
+              return (
+                <div key={idx} className="avail-row">
+                  <div className="k-day-toggle">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={on}
+                      aria-label={`${label} availability`}
+                      className={`k-switch ${on ? 'on' : ''}`}
+                      onClick={() => toggleDay(idx, !on)}
+                    />
+                    {label}
+                  </div>
+                  {on ? (
+                    <RangeEditor ranges={ranges} onEdit={(ri, w, v) => editRange(idx, ri, w, v)} onRemove={(ri) => removeRange(idx, ri)} onAdd={() => addRange(idx)} />
+                  ) : (
+                    <span className="k-unavail">Unavailable</span>
+                  )}
                 </div>
-                <button className="btn btn-danger-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => removeOverride(o.id)}>Remove</button>
-              </div>
-              {!off && (
-                <RangeEditor
-                  ranges={o.ranges}
-                  onEdit={(ri, w, v) => setOverride(o.id, { ranges: o.ranges.map((r, i) => i === ri ? (w === 0 ? [v, r[1]] : [r[0], v]) as Range : r) })}
-                  onRemove={(ri) => setOverride(o.id, { ranges: o.ranges.filter((_, i) => i !== ri) })}
-                  onAdd={() => setOverride(o.id, { ranges: [...o.ranges, ['09:00', '17:00']] })}
-                />
-              )}
-            </div>
-          )
-        })}
-      </div>
+              )
+            })}
+          </div>
 
-      {error && <p style={{ color: 'var(--red)', fontSize: 12, margin: '8px 0 0' }}>{error}</p>}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-        {saved && <span style={{ fontSize: 12, color: 'var(--green)' }}>✓ Saved — your booking page is updated</span>}
-        <button className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }} disabled={pending} onClick={save}>{pending ? 'Saving…' : 'Save availability'}</button>
-      </div>
-    </section>
+          <div className="k-subhead">
+            <h4>Date overrides</h4>
+            <span>Days off or one-off hours that replace the weekly schedule.</span>
+            <button className="btn btn-ghost btn-sm" onClick={addOverride}>+ Add date</button>
+          </div>
+
+          <div style={{ display: 'grid', gap: 10 }}>
+            {overrides.length === 0 && <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>No overrides. Add a date to block a day off or set special hours.</p>}
+            {overrides.map((o) => {
+              const off = o.ranges.length === 0
+              return (
+                <div key={o.id} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 12, display: 'grid', gap: 10, background: 'var(--surface)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <input type="date" value={o.date} onChange={(e) => setOverride(o.id, { date: e.target.value })} style={{ ...inputStyle, width: 'auto' }} />
+                    <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', padding: 3, borderRadius: 8 }}>
+                      <button className="btn btn-sm" style={{ border: 0, background: off ? '#fff' : 'transparent', color: off ? 'var(--red)' : 'var(--muted)' }} onClick={() => setOverride(o.id, { ranges: [] })}>Day off</button>
+                      <button className="btn btn-sm" style={{ border: 0, background: !off ? '#fff' : 'transparent', color: !off ? 'var(--ink)' : 'var(--muted)' }} onClick={() => { if (off) setOverride(o.id, { ranges: [['09:00', '17:00']] }) }}>Custom hours</button>
+                    </div>
+                    <button className="btn btn-danger-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => removeOverride(o.id)}>Remove</button>
+                  </div>
+                  {!off && (
+                    <RangeEditor
+                      ranges={o.ranges}
+                      onEdit={(ri, w, v) => setOverride(o.id, { ranges: o.ranges.map((r, i) => i === ri ? (w === 0 ? [v, r[1]] : [r[0], v]) as Range : r) })}
+                      onRemove={(ri) => setOverride(o.id, { ranges: o.ranges.filter((_, i) => i !== ri) })}
+                      onAdd={() => setOverride(o.id, { ranges: [...o.ranges, ['09:00', '17:00']] })}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {SaveBar}
+        </section>
+      </SettingsPanel>
+    </>
   )
 }

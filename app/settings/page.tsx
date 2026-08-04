@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import AppNav from '@/components/AppNav'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
-import SettingsNav from '@/components/SettingsNav'
+import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,24 +42,22 @@ export default async function SettingsPage() {
   return (
     <>
       <AppNav email={token?.email} connected={Boolean(token)} />
-      <main className="wrap page-fade">
-        <header className="k-thead">
-          <div>
+      <main className="wrap settings-wrap page-fade">
+        <header className="k-thead slim">
+          <div className="k-thead-title">
             <span className="k-phead-eyebrow">Workspace</span>
             <h1>Settings</h1>
-            <p>Keep scheduling, meetings, and payments connected — and control when students can book you.</p>
           </div>
-          <div className="k-hero-art" style={{ right: -30, opacity: .45 }} aria-hidden>
-            <span className="k-orb" style={{ width: 86, height: 86, right: 16, top: 10 }} />
-            <span className="k-ring" style={{ width: 46, height: 46, right: 96, top: 84 }} />
+          <div className="k-hero-art" style={{ right: -20, opacity: .4 }} aria-hidden>
+            <span className="k-orb" style={{ width: 64, height: 64, right: 14, top: -6 }} />
+            <span className="k-ring" style={{ width: 36, height: 36, right: 80, top: 44 }} />
           </div>
         </header>
 
-        <div className="settings-layout">
-          <SettingsNav />
-          <div className="settings-stack">
-            {/* Connectors gallery */}
-            <section className="k-sec" id="connections">
+        <SettingsTabs>
+          {/* ── Connections ─────────────────────────────────────────── */}
+          <SettingsPanel id="connections">
+            <section className="k-sec">
               <div className="k-sec-head">
                 <span className="k-sec-icon" aria-hidden>🔗</span>
                 <div>
@@ -104,9 +102,11 @@ export default async function SettingsPage() {
                 </div>
               </section>
             )}
+          </SettingsPanel>
 
-            {/* Meeting platform */}
-            <section className="k-sec" id="booking">
+          {/* ── Booking preference: meeting platform + lesson defaults ── */}
+          <SettingsPanel id="booking">
+            <section className="k-sec">
               <div className="k-sec-head">
                 <span className="k-sec-icon b" aria-hidden>🎥</span>
                 <div>
@@ -131,11 +131,11 @@ export default async function SettingsPage() {
                 </form>
               </div>
             </section>
+          </SettingsPanel>
 
-            {/* Availability & booking rules */}
-            <AvailabilityEditor config={bookingConfig} />
-          </div>
-        </div>
+          {/* Lesson defaults (booking) + working hours (availability) */}
+          <AvailabilityEditor config={bookingConfig} />
+        </SettingsTabs>
       </main>
     </>
   )

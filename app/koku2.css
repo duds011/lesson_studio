@@ -292,8 +292,8 @@
    Pin it to the container instead. */
 .settings-stack{grid-template-columns:minmax(0,1fr)}
 /* Availability day rows: label + time ranges, stacking on narrow screens. */
-.avail-row{grid-template-columns:minmax(0,150px) minmax(0,1fr)}
-@media(max-width:560px){.avail-row{grid-template-columns:minmax(0,1fr)}}
+.avail-row{display:grid;grid-template-columns:minmax(0,140px) minmax(0,1fr)}
+@media(max-width:560px){.avail-row{grid-template-columns:minmax(0,1fr);gap:6px}}
 
 /* Teacher student rows. These columns used to be an inline style on the
    element, which no media query could override — hence the class. */
@@ -415,27 +415,36 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
    KOKU 2.0 — settings, availability, payments
    ═══════════════════════════════════════════════════════════════════ */
 
-/* section nav rail */
-.settings-layout{display:grid!important;grid-template-columns:196px minmax(0,1fr);gap:24px;align-items:start}
-@media(max-width:860px){.settings-layout{grid-template-columns:minmax(0,1fr);gap:14px}}
-.settings-index{position:sticky;top:14px;display:grid;gap:4px;background:var(--surface);border-radius:var(--r-lg);padding:8px;box-shadow:var(--shadow-soft)}
-.settings-index a{display:block;padding:11px 14px;border-radius:13px;font-size:12.5px;font-weight:700;color:var(--muted);transition:.16s ease}
-.settings-index a:hover{background:var(--surface-2);color:var(--ink)}
-.settings-index a.active{background:var(--forest);color:#fff}
+/* Settings is one view at a time: a rail of tabs beside the active panel.
+   Capped width — full-bleed cards on a wide monitor read as empty space. */
+.settings-wrap{max-width:1080px}
+.settings-layout{display:grid!important;grid-template-columns:190px minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:860px){.settings-layout{grid-template-columns:minmax(0,1fr);gap:12px}}
+.settings-index{position:sticky;top:14px;display:grid;gap:3px;background:var(--surface);border-radius:var(--r-lg);padding:7px;box-shadow:var(--shadow-soft)}
+.settings-index a,.settings-index button{display:block;width:100%;text-align:left;border:0;background:transparent;font:inherit;cursor:pointer;padding:10px 13px;border-radius:12px;font-size:12.5px;font-weight:700;color:var(--muted);transition:.16s ease}
+.settings-index a:hover,.settings-index button:hover{background:var(--surface-2);color:var(--ink)}
+.settings-index a.active,.settings-index button.active{background:var(--forest);color:#fff}
 @media(max-width:860px){
   .settings-index{position:static;grid-auto-flow:column;grid-auto-columns:max-content;overflow-x:auto;gap:6px}
-  .settings-index a{white-space:nowrap}
+  .settings-index a,.settings-index button{white-space:nowrap;width:auto}
 }
-.settings-stack{gap:16px}
+.settings-stack{gap:14px}
+.settings-view{display:grid;gap:14px}
+.settings-view[hidden]{display:none}
 
 /* section card */
-.k-sec{background:var(--surface);border:0;border-radius:var(--r-xl);padding:26px 28px;box-shadow:var(--shadow-soft)}
-@media(max-width:560px){.k-sec{padding:20px 18px}}
-.k-sec-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px}
-.k-sec-icon{flex:0 0 auto;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:19px;background:var(--brand-soft)}
+.k-sec{background:var(--surface);border:0;border-radius:var(--r-xl);padding:22px 24px;box-shadow:var(--shadow-soft)}
+@media(max-width:560px){.k-sec{padding:18px 16px}}
+.k-sec-head{display:flex;align-items:flex-start;justify-content:flex-start;gap:12px;margin:0 0 16px}
+.k-sec-icon{flex:0 0 auto;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:17px;background:var(--brand-soft)}
 .k-sec-icon.y{background:#fdf1cd}.k-sec-icon.b{background:#dbeafe}.k-sec-icon.p{background:#f3e3ff}
 .k-sec h3{font-size:17px;font-weight:700;letter-spacing:-.028em;margin:0 0 3px}
 .k-sec .desc,.k-sec p.desc{font-size:12.5px;color:var(--muted);margin:0;line-height:1.6;max-width:62ch}
+
+/* connector cards — tighter than the stock .connector-card in globals */
+.k-sec .connector-grid{margin-top:0;gap:12px}
+.k-sec .connector-card{min-height:0;padding:16px;gap:8px}
+.k-sec .connector-logo{width:40px;height:40px;border-radius:10px}
 
 /* selectable option cards (calendar, platform) */
 .k-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
@@ -447,17 +456,31 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 .k-choice small{display:block;font-weight:500;font-size:11px;color:var(--muted);margin-top:1px}
 
 /* availability */
-.k-avail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:12px;margin-bottom:22px}
-.avail-row{border-top:1px solid var(--line);padding:12px 0}
-.k-day-toggle{display:flex;align-items:center;gap:10px;font-weight:700;font-size:13px;padding-top:5px}
+.k-avail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px 12px;margin-bottom:16px}
+.k-week{display:grid;grid-template-columns:minmax(0,1fr);margin-bottom:6px}
+.avail-row{border-top:1px solid var(--line);padding:8px 0;align-items:center;gap:12px}
+.avail-row:first-child{border-top:0;padding-top:0}
+.k-day-toggle{display:flex;align-items:center;gap:10px;font-weight:700;font-size:13px}
+.k-ranges{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.k-chip-x{border:0;background:transparent;color:var(--muted);font:inherit;font-size:10px;line-height:1;padding:4px;border-radius:6px;cursor:pointer;transition:.14s ease}
+.k-chip-x:hover{color:var(--red);background:var(--surface)}
+
+/* sub-section header inside a card */
+.k-subhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.k-subhead h4{margin:0;font-size:13.5px;font-weight:700;letter-spacing:-.02em}
+.k-subhead span{font-size:11.5px;color:var(--muted)}
+.k-subhead .btn{margin-left:auto}
+
+/* save row pinned to the bottom of a settings card */
+.k-save-bar{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .k-switch{position:relative;width:38px;height:22px;border-radius:999px;background:var(--line-strong);border:0;cursor:pointer;transition:.18s ease;flex:0 0 auto}
 .k-switch.on{background:var(--forest)}
 .k-switch::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.18s ease}
 .k-switch.on::after{transform:translateX(16px)}
-.k-time-chip{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);border-radius:12px;padding:7px 10px}
-.k-time-chip input{border:1.5px solid transparent;background:var(--surface);border-radius:9px;padding:6px 8px;font:inherit;font-size:12.5px;font-weight:600;width:84px;outline:0}
+.k-time-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border-radius:11px;padding:4px 6px}
+.k-time-chip input{border:1.5px solid transparent;background:var(--surface);border-radius:8px;padding:5px 7px;font:inherit;font-size:12.5px;font-weight:600;width:82px;outline:0}
 .k-time-chip input:focus{border-color:var(--forest)}
-.k-unavail{color:var(--muted);font-size:12.5px;padding-top:9px}
+.k-unavail{color:var(--muted);font-size:12.5px}
 
 /* payments */
 .k-pay-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}

@@ -1,35 +1,26 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCreditsByStudent } from '@/lib/credits'
-import { normalizeMethods } from '@/lib/payment-methods'
 import PaymentsManager, { ManagedPayment, StudentOption, Credit } from '@/components/portal/PaymentsManager'
-import PaymentMethodsManager from '@/components/portal/PaymentMethodsManager'
-import StripeManager, { Pkg } from '@/components/portal/StripeManager'
 
 export const dynamic = 'force-dynamic'
 
 const TRIAL_ID = '__trial__'
 const OTHER_ID = '__other__'
 
-export default async function PaymentsPage({ searchParams }: { searchParams: Promise<{ stripe?: string }> }) {
-  const { stripe: stripeStatus } = await searchParams
+export default async function PaymentsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: students }, { data: payments }, { data: profile }, { data: pkgRows }, creditMap] = await Promise.all([
+  const [{ data: students }, { data: payments }, { data: profile }, creditMap] = await Promise.all([
     supabase.from('students').select('id, full_name').eq('teacher_id', user.id).order('full_name'),
     supabase.from('payments').select('*').eq('teacher_id', user.id),
-    supabase.from('profiles').select('currency, payment_methods, stripe_account_id, stripe_charges_enabled').eq('id', user.id).single(),
-    supabase.from('lesson_packages').select('*').eq('teacher_id', user.id).order('created_at', { ascending: true }),
+    supabase.from('profiles').select('currency').eq('id', user.id).single(),
     getCreditsByStudent(supabase, user.id),
   ])
 
   const currency = (profile as any)?.currency ?? 'USD'
-  const paymentMethods = normalizeMethods((profile as any)?.payment_methods)
-  const stripeConnected = Boolean((profile as any)?.stripe_account_id)
-  const chargesEnabled = Boolean((profile as any)?.stripe_charges_enabled)
-  const packages: Pkg[] = (pkgRows ?? []).map((p: any) => ({ id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency, active: p.active }))
   const nameById = new Map((students ?? []).map((s: any) => [s.id, s.full_name]))
 
   const managed: ManagedPayment[] = (payments ?? []).map((p: any) => ({
@@ -66,22 +57,6 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
       </header>
 
       <PaymentsManager students={studentOptions} credits={credits} payments={managed} currency={currency} />
-
-      {/* Card payments (Stripe) — coming soon */}
-      <section className="k-sec">
-        <div className="k-sec-head" style={{ marginBottom: 0 }}>
-          <span className="k-sec-icon b" aria-hidden>💳</span>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <h3>Card payments</h3>
-              <span className="pill" style={{ background: 'var(--brand-soft)', color: 'var(--forest)' }}>Coming soon</span>
-            </div>
-            <p className="desc">Sell lesson packages and take card payments with automatic payouts. For now, record payments manually above and share your payment details below.</p>
-          </div>
-        </div>
-      </section>
-
-      <PaymentMethodsManager initial={paymentMethods} />
     </div>
   )
 }
