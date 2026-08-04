@@ -4,13 +4,16 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveOnboarding, completeOnboarding } from '@/app/actions/onboarding'
 import { ACCENT_PRESETS, type Brand } from '@/lib/brand'
+import {
+  TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
+} from '@/lib/teaching-platform'
 
 type Props = {
   initial: {
     fullName: string
     teachingLanguage: string | null
     timezone: string
-    meetingPlatform: 'google_meet' | 'zoom'
+    teachingPlatform: TeachingPlatform
     step: number
     brand: Brand
   }
@@ -18,7 +21,13 @@ type Props = {
   zoomConnected: boolean
 }
 
-const LANGUAGES = ['Japanese', 'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Korean', 'Mandarin', 'Arabic']
+const LANGUAGES = [
+  'Arabic', 'Cantonese', 'Dutch', 'English', 'French', 'German', 'Greek', 'Hebrew', 'Hindi',
+  'Indonesian', 'Italian', 'Japanese', 'Korean', 'Mandarin', 'Polish', 'Portuguese', 'Russian',
+  'Spanish', 'Swedish', 'Thai', 'Turkish', 'Ukrainian', 'Vietnamese',
+]
+/** Sentinel for the dropdown's last row, which reveals a free-text field. */
+const OTHER = '__other__'
 
 const ZONES = [
   'Asia/Tokyo', 'Asia/Seoul', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Dubai',
@@ -27,7 +36,7 @@ const ZONES = [
   'Australia/Sydney',
 ]
 
-const STEPS = ['What you teach', 'Where you meet', 'Your calendar', 'Your student view'] as const
+const STEPS = ['What you teach', 'Where you meet', 'How lessons arrive', 'Your student view'] as const
 
 export default function OnboardingFlow({ initial, googleConnected, zoomConnected }: Props) {
   const router = useRouter()
@@ -36,16 +45,19 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
   // Resume where they left off, but never past the last step.
   const [step, setStep] = useState(Math.min(initial.step, STEPS.length - 1))
-  const [language, setLanguage] = useState(initial.teachingLanguage ?? '')
-  const [customLanguage, setCustomLanguage] = useState(
-    initial.teachingLanguage && !LANGUAGES.includes(initial.teachingLanguage) ? initial.teachingLanguage : ''
+  const known = initial.teachingLanguage && LANGUAGES.includes(initial.teachingLanguage)
+  const [language, setLanguage] = useState(
+    initial.teachingLanguage ? (known ? initial.teachingLanguage : OTHER) : ''
   )
+  const [customLanguage, setCustomLanguage] = useState(known ? '' : (initial.teachingLanguage ?? ''))
   const [timezone, setTimezone] = useState(initial.timezone)
-  const [platform, setPlatform] = useState(initial.meetingPlatform)
+  const [platform, setPlatform] = useState<TeachingPlatform>(initial.teachingPlatform)
   const [accent, setAccent] = useState(initial.brand.accent)
   const [portalName, setPortalName] = useState(initial.brand.portalName)
 
-  const effectiveLanguage = customLanguage.trim() || language
+  const effectiveLanguage = language === OTHER ? customLanguage.trim() : language
+  /** A marketplace teacher has no link for us to make and may have no calendar. */
+  const external = isExternalPlatform(platform)
 
   const persist = (patch: Parameters<typeof saveOnboarding>[0], then?: () => void) =>
     startTransition(async () => {
@@ -60,7 +72,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
       if (!effectiveLanguage) { setError('Pick the language you teach, or type your own.'); return }
       persist({ teachingLanguage: effectiveLanguage, timezone, step: 1 }, () => setStep(1))
     } else if (step === 1) {
-      persist({ meetingPlatform: platform, step: 2 }, () => setStep(2))
+      persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
       persist({ step: 3 }, () => setStep(3))
     }
@@ -115,28 +127,27 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               <h1>What do you teach?</h1>
               <p className="k-onb-lead">This shapes the recaps, vocabulary and practice we generate for your students.</p>
 
-              <div className="k-choices" style={{ marginBottom: 16 }}>
-                {LANGUAGES.map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    className={`k-choice ${language === l && !customLanguage ? 'sel' : ''}`}
-                    onClick={() => { setLanguage(l); setCustomLanguage('') }}
-                  >
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{l}</span>
-                  </button>
-                ))}
-              </div>
-
               <label className="k-field">
-                <span>Something else</span>
-                <input
-                  value={customLanguage}
-                  onChange={(e) => { setCustomLanguage(e.target.value); if (e.target.value) setLanguage('') }}
-                  placeholder="e.g. Swedish"
-                />
+                <span>Language</span>
+                <select className="k-input" value={language} onChange={(e) => setLanguage(e.target.value)}>
+                  <option value="" disabled>Choose a language…</option>
+                  {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+                  <option value={OTHER}>Something else…</option>
+                </select>
               </label>
+
+              {language === OTHER && (
+                <label className="k-field">
+                  <span>Which language?</span>
+                  <input
+                    value={customLanguage}
+                    onChange={(e) => setCustomLanguage(e.target.value)}
+                    placeholder="e.g. Swedish"
+                    maxLength={60}
+                    autoFocus
+                  />
+                </label>
+              )}
 
               <label className="k-field">
                 <span>Your timezone</span>
@@ -151,28 +162,47 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {step === 1 && (
             <>
               <h1>Where do you meet students?</h1>
-              <p className="k-onb-lead">We&rsquo;ll create meeting links here when a student books, and send the recorder to the right place.</p>
+              <p className="k-onb-lead">
+                On Meet or Zoom we create the link when a student books. On a marketplace the lesson already has a
+                room, so we leave the link alone and take it from there.
+              </p>
 
               <div className="k-choices">
-                <button type="button" className={`k-choice ${platform === 'google_meet' ? 'sel' : ''}`} onClick={() => setPlatform('google_meet')}>
-                  <span className="k-choice-tick" aria-hidden>✓</span>
-                  <span>Google Meet<small>Created on your calendar automatically</small></span>
-                </button>
-                <button type="button" className={`k-choice ${platform === 'zoom' ? 'sel' : ''}`} onClick={() => setPlatform('zoom')}>
-                  <span className="k-choice-tick" aria-hidden>✓</span>
-                  <span>Zoom<small>{zoomConnected ? 'Connected' : 'Connect Zoom later in Settings'}</small></span>
-                </button>
+                {TEACHING_PLATFORMS.map((id) => {
+                  const meta = TEACHING_PLATFORM_META[id]
+                  const hint = id === 'zoom' && !zoomConnected ? 'Connect Zoom later in Settings' : meta.hint
+                  return (
+                    <button key={id} type="button" className={`k-choice ${platform === id ? 'sel' : ''}`} onClick={() => setPlatform(id)}>
+                      <span className="k-choice-tick" aria-hidden>✓</span>
+                      <span>{meta.label}<small>{hint}</small></span>
+                    </button>
+                  )
+                })}
               </div>
+
+              {external && (
+                <div className="k-onb-ok" style={{ marginTop: 16, background: 'var(--amber-soft)' }}>
+                  <span aria-hidden style={{ background: 'var(--amber)' }}>i</span>
+                  <div>
+                    <strong>We&rsquo;ll stay out of the lesson itself</strong>
+                    <small>
+                      No links created, no bot sent. You record the lesson yourself and the recap, vocabulary and
+                      practice are built from that — everything your students see works the same.
+                    </small>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
           {/* ── 3. Calendar ── */}
           {step === 2 && (
             <>
-              <h1>Connect your calendar</h1>
+              <h1>{external ? 'How do lessons get in?' : 'Connect your calendar'}</h1>
               <p className="k-onb-lead">
-                Lesson Studio reads your lessons, takes bookings into free slots, and sends the recorder to each class.
-                Nothing is written to your calendar until a student books.
+                {external
+                  ? `Your lessons happen in ${TEACHING_PLATFORM_META[platform].label}, so there is nothing on a calendar for us to read. Recordings are the way in — a calendar is optional here, and only adds a booking page.`
+                  : 'Lesson Studio reads your lessons, takes bookings into free slots, and sends the recorder to each class. Nothing is written to your calendar until a student books.'}
               </p>
 
               {googleConnected ? (
@@ -183,6 +213,27 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                     <small>You can pick which calendar holds your lessons in Settings.</small>
                   </div>
                 </div>
+              ) : external ? (
+                <>
+                  <div className="k-onb-ok">
+                    <span aria-hidden>1</span>
+                    <div>
+                      <strong>Record the lesson</strong>
+                      <small>Whatever room you teach in, capture it and hand the recording to Lesson Studio.</small>
+                    </div>
+                  </div>
+                  <div className="k-onb-ok" style={{ marginTop: 10 }}>
+                    <span aria-hidden>2</span>
+                    <div>
+                      <strong>Review the recap</strong>
+                      <small>It joins your review queue like any other lesson. Publish it and the student has it.</small>
+                    </div>
+                  </div>
+                  <p className="k-fine" style={{ textAlign: 'left', marginTop: 14 }}>
+                    Want a booking page too? Connect Google Calendar and students can book your free slots —{' '}
+                    <a href="/api/google/auth">connect it now</a>, or any time from Settings.
+                  </p>
+                </>
               ) : (
                 <>
                   <a className="k-btn-block" href="/api/google/auth" style={{ textDecoration: 'none' }}>
@@ -235,7 +286,9 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           <div className="k-onb-actions">
             {step > 0 && <button type="button" className="btn btn-ghost" onClick={back} disabled={pending}>Back</button>}
             {step === 2 && !googleConnected && (
-              <button type="button" className="btn btn-ghost" onClick={next} disabled={pending}>Skip for now</button>
+              <button type="button" className="btn btn-ghost" onClick={next} disabled={pending}>
+                {external ? 'No calendar, thanks' : 'Skip for now'}
+              </button>
             )}
             {step < STEPS.length - 1 ? (
               <button type="button" className="k-btn-block" style={{ width: 'auto', marginLeft: 'auto' }} onClick={next} disabled={pending}>

@@ -111,7 +111,7 @@ export default async function SettingsPage() {
                 <span className="k-sec-icon b" aria-hidden>🎥</span>
                 <div>
                   <h3>Default meeting platform</h3>
-                  <p className="desc">The service used to create meeting links for new bookings.</p>
+                  <p className="desc">What a new booking creates. Pick the last one if your lessons live on a marketplace and the link is already theirs.</p>
                 </div>
               </div>
               <div className="k-choices">
@@ -127,6 +127,13 @@ export default async function SettingsPage() {
                   <button type="submit" className={`k-choice ${settings.platform === 'zoom' ? 'sel' : ''}`}>
                     <span className="k-choice-tick" aria-hidden>✓</span>
                     <span>Zoom<small>Requires a connected Zoom account</small></span>
+                  </button>
+                </form>
+                <form action="/api/settings" method="post">
+                  <input type="hidden" name="platform" value="none" />
+                  <button type="submit" className={`k-choice ${settings.platform === 'none' ? 'sel' : ''}`}>
+                    <span className="k-choice-tick" aria-hidden>✓</span>
+                    <span>I share my own link<small>Preply, italki, or a room of your own</small></span>
                   </button>
                 </form>
               </div>

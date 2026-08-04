@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { setPlatform, type Platform } from '@/lib/settings'
+import { linkPlatformFor, isTeachingPlatform, type TeachingPlatform } from '@/lib/teaching-platform'
 import { resolveBrand, type Brand } from '@/lib/brand'
 
 type Result = { success: boolean; error?: string }
@@ -20,7 +21,7 @@ async function currentTeacher() {
 export type OnboardingPatch = {
   teachingLanguage?: string
   timezone?: string
-  meetingPlatform?: Platform
+  teachingPlatform?: TeachingPlatform
   step?: number
   brand?: Partial<Brand>
 }
@@ -37,7 +38,12 @@ export async function saveOnboarding(patch: OnboardingPatch): Promise<Result> {
   const update: Record<string, unknown> = {}
   if (typeof patch.teachingLanguage === 'string') update.teaching_language = patch.teachingLanguage.trim().slice(0, 60) || null
   if (typeof patch.timezone === 'string' && patch.timezone.trim()) update.timezone = patch.timezone.trim().slice(0, 60)
-  if (patch.meetingPlatform === 'google_meet' || patch.meetingPlatform === 'zoom') update.meeting_platform = patch.meetingPlatform
+  if (isTeachingPlatform(patch.teachingPlatform)) {
+    update.teaching_platform = patch.teachingPlatform
+    // What we create when a student books follows from where they teach: a
+    // marketplace lesson has a link already, and it isn't ours to make.
+    update.meeting_platform = linkPlatformFor(patch.teachingPlatform)
+  }
   if (typeof patch.step === 'number') update.onboarding_step = Math.max(0, Math.min(10, Math.round(patch.step)))
 
   if (patch.brand) {

@@ -2,7 +2,14 @@
 import { readDoc, writeDoc } from './docstore'
 import { requireTeacherId } from './current-teacher'
 
-export type Platform = 'google_meet' | 'zoom'
+/**
+ * Which meeting link a booking creates. 'none' is for a teacher who meets on
+ * someone else's platform — Preply and the like — where the link is theirs to
+ * send, not ours to make.
+ */
+export type Platform = 'google_meet' | 'zoom' | 'none'
+export const PLATFORMS: Platform[] = ['google_meet', 'zoom', 'none']
+export const isPlatform = (v: unknown): v is Platform => PLATFORMS.includes(v as Platform)
 export type Settings = { platform: Platform }
 
 const DEFAULTS: Settings = { platform: 'google_meet' }
