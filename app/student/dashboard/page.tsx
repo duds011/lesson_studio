@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStudentCredits } from '@/lib/credits'
 import { getTeacherPaymentMethods } from '@/lib/payment-methods'
@@ -25,8 +25,7 @@ const Icon = ({ d }: { d: string }) => (
 
 export default async function StudentDashboard() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const user = await requireUser(supabase, '/student/dashboard')
 
   const { data: student } = await supabase.from('students').select('*').eq('profile_id', user.id).single()
 

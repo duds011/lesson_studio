@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { backgroundClass, brandVars, resolveBrand } from '@/lib/brand'
 import StudentRail from '@/components/koku/StudentRail'
@@ -8,8 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const user = await requireUser(supabase, '/student/dashboard')
 
   // The student's teacher owns the branding. Read it with admin so this works
   // even if the RLS policy hasn't been applied to a given environment yet.

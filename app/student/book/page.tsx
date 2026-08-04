@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStudentCredits } from '@/lib/credits'
 import BookingCalendar from '@/components/portal/BookingCalendar'
@@ -8,8 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function StudentBookPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const user = await requireUser(supabase, '/student/book')
 
   const admin = createAdminClient()
   const { data: student } = await admin.from('students').select('id').eq('profile_id', user.id).single()

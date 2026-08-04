@@ -2,11 +2,15 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
+  const params = useSearchParams()
+  /** Where they were headed before being asked to sign in. */
+  const next = params.get('next')
+  const expired = params.get('expired') === '1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,7 +32,9 @@ export default function LoginPage() {
 
     if (data.user) {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
-      router.push(profile?.role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')
+      // Only ever back into this app, never to a URL someone else supplied.
+      const home = profile?.role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'
+      router.push(next && next.startsWith('/') && !next.startsWith('//') ? next : home)
       router.refresh()
     }
   }
@@ -51,7 +57,7 @@ export default function LoginPage() {
         <div className="k-auth-card">
           <div className="k-auth-mark" aria-hidden>📚</div>
           <h1>Sign in</h1>
-          <p>Welcome back. Sign in to see your lessons, progress, and recaps.</p>
+          <p>{expired ? 'Your session timed out. Sign in and we’ll take you straight back.' : 'Welcome back. Sign in to see your lessons, progress, and recaps.'}</p>
 
           <form onSubmit={handleLogin}>
             <label className="k-field" htmlFor="email">

@@ -35,7 +35,14 @@ export async function middleware(request: NextRequest) {
   })
 
   // Refresh session — must come before any redirect.
-  const { data: { user } } = await supabase.auth.getUser()
+  //
+  // getUser() asks the auth server, so a slow round trip or a token rotating
+  // mid-flight answers "nobody" for a request that is carrying a real session.
+  // Bouncing on that logs a signed-in student out of a link they just clicked,
+  // so the cookie gets a second opinion. It only decides *routing*: the page
+  // behind this still checks, and RLS decides what any query can actually see.
+  const { data: { user: verified } } = await supabase.auth.getUser()
+  const user = verified ?? (await supabase.auth.getSession()).data.session?.user ?? null
   const path = request.nextUrl.pathname
 
   /**
@@ -96,9 +103,11 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/settings') ||
     path.startsWith('/students') ||
     path.startsWith('/teacher')
-  // Not logged in → send to login for any gated route.
+  // Not logged in → send to login for any gated route, remembering where they
+  // were headed so signing in finishes the click they made.
   if (!user && (isTeacherArea || isStudentPortal || isOnboarding)) {
-    return goTo('/login')
+    const back = `${path}${request.nextUrl.search}`
+    return goTo(`/login?next=${encodeURIComponent(back)}&expired=1`)
   }
 
   if (user) {

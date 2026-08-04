@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/auth'
 import { formatDateShort } from '@/lib/portal-utils'
 import TestView from '@/components/TestView'
 
@@ -8,8 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function StudentTestPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const user = await requireUser(supabase, `/student/tests/${params.id}`)
 
   // RLS only returns published tests that belong to this student.
   const { data: test } = await supabase

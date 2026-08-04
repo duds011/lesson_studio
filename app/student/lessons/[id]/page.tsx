@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveBrand } from '@/lib/brand'
 import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
@@ -12,8 +13,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function StudentLessonPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const user = await requireUser(supabase, `/student/lessons/${params.id}`)
 
   const { data: lesson } = await supabase
     .from('lessons')
