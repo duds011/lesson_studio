@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
+import { brandVars, resolveBrand } from '@/lib/brand'
+import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
+import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
 import LessonAdminActions from '@/components/portal/LessonAdminActions'
 
@@ -30,34 +32,55 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
 
   if (!recap) notFound()
 
-  const [{ data: files }, { data: audios }] = await Promise.all([
+  // Same branding the student's copy of this recap is rendered with, so this
+  // page is a preview of theirs rather than a different page about it.
+  const [{ data: files }, { data: audios }, { data: profile }] = await Promise.all([
     supabase.from('lesson_attachments').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     supabase.from('student_audio_submissions').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+    supabase.from('profiles').select('brand, full_name').eq('id', user.id).single(),
   ])
+  const brand = resolveBrand((profile as any)?.brand)
+  const teacherFirst = ((profile as any)?.full_name ?? '').split(' ')[0] || 'You'
 
   return (
-    <div className="page-fade" style={{ maxWidth: 860 }}>
+    <div className="k-scope page-fade" style={{ maxWidth: 900, ...brandVars(brand) }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         <Link href={`/teacher/students/${params.id}`} className="btn btn-ghost btn-sm">← {studentName || 'Student'}</Link>
         <LessonAdminActions lessonId={l.id} studentId={params.id} sourceEventId={l.source_event_id} />
       </div>
-      <div className="lesson-hero">
+
+      <header className="k-phead">
         <div>
-          <div className="eyebrow">Lesson {l.lesson_number} · Recap</div>
+          <div className="k-phead-eyebrow">Lesson {l.lesson_number} · Recap</div>
           <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
-          <div className="lesson-meta">
-            <div className="meta-box"><div className="meta-label">Student</div><div className="meta-value">{studentName}</div></div>
-            <div className="meta-box"><div className="meta-label">Date</div><div className="meta-value">{formatDateShort(l.lesson_date)}</div></div>
-            <div className="meta-box"><div className="meta-label">Status</div><div className="meta-value"><span className={`status-pill ${l.status === 'published' ? 'published' : 'draft'}`}>{l.status}</span></div></div>
+          <div className="k-pmeta">
+            <span>{studentName}</span>
+            <span>{ordinal(l.lesson_number)} lesson</span>
+            <span>{formatDateShort(l.lesson_date)}</span>
+            {recap.confidence_label && <span>{recap.confidence_label}</span>}
+            <span className={`status-pill ${l.status === 'published' ? 'published' : 'draft'}`}>{l.status}</span>
           </div>
         </div>
-        {recap.score != null && <div className="lesson-score"><div><strong>{recap.score}</strong><span>OUT OF 10</span></div></div>}
-      </div>
+        {recap.score != null && (
+          <div className="k-pscore">
+            <div>
+              <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
+              <small>OUT OF 10</small>
+            </div>
+          </div>
+        )}
+
+        <div className="k-hero-art" style={{ right: -30, opacity: .5 }} aria-hidden>
+          <span className="k-orb" style={{ width: 84, height: 84, right: 10, top: 12 }} />
+          <span className="k-tube" style={{ width: 66, height: 66, right: 74, top: 76, transform: 'rotate(40deg)' }} />
+        </div>
+      </header>
 
       <LessonPageTabs
         lesson={{ id: l.id, lessonNumber: l.lesson_number, date: l.lesson_date, title: l.title, recap }}
         studentFirst={studentName.split(' ')[0] || 'Student'}
-        teacherFirst="Noa"
+        teacherFirst={teacherFirst}
+        brand={brand}
       />
 
       <LessonExchange lessonId={l.id} role="teacher" files={files || []} audios={audios || []} />

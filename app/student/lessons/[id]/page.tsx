@@ -39,10 +39,11 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
     supabase.from('lesson_attachments').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     supabase.from('student_audio_submissions').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     student?.teacher_id
-      ? admin.from('profiles').select('brand').eq('id', student.teacher_id).single()
+      ? admin.from('profiles').select('brand, full_name').eq('id', student.teacher_id).single()
       : Promise.resolve({ data: null }),
   ])
   const brand = resolveBrand((teacherProfile as any)?.brand)
+  const teacherFirst = ((teacherProfile as any)?.full_name ?? '').split(' ')[0] || 'Your teacher'
 
   return (
     <div style={{ maxWidth: 900 }}>
@@ -76,7 +77,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
       <LessonPageTabs
         lesson={{ id: l.id, lessonNumber: l.lesson_number, date: l.lesson_date, title: l.title, recap }}
         studentFirst={studentName.split(' ')[0] || 'You'}
-        teacherFirst="Noa"
+        teacherFirst={teacherFirst}
         brand={brand}
       />
 

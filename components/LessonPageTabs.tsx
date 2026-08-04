@@ -144,7 +144,7 @@ export default function LessonPageTabs({
         if (!total) return null
         return (
           <div className="lesson-block k-chart-card">
-            <h3>Vocabulary by JLPT level</h3>
+            <h3>Vocabulary by level</h3>
             <VocabLevelChart distribution={dist} height={chartH(h, 150)} />
           </div>
         )

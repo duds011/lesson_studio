@@ -4,18 +4,17 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStudentCredits } from '@/lib/credits'
 import { getTeacherPaymentMethods } from '@/lib/payment-methods'
-import { formatDateShort, getLevelLabel, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
+import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import ProgressCharts from '@/components/portal/ProgressCharts'
-import { MilestoneGauge, ScoreTrendChart, VocabLevelChart } from '@/components/portal/BrandCharts'
+import { MilestoneTrack, ScoreTrendChart, VocabLevelChart } from '@/components/portal/BrandCharts'
 import CountUp from '@/components/portal/CountUp'
+import LessonPillar, { PillarLesson } from '@/components/portal/LessonPillar'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
 import CalendarCard from '@/components/koku/CalendarCard'
-import { resolveBrand, type BlockId } from '@/lib/brand'
+import { levelProgress, resolveBrand, type BlockId } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
-
-const MILESTONES = [1, 5, 10, 25, 50]
 
 const Icon = ({ d }: { d: string }) => (
   <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -89,9 +88,6 @@ export default async function StudentDashboard() {
   }
   const totalVocab = Object.values(vocabDistribution).reduce((sum, n) => sum + n, 0)
 
-  const nextMilestone = MILESTONES.find((m) => m > lessonCount) ?? 50
-  const milestonePct = Math.min(Math.round((lessonCount / nextMilestone) * 100), 100)
-
   const { data: tests } = await supabase
     .from('tests')
     .select('id, title, level, published_at, lessons ( lesson_number )')
@@ -110,6 +106,25 @@ export default async function StudentDashboard() {
     id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency,
   }))
 
+  // Where they are on the teacher's milestone ladder.
+  const milestone = levelProgress(brand.levels, lessonCount)
+
+  // The pillar reads earliest lesson first — `rows` comes back newest first.
+  const pillarLessons: PillarLesson[] = rows
+    .slice()
+    .reverse()
+    .map((lesson) => {
+      const s = summaryOf(lesson)
+      return {
+        id: lesson.id as string,
+        number: lesson.lesson_number as number,
+        title: lessonDisplayTitle(s?.recap_json, lesson.title, lesson.lesson_number),
+        meta: `${ordinal(lesson.lesson_number)} lesson · ${formatDateShort(lesson.lesson_date)}`,
+        score: s?.score != null ? Number(s.score) : null,
+        tag: `Lesson ${lesson.lesson_number}`,
+      }
+    })
+
   const firstName = student.full_name.split(' ')[0]
   // Most recent scored lessons, oldest-first so the chart reads left to right.
   const scoreTrend = rows
@@ -122,7 +137,7 @@ export default async function StudentDashboard() {
   // plot area (CHART_CHROME is the card padding + heading above it, so the block
   // as a whole lands on the height that was dragged); everything else gets the
   // height on its wrapper and scrolls what doesn't fit.
-  const CHART_BLOCKS = new Set<BlockId>(['scores', 'milestone', 'vocab'])
+  const CHART_BLOCKS = new Set<BlockId>(['scores', 'vocab'])
   const CHART_CHROME = 74
   const sizeOf = (id: BlockId) => brand.layout.find((p) => p.id === id)
   const heightOf = (id: BlockId, fallback: number) => {
@@ -139,8 +154,8 @@ export default async function StudentDashboard() {
           <section className="k-hero">
             <h2 style={{ whiteSpace: 'pre-line' }}>{brand.headline}</h2>
             <p>
-              {lessonCount > 0
-                ? `You're ${nextMilestone - lessonCount} lesson${nextMilestone - lessonCount === 1 ? '' : 's'} away from ${getLevelLabel(nextMilestone)}. Keep the streak going.`
+              {lessonCount > 0 && milestone.remaining > 0
+                ? `You're ${milestone.remaining} lesson${milestone.remaining === 1 ? '' : 's'} away from ${milestone.label}. Keep the streak going.`
                 : brand.welcome}
             </p>
             <Link href="/student/book" className="k-hero-btn">Book a lesson</Link>
@@ -215,51 +230,7 @@ export default async function StudentDashboard() {
           </div>
       </>
     ),
-    lessons: (
-      <>
-          <div className="k-sec-head">
-            <h2>Your lessons</h2>
-            {rows.length > 4 && <span className="k-link">{rows.length} total</span>}
-          </div>
-
-          {rows.length === 0 ? (
-            <div className="k-empty">
-              <strong style={{ color: 'var(--ink)' }}>No lessons yet</strong>
-              <br />
-              Your lessons will appear here once your teacher publishes them.
-            </div>
-          ) : (
-            <div className="k-courses">
-              {rows.map((lesson, idx) => {
-                const s = summaryOf(lesson)
-                const pct = s?.score != null ? Math.round((s.score / 10) * 100) : null
-                return (
-                  <Link key={lesson.id} href={`/student/lessons/${lesson.id}`} className="k-course">
-                    <div className={`k-course-thumb c${(idx % 4) + 1}`}>
-                      <span className="k-course-tag">Lesson {lesson.lesson_number}</span>
-                      <span aria-hidden>{['📗', '📘', '📙', '📒'][idx % 4]}</span>
-                    </div>
-                    <div>
-                      <div className="k-course-title">{lessonDisplayTitle(s?.recap_json, lesson.title, lesson.lesson_number)}</div>
-                      <div className="k-course-meta">{ordinal(lesson.lesson_number)} lesson · {formatDateShort(lesson.lesson_date)}</div>
-                    </div>
-                    <div className="k-course-foot">
-                      {pct != null ? (
-                        <>
-                          <div className="k-hw-track"><div className="k-hw-fill" style={{ width: `${pct}%` }} /></div>
-                          <span className="k-score">{s.score}/10</span>
-                        </>
-                      ) : (
-                        <span className="k-course-meta">Recap ready →</span>
-                      )}
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-      </>
-    ),
+    lessons: <LessonPillar lessons={pillarLessons} />,
     progress: (
       <>
           {brand.showProgress && lessonCount >= 2 && (
@@ -307,14 +278,16 @@ export default async function StudentDashboard() {
     ),
     milestone: (
       <>
-          {brand.showMilestone && <div className="k-card k-chart-card">
+          {brand.showMilestone && <div className="k-card">
             <div className="k-card-head">
               <h3>Next milestone</h3>
-              <span className="k-link">{getLevelLabel(nextMilestone)}</span>
+              <span className="k-link">{milestone.label}</span>
             </div>
-            <MilestoneGauge pct={milestonePct} color={brand.accent} height={heightOf('milestone', 150)} caption={`to ${getLevelLabel(nextMilestone)}`} />
-            <p className="k-course-meta" style={{ marginTop: 9 }}>
-              {lessonCount} of {nextMilestone} lessons towards {getLevelLabel(nextMilestone)}
+            <MilestoneTrack levels={brand.levels} lessonCount={lessonCount} color={brand.accent} />
+            <p className="k-course-meta" style={{ marginTop: 11 }}>
+              {milestone.remaining > 0
+                ? `${lessonCount} of ${milestone.target} lessons towards ${milestone.label}`
+                : `Every level cleared — ${lessonCount} lessons in.`}
             </p>
           </div>}
       </>

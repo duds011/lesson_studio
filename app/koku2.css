@@ -70,6 +70,52 @@
 .k-stat.yellow .k-chip{background:rgba(91,67,2,.16)}
 .k-stat-sub{font-size:12px;margin:7px 0 0;opacity:.82;line-height:1.45}
 
+/* — lesson pillar —
+   Closed: one button. Open: a column that rolls under a reading line, the card
+   on the line proud of the rest. The size change is transform-only so the
+   scroll never fights a reflow (see LessonPillar.tsx). */
+.k-pillar{display:flex;flex-direction:column;min-height:0}
+.k-pillar-btn{display:flex;flex-direction:column;gap:14px;width:100%;text-align:left;border:0;background:var(--surface);border-radius:var(--r-xl);padding:16px 18px;box-shadow:var(--shadow-soft);cursor:pointer;font:inherit;color:inherit;transition:box-shadow .18s ease}
+.k-pillar:not(.open) .k-pillar-btn{flex:1 1 auto}
+.k-pillar-btn:hover{box-shadow:0 10px 26px rgba(15,18,14,.1)}
+.k-pillar-btn-head{display:flex;align-items:center;gap:13px;flex:0 0 auto}
+/* The deck behind the button: nearest card first, the rest tucked under it. */
+.k-pillar-peek{flex:1;display:grid;align-content:start;gap:7px;min-height:0}
+.k-pillar-peek-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:var(--r-md);padding:10px 12px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transform:scale(calc(1 - var(--i) * .035));transform-origin:50% 0;opacity:calc(1 - var(--i) * .28)}
+.k-pillar-peek-row b{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--forest);flex:0 0 auto}
+.k-pillar-btn-mark{width:40px;height:40px;border-radius:var(--r-md);background:var(--brand-soft);display:grid;place-items:center;font-size:18px;flex:0 0 auto}
+.k-pillar-btn-copy strong{display:block;font-size:15px;font-weight:700;letter-spacing:-.025em}
+.k-pillar-btn-copy small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.k-pillar-chev{margin-left:auto;color:var(--muted);font-size:13px;transition:transform .22s ease}
+.k-pillar.open .k-pillar-chev{transform:rotate(180deg)}
+.k-pillar-scroll{flex:1;margin-top:10px;min-height:210px;max-height:min(58vh,430px);overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y proximity;scroll-padding-top:26px;perspective:820px;display:grid;gap:10px;padding:26px 4px 16px;scrollbar-width:none}
+.k-pillar-scroll::-webkit-scrollbar{display:none}
+.k-pillar-card{scroll-snap-align:start;display:grid;gap:3px;align-content:start;background:var(--surface);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--shadow-soft);
+  transform:rotateX(var(--roll-tilt,0deg)) scale(var(--roll-scale,1));opacity:var(--roll-fade,1);transform-origin:50% 0;transition:box-shadow .2s ease}
+.k-pillar-card.on{box-shadow:0 12px 30px rgba(15,18,14,.13)}
+.k-pillar-num{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--forest)}
+.k-pillar-title{font-size:14px;font-weight:700;letter-spacing:-.02em;line-height:1.3}
+.k-pillar-meta{font-size:11.5px;color:var(--muted)}
+.k-pillar-foot{display:flex;align-items:center;gap:9px;margin-top:7px}
+.k-pillar-foot .k-hw-track{flex:1}
+.k-pillar-foot .k-hw-track i{display:block;height:100%;border-radius:999px;background:var(--forest)}
+.k-pillar-foot b{font-size:11.5px;font-weight:800}
+.k-pillar-go{font-size:11.5px;font-weight:800;color:var(--forest);margin-top:6px;opacity:0;transition:opacity .2s ease}
+.k-pillar-card.on .k-pillar-go{opacity:1}
+@media(prefers-reduced-motion:reduce){.k-pillar-card{transform:none;opacity:1}}
+
+/* — milestone ladder — one segment per level the teacher set — */
+.k-track{display:grid;gap:9px}
+.k-track-bar{display:flex;gap:4px}
+.k-track-seg{flex:1;min-width:0;height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.k-track-seg i{display:block;height:100%;border-radius:999px;transition:width .6s cubic-bezier(.2,.75,.3,1)}
+.k-track-legend{display:flex;gap:4px}
+.k-track-rung{flex:1;min-width:0;text-align:center;color:var(--muted)}
+.k-track-rung b{display:block;font-size:12px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.k-track-rung small{display:block;font-size:9px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k-track-rung.on{color:var(--forest)}
+
 /* — right rail cards — */
 .k-card{background:var(--surface);border-radius:var(--r-xl);padding:20px;box-shadow:var(--shadow-soft)}
 .k-card+.k-card{margin-top:14px}
@@ -610,6 +656,22 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 .k-presize-xy::after{width:9px;height:9px;border-radius:3px}
 .k-pblock:hover .k-presize::after,.k-pblock:hover .k-presize-x::after,.k-pblock:hover .k-presize-xy::after,
 .k-pblock.resizing .k-presize::after,.k-pblock.resizing .k-presize-x::after,.k-pblock.resizing .k-presize-xy::after{opacity:.9}
+
+/* ── text typed straight onto the canvas ──
+   Editing has to beat dragging, so these take pointer events back from the
+   .k-pblock>* rule that turns them off for everything else. */
+.k-inline{pointer-events:auto;cursor:text;border-radius:6px;outline:0;transition:box-shadow .14s ease,background .14s ease;-webkit-user-select:text;user-select:text}
+.k-pblock .k-inline{position:relative;z-index:2}
+.k-inline:hover{box-shadow:0 0 0 2px rgba(255,255,255,.45),0 0 0 3px var(--forest)}
+.k-inline:focus{box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 0 3px var(--forest);background:rgba(255,255,255,.1)}
+.k-inline:empty::before{content:attr(data-placeholder);opacity:.5}
+.k-preview-portal{margin-left:auto;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:-.01em;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── milestone ladder editor ── */
+.k-levels{display:grid;gap:7px}
+.k-level-row{display:grid;grid-template-columns:minmax(0,1fr) 68px auto;gap:6px;align-items:center}
+.k-level-row input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:11px;padding:9px 11px;font:inherit;font-size:12.5px;color:var(--ink);outline:0}
+.k-level-row input:focus{border-color:var(--forest)}
 
 /* ── content that fits its rectangle ──
    A block the teacher sized becomes a size container, and everything inside is

@@ -83,6 +83,48 @@ export type LessonLayout = Placement<LessonBlockId>[]
 export const MIN_BLOCK_H = 90
 export const MAX_BLOCK_H = 560
 
+/**
+ * The milestone ladder. Each rung is a name the student reaches at `lessons`
+ * lessons — the teacher owns both, so a course can count in whatever units it
+ * teaches in.
+ */
+export type Level = { name: string; lessons: number }
+export const MAX_LEVELS = 8
+export const MAX_LEVEL_LESSONS = 999
+
+const DEFAULT_LEVELS: Level[] = [
+  { name: 'Sprouting', lessons: 1 },
+  { name: 'Blooming', lessons: 5 },
+  { name: 'Committed', lessons: 10 },
+  { name: 'Advanced', lessons: 25 },
+  { name: 'Master', lessons: 50 },
+]
+
+/**
+ * Where a student stands on the ladder. `pct` is progress through the current
+ * rung, not the whole ladder, so the bar fills once per level.
+ */
+export function levelProgress(levels: Level[], lessonCount: number) {
+  const rungs = levels.length ? levels : DEFAULT_LEVELS
+  const reached = rungs.filter((l) => l.lessons <= lessonCount)
+  const next = rungs.find((l) => l.lessons > lessonCount)
+  const from = reached.length ? reached[reached.length - 1].lessons : 0
+  const target = next?.lessons ?? rungs[rungs.length - 1].lessons
+  const span = Math.max(1, target - from)
+  return {
+    rungs,
+    /** The last rung reached, if any. */
+    current: reached[reached.length - 1],
+    /** The rung being worked towards — undefined once the ladder is finished. */
+    next,
+    target,
+    remaining: Math.max(0, target - lessonCount),
+    pct: next ? Math.max(0, Math.min(100, Math.round(((lessonCount - from) / span) * 100))) : 100,
+    /** What to call the thing ahead of them (or the top rung, once done). */
+    label: (next ?? rungs[rungs.length - 1]).name,
+  }
+}
+
 /** Heading + body pairing for the student portal. */
 export type FontId = 'modern' | 'techy' | 'editorial' | 'friendly' | 'plain'
 
@@ -114,6 +156,8 @@ export type Brand = {
   font: FontId
   layout: Layout
   lessonLayout: LessonLayout
+  /** Milestone ladder, easiest first. */
+  levels: Level[]
   showMilestone: boolean
   showProgress: boolean
   showVocab: boolean
@@ -151,6 +195,7 @@ export const DEFAULT_BRAND: Brand = {
   font: 'modern',
   layout: DEFAULT_LAYOUT,
   lessonLayout: DEFAULT_LESSON_LAYOUT,
+  levels: DEFAULT_LEVELS,
   showMilestone: true,
   showProgress: true,
   showVocab: true,
@@ -321,6 +366,7 @@ export function resolveBrand(raw: unknown): Brand {
     font: FONTS.some((f) => f.value === b.font) ? (b.font as FontId) : DEFAULT_BRAND.font,
     layout: resolveLayout(b.layout, b.heights),
     lessonLayout: resolveLessonLayout(b.lessonLayout),
+    levels: resolveLevels(b.levels),
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
@@ -391,6 +437,28 @@ function resolvePlacements<T extends string>(
   for (const p of defaults) if (!seen.has(p.id)) { seen.add(p.id); out.push({ ...p, ...(clampHeight(heights[p.id]) ? { h: clampHeight(heights[p.id]) } : {}) }) }
 
   return out
+}
+
+/**
+ * Normalise a stored ladder: keep named rungs with a sane lesson count, order
+ * them easiest-first, drop rungs that repeat a count, and fall back to the
+ * defaults if nothing usable survives.
+ */
+export function resolveLevels(raw: unknown): Level[] {
+  if (!Array.isArray(raw)) return DEFAULT_LEVELS
+  const seen = new Set<number>()
+  const out: Level[] = []
+  for (const r of raw) {
+    if (!r || typeof r !== 'object') continue
+    const name = typeof (r as any).name === 'string' ? (r as any).name.trim().slice(0, 24) : ''
+    const lessons = Math.round(Number((r as any).lessons))
+    if (!name || !Number.isFinite(lessons) || lessons < 1 || lessons > MAX_LEVEL_LESSONS) continue
+    if (seen.has(lessons)) continue
+    seen.add(lessons)
+    out.push({ name, lessons })
+  }
+  if (out.length === 0) return DEFAULT_LEVELS
+  return out.sort((a, b) => a.lessons - b.lessons).slice(0, MAX_LEVELS)
 }
 
 export function resolveLayout(raw: unknown, legacyHeights?: unknown): Layout {

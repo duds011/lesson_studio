@@ -11,9 +11,9 @@
  */
 
 import {
-  Area, AreaChart, Bar, BarChart, Cell, PolarAngleAxis, RadialBar, RadialBarChart,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
+import { levelProgress, type Level } from '@/lib/brand'
 import { levelColor, levelScale } from './VocabLevelBreakdown'
 
 const AXIS = { fontSize: 10, fill: 'var(--muted)', fontWeight: 700 }
@@ -61,36 +61,38 @@ export function ScoreTrendChart({
 }
 
 /**
- * Milestone progress as a radial gauge. PolarAngleAxis with a fixed 0–100
- * domain is what makes the sweep proportional to the value rather than to the
- * number of bars.
+ * The milestone ladder as a filling track: one segment per level the teacher
+ * set, each filling with the lessons taken towards it. Replaces the donut —
+ * a bar says "3 of 5 lessons" without the student doing the arithmetic.
  */
-export function MilestoneGauge({
-  pct, color, height = 150, caption, compact = false,
-}: { pct: number; color: string; height?: number | string; caption?: string; compact?: boolean }) {
-  const value = Math.max(0, Math.min(100, pct))
-
+export function MilestoneTrack({
+  levels, lessonCount, color, compact = false,
+}: { levels: Level[]; lessonCount: number; color: string; compact?: boolean }) {
+  const { rungs } = levelProgress(levels, lessonCount)
   return (
-    <div className="k-gauge" style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <RadialBarChart
-          data={[{ name: 'progress', value }]}
-          innerRadius="68%" outerRadius="100%"
-          startAngle={90} endAngle={-270}
-          barSize={compact ? 8 : 12}
-        >
-          <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-          <RadialBar
-            dataKey="value" cornerRadius={99} fill={color}
-            background={{ fill: 'var(--surface-2)' } as any}
-            isAnimationActive={!compact}
-          />
-        </RadialBarChart>
-      </ResponsiveContainer>
-      <div className="k-gauge-mid">
-        <b style={{ color }}>{Math.round(value)}%</b>
-        {caption && !compact && <small>{caption}</small>}
+    <div className="k-track">
+      <div className="k-track-bar">
+        {rungs.map((rung, i) => {
+          const from = i === 0 ? 0 : rungs[i - 1].lessons
+          const span = Math.max(1, rung.lessons - from)
+          const fill = Math.max(0, Math.min(100, ((lessonCount - from) / span) * 100))
+          return (
+            <span key={`${rung.name}-${rung.lessons}`} className="k-track-seg">
+              <i style={{ width: `${fill}%`, background: color }} />
+            </span>
+          )
+        })}
       </div>
+      {!compact && (
+        <div className="k-track-legend">
+          {rungs.map((rung) => (
+            <span key={`${rung.name}-${rung.lessons}`} className={`k-track-rung ${lessonCount >= rung.lessons ? 'on' : ''}`}>
+              <b>{rung.lessons}</b>
+              <small title={rung.name}>{rung.name}</small>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

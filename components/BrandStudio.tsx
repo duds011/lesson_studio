@@ -1,20 +1,28 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
   ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_TABS,
   PRESETS, FONTS, brandVars, backgroundClass, clampSpan, GRID_COLS, MIN_BLOCK_H, MAX_BLOCK_H,
+  MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
   type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle,
-  type BlockId, type LessonBlockId, type LessonTab, type Placement,
+  type BlockId, type LessonBlockId, type LessonTab, type Level, type Placement,
 } from '@/lib/brand'
-import { MilestoneGauge, MiniTrend, ScoreTrendChart, VocabLevelChart } from './portal/BrandCharts'
+import { MilestoneTrack, MiniTrend, ScoreTrendChart, VocabLevelChart } from './portal/BrandCharts'
 import CountUp from './portal/CountUp'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 /** Must match --g on .k-flow, since span maths is done against it. */
 const GAP = 12
+
+const BRAND_TEXT_LABELS = {
+  headline: 'Hero headline',
+  welcome: 'Hero subtext',
+  logoText: 'Portal mark',
+  portalName: 'Portal name',
+} as const
 
 const HERO_STYLES: { value: HeroStyle; label: string; hint: string }[] = [
   { value: 'forest', label: 'Solid', hint: 'Filled accent panel' },
@@ -253,6 +261,80 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   /** Height left for a chart inside a block the teacher has sized. */
   const chartH = (h: number | undefined, fallback: number) => (h ? Math.max(52, h - 62) : fallback)
 
+  // ── text edited on the canvas ───────────────────────────────────────────
+  /**
+   * The words are typed straight onto the preview. contentEditable owns the
+   * text while it is being typed — handing React the value back as children
+   * would rewrite the node on every keystroke and drop the caret at the front
+   * — so children are pinned to the value this field mounted with, and the
+   * effect below only writes when the value changes from somewhere else (a
+   * preset, or Reset).
+   */
+  type TextKey = 'headline' | 'welcome' | 'logoText' | 'portalName'
+  const textEls = useRef<Partial<Record<TextKey, HTMLElement | null>>>({})
+  const mounted = useRef<Partial<Record<TextKey, string>>>({})
+  const pin = (key: TextKey) => (mounted.current[key] ??= brand[key])
+
+  useEffect(() => {
+    for (const key of Object.keys(textEls.current) as TextKey[]) {
+      const el = textEls.current[key]
+      if (el && el.innerText !== brand[key]) el.innerText = brand[key]
+    }
+  }, [brand.headline, brand.welcome, brand.logoText, brand.portalName])
+
+  const editable = (key: TextKey, { multiline = false, max = 120 }: { multiline?: boolean; max?: number } = {}) => ({
+    ref: (el: HTMLElement | null) => { textEls.current[key] = el },
+    contentEditable: true,
+    suppressContentEditableWarning: true,
+    spellCheck: false,
+    role: 'textbox',
+    'aria-label': BRAND_TEXT_LABELS[key],
+    title: `Click to edit — ${BRAND_TEXT_LABELS[key]}`,
+    className: 'k-inline',
+    // Editing beats dragging: this text must take the pointer, and the block
+    // underneath must not read the click as the start of a move.
+    onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      e.stopPropagation()
+      if (e.key === 'Escape' || (e.key === 'Enter' && !multiline)) {
+        e.preventDefault()
+        ;(e.target as HTMLElement).blur()
+      }
+    },
+    onPaste: (e: React.ClipboardEvent) => {
+      e.preventDefault()
+      const raw = e.clipboardData.getData('text/plain')
+      document.execCommand('insertText', false, multiline ? raw : raw.replace(/\s*[\r\n]+\s*/g, ' '))
+    },
+    onInput: (e: React.FormEvent<HTMLElement>) => {
+      const el = e.currentTarget
+      let text = el.innerText.replace(/ /g, ' ').replace(/\n$/, '')
+      if (text.length > max) {
+        text = text.slice(0, max)
+        el.innerText = text
+        const range = document.createRange()
+        range.selectNodeContents(el)
+        range.collapse(false)
+        const sel = window.getSelection()
+        sel?.removeAllRanges()
+        sel?.addRange(range)
+      }
+      set(key, text as never)
+    },
+  })
+
+  // ── milestone ladder ────────────────────────────────────────────────────
+  const setLevels = (next: Level[]) => set('levels', next)
+  const patchLevel = (i: number, patch: Partial<Level>) =>
+    setLevels(brand.levels.map((l, k) => (k === i ? { ...l, ...patch } : l)))
+  const addLevel = () => {
+    const last = brand.levels[brand.levels.length - 1]
+    setLevels([...brand.levels, { name: 'New level', lessons: Math.min(MAX_LEVEL_LESSONS, (last?.lessons ?? 0) + 5) }])
+  }
+  const removeLevel = (i: number) => setLevels(brand.levels.filter((_, k) => k !== i))
+  /** Re-order and de-duplicate once the teacher has stopped typing numbers. */
+  const settleLevels = () => setLevels(resolveLevels(brand.levels))
+
   const hidden = new Set<BlockId>()
   if (!brand.showMilestone) hidden.add('milestone')
   if (!brand.showProgress) hidden.add('progress')
@@ -274,8 +356,8 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       case 'hero':
         return (
           <div className="k-preview-hero" style={{ background: heroBg, color: heroInk }}>
-            <strong style={{ whiteSpace: 'pre-line' }}>{brand.headline || DEFAULT_BRAND.headline}</strong>
-            <p style={{ color: heroSub }}>{brand.welcome || DEFAULT_BRAND.welcome}</p>
+            <strong {...editable('headline', { multiline: true, max: 90 })} style={{ whiteSpace: 'pre-line' }}>{pin('headline')}</strong>
+            <p {...editable('welcome', { multiline: true, max: 200 })} style={{ color: heroSub }}>{pin('welcome')}</p>
             <span className="k-preview-btn" style={{ background: brand.heroStyle === 'light' ? brand.accent : '#fff', color: brand.heroStyle === 'light' ? '#fff' : brand.accent }}>
               Book a lesson
             </span>
@@ -331,13 +413,17 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             </div>
           </div>
         )
-      case 'milestone':
+      case 'milestone': {
+        const sample = Math.max(1, Math.round((brand.levels[brand.levels.length - 1]?.lessons ?? 10) * 0.45))
         return (
-          <div className="k-preview-card k-chart-card">
-            <div className="k-preview-row"><strong>Next milestone</strong><span>Level 3</span></div>
-            <MilestoneGauge pct={60} color={brand.accent} height={chartH(h, 92)} compact />
+          <div className="k-preview-card">
+            <div className="k-preview-row"><strong>Next milestone</strong><span>{brand.levels.find((l) => l.lessons > sample)?.name ?? brand.levels[brand.levels.length - 1]?.name}</span></div>
+            <div style={{ marginTop: 10 }}>
+              <MilestoneTrack levels={brand.levels} lessonCount={sample} color={brand.accent} />
+            </div>
           </div>
         )
+      }
       case 'scores':
         return (
           <div className="k-preview-card k-chart-card">
@@ -609,7 +695,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             <span className="k-sec-icon y" aria-hidden>✍️</span>
             <div>
               <h3>Words</h3>
-              <p className="desc">What your students read when they sign in.</p>
+              <p className="desc">What your students read when they sign in — or click the text on the preview and type there.</p>
             </div>
           </div>
 
@@ -703,6 +789,52 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </div>
         </section>
 
+        <section className="k-sec">
+          <div className="k-sec-head">
+            <span className="k-sec-icon y" aria-hidden>🏆</span>
+            <div>
+              <h3>Milestones</h3>
+              <p className="desc">The ladder behind the milestone block: what each level is called and how many lessons it takes. The bar fills as they get there.</p>
+            </div>
+          </div>
+
+          <div className="k-levels">
+            {brand.levels.map((lvl, i) => (
+              <div className="k-level-row" key={i}>
+                <input
+                  value={lvl.name}
+                  onChange={(e) => patchLevel(i, { name: e.target.value.slice(0, 24) })}
+                  placeholder="Level name"
+                  aria-label={`Level ${i + 1} name`}
+                />
+                <input
+                  type="number"
+                  min={1}
+                  max={MAX_LEVEL_LESSONS}
+                  value={lvl.lessons}
+                  onChange={(e) => patchLevel(i, { lessons: Number(e.target.value) })}
+                  onBlur={settleLevels}
+                  aria-label={`Lessons to reach ${lvl.name || `level ${i + 1}`}`}
+                />
+                <button
+                  type="button"
+                  className="btn btn-danger-ghost btn-sm"
+                  onClick={() => removeLevel(i)}
+                  disabled={brand.levels.length <= 1}
+                  aria-label={`Remove ${lvl.name || `level ${i + 1}`}`}
+                >✕</button>
+              </div>
+            ))}
+          </div>
+
+          <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 9 }} onClick={addLevel} disabled={brand.levels.length >= MAX_LEVELS}>
+            + Add level
+          </button>
+          {!brand.showMilestone && (
+            <p className="desc" style={{ marginTop: 9 }}>The milestone block is hidden right now — turn it back on under Sections.</p>
+          )}
+        </section>
+
         {error && <p className="k-error">{error}</p>}
 
         <div className="k-studio-actions">
@@ -718,7 +850,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       <div className="k-studio-preview">
         <div className="k-preview-bar">
           <span className="k-preview-label">
-            {view === 'dashboard' ? 'Student dashboard' : 'Lesson recap'} · drag to arrange, pull an edge to resize
+            {view === 'dashboard' ? 'Student dashboard' : 'Lesson recap'} · click the words to edit, drag to arrange, pull an edge to resize
           </span>
           <div className="k-preview-switches">
             <div className="k-seg" style={{ margin: 0, width: 210 }}>
@@ -736,11 +868,12 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           {view === 'dashboard' ? (
             <>
               <div className="k-preview-top">
-                <span className="k-preview-mark" style={{ background: `${brand.accent}22`, color: brand.accent }}>{brand.logoText || '📚'}</span>
+                <span {...editable('logoText', { max: 4 })} className="k-preview-mark k-inline" style={{ background: `${brand.accent}22`, color: brand.accent }}>{pin('logoText')}</span>
                 <div>
                   <div className="k-preview-hello">Welcome back,</div>
                   <div className="k-preview-name">Derek</div>
                 </div>
+                <span {...editable('portalName', { max: 40 })} className="k-inline k-preview-portal">{pin('portalName')}</span>
               </div>
               {flow()}
             </>
@@ -775,9 +908,10 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         </div>
 
         <p className="k-fine" style={{ textAlign: 'left' }}>
-          Drag any block to move it. Pull its bottom edge for height, its right edge for width, the corner for
-          both — the text inside scales to whatever size you give it, and blocks slide up beside each other when
-          there is room. Double-click an edge to hand that dimension back to the content.
+          Click any of your own words — the headline, the line under it, the mark, the portal name — and type
+          straight onto the page. Drag a block to move it. Pull its bottom edge for height, its right edge for
+          width, the corner for both; the text inside scales to whatever size you give it, and blocks share the
+          height of the row they land in. Double-click an edge to hand that dimension back to the content.
           {view === 'lesson' && ' Each recap tab is arranged separately.'}
           {' '}This is {teacherName ? `${teacherName}'s` : 'your'} student portal; save to publish it.
         </p>
