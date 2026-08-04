@@ -19,6 +19,15 @@ const HEX = /^#[0-9a-fA-F]{6}$/
 /** Must match --g on .k-flow, since span maths is done against it. */
 const GAP = 12
 
+/**
+ * The canvas is a fixed page, not a fluid one: what a teacher arranges has to
+ * be what a student on a laptop gets, so the widths they choose mean the same
+ * thing on both. 1180 is the student portal's own content width at 1280 wide,
+ * rail and padding removed. Too narrow a pane scales the whole page down
+ * rather than reflowing it.
+ */
+const CANVAS_WIDTH = { desktop: 1180, mobile: 390 } as const
+
 const BRAND_TEXT_LABELS: Record<string, string> = {
   headline: 'Hero headline',
   welcome: 'Hero subtext',
@@ -135,8 +144,33 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const [resizing, setResizing] = useState<AnyId | null>(null)
   const blockEls = useRef<Partial<Record<string, HTMLDivElement | null>>>({})
   const flowEl = useRef<HTMLDivElement | null>(null)
+  const canvasEl = useRef<HTMLDivElement | null>(null)
+  const frameEl = useRef<HTMLDivElement | null>(null)
+  const [scale, setScale] = useState(1)
+  /** Pointer maths runs in screen pixels; sizes are stored in canvas pixels. */
+  const scaleRef = useRef(1)
+  scaleRef.current = scale
 
   const scope: Scope = view === 'dashboard' ? 'dash' : 'lesson'
+
+  // Fit the fixed-width canvas into whatever pane it has, and keep the space
+  // it occupies in the layout equal to its scaled height.
+  useEffect(() => {
+    const wrap = canvasEl.current
+    const frame = frameEl.current
+    if (!wrap || !frame) return
+    const fit = () => {
+      const next = Math.min(1, wrap.clientWidth / CANVAS_WIDTH[device])
+      setScale((s) => (Math.abs(s - next) > 0.001 ? next : s))
+      const h = `${Math.round(frame.offsetHeight * next)}px`
+      if (wrap.style.height !== h) wrap.style.height = h
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(wrap)
+    ro.observe(frame)
+    return () => ro.disconnect()
+  }, [device, view, dashTab, lessonTab, brand])
 
   const set = <K extends keyof Brand>(key: K, value: Brand[K]) => {
     setBrand((b) => ({ ...b, [key]: value }))
@@ -277,19 +311,22 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     const el = blockEls.current[id]
     const flow = flowEl.current
     if (!el || !flow) return
+    // The canvas is scaled, so every screen measurement is divided back into
+    // canvas pixels before it is compared with a stored size.
+    const s = scaleRef.current || 1
     const rect = el.getBoundingClientRect()
     const startX = e.clientX, startY = e.clientY
-    const startW = rect.width
-    const startH = (visible.find((p) => p.id === id)?.h) ?? rect.height
+    const startW = rect.width / s
+    const startH = (visible.find((p) => p.id === id)?.h) ?? rect.height / s
     // One column, including the gap that follows it.
-    const colW = (flow.getBoundingClientRect().width + GAP) / GRID_COLS
+    const colW = (flow.getBoundingClientRect().width / s + GAP) / GRID_COLS
     setResizing(id)
     setSaved(false)
 
     const onMove = (ev: PointerEvent) => {
       const patch: Partial<Placement<any>> = {}
-      if (axis !== 'y') patch.w = clampSpan(Math.round((startW + (ev.clientX - startX) + GAP) / colW))
-      if (axis !== 'x') patch.h = clampH(startH + (ev.clientY - startY))
+      if (axis !== 'y') patch.w = clampSpan(Math.round((startW + (ev.clientX - startX) / s + GAP) / colW))
+      if (axis !== 'x') patch.h = clampH(startH + (ev.clientY - startY) / s)
       updateBlock(id, patch)
     }
     const onUp = () => {
@@ -940,7 +977,12 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </div>
         </div>
 
-        <div className={`k-preview-frame ${device} ${backgroundClass(brand)}`} style={vars}>
+        <div className="k-canvas" ref={canvasEl}>
+        <div
+          ref={frameEl}
+          className={`k-preview-frame ${device} ${backgroundClass(brand)}`}
+          style={{ ...vars, ['--canvas-w' as any]: `${CANVAS_WIDTH[device]}px`, ['--canvas-scale' as any]: scale }}
+        >
           {view === 'dashboard' ? (
             <>
               <div className="k-preview-top">
@@ -991,6 +1033,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               {flow()}
             </div>
           )}
+        </div>
         </div>
 
         <p className="k-fine" style={{ textAlign: 'left' }}>

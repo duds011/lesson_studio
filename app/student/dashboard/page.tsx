@@ -274,7 +274,9 @@ export default async function StudentDashboard() {
             <>
               <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{totalVocab} words</span></div>
               <div className="k-card k-chart-card">
-                <VocabLevelChart distribution={vocabDistribution} height={heightOf('vocab', 170)} />
+                <div className="k-chart-fill">
+                  <VocabLevelChart distribution={vocabDistribution} height={sizeOf('vocab')?.h ? heightOf('vocab', 170) : '100%'} />
+                </div>
               </div>
             </>
           )}
@@ -309,7 +311,9 @@ export default async function StudentDashboard() {
                 <h3>{L.scoresTitle}</h3>
                 <span className="k-link">Last {scoreTrend.length}</span>
               </div>
-              <ScoreTrendChart points={scoreTrend} color={brand.accent} height={heightOf('scores', 150)} />
+              <div className="k-chart-fill">
+                <ScoreTrendChart points={scoreTrend} color={brand.accent} height={sizeOf('scores')?.h ? heightOf('scores', 150) : '100%'} />
+              </div>
             </div>
           )}
       </>
@@ -349,7 +353,7 @@ export default async function StudentDashboard() {
           {brand.showSpeaking && (avgWpm != null || avgThinkSec != null) && (
             <div className="k-card">
               <div className="k-card-head"><h3>{L.speakingTitle}</h3></div>
-              <div style={{ display: 'grid', gap: 11 }}>
+              <div style={{ display: 'grid', gap: 11, flex: 1, alignContent: 'center' }}>
                 {avgWpm != null && (
                   <div className="k-hw-top">
                     <div className="k-hw-title">Pace</div>

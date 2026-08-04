@@ -48,7 +48,9 @@ function Spark({
   const latest = vals[vals.length - 1]
   const delta = vals.length > 1 ? latest - vals[0] : 0
   const improved = lowerIsBetter ? delta < 0 : delta > 0
-  const fmt = format ?? ((v: number) => v)
+  // Subtracting two floats prints 1.2000000000000002 unless it is rounded, so
+  // every tile gets a formatter whether it asked for one or not.
+  const fmt = format ?? ((v: number) => Number(v.toFixed(1)))
   const gid = `spark-${dataKey}`
 
   return (
@@ -107,10 +109,10 @@ export default function ProgressCharts({ lessons }: Props) {
   return (
     <div className="spark-grid">
       <Spark label="Score" data={withVocab} dataKey="score" color={BRAND} suffix="/10" domain={[0, 10]} format={(v) => v.toFixed(1)} />
-      <Spark label="You talk" data={withVocab} dataKey="talkPct" color={PURPLE} suffix="%" domain={[0, 100]} />
-      <Spark label="Pace" data={withVocab} dataKey="wpm" color={GREEN} suffix=" wpm" />
-      <Spark label="Thinking" data={withVocab} dataKey="responseSec" color={AMBER} suffix="s" lowerIsBetter />
-      <Spark label="Vocabulary" data={withVocab} dataKey="cumVocab" color={PINK} suffix=" words" />
+      <Spark label="You talk" data={withVocab} dataKey="talkPct" color={PURPLE} suffix="%" domain={[0, 100]} format={Math.round} />
+      <Spark label="Pace" data={withVocab} dataKey="wpm" color={GREEN} suffix=" wpm" format={Math.round} />
+      <Spark label="Thinking" data={withVocab} dataKey="responseSec" color={AMBER} suffix="s" lowerIsBetter format={(v) => v.toFixed(1)} />
+      <Spark label="Vocabulary" data={withVocab} dataKey="cumVocab" color={PINK} suffix=" words" format={Math.round} />
     </div>
   )
 }
