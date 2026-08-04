@@ -281,49 +281,112 @@ export async function generateTest(opts: { studentName: string; lessonTitle: str
  */
 const GENERIC_PROMPT = `Analyze this {{LANGUAGE}} lesson transcript and return ONLY valid JSON.
 
-The transcript comes from two separate microphones, so each line is already attributed to the right speaker. It may contain mis-heard words — work from what is clearly legible and ignore obvious garble. The meeting host is the teacher; the other speaker is the student.
+The transcript is auto-generated from two separate microphones, so each line is already attributed to the right speaker. It may be NOISY: parts are garbled phonetic gibberish — IGNORE the gibberish and work from the clean, legible {{LANGUAGE}}, which is reliable. The meeting host is the teacher; the other speaker is the student.
 
-The target language of this lesson is {{LANGUAGE}}. Write explanations, definitions and notes in English. Write vocabulary and example sentences in {{LANGUAGE}}.
+CRITICAL — BE EXHAUSTIVE. Read the ENTIRE transcript start to finish and extract EVERY grammar point, verb form, and pattern that was taught or drilled, even briefly. Give the LATER HALF of the transcript equal attention — points near the end (often buried in noisy text) are commonly and wrongly dropped. Do NOT stop early or summarize only the first few. A single lesson often has 10-16 teaching points. Actively scan for these commonly-missed items and include each one you find:
+- Verb tenses and aspect: past, imperfect/preterite, perfect, future, progressive
+- Mood: conditional, subjunctive, imperative
+- Agreement: gender, number, adjective and participle agreement
+- Pronouns: object, reflexive, relative, demonstrative
+- Prepositions and the fixed expressions built on them
+- Negation patterns
+- Comparatives and superlatives
+- Conditionals and hypotheticals
+- Reported speech
+- Question formation and word order
+- Articles and determiners
+- Set phrases, idioms and natural fillers
+- Register: formal vs informal address
+Every point that has clean evidence in the transcript MUST get its own section. Missing a point that was clearly taught is a failure.
+
+DO NOT OVER-SPLIT one grammar family: put all members of a single family (for example every irregular past form drilled, or every reflexive verb) together in ONE section, listing them as multiple examples inside it — never one section per word. That frees room to cover the OTHER distinct points.
+
+Before writing, mentally list every distinct teaching point with transcript evidence, then output ONE section for EACH. If the transcript shows it, it gets its own section — do not drop it to save space.
 
 Student: {{STUDENT}}
 
-Return this exact structure. Replace ALL bracketed placeholders with real values — never copy placeholder text:
+Return this exact structure. Replace ALL bracketed placeholders with calculated values — never copy placeholder text:
 {
-  "lesson_title": "[3-7 words, English, Title Case, like a textbook chapter heading. No names, dates or lesson numbers.]",
-  "recap": "[2-3 sentences, max ~55 words, warm and student-facing. No title line, no bullets, no vocab list.]",
-  "score": [0.0-10.0, one decimal — accuracy, grammar, fluency, engagement],
-  "talk_percentage": [integer 0-100 — the student's share of speaking time],
+  "lesson_title": "[short clean lesson title — follow LESSON TITLE rules below]",
+  "recap": "[Full formatted lesson recap — follow RECAP FORMAT below]",
+  "score": [calculated 0.0-10.0],
+  "talk_percentage": [estimated integer 0-100],
   "grammar_density": "[Low or Medium or Medium-High or High]",
-  "confidence_label": "[Developing | Building | Strong Foundation | Confident]",
+  "confidence_label": "[result of weighted formula below]",
   "teacher_note": "[warm 2-3 sentence personal note to this student]",
-  "audio_script": "[short voice-memo script the teacher could read aloud: greeting, a paragraph per topic, a homework line, a warm closing]",
-  "vocab_total_count": [integer — distinct vocabulary items practiced],
+  "audio_script": "[voice memo script — follow AUDIO SCRIPT rules below]",
+  "vocab_total_count": [integer — total distinct vocabulary items in this lesson],
   "vocab_level_distribution": {"A1": [count], "A2": [count], "B1": [count], "B2": [count], "C1": [count], "C2": [count]},
-  "vocabulary": [{"word": "[word or phrase in {{LANGUAGE}}]", "reading": "[pronunciation guide, or the word itself where the spelling is already phonetic]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[sentence in {{LANGUAGE}}]"}],
+  "vocabulary": [{"word": "[{{LANGUAGE}}]", "reading": "[pronunciation guide]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[{{LANGUAGE}} sentence]"}],
   "homework": [{"description": "[task]"}],
   "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
-  "sections": [{"title": "1. Target Phrase: English Meaning", "content": "[see SECTION FORMAT]"}]
+  "sections": [{"title": "1. {{LANGUAGE}} phrase: English Title", "content": "[see SECTION FORMAT]"}]
 }
 
+SCORING:
+- score: Student accuracy, grammar, fluency, engagement. 0.0-10.0 one decimal.
+- talk_percentage: Count turns. Estimate student share of speaking time. Integer 0-100.
+- grammar_density: Amount of new/complex grammar. Low / Medium / Medium-High / High.
+
 CONFIDENCE — weighted formula:
-Self-correction (30%) + Response independence (25%) + Grammar recognition (20%) + Target-language output (15%) + Difficulty handled (10%)
+Self-correction (30%) + Response independence (25%) + Grammar recognition (20%) + {{LANGUAGE}} output (15%) + Difficulty handled (10%)
 0.0-3.9 = Developing | 4.0-5.9 = Building | 6.0-7.9 = Strong Foundation | 8.0-10.0 = Confident
 
-VOCABULARY:
-- Count every distinct item practiced — words, phrases, grammar patterns, set expressions.
-- "jlpt_level" carries the CEFR level here (A1 easiest, C2 hardest). The field keeps its name so the rest of the app is unchanged.
-- vocab_level_distribution: include all six CEFR levels even where the count is 0.
-- 8-12 vocabulary items, all drawn from what was actually said.
+VOCABULARY DETECTION — for vocab_total_count and vocab_level_distribution:
+- Count ALL distinct vocabulary items that appeared or were practiced in this lesson — not just the 10 key items.
+- Include words, grammar patterns, expressions, set phrases and connectors.
+- vocab_total_count: total number of distinct items found.
+- vocab_level_distribution: count of items per CEFR level. Include all 6 levels even if count is 0.
 
-SECTION FORMAT — one section per teaching point with clear evidence in the transcript:
-- Title: "1. Target Phrase: English Meaning"
-- A short explanation in English, an example sentence in {{LANGUAGE}} with its English meaning, and when to use it.
-- 3-6 sections. A point clearly taught but missing is a failure.
+LESSON TITLE — for the "lesson_title" field:
+A short, clean, student-facing title (3-7 words, English, Title Case) naming what the lesson covered — like a textbook chapter heading. Examples: "Contrasting Ideas & Giving Reasons", "Making Comparisons and Strong Advice", "Talking About the Past". NO student/teacher names, NO dates, NO lesson numbers, NO quotes.
+
+RECAP FORMAT — for the "recap" field:
+Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name the lesson's main topic and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, pronunciation blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
+
+SECTION FORMAT — one section per DISTINCT grammar point/topic. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
+- Title: "1. {{LANGUAGE}} phrase: English" (e.g. "1. il faut que: You Have To")
+- Start with 1-3 short plain English sentences.
+- Vocab bullets: - **word in {{LANGUAGE}}** *pronunciation* — English meaning
+- Example sentences as 3-line blocks.
+- Grammar callouts: **Pattern:** structure
+- Tips: Natural note: text OR Important: text
+- NO sub-headers. SHORT sentences only.
+
+LAST SECTION — REQUIRED — titled exactly "Main Corrections & Refinements":
+8-10 bullet points only. Each bullet: **word or pattern in {{LANGUAGE}}** / pronunciation: one short English sentence (max 12 words).
+Base these on mistakes the student actually made and the teacher actually corrected in this transcript.
+
+AUDIO SCRIPT — for the "audio_script" field:
+Write based on the recap. One paragraph per topic, no transitions between paragraphs.
+Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic ({{LANGUAGE}} word [pronunciation] — meaning — short example). Homework sentence. Personal closing line.
+Total: 45-75 seconds when read aloud.
+
+EXERCISES — generate exactly 7 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud, 1 speak, 3 multiple_choice, 2 fill_blank.
+Keep everything at this student's level. The JSON keys below are structural — keep them exactly as written even though the content is {{LANGUAGE}}.
+The "data" object depends on "type":
+- read_aloud → prompt: "Read these sentences aloud". data: {"focus": "[grammar focus]", "sentences": [{"jp": "[sentence in {{LANGUAGE}}]", "en": "[English]"}, {"jp":"...","en":"..."}, {"jp":"...","en":"..."}]}
+- speak → prompt: "Answer out loud". data: {"prompt_jp": "[a question in {{LANGUAGE}}]", "prompt_en": "[English]", "hint": "[which grammar/words to use]"}
+- multiple_choice → prompt: "Quick check". data: {"question": "[question in English about this lesson]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": [integer index 0-2 of the correct option]}
+- fill_blank → prompt: "Fill in the blank". data: {"before": "[{{LANGUAGE}} text before the gap]", "after": "[{{LANGUAGE}} text after the gap]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": "[the correct option, must exactly match one option]", "en": "[English translation]"}
+
+VOCABULARY RULES:
+- Include exactly 10 vocabulary words, drawn from what was actually said.
+- "reading": a pronunciation guide. Where the spelling is already phonetic, repeat the word. Never empty.
+- "definition": short English meaning ending with a period.
+- "explanation": 1-2 short warm sentences.
+
+CEFR LEVEL — STRICT RULES:
+Anchor: A1: greetings, numbers, everyday nouns, basic present tense | A2: past tense, simple connectors, routine description | B1: opinions, conditionals, common abstract nouns | B2: complex moods, nuanced connectors, formal register | C1: idiomatic and literary usage | C2: rare, specialist or literary only.
+1. Everyday conversational words belong at B1 or below.
+2. Cultural nuance or formality does NOT raise the level.
+3. When unsure between B1 and B2, always choose B1.
+4. Only assign C1 or C2 if absent from a standard B2-level textbook.
 
 IF THIS TRANSCRIPT IS NOT A LESSON:
 Say so plainly. Set score to 0, leave vocabulary, sections, homework and exercises empty, and use "recap" to state in one sentence what the recording actually contains. Never invent teaching that did not happen.
 
-TRANSCRIPT:
+Transcript:
 {{TRANSCRIPT}}`
 
 export async function generateRecap(opts: {
