@@ -34,10 +34,10 @@ export default function RecordingsOverview({
   return (
     <>
       <header className="k-thead slim">
-        <div className="k-hero-art" aria-hidden>
-          <span className="k-line-arc" style={{ width: 90, height: 90, right: 10, top: 6 }} />
-          <span className="k-line-ring" style={{ width: 44, height: 44, right: 82, top: 40 }} />
-          <span className="k-line-bar" style={{ width: 120, right: 30, top: 84 }} />
+        <div className="k-hero-art" style={{ right: -14, opacity: .5 }} aria-hidden>
+          <span className="k-orb" style={{ width: 54, height: 54, right: 4, top: 46 }} />
+          <span className="k-tube" style={{ width: 40, height: 40, right: 54, top: 68, borderWidth: 10 }} />
+          <span className="k-ring" style={{ width: 26, height: 26, right: 104, top: 54, borderWidth: 7 }} />
         </div>
         <div className="k-thead-title">
           <span className="k-phead-eyebrow">Overview</span>
@@ -53,7 +53,7 @@ export default function RecordingsOverview({
         <div className="k-overview-main">
           <section className="k-sec">
             <div className="k-sec-head">
-              <span className="k-sec-icon" aria-hidden>◎</span>
+              <span className="k-sec-icon" aria-hidden>🎙️</span>
               <div>
                 <h3>How lessons reach you</h3>
                 <p className="desc">
@@ -63,25 +63,21 @@ export default function RecordingsOverview({
               </div>
             </div>
 
-            <ol className="k-steps">
-              <li>
-                <b>Record the lesson</b>
-                <span>Use the browser recorder, or upload the file your platform gives you.</span>
-              </li>
-              <li>
-                <b>We build the recap</b>
-                <span>Summary, vocabulary, corrections and practice, drafted from the transcript.</span>
-              </li>
-              <li>
-                <b>You review and publish</b>
-                <span>Edit anything, then send it — the student sees it in their portal.</span>
-              </li>
-            </ol>
+            {[
+              ['Record the lesson', 'Use the browser recorder, or upload the file your platform gives you.'],
+              ['We build the recap', 'Summary, vocabulary, corrections and practice, drafted from the transcript.'],
+              ['You review and publish', 'Edit anything, then send it — the student sees it in their portal.'],
+            ].map(([title, note], i) => (
+              <div key={title} className="k-onb-ok" style={i > 0 ? { marginTop: 10 } : undefined}>
+                <span aria-hidden>{i + 1}</span>
+                <div><strong>{title}</strong><small>{note}</small></div>
+              </div>
+            ))}
           </section>
 
           <section className="k-sec">
             <div className="k-sec-head">
-              <span className="k-sec-icon b" aria-hidden>▤</span>
+              <span className="k-sec-icon b" aria-hidden>📄</span>
               <div>
                 <h3>Latest lessons</h3>
                 <p className="desc">Everything published or drafted for your students, newest first.</p>
@@ -94,17 +90,18 @@ export default function RecordingsOverview({
                 Record your first lesson and it will appear here as a draft recap.
               </div>
             ) : (
-              <div className="k-list">
+              <div>
                 {recent.map((l) => (
-                  <div key={l.id} className="k-list-row">
-                    <span className="k-list-num">{l.lessonNumber ? `#${l.lessonNumber}` : '—'}</span>
-                    <div className="k-list-copy">
-                      <strong>{l.title || 'Untitled lesson'}</strong>
-                      <small>{l.studentName} · {fmtDate(l.date)}</small>
+                  <div key={l.id} className="lesson-card">
+                    <span className="lc-num">{l.lessonNumber ? `#${l.lessonNumber}` : '—'}</span>
+                    <div>
+                      <div className="lc-title">{l.title || 'Untitled lesson'}</div>
+                      <div className="lc-meta">{l.studentName} · {fmtDate(l.date)}</div>
                     </div>
                     <span className={`pill ${l.status === 'published' ? 'green' : 'amber'}`}>
                       {l.status === 'published' ? 'Published' : 'Draft'}
                     </span>
+                    <span />
                   </div>
                 ))}
               </div>
@@ -114,17 +111,17 @@ export default function RecordingsOverview({
 
         <aside className="k-overview-rail" aria-label="Lesson summary">
           <div className="k-tstats">
-            <div className="k-stat one">
+            <div className="k-stat yellow">
               <div className="k-stat-head"><span>Students</span></div>
               <div className="k-stat-val"><b><CountUp value={studentCount} /></b></div>
               <p className="k-stat-sub">with a portal of their own</p>
             </div>
-            <div className="k-stat two">
+            <div className="k-stat blue">
               <div className="k-stat-head"><span>Drafts to review</span></div>
               <div className="k-stat-val"><b><CountUp value={draftCount} /></b></div>
               <p className="k-stat-sub">recaps waiting on you</p>
             </div>
-            <div className="k-stat three">
+            <div className="k-stat purple">
               <div className="k-stat-head"><span>Published recaps</span></div>
               <div className="k-stat-val"><b><CountUp value={publishedCount} /></b></div>
               <p className="k-stat-sub">sent to students</p>

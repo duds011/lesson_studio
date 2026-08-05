@@ -586,15 +586,10 @@ export function brandVars(brand: Brand): React.CSSProperties {
   const r = SHAPE_RADII[brand.shape] ?? SHAPE_RADII.rounded
   const f = FONTS.find((x) => x.value === brand.font) ?? FONTS[0]
   return {
-    ['--blue' as any]: brand.accent,
-    ['--blue-deep' as any]: shade(brand.accent, -0.22),
-    ['--blue-mid' as any]: shade(brand.accent, 0.42),
+    ['--forest' as any]: brand.accent,
+    ['--forest-deep' as any]: shade(brand.accent, -0.22),
     ['--brand' as any]: brand.accent,
     ['--brand-soft' as any]: shade(brand.accent, 0.88),
-    // The one gradient in the system, rebuilt around whatever accent the
-    // teacher picked so their portal keeps the same depth as the house look.
-    ['--grad' as any]: `linear-gradient(135deg, ${brand.accent} 0%, ${shade(brand.accent, -0.16)} 52%, ${shade(brand.accent, -0.34)} 100%)`,
-    ['--grad-rule' as any]: `linear-gradient(90deg, transparent, ${shade(brand.accent, 0.45)} 20%, ${brand.accent} 50%, ${shade(brand.accent, 0.45)} 80%, transparent)`,
     ['--r-md' as any]: r.md,
     ['--r-lg' as any]: r.lg,
     ['--r-xl' as any]: r.xl,

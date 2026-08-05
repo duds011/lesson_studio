@@ -95,17 +95,17 @@ export default function PaymentsManager({
     <div style={{ display: 'grid', gap: 20 }}>
       {/* Summary */}
       <div className="k-pay-stats">
-        <div className="k-stat one">
+        <div className="k-stat yellow">
           <div className="k-stat-head"><span>This month</span></div>
           <div className="k-stat-val"><b>{formatMoney(thisMonth, currency)}</b></div>
           <p className="k-stat-sub">received since the 1st</p>
         </div>
-        <div className="k-stat two">
+        <div className="k-stat blue">
           <div className="k-stat-head"><span>Received all-time</span></div>
           <div className="k-stat-val"><b>{formatMoney(totalReceived, currency)}</b></div>
           <p className="k-stat-sub">across every student</p>
         </div>
-        <div className="k-stat three">
+        <div className="k-stat purple">
           <div className="k-stat-head"><span>Outstanding</span></div>
           <div className="k-stat-val"><b>{formatMoney(totalOutstanding, currency)}</b></div>
           <p className="k-stat-sub">{totalOutstanding > 0 ? 'still to collect' : 'nothing owed — nice'}</p>
@@ -153,7 +153,7 @@ export default function PaymentsManager({
               <Link href={`/teacher/students/${s.id}`} className="sc-name" style={{ color: 'inherit' }}>{s.fullName}</Link>
               <span style={{ fontWeight: 700 }}>{formatMoney(paidByStudent.get(s.id) ?? 0, currency)}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <strong style={{ color: c.remaining <= 0 ? 'var(--red)' : c.low ? 'var(--amber)' : 'var(--blue)' }}>{c.remaining}</strong>
+                <strong style={{ color: c.remaining <= 0 ? 'var(--red)' : c.low ? 'var(--amber)' : 'var(--forest)' }}>{c.remaining}</strong>
                 <span style={{ fontSize: 11, color: 'var(--muted)' }}>left / {c.purchased} bought</span>
                 {c.low && <span className="pill" style={{ background: c.remaining <= 0 ? 'var(--red-soft)' : 'var(--amber-soft)', color: c.remaining <= 0 ? 'var(--red)' : 'var(--amber)' }}>⚠️</span>}
               </span>

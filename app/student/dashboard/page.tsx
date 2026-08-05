@@ -191,7 +191,7 @@ export default async function StudentDashboard() {
     stats: (
       <>
           <div className="k-stats">
-            <div className="k-stat one">
+            <div className="k-stat yellow">
               <div className="k-stat-head">
                 <Icon d="M4 5h16v14H4zM4 9h16M9 9v10" />
                 <span>{L.statLessons}</span>
@@ -203,7 +203,7 @@ export default async function StudentDashboard() {
               <p className="k-stat-sub">{recentCount > 0 ? `${recentCount} in the last 30 days` : 'Total lessons completed'}</p>
             </div>
 
-            <div className="k-stat two">
+            <div className="k-stat blue">
               <div className="k-stat-head">
                 <Icon d="M12 3v18M5 10l7-7 7 7" />
                 <span>{L.statScore}</span>
@@ -217,7 +217,7 @@ export default async function StudentDashboard() {
               <p className="k-stat-sub">out of 10 across {scores.length} scored lesson{scores.length === 1 ? '' : 's'}</p>
             </div>
 
-            <div className="k-stat three">
+            <div className="k-stat purple">
               <div className="k-stat-head">
                 <Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" />
                 <span>{L.statSpeaking}</span>

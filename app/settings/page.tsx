@@ -78,7 +78,7 @@ export default async function SettingsPage() {
             {/* The onboarding answer, changeable — see lib/calendar-mode. */}
             <section className="k-sec">
               <div className="k-sec-head">
-                <span className="k-sec-icon b" aria-hidden>◷</span>
+                <span className="k-sec-icon y" aria-hidden>🗓️</span>
                 <div>
                   <h3>Where your lessons live</h3>
                   <p className="desc">
@@ -87,7 +87,7 @@ export default async function SettingsPage() {
                   </p>
                 </div>
               </div>
-              <div className="k-choices k-choices-wide">
+              <div className="k-choices">
                 {CALENDAR_MODES.map((m) => (
                   <form key={m} action={chooseCalendarMode}>
                     <input type="hidden" name="mode" value={m} />

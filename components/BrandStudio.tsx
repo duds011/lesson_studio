@@ -468,10 +468,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       case 'stats':
         return (
           <div className="k-preview-stats">
-            {/* White cards told apart by a rule, the same as the real ones. */}
-            <div className="one"><span {...editable('label:statLessons', { max: 24 })}>{pin('label:statLessons')}</span><b><CountUp value={12} /></b></div>
-            <div className="two"><span {...editable('label:statScore', { max: 24 })}>{pin('label:statScore')}</span><b><CountUp value={7.4} decimals={1} /></b></div>
-            <div className="three"><span {...editable('label:statSpeaking', { max: 24 })}>{pin('label:statSpeaking')}</span><b><CountUp value={41} suffix="%" /></b></div>
+            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span {...editable('label:statLessons', { max: 24 })}>{pin('label:statLessons')}</span><b><CountUp value={12} /></b></div>
+            <div style={{ background: 'var(--c-blue)' }}><span {...editable('label:statScore', { max: 24 })}>{pin('label:statScore')}</span><b><CountUp value={7.4} decimals={1} /></b></div>
+            <div style={{ background: 'var(--c-purple)' }}><span {...editable('label:statSpeaking', { max: 24 })}>{pin('label:statSpeaking')}</span><b><CountUp value={41} suffix="%" /></b></div>
           </div>
         )
       case 'lessons':

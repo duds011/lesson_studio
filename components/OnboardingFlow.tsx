@@ -8,7 +8,6 @@ import {
   TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
 } from '@/lib/teaching-platform'
 import { CALENDAR_MODE_META, type CalendarMode } from '@/lib/calendar-mode'
-import StudioMark from '@/components/StudioMark'
 
 type Props = {
   initial: {
@@ -104,9 +103,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     <div className="k-onb">
       <div className="k-onb-side">
         <div className="k-onb-brandline">
-          <span className="k-auth-mark" style={{ background: 'transparent', borderColor: 'rgba(255,255,255,.4)', color: '#fff', marginBottom: 0, width: 40, height: 40 }} aria-hidden>
-            <StudioMark size={21} />
-          </span>
+          <span className="k-auth-mark" style={{ background: 'rgba(255,255,255,.16)', color: '#fff', marginBottom: 0 }} aria-hidden>📚</span>
           <strong>Lesson Studio</strong>
         </div>
 
@@ -216,7 +213,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   : 'If your students are on your Google Calendar we can read the week, take bookings and send the recorder. If you schedule elsewhere, we stay out of it.'}
               </p>
 
-              <div className="k-choices k-choices-wide">
+              <div className="k-choices">
                 {(['google', 'none'] as const).map((id) => (
                   <button
                     key={id}

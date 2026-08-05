@@ -225,17 +225,17 @@ export default async function Home() {
 
           <aside className="k-overview-rail" aria-label="Lesson summary">
             <div className="k-tstats">
-              <div className="k-stat one">
+              <div className="k-stat yellow">
                 <div className="k-stat-head"><span>Upcoming lessons</span></div>
                 <div className="k-stat-val"><b><CountUp value={lessons.length} /></b></div>
                 <p className="k-stat-sub">on {token.calendarName || 'your calendar'}</p>
               </div>
-              <div className="k-stat two">
+              <div className="k-stat blue">
                 <div className="k-stat-head"><span>Drafts to review</span></div>
                 <div className="k-stat-val"><b><CountUp value={Object.values(recapRecs).filter((r) => r.status === 'draft').length} /></b></div>
                 <p className="k-stat-sub">recaps waiting on you</p>
               </div>
-              <div className="k-stat three">
+              <div className="k-stat purple">
                 <div className="k-stat-head"><span>Published recaps</span></div>
                 <div className="k-stat-val"><b><CountUp value={Object.values(recapRecs).filter((r) => r.status === 'published').length} /></b></div>
                 <p className="k-stat-sub">sent to students</p>
