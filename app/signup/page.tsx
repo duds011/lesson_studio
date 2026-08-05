@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signUpTeacher } from '@/app/actions/signup'
+import StudioMark from '@/components/StudioMark'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -63,7 +64,7 @@ export default function SignupPage() {
 
       <main className="k-auth-main">
         <div className="k-auth-card">
-          <div className="k-auth-mark" aria-hidden style={{ fontSize: 17, fontWeight: 800 }}>KL</div>
+          <div className="k-auth-mark" aria-hidden><StudioMark size={26} /></div>
           <h1>Create a teacher account</h1>
           <p>Start your Koku Library workspace for students, lesson recaps, bookings, and progress tracking.</p>
 

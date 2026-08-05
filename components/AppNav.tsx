@@ -37,7 +37,13 @@ const LINKS = [
  *  --sidebar width the whole layout is built on collapses with it. */
 const NAV_KEY = 'nav-collapsed'
 
-export default function AppNav({ email, connected }: { email?: string | null; connected?: boolean }) {
+/**
+ * `calendar={false}` is a teacher who told onboarding their lessons live
+ * somewhere else. Availability and the booking page are both computed from
+ * Google free/busy, so for them those links lead nowhere — they come out of the
+ * nav rather than sitting there broken.
+ */
+export default function AppNav({ email, connected, calendar = true }: { email?: string | null; connected?: boolean; calendar?: boolean }) {
   const pathname = usePathname()
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
   const accountLabel = email?.split('@')[0] || 'Teacher workspace'
@@ -89,12 +95,16 @@ export default function AppNav({ email, connected }: { email?: string | null; co
 
         <div className="nav-section-label">Manage</div>
         <nav className="side-nav">
-          <Link href="/settings#availability" className="side-link">
-            <Icon name="clock" /><span>Availability</span>
-          </Link>
-          <Link href="/book" className={`side-link ${isActive('/book') ? 'active' : ''}`} target="_blank">
-            <Icon name="calendar" /><span>Booking page</span><Icon name="external" />
-          </Link>
+          {calendar && (
+            <>
+              <Link href="/settings#availability" className="side-link">
+                <Icon name="clock" /><span>Availability</span>
+              </Link>
+              <Link href="/book" className={`side-link ${isActive('/book') ? 'active' : ''}`} target="_blank">
+                <Icon name="calendar" /><span>Booking page</span><Icon name="external" />
+              </Link>
+            </>
+          )}
           <Link href="/settings" className={`side-link ${isActive('/settings') ? 'active' : ''}`}>
             <Icon name="settings" /><span>Settings</span>
           </Link>
@@ -103,7 +113,13 @@ export default function AppNav({ email, connected }: { email?: string | null; co
 
       <div className="sidebar-account">
         <span className="account-avatar">{accountLabel.charAt(0).toUpperCase()}</span>
-        <span className="account-copy"><strong>{accountLabel}</strong><small><span className={`status-dot ${connected ? 'online' : ''}`} />{connected ? 'Calendar connected' : 'Setup needed'}</small></span>
+        <span className="account-copy">
+          <strong>{accountLabel}</strong>
+          <small>
+            <span className={`status-dot ${connected || !calendar ? 'online' : ''}`} />
+            {connected ? 'Calendar connected' : calendar ? 'Setup needed' : 'Recordings only'}
+          </small>
+        </span>
         <a href="/logout" className="btn btn-danger-ghost btn-sm" title="Sign out" aria-label="Sign out" style={{ padding: '6px 8px' }}>
           Sign out
         </a>

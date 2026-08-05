@@ -7,6 +7,8 @@ import { ACCENT_PRESETS, type Brand } from '@/lib/brand'
 import {
   TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
 } from '@/lib/teaching-platform'
+import { CALENDAR_MODE_META, type CalendarMode } from '@/lib/calendar-mode'
+import StudioMark from '@/components/StudioMark'
 
 type Props = {
   initial: {
@@ -14,6 +16,8 @@ type Props = {
     teachingLanguage: string | null
     timezone: string
     teachingPlatform: TeachingPlatform
+    /** null until they answer — this step has no safe default. */
+    calendarMode: CalendarMode | null
     step: number
     brand: Brand
   }
@@ -36,7 +40,7 @@ const ZONES = [
   'Australia/Sydney',
 ]
 
-const STEPS = ['What you teach', 'Where you meet', 'How lessons arrive', 'Your student view'] as const
+const STEPS = ['What you teach', 'Where you meet', 'Your calendar', 'Your student view'] as const
 
 export default function OnboardingFlow({ initial, googleConnected, zoomConnected }: Props) {
   const router = useRouter()
@@ -52,6 +56,10 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
   const [customLanguage, setCustomLanguage] = useState(known ? '' : (initial.teachingLanguage ?? ''))
   const [timezone, setTimezone] = useState(initial.timezone)
   const [platform, setPlatform] = useState<TeachingPlatform>(initial.teachingPlatform)
+  // A calendar already connected is an answer in itself; otherwise they choose.
+  const [calendarMode, setCalendarMode] = useState<CalendarMode | null>(
+    googleConnected ? 'google' : initial.calendarMode
+  )
   const [accent, setAccent] = useState(initial.brand.accent)
   const [portalName, setPortalName] = useState(initial.brand.portalName)
 
@@ -74,7 +82,8 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
-      persist({ step: 3 }, () => setStep(3))
+      if (!calendarMode) { setError('Tell us whether your lessons live on a calendar.'); return }
+      persist({ calendarMode, step: 3 }, () => setStep(3))
     }
   }
 
@@ -95,7 +104,9 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     <div className="k-onb">
       <div className="k-onb-side">
         <div className="k-onb-brandline">
-          <span className="k-auth-mark" style={{ background: 'rgba(255,255,255,.16)', color: '#fff', marginBottom: 0 }} aria-hidden>📚</span>
+          <span className="k-auth-mark" style={{ background: 'transparent', borderColor: 'rgba(255,255,255,.4)', color: '#fff', marginBottom: 0, width: 40, height: 40 }} aria-hidden>
+            <StudioMark size={21} />
+          </span>
           <strong>Lesson Studio</strong>
         </div>
 
@@ -195,26 +206,54 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
             </>
           )}
 
-          {/* ── 3. Calendar ── */}
+          {/* ── 3. Calendar — the fork the whole workspace follows ── */}
           {step === 2 && (
             <>
-              <h1>{external ? 'How do lessons get in?' : 'Connect your calendar'}</h1>
+              <h1>Where do your lessons live?</h1>
               <p className="k-onb-lead">
                 {external
-                  ? `Your lessons happen in ${TEACHING_PLATFORM_META[platform].label}, so there is nothing on a calendar for us to read. Recordings are the way in — a calendar is optional here, and only adds a booking page.`
-                  : 'Lesson Studio reads your lessons, takes bookings into free slots, and sends the recorder to each class. Nothing is written to your calendar until a student books.'}
+                  ? `Some ${TEACHING_PLATFORM_META[platform].label} teachers still keep their week on Google Calendar, and some never leave the platform. Your answer decides what the workspace shows you.`
+                  : 'If your students are on your Google Calendar we can read the week, take bookings and send the recorder. If you schedule elsewhere, we stay out of it.'}
               </p>
 
-              {googleConnected ? (
-                <div className="k-onb-ok">
+              <div className="k-choices k-choices-wide">
+                {(['google', 'none'] as const).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`k-choice ${calendarMode === id ? 'sel' : ''}`}
+                    onClick={() => { setCalendarMode(id); setError('') }}
+                    aria-pressed={calendarMode === id}
+                  >
+                    <span className="k-choice-tick" aria-hidden>✓</span>
+                    <span>{CALENDAR_MODE_META[id].label}<small>{CALENDAR_MODE_META[id].hint}</small></span>
+                  </button>
+                ))}
+              </div>
+
+              {/* What that answer means, shown in place rather than a step later. */}
+              {calendarMode === 'google' && (googleConnected ? (
+                <div className="k-onb-ok" style={{ marginTop: 16 }}>
                   <span aria-hidden>✓</span>
                   <div>
                     <strong>Google Calendar connected</strong>
                     <small>You can pick which calendar holds your lessons in Settings.</small>
                   </div>
                 </div>
-              ) : external ? (
-                <>
+              ) : (
+                <div style={{ marginTop: 16 }}>
+                  <a className="k-btn-block" href="/api/google/auth" style={{ textDecoration: 'none' }}>
+                    Connect Google Calendar
+                  </a>
+                  <p className="k-fine" style={{ textAlign: 'left', marginTop: 12 }}>
+                    You&rsquo;ll be sent to Google&rsquo;s consent screen and returned here. You can carry on without it,
+                    but bookings and automatic recording stay off until you connect.
+                  </p>
+                </div>
+              ))}
+
+              {calendarMode === 'none' && (
+                <div style={{ marginTop: 16 }}>
                   <div className="k-onb-ok">
                     <span aria-hidden>1</span>
                     <div>
@@ -230,20 +269,10 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                     </div>
                   </div>
                   <p className="k-fine" style={{ textAlign: 'left', marginTop: 14 }}>
-                    Want a booking page too? Connect Google Calendar and students can book your free slots —{' '}
-                    <a href="/api/google/auth">connect it now</a>, or any time from Settings.
+                    No calendar, no booking page, no nagging — your workspace opens on lessons and recaps instead.
+                    Change your mind any time in Settings.
                   </p>
-                </>
-              ) : (
-                <>
-                  <a className="k-btn-block" href="/api/google/auth" style={{ textDecoration: 'none' }}>
-                    Connect Google Calendar
-                  </a>
-                  <p className="k-fine" style={{ textAlign: 'left', marginTop: 12 }}>
-                    You&rsquo;ll be sent to Google&rsquo;s consent screen and returned here. You can skip this and connect later,
-                    but bookings and recording stay off until you do.
-                  </p>
-                </>
+                </div>
               )}
             </>
           )}
@@ -285,11 +314,6 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
           <div className="k-onb-actions">
             {step > 0 && <button type="button" className="btn btn-ghost" onClick={back} disabled={pending}>Back</button>}
-            {step === 2 && !googleConnected && (
-              <button type="button" className="btn btn-ghost" onClick={next} disabled={pending}>
-                {external ? 'No calendar, thanks' : 'Skip for now'}
-              </button>
-            )}
             {step < STEPS.length - 1 ? (
               <button type="button" className="k-btn-block" style={{ width: 'auto', marginLeft: 'auto' }} onClick={next} disabled={pending}>
                 {pending ? 'Saving…' : 'Continue'}

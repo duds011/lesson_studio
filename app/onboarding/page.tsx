@@ -4,6 +4,7 @@ import { getToken } from '@/lib/store'
 import { zoomConnection } from '@/lib/zoom'
 import { resolveBrand } from '@/lib/brand'
 import { resolveTeachingPlatform } from '@/lib/teaching-platform'
+import { isCalendarMode } from '@/lib/calendar-mode'
 import OnboardingFlow from '@/components/OnboardingFlow'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,7 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name, teaching_language, timezone, teaching_platform, meeting_platform, onboarding_step, onboarding_completed_at, brand')
+    .select('role, full_name, teaching_language, timezone, teaching_platform, meeting_platform, calendar_mode, onboarding_step, onboarding_completed_at, brand')
     .eq('id', user.id)
     .single()
 
@@ -34,6 +35,9 @@ export default async function OnboardingPage() {
         teachingLanguage: profile.teaching_language ?? null,
         timezone: profile.timezone ?? 'Asia/Tokyo',
         teachingPlatform: resolveTeachingPlatform(profile.teaching_platform ?? profile.meeting_platform),
+        // Deliberately not defaulted: the step asks for an answer, and a
+        // pre-ticked box is an answer nobody gave.
+        calendarMode: isCalendarMode(profile.calendar_mode) ? profile.calendar_mode : null,
         step: profile.onboarding_step ?? 0,
         brand: resolveBrand(profile.brand),
       }}

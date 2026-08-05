@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import StudioMark from '@/components/StudioMark'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -55,7 +56,7 @@ export default function LoginPage() {
 
       <main className="k-auth-main">
         <div className="k-auth-card">
-          <div className="k-auth-mark" aria-hidden>📚</div>
+          <div className="k-auth-mark" aria-hidden><StudioMark size={26} /></div>
           <h1>Sign in</h1>
           <p>{expired ? 'Your session timed out. Sign in and we’ll take you straight back.' : 'Welcome back. Sign in to see your lessons, progress, and recaps.'}</p>
 

@@ -4,6 +4,8 @@ import { getSettings } from '@/lib/settings'
 import { getBookingConfig } from '@/lib/booking'
 import { zoomConnection, isZoomConfigured } from '@/lib/zoom'
 import { createClient } from '@/lib/supabase/server'
+import { CALENDAR_MODES, CALENDAR_MODE_META, resolveCalendarMode } from '@/lib/calendar-mode'
+import { chooseCalendarMode } from '@/app/actions/calendar'
 import AppNav from '@/components/AppNav'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
@@ -32,8 +34,9 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = user
-    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode').eq('id', user.id).single()
     : { data: null }
+  const calendarMode = resolveCalendarMode((profile as any)?.calendar_mode)
   const stripe = {
     connected: Boolean((profile as any)?.stripe_account_id),
     chargesEnabled: Boolean((profile as any)?.stripe_charges_enabled),
@@ -41,7 +44,7 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <AppNav email={token?.email} connected={Boolean(token)} />
+      <AppNav email={token?.email} connected={Boolean(token)} calendar={calendarMode !== 'none'} />
       <main className="wrap settings-wrap page-fade">
         <header className="k-thead slim">
           <div className="k-thead-title">
@@ -54,7 +57,7 @@ export default async function SettingsPage() {
           </div>
         </header>
 
-        <SettingsTabs>
+        <SettingsTabs calendar={calendarMode !== 'none'}>
           {/* ── Connections ─────────────────────────────────────────── */}
           <SettingsPanel id="connections">
             <section className="k-sec">
@@ -70,6 +73,31 @@ export default async function SettingsPage() {
                 zoom={zoom}
                 stripe={stripe}
               />
+            </section>
+
+            {/* The onboarding answer, changeable — see lib/calendar-mode. */}
+            <section className="k-sec">
+              <div className="k-sec-head">
+                <span className="k-sec-icon b" aria-hidden>◷</span>
+                <div>
+                  <h3>Where your lessons live</h3>
+                  <p className="desc">
+                    Keep them on Google Calendar and you get a booking page, free-slot scheduling and automatic
+                    recording. Schedule elsewhere and the workspace drops all of that and works from recordings.
+                  </p>
+                </div>
+              </div>
+              <div className="k-choices k-choices-wide">
+                {CALENDAR_MODES.map((m) => (
+                  <form key={m} action={chooseCalendarMode}>
+                    <input type="hidden" name="mode" value={m} />
+                    <button type="submit" className={`k-choice ${calendarMode === m ? 'sel' : ''}`}>
+                      <span className="k-choice-tick" aria-hidden>✓</span>
+                      <span>{CALENDAR_MODE_META[m].label}<small>{CALENDAR_MODE_META[m].hint}</small></span>
+                    </button>
+                  </form>
+                ))}
+              </div>
             </section>
 
             {/* Which calendar holds lessons (only when Google is connected) */}
@@ -105,6 +133,7 @@ export default async function SettingsPage() {
           </SettingsPanel>
 
           {/* ── Booking preference: meeting platform + lesson defaults ── */}
+          {calendarMode !== 'none' && (
           <SettingsPanel id="booking">
             <section className="k-sec">
               <div className="k-sec-head">
@@ -139,9 +168,10 @@ export default async function SettingsPage() {
               </div>
             </section>
           </SettingsPanel>
+          )}
 
           {/* Lesson defaults (booking) + working hours (availability) */}
-          <AvailabilityEditor config={bookingConfig} />
+          {calendarMode !== 'none' && <AvailabilityEditor config={bookingConfig} />}
         </SettingsTabs>
       </main>
     </>

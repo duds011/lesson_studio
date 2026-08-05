@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { setPlatform, type Platform } from '@/lib/settings'
 import { linkPlatformFor, isTeachingPlatform, type TeachingPlatform } from '@/lib/teaching-platform'
+import { isCalendarMode, type CalendarMode } from '@/lib/calendar-mode'
 import { resolveBrand, type Brand } from '@/lib/brand'
 
 type Result = { success: boolean; error?: string }
@@ -22,6 +23,7 @@ export type OnboardingPatch = {
   teachingLanguage?: string
   timezone?: string
   teachingPlatform?: TeachingPlatform
+  calendarMode?: CalendarMode
   step?: number
   brand?: Partial<Brand>
 }
@@ -44,6 +46,7 @@ export async function saveOnboarding(patch: OnboardingPatch): Promise<Result> {
     // marketplace lesson has a link already, and it isn't ours to make.
     update.meeting_platform = linkPlatformFor(patch.teachingPlatform)
   }
+  if (isCalendarMode(patch.calendarMode)) update.calendar_mode = patch.calendarMode
   if (typeof patch.step === 'number') update.onboarding_step = Math.max(0, Math.min(10, Math.round(patch.step)))
 
   if (patch.brand) {

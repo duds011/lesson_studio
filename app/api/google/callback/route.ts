@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { exchangeCode } from '@/lib/google'
+import { setCalendarMode } from '@/lib/calendar-mode.server'
 
 // Public base URL, honoring ngrok / proxy forwarding headers.
 function publicBase(req: NextRequest): string {
@@ -20,6 +21,9 @@ export async function GET(req: NextRequest) {
 
   try {
     await exchangeCode(code)
+    // Connecting a calendar answers the onboarding question, whatever was said
+    // before — the workspace should stop hiding its calendar surfaces.
+    await setCalendarMode('google')
     return NextResponse.redirect(`${base}/?connected=ok`)
   } catch (e) {
     console.error('OAuth callback failed:', e)

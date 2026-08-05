@@ -2,10 +2,10 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
-const TABS = [
-  { id: 'connections', label: 'Connections' },
-  { id: 'booking', label: 'Booking preference' },
-  { id: 'availability', label: 'Availability' },
+const ALL_TABS = [
+  { id: 'connections', label: 'Connections', calendarOnly: false },
+  { id: 'booking', label: 'Booking preference', calendarOnly: true },
+  { id: 'availability', label: 'Availability', calendarOnly: true },
 ]
 
 const TabCtx = createContext('connections')
@@ -13,20 +13,24 @@ const TabCtx = createContext('connections')
 /**
  * Settings shell: the rail switches between views instead of scrolling one long
  * page. Panels are hidden rather than unmounted so edits survive a tab switch.
+ *
+ * Booking and availability are both computed from Google free/busy, so a
+ * teacher who keeps no calendar isn't shown two views that can do nothing.
  */
-export default function SettingsTabs({ children }: { children: React.ReactNode }) {
+export default function SettingsTabs({ children, calendar = true }: { children: React.ReactNode; calendar?: boolean }) {
   const [active, setActive] = useState('connections')
+  const TABS = ALL_TABS.filter((t) => calendar || !t.calendarOnly)
 
   // Deep links (/settings#availability) and back/forward pick the view.
   useEffect(() => {
     const fromHash = () => {
       const id = window.location.hash.slice(1)
-      if (TABS.some((t) => t.id === id)) setActive(id)
+      if (ALL_TABS.some((t) => t.id === id && (calendar || !t.calendarOnly))) setActive(id)
     }
     fromHash()
     window.addEventListener('hashchange', fromHash)
     return () => window.removeEventListener('hashchange', fromHash)
-  }, [])
+  }, [calendar])
 
   const go = (id: string) => {
     setActive(id)

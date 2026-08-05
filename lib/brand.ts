@@ -254,7 +254,7 @@ const DEFAULT_LESSON_LAYOUT: LessonLayout = [
 ]
 
 export const DEFAULT_BRAND: Brand = {
-  accent: '#234f3c',
+  accent: '#0a61c9',
   headline: 'Learn today,\nsucceed tomorrow!',
   welcome: 'Every lesson recorded, recapped, and turned into practice you can review.',
   logoText: '📚',
@@ -294,11 +294,11 @@ export type Preset = {
 
 export const PRESETS: Preset[] = [
   {
-    id: 'forest',
-    name: 'Forest',
-    hint: 'The classic — calm green, generous corners',
+    id: 'studio',
+    name: 'Studio',
+    hint: 'The house look — signal blue on white',
     brand: {
-      accent: '#234f3c', heroStyle: 'forest', background: 'plain', shape: 'rounded', props: 'orbs', font: 'modern',
+      accent: '#0a61c9', heroStyle: 'forest', background: 'plain', shape: 'rounded', props: 'orbs', font: 'modern',
       layout: DEFAULT_LAYOUT, lessonLayout: DEFAULT_LESSON_LAYOUT,
     },
   },
@@ -399,9 +399,11 @@ export const PRESETS: Preset[] = [
 
 /** Accent presets offered in the toolkit — friendly, high-contrast on white. */
 export const ACCENT_PRESETS = [
-  { name: 'Forest', value: '#234f3c' },
+  { name: 'Signal', value: '#0a61c9' },
+  { name: 'Harbour', value: '#749dc8' },
   { name: 'Indigo', value: '#4f46e5' },
   { name: 'Ocean', value: '#0369a1' },
+  { name: 'Forest', value: '#234f3c' },
   { name: 'Plum', value: '#7e22ce' },
   { name: 'Clay', value: '#b45309' },
   { name: 'Rose', value: '#be123c' },
@@ -584,10 +586,15 @@ export function brandVars(brand: Brand): React.CSSProperties {
   const r = SHAPE_RADII[brand.shape] ?? SHAPE_RADII.rounded
   const f = FONTS.find((x) => x.value === brand.font) ?? FONTS[0]
   return {
-    ['--forest' as any]: brand.accent,
-    ['--forest-deep' as any]: shade(brand.accent, -0.22),
+    ['--blue' as any]: brand.accent,
+    ['--blue-deep' as any]: shade(brand.accent, -0.22),
+    ['--blue-mid' as any]: shade(brand.accent, 0.42),
     ['--brand' as any]: brand.accent,
     ['--brand-soft' as any]: shade(brand.accent, 0.88),
+    // The one gradient in the system, rebuilt around whatever accent the
+    // teacher picked so their portal keeps the same depth as the house look.
+    ['--grad' as any]: `linear-gradient(135deg, ${brand.accent} 0%, ${shade(brand.accent, -0.16)} 52%, ${shade(brand.accent, -0.34)} 100%)`,
+    ['--grad-rule' as any]: `linear-gradient(90deg, transparent, ${shade(brand.accent, 0.45)} 20%, ${brand.accent} 50%, ${shade(brand.accent, 0.45)} 80%, transparent)`,
     ['--r-md' as any]: r.md,
     ['--r-lg' as any]: r.lg,
     ['--r-xl' as any]: r.xl,
