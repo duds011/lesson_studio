@@ -60,5 +60,38 @@ export async function deliverRecapToStudent(eventId: string, rec: any): Promise<
   )
   if (se) throw se
 
+  /**
+   * The lesson's words, as rows rather than only as JSON inside the recap.
+   *
+   * They were already in `recap_json.vocabulary`, but buried in a blob there
+   * is no way to ask "when did I first meet this word" — that question spans
+   * lessons, and a JSON column cannot be grouped across them. Written here,
+   * every word carries the lesson it came from.
+   *
+   * Replaced rather than appended, so re-publishing an edited recap does not
+   * leave the words it used to have.
+   */
+  const vocab = Array.isArray(recapObj.vocabulary) ? recapObj.vocabulary : []
+  const rows = vocab
+    .map((v: any, i: number) => ({
+      lesson_id: lessonRow.id,
+      word: String(v?.word ?? '').trim(),
+      reading: v?.reading ? String(v.reading).trim() : null,
+      definition: v?.definition ? String(v.definition).trim() : null,
+      explanation: v?.explanation ? String(v.explanation).trim() : null,
+      example_sentence: v?.example_sentence ? String(v.example_sentence).trim() : null,
+      jlpt_level: v?.jlpt_level ? String(v.jlpt_level).trim() : null,
+      sort_order: i,
+    }))
+    .filter((r: any) => r.word)
+
+  await admin.from('vocabulary_items').delete().eq('lesson_id', lessonRow.id)
+  if (rows.length) {
+    // A recap that lands without its word rows is still a good recap, so this
+    // is logged rather than thrown — it must not undo a successful publish.
+    const { error: ve } = await admin.from('vocabulary_items').insert(rows)
+    if (ve) console.error('vocabulary_items write failed', ve.message)
+  }
+
   return { delivered: true, lessonId: lessonRow.id, studentId: linked.studentId }
 }

@@ -9,8 +9,19 @@ export default function LessonAdminActions({ lessonId, studentId, sourceEventId 
   lessonId: string; studentId: string; sourceEventId?: string | null
 }) {
   const router = useRouter()
-  const [busy, setBusy] = useState<'' | 'regen' | 'del'>('')
+  const [busy, setBusy] = useState<'' | 'regen' | 'del' | 'edit'>('')
   const [err, setErr] = useState('')
+
+  /** Reopen the published recap as a draft, then edit it on the review page. */
+  async function edit() {
+    setBusy('edit'); setErr('')
+    const j = await fetch('/api/recap/edit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lessonId }),
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Could not open this recap for editing' }))
+    if (!j.ok) { setBusy(''); setErr(j.error || 'Could not open this recap for editing'); return }
+    router.push(`/teacher/recap/${encodeURIComponent(j.eventId)}`)
+  }
 
   async function regenerate() {
     if (!sourceEventId) { setErr('No recording linked to regenerate from.'); return }
@@ -37,7 +48,10 @@ export default function LessonAdminActions({ lessonId, studentId, sourceEventId 
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       {sourceEventId && (
-        <button className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={regenerate}>{busy === 'regen' ? 'Rebuilding… (1-2 min)' : '↻ Rebuild recap'}</button>
+        <>
+          <button className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={edit}>{busy === 'edit' ? 'Opening…' : '✎ Edit recap'}</button>
+          <button className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={regenerate}>{busy === 'regen' ? 'Rebuilding… (1-2 min)' : '↻ Rebuild recap'}</button>
+        </>
       )}
       <button className="btn btn-danger-ghost btn-sm" disabled={busy !== ''} onClick={remove}>{busy === 'del' ? 'Deleting…' : 'Delete lesson'}</button>
       {err && <span style={{ fontSize: 12, color: 'var(--red)' }}>{err}</span>}

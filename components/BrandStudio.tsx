@@ -78,6 +78,12 @@ const SAMPLE: DashboardData = {
   ],
   vocabDistribution: { N5: 18, N4: 13, N3: 9, N2: 5 },
   totalVocab: 45,
+  vocabWords: [
+    { word: 'けど', reading: 'kedo', definition: 'But, although.', level: 'N5', firstLessonNumber: 12, firstDate: '2 Aug', lessonCount: 1 },
+    { word: '静か', reading: 'shizuka', definition: 'Quiet.', level: 'N5', firstLessonNumber: 12, firstDate: '2 Aug', lessonCount: 1 },
+    { word: 'お願いします', reading: 'onegaishimasu', definition: 'Please, if you would.', level: 'N5', firstLessonNumber: 11, firstDate: '26 Jul', lessonCount: 3 },
+    { word: '先週', reading: 'senshuu', definition: 'Last week.', level: 'N4', firstLessonNumber: 10, firstDate: '19 Jul', lessonCount: 2 },
+  ],
   scoreTrend: [
     { lesson: 8, score: 6.4 }, { lesson: 9, score: 7.1 }, { lesson: 10, score: 6.9 },
     { lesson: 11, score: 7.8 }, { lesson: 12, score: 8.3 },

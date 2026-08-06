@@ -90,6 +90,19 @@ export default async function StudentDashboard() {
     .eq('student_id', student.id)
     .order('published_at', { ascending: false })
 
+  /**
+   * Every word this student has met, with the lesson it came from.
+   *
+   * RLS already limits these rows to their own published lessons. Words live
+   * as rows (not only inside each recap's JSON) precisely so this question —
+   * when did I first see this, and has it come back — can be asked across
+   * lessons at all.
+   */
+  const { data: vocabRows } = await supabase
+    .from('vocabulary_items')
+    .select('word, reading, definition, jlpt_level, lessons!inner ( lesson_number, lesson_date )')
+    .order('sort_order', { ascending: true })
+
   // Teacher-shared files across every lesson — the Files tab. RLS only returns
   // rows for this student.
   const { data: attachments } = await supabase
@@ -126,6 +139,52 @@ export default async function StudentDashboard() {
         tag: `Lesson ${lesson.lesson_number}`,
       }
     })
+
+  /**
+   * One entry per distinct word, attributed to the lesson it FIRST appeared
+   * in. A word taught again in a later lesson is not a new word — it is the
+   * same word met again, which is worth showing but must not be counted twice.
+   */
+  const vocabByWord = new Map<string, {
+    word: string; reading: string | null; definition: string | null; level: string | null
+    firstLessonNumber: number | null; firstDate: string | null; lessonCount: number
+  }>()
+  for (const row of ((vocabRows ?? []) as any[])) {
+    const lesson = Array.isArray(row.lessons) ? row.lessons[0] : row.lessons
+    const word = String(row.word ?? '').trim()
+    if (!word) continue
+    const key = word.toLocaleLowerCase()
+    const num = lesson?.lesson_number ?? null
+    const existing = vocabByWord.get(key)
+    if (!existing) {
+      vocabByWord.set(key, {
+        word,
+        reading: row.reading ?? null,
+        definition: row.definition ?? null,
+        level: row.jlpt_level ?? null,
+        firstLessonNumber: num,
+        firstDate: lesson?.lesson_date ?? null,
+        lessonCount: 1,
+      })
+      continue
+    }
+    existing.lessonCount += 1
+    // Keep the earliest sighting, whichever order the rows arrived in.
+    if (num != null && (existing.firstLessonNumber == null || num < existing.firstLessonNumber)) {
+      existing.firstLessonNumber = num
+      existing.firstDate = lesson?.lesson_date ?? existing.firstDate
+    }
+  }
+  // Collected with forEach rather than spreading the map: this project targets
+  // ES5, where iterating a Map needs downlevelIteration.
+  const vocabWords: {
+    word: string; reading: string | null; definition: string | null; level: string | null
+    firstLessonNumber: number | null; firstDate: string | null; lessonCount: number
+  }[] = []
+  vocabByWord.forEach((v) => vocabWords.push(v))
+  vocabWords.sort(
+    (a, b) => (b.firstLessonNumber ?? 0) - (a.firstLessonNumber ?? 0) || a.word.localeCompare(b.word),
+  )
 
   const firstName = student.full_name.split(' ')[0]
   // Most recent scored lessons, oldest-first so the chart reads left to right.
@@ -166,6 +225,7 @@ export default async function StudentDashboard() {
     }),
     vocabDistribution,
     totalVocab,
+    vocabWords: vocabWords.map((v) => ({ ...v, firstDate: formatDateShort(v.firstDate) })),
     scoreTrend,
     tests: ((tests ?? []) as any[]).map((t) => {
       const lesson = Array.isArray(t.lessons) ? t.lessons[0] : t.lessons

@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import ProgressCharts from './ProgressCharts'
 import { MilestoneTrack, ScoreTrendChart } from './BrandCharts'
-import VocabLevelBreakdown from './VocabLevelBreakdown'
 import CountUp from './CountUp'
 import LessonPillar, { PillarLesson } from './LessonPillar'
 import { levelProgress, type Brand, type BlockId } from '@/lib/brand'
@@ -38,6 +37,16 @@ export type DashboardData = {
   }[]
   vocabDistribution: Record<string, number>
   totalVocab: number
+  /** Distinct words, newest first, each attributed to where it first appeared. */
+  vocabWords: {
+    word: string
+    reading: string | null
+    definition: string | null
+    level: string | null
+    firstLessonNumber: number | null
+    firstDate: string | null
+    lessonCount: number
+  }[]
   scoreTrend: { lesson: number; score: number }[]
   tests: { id: string; title: string; lessonNumber: number | null; date: string | null }[]
   avgWpm: number | null
@@ -84,7 +93,7 @@ export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): bo
     case 'stats': return brand.showStats
     case 'lessons': return brand.showLessons && d.pillarLessons.length > 0
     case 'progress': return brand.showProgress && d.progressLessons.length >= 2
-    case 'vocab': return brand.showVocab && d.totalVocab > 0
+    case 'vocab': return brand.showVocab && d.vocabWords.length > 0
     case 'milestone': return brand.showMilestone
     case 'scores': return brand.showScores && d.scoreTrend.length > 0
     case 'tests': return brand.showTests && d.tests.length > 0
@@ -152,11 +161,30 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
       )
 
     case 'vocab':
+      // Every word, and where it came from. "Lesson 7 · 12 Jul" is the thing a
+      // student actually wants from a word list — it turns a vocabulary pile
+      // back into the lesson they remember learning it in.
       return (
         <>
-          <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{d.totalVocab} words</span></div>
+          <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{d.vocabWords.length} words</span></div>
           <div className="k-card">
-            <VocabLevelBreakdown distribution={d.vocabDistribution} totalCount={d.totalVocab} plain />
+            <div className="k-vocab-list">
+              {d.vocabWords.map((v, i) => (
+                <div className="k-vocab-row" key={`${v.word}-${i}`}>
+                  <div className="k-vocab-main">
+                    <span className="k-vocab-word">{v.word}</span>
+                    {v.reading && <span className="k-vocab-reading">{v.reading}</span>}
+                    {v.level && <span className="k-vocab-level">{v.level}</span>}
+                  </div>
+                  {v.definition && <p className="k-vocab-def">{v.definition}</p>}
+                  <p className="k-vocab-when">
+                    {v.firstLessonNumber != null ? `First seen in lesson ${v.firstLessonNumber}` : 'First seen'}
+                    {v.firstDate ? ` · ${v.firstDate}` : ''}
+                    {v.lessonCount > 1 ? ` · came back in ${v.lessonCount - 1} more lesson${v.lessonCount - 1 === 1 ? '' : 's'}` : ''}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </>
       )
