@@ -32,8 +32,21 @@ function ChartTip({ active, payload, label, suffix = '', prefix = '' }: any) {
 export type ScorePoint = { lesson: number; score: number }
 
 /**
+ * How many lessons the chart makes room for before it starts scrolling its
+ * oldest off. A student with two lessons should see two bars in a chart with
+ * space left in it, not two slabs stretched over the whole width — the shape
+ * of the chart should say "early days", and a full-width block says the
+ * opposite.
+ */
+const SCORE_SLOTS = 8
+
+/**
  * Recent lesson scores as bars. The most recent lesson is the accent colour at
  * full strength; older ones fade back so the latest reads first.
+ *
+ * The data is padded to a fixed number of slots so bar width never depends on
+ * how many lessons exist: bars keep their size and accumulate left to right as
+ * lessons are taken.
  */
 export function ScoreTrendChart({
   points, color, height = 150, compact = false,
@@ -41,23 +54,26 @@ export function ScoreTrendChart({
   if (points.length === 0) return null
   const last = points.length - 1
 
+  const data: { lesson: number; score: number | null }[] = points.slice(-SCORE_SLOTS)
+  // Empty slots carry a negative key so they stay unique and can be told apart
+  // from real lessons when labelling the axis.
+  for (let i = data.length; i < SCORE_SLOTS; i++) data.push({ lesson: -1 - i, score: null })
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
-        data={points}
+        data={data}
         margin={compact ? { top: 4, right: 0, left: 0, bottom: 0 } : { top: 6, right: 4, left: -22, bottom: 0 }}
-        barCategoryGap={1}
+        barCategoryGap="26%"
       >
         <XAxis
           dataKey="lesson" tickLine={false} axisLine={false} tick={compact ? false : AXIS}
-          height={compact ? 0 : 18} tickFormatter={(v) => `L${v}`}
+          height={compact ? 0 : 18} tickFormatter={(v) => (Number(v) > 0 ? `L${v}` : '')}
         />
         <YAxis domain={[0, 10]} tickLine={false} axisLine={false} tick={compact ? false : AXIS} width={compact ? 0 : 30} />
         {!compact && <Tooltip cursor={{ fill: `${color}14` }} content={<ChartTip prefix="Lesson " suffix="/10" />} />}
-        {/* No maxBarSize and next to no category gap: the bars butt together
-            and read as one block of lessons rather than five lonely columns. */}
-        <Bar dataKey="score" radius={[4, 4, 0, 0]} isAnimationActive={!compact}>
-          {points.map((p, i) => (
+        <Bar dataKey="score" radius={[4, 4, 0, 0]} maxBarSize={compact ? 12 : 34} isAnimationActive={!compact}>
+          {data.map((p, i) => (
             <Cell key={p.lesson} fill={color} fillOpacity={i === last ? 1 : 0.42} />
           ))}
         </Bar>

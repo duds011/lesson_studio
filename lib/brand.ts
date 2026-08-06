@@ -16,7 +16,7 @@ export type PropStyle = 'orbs' | 'geometric' | 'minimal' | 'none'
 
 /** Blocks a teacher can arrange on the student dashboard. */
 export const DASHBOARD_BLOCKS = [
-  'stats', 'lessons', 'progress', 'vocab',
+  'stats', 'lessons', 'progress', 'vocab', 'vocabTotals',
   'milestone', 'scores', 'tests', 'speaking', 'files',
 ] as const
 export type BlockId = (typeof DASHBOARD_BLOCKS)[number]
@@ -26,6 +26,7 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   lessons: 'Lesson cards',
   progress: 'Progress charts',
   vocab: 'Vocabulary',
+  vocabTotals: 'Vocabulary growth',
   milestone: 'Milestone',
   scores: 'Recent scores',
   tests: 'Practice tests',
@@ -38,7 +39,7 @@ export const DASH_TABS = ['Overview', 'Lessons', 'Progress', 'Files', 'Tests'] a
 export type DashTab = (typeof DASH_TABS)[number]
 
 export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
-  stats: 'Overview', scores: 'Overview', milestone: 'Overview',
+  stats: 'Overview', scores: 'Overview', milestone: 'Overview', vocabTotals: 'Overview',
   lessons: 'Lessons',
   progress: 'Progress', vocab: 'Progress', speaking: 'Progress',
   files: 'Files',
@@ -53,6 +54,7 @@ export const BLOCK_TOGGLE: Record<BlockId, keyof Brand> = {
   scores: 'showScores',
   progress: 'showProgress',
   vocab: 'showVocab',
+  vocabTotals: 'showVocabTotals',
   tests: 'showTests',
   speaking: 'showSpeaking',
   files: 'showFiles',
@@ -81,6 +83,7 @@ export const TEXT_SLOTS = {
   testsTitle: 'Practice tests',
   speakingTitle: 'Speaking habits',
   filesTitle: 'Lesson files',
+  vocabTotalsTitle: 'Vocabulary growth',
 } as const
 export type TextSlot = keyof typeof TEXT_SLOTS
 export const TEXT_SLOT_IDS = Object.keys(TEXT_SLOTS) as TextSlot[]
@@ -91,6 +94,7 @@ export const BLOCK_TEXT_SLOTS: Partial<Record<BlockId, TextSlot[]>> = {
   lessons: ['lessonsTitle'],
   progress: ['progressTitle'],
   vocab: ['vocabTitle'],
+  vocabTotals: ['vocabTotalsTitle'],
   milestone: ['milestoneTitle'],
   scores: ['scoresTitle'],
   tests: ['testsTitle'],
@@ -226,6 +230,7 @@ export type Brand = {
   showMilestone: boolean
   showProgress: boolean
   showVocab: boolean
+  showVocabTotals: boolean
   showTests: boolean
   showSpeaking: boolean
   showFiles: boolean
@@ -247,6 +252,7 @@ export const DEFAULT_BRAND: Brand = {
   showMilestone: true,
   showProgress: true,
   showVocab: true,
+  showVocabTotals: true,
   showTests: true,
   showSpeaking: true,
   showFiles: true,
@@ -366,6 +372,7 @@ export function resolveBrand(raw: unknown): Brand {
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
+    showVocabTotals: bool(b.showVocabTotals, DEFAULT_BRAND.showVocabTotals),
     showTests: bool(b.showTests, DEFAULT_BRAND.showTests),
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
     showFiles: bool(b.showFiles, DEFAULT_BRAND.showFiles),

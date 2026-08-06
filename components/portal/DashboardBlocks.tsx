@@ -79,11 +79,17 @@ function Go({ href, className, children, preview }: { href: string; className?: 
  * 12-column row — see .k-flow.
  */
 export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
+  // Overview reads top to bottom, each band the full width: the three figures,
+  // then where they are heading, then what they have collected, then how each
+  // lesson went. Side by side, the milestone and the scores each got half a
+  // page and neither had room to say anything.
   { id: 'stats', w: 12 },
-  { id: 'scores', w: 7 }, { id: 'milestone', w: 5 },
+  { id: 'milestone', w: 12 },
+  { id: 'vocabTotals', w: 12 },
+  { id: 'scores', w: 12 },
   { id: 'lessons', w: 12 },
-  { id: 'vocab', w: 12 },
   { id: 'progress', w: 12 },
+  { id: 'vocab', w: 12 },
   { id: 'speaking', w: 12 },
   { id: 'files', w: 12 },
   { id: 'tests', w: 12 },
@@ -96,6 +102,7 @@ export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): bo
     case 'lessons': return brand.showLessons && d.pillarLessons.length > 0
     case 'progress': return brand.showProgress && d.progressLessons.length >= 2
     case 'vocab': return brand.showVocab && d.vocabWords.length > 0
+    case 'vocabTotals': return brand.showVocabTotals && d.totalVocab > 0
     case 'milestone': return brand.showMilestone
     case 'scores': return brand.showScores && d.scoreTrend.length > 0
     case 'tests': return brand.showTests && d.tests.length > 0
@@ -159,6 +166,18 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
         <>
           <div className="k-sec-head"><h2>{L.progressTitle}</h2></div>
           <div className="k-card"><ProgressCharts lessons={d.progressLessons} /></div>
+        </>
+      )
+
+    case 'vocabTotals':
+      // The overview's answer to "how much have I picked up" — the totals bar
+      // only. The words themselves are a Progress-tab read, not a glance.
+      return (
+        <>
+          <div className="k-sec-head"><h2>{L.vocabTotalsTitle}</h2><span className="k-link">{d.totalVocab} words</span></div>
+          <div className="k-card">
+            <VocabLevelBreakdown distribution={d.vocabDistribution} totalCount={d.totalVocab} plain />
+          </div>
         </>
       )
 
