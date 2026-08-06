@@ -9,6 +9,7 @@
  */
 import { createAdminClient } from '@/lib/supabase/admin'
 import { mapEventToStudent } from '@/lib/lesson-link'
+import { pgSafeJson } from '@/lib/pg-json'
 
 export type DeliveryResult =
   | { delivered: true; lessonId: string; studentId: string }
@@ -19,7 +20,9 @@ export async function deliverRecapToStudent(eventId: string, rec: any): Promise<
   const linked = await mapEventToStudent(admin, eventId, rec?.attendees ?? [])
   if (!linked) return { delivered: false, reason: 'No student is linked to this recording.' }
 
-  const recapObj: any = rec?.recap || {}
+  // Cleaned here, at the database boundary, rather than only where recaps are
+  // generated — a draft written before that guard existed still has to publish.
+  const recapObj: any = pgSafeJson(rec?.recap || {})
   const lessonDate = rec?.lessonDate ? String(rec.lessonDate).slice(0, 10) : new Date().toISOString().slice(0, 10)
   const title =
     (typeof recapObj.lesson_title === 'string' && recapObj.lesson_title.trim()) || rec?.lessonTitle || 'Lesson'

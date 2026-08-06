@@ -36,7 +36,14 @@ export async function POST(req: NextRequest) {
     if (res.delivered) lessonId = res.lessonId
   } catch (e: any) {
     console.error('recap publish bridge failed', e?.message || e)
-    return NextResponse.json({ ok: true, delivered: false, warning: 'Published, but could not deliver to the student portal.' })
+    // Say what actually broke. "Could not deliver" on its own sent us to the
+    // database logs to find out that Postgres had rejected one character.
+    const detail = e?.message || e?.error_description || ''
+    return NextResponse.json({
+      ok: true,
+      delivered: false,
+      warning: `Published, but could not deliver to the student portal.${detail ? ` (${detail})` : ''}`,
+    })
   }
 
   // lessonId lets the review page attach anything recorded during review —

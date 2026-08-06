@@ -4,6 +4,8 @@
  * Input here is a diarized meeting transcript (extension recording → Whisper)
  * instead of a Drive doc.
  */
+import { pgSafeJson } from '@/lib/pg-json'
+
 const OPENAI_MODEL = 'gpt-4.1'
 
 export type VocabItem = {
@@ -407,7 +409,7 @@ export async function generateTest(opts: {
   })
   if (!res.ok) throw new Error(`OpenAI failed (${res.status}): ${await res.text()}`)
   const j = await res.json()
-  return JSON.parse(j.choices[0].message.content) as TestJson
+  return pgSafeJson(JSON.parse(j.choices[0].message.content)) as TestJson
 }
 
 /**
@@ -558,7 +560,9 @@ export async function generateRecap(opts: {
   })
   if (!res.ok) throw new Error(`OpenAI failed (${res.status}): ${await res.text()}`)
   const j = await res.json()
-  const recap = JSON.parse(j.choices[0].message.content) as Recap
+  // Asking for verbatim quotes means the model sometimes copies junk out of a
+  // noisy transcript, and a single NUL makes the whole recap unstorable.
+  const recap = pgSafeJson(JSON.parse(j.choices[0].message.content)) as Recap
   recap.corrections = cleanCorrections((recap as any).corrections)
   recap.did_well = cleanStrengths((recap as any).did_well)
   return recap
