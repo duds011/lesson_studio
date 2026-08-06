@@ -39,7 +39,15 @@
 /* — top bar — */
 /* Capped and centred: stretched full-bleed across a wide monitor, every row
    turns into a long thin band with dead space in it. */
-.k-main{min-width:0;width:100%;max-width:1240px;margin:0 auto}
+/* `container-type` so the portal's breakpoints measure this column instead of
+   the window — see the @container rules below.
+   CAUTION: it applies layout containment, which makes this element a
+   containing block for position:fixed descendants. Nothing inside the student
+   portal is fixed today (every modal and drawer lives on the teacher side,
+   inside .wrap) and the rail is a sibling, not a child. If a full-screen
+   overlay is ever added under .k-main it will be trapped here — render it in a
+   portal, or move the container onto a wrapper that excludes it. */
+.k-main{min-width:0;width:100%;max-width:1240px;margin:0 auto;container-type:inline-size}
 .k-top{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin-bottom:20px}
 .k-hello{color:var(--muted);font-size:13px;font-weight:600;margin:0}
 .k-name{font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-.045em;line-height:1.1;margin:2px 0 0}
@@ -75,7 +83,27 @@
 
 /* — colour-blocked stat cards — */
 .k-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
-@media(max-width:760px){.k-stats{grid-template-columns:1fr}}
+/* ── the portal's own breakpoints ──
+   Container, not viewport: the studio's phone canvas is a 390px-wide element
+   inside a desktop window, so a media query there measures the wrong thing and
+   showed a squashed desktop layout where a phone layout belongs. Measuring the
+   column means the preview is the phone. */
+@container (max-width:760px){
+  .k-stats{grid-template-columns:minmax(0,1fr)}
+  .k-flow>*{flex-basis:100%}
+  .k-top{flex-direction:column;align-items:stretch;gap:14px}
+  .k-top-tools{justify-content:space-between}
+  .k-whoami{max-width:none}
+}
+@container (max-width:520px){
+  .k-name{font-size:27px}
+  .k-swipe-value{font-size:27px}
+  .k-swipe-chart,.k-swipe-empty{height:158px}
+  .k-stat{min-height:0;padding:16px 17px}
+  .k-stat-val b{font-size:28px}
+  .k-card,.k-sec{padding:16px}
+  .vocab-line.plain .vocab-line-chips{gap:10px}
+}
 .k-stat{border-radius:var(--r-lg);padding:20px 22px 22px;color:#fff;position:relative;overflow:hidden;min-height:158px;display:flex;flex-direction:column}
 .k-stat.yellow{background:var(--c-yellow);color:var(--c-yellow-ink)}
 .k-stat.blue{background:var(--c-blue)}
@@ -779,7 +807,11 @@
    BrandStudio. The wrapper's height is set from JS to the scaled height, so the
    page below it doesn't sit under a full-size gap. */
 .k-canvas{position:relative;z-index:1}
-.k-preview-frame{border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-soft);display:grid;gap:14px;overflow:hidden;
+.k-preview-frame{container-type:inline-size;border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-soft);display:grid;
+  /* An implicit auto column sizes to its widest child's min-content, and the
+     metric tabs are a nowrap row — on the phone canvas that pushed the whole
+     page 30px past the frame. Pin the column and let the children scroll. */
+  grid-template-columns:minmax(0,1fr);gap:14px;overflow:hidden;
   width:var(--canvas-w,1180px);transform:scale(var(--canvas-scale,1));transform-origin:top left}
 
 /* A card given a whole row's height spends it, rather than clumping its
@@ -869,9 +901,20 @@
 .k-lpview .metric .mk{font-size:8px;margin-top:4px}
 .k-lpview .metric .mn{font-size:8px}
 .k-lpview .example{font-size:11px;line-height:1.6}
-.k-preview-frame.mobile .k-lpview .stat-cards{grid-template-columns:minmax(0,1fr)}
-.k-preview-frame.mobile .k-lpview .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-.k-preview-frame.mobile .k-lpview .k-phead{flex-wrap:wrap}
+@container (max-width:620px){
+  /* .k-lpview's own rules above are (0,2,0), so match that weight or they win
+     and the recap stays four tiles wide on a phone. */
+  .stat-cards,.k-lpview .stat-cards{grid-template-columns:minmax(0,1fr)}
+  .metric-grid,.k-lpview .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .k-phead{flex-wrap:wrap;padding:20px 22px}
+  .k-phead h1{font-size:21px}
+  .lesson-block,.corrections-card,.ex-card{padding:18px 18px}
+}
+@container (max-width:430px){
+  .tabs{gap:0}
+  .tab{padding:10px 10px;font-size:11.5px}
+  .k-dtabs button{padding:10px 13px;font-size:12px}
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    Public booking — real month calendar, times on the right

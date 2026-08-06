@@ -70,8 +70,9 @@ export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
   { id: 'stats', w: 12 },
   { id: 'scores', w: 7 }, { id: 'milestone', w: 5 },
   { id: 'lessons', w: 8 }, { id: 'tests', w: 4 },
+  { id: 'vocab', w: 12 },
   { id: 'progress', w: 12 },
-  { id: 'vocab', w: 7 }, { id: 'speaking', w: 5 },
+  { id: 'speaking', w: 12 },
 ]
 
 /** Whether a block has anything to say for this student. */

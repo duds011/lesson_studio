@@ -181,7 +181,6 @@ export default function LessonPageTabs({
       {/* Keyed on the tab so switching remounts the panel and its cards run
           their entrance again — the page answers the click. */}
       <div className="k-flow" role="tabpanel" key={tab}>
-        {tab === 'Progress' && <h3 className="dashboard-title" style={{ ['--w' as any]: 12 }}>How this lesson went</h3>}
         {placements.map(({ id, w }) => {
           const content = section(id)
           if (!content) return null
