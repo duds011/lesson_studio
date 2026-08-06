@@ -432,27 +432,57 @@
 .nav-toggle:hover{background:var(--brand-soft);color:var(--forest)}
 .nav-toggle .ui-icon{width:15px;height:15px;transition:transform .2s ease}
 
-html[data-nav="collapsed"]{--sidebar:76px}
-/* The KOKU shell floats the sidebar as an inset card and pins .wrap to a
-   literal margin, so collapsing has to move both — setting --sidebar alone
-   shrinks the rail and leaves the content where it was. */
-html[data-nav="collapsed"] .app-sidebar{width:76px}
-html[data-nav="collapsed"] .wrap{margin-left:104px}
 .app-sidebar,.wrap{transition:width .18s ease,margin-left .18s ease}
-html[data-nav="collapsed"] .sidebar-top{flex-direction:column;gap:8px;padding:16px 0}
-html[data-nav="collapsed"] .sidebar-top .logo{flex:0 0 auto}
-html[data-nav="collapsed"] .nav-toggle .ui-icon{transform:rotate(180deg)}
-html[data-nav="collapsed"] .logo>span:not(.mark),
-html[data-nav="collapsed"] .nav-section-label,
-html[data-nav="collapsed"] .side-link span,
-html[data-nav="collapsed"] .sidebar-account .account-copy,
-html[data-nav="collapsed"] .sidebar-account .btn,
-html[data-nav="collapsed"] .side-link>.ui-icon:last-child:not(:first-child){display:none}
-html[data-nav="collapsed"] .side-link{justify-content:center;padding:11px}
-html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
+
+/* Every collapse rule is gated to the widths where the sidebar is actually a
+   fixed rail. `html[data-nav=…] .app-sidebar` is specificity (0,2,1) and the
+   responsive rules below are (0,1,0), so ungated they won every media query:
+   a window narrowed while collapsed kept a 76px-wide card, but the card had
+   already gone `position:static`, which dropped the content underneath it and
+   still pushed it 104px to the right. Below 900px the sidebar is a rail
+   already and the toggle is hidden, so there is nothing to collapse. */
+@media(min-width:901px){
+  html[data-nav="collapsed"]{--sidebar:76px}
+  /* The KOKU shell floats the sidebar as an inset card and pins .wrap to a
+     literal margin, so collapsing has to move both — setting --sidebar alone
+     shrinks the rail and leaves the content where it was. */
+  html[data-nav="collapsed"] .app-sidebar{width:76px}
+  html[data-nav="collapsed"] .wrap{margin-left:104px}
+  html[data-nav="collapsed"] .sidebar-top{flex-direction:column;gap:8px;padding:16px 0}
+  html[data-nav="collapsed"] .sidebar-top .logo{flex:0 0 auto}
+  html[data-nav="collapsed"] .nav-toggle .ui-icon{transform:rotate(180deg)}
+  html[data-nav="collapsed"] .logo>span:not(.mark),
+  html[data-nav="collapsed"] .nav-section-label,
+  html[data-nav="collapsed"] .side-link span,
+  html[data-nav="collapsed"] .sidebar-account .account-copy,
+  html[data-nav="collapsed"] .sidebar-account .btn,
+  html[data-nav="collapsed"] .side-link>.ui-icon:last-child:not(:first-child){display:none}
+  html[data-nav="collapsed"] .side-link{justify-content:center;padding:11px}
+  html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
+}
 /* Below 900px the sidebar is already a rail, and under 680px it becomes a top
    bar — the toggle has nothing to collapse there. */
 @media(max-width:900px){.nav-toggle{display:none}}
+
+/* 861–900px was a mismatch between the two stylesheets: globals.css strips the
+   sidebar down to an icon rail there, but this file's `.app-sidebar` carries a
+   literal 236px that wins on source order — leaving a full-width card holding
+   a column of centred icons and 160px of nothing.
+   The window is 880px: there is room for the real sidebar and still ~615px of
+   content, so the labels come back rather than the card shrinking. Shrinking
+   it would also have taken Sign out with it, and the collapse toggle is hidden
+   at this width, so there would be no way to get it back. Written as an
+   explicit band so the <=860px top bar below still wins whatever the order. */
+@media(min-width:861px) and (max-width:900px){
+  .sidebar-top{padding:22px 20px 14px}
+  .logo>span:not(.mark),
+  .nav-section-label,
+  .side-link span,
+  .side-link>.ui-icon:last-child:not(:first-child){display:block}
+  .sidebar-account .account-copy{display:flex}
+  .side-link{justify-content:flex-start;padding:11px 12px}
+  .sidebar-account{justify-content:flex-start;padding:14px 16px}
+}
 
 /* teacher primitives — same treatment the student shell gets */
 .wrap .btn{border-radius:999px;padding:10px 17px;font-size:12.5px;box-shadow:none}
