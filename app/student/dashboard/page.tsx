@@ -399,10 +399,14 @@ export default async function StudentDashboard() {
           <h1 className="k-name">{firstName}</h1>
         </div>
         <div className="k-top-tools">
-          <label className="k-search">
-            <Icon d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4" />
-            <input placeholder="Search lessons" aria-label="Search lessons" />
-          </label>
+          {/* The search box searched nothing — it was a box with a magnifier in
+              it. Whose portal this is says more. */}
+          <div className="k-whoami">
+            <span className="k-whoami-mark" aria-hidden>
+              {student.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}
+            </span>
+            <span className="k-whoami-name">{student.full_name}</span>
+          </div>
           <button className="k-bell" aria-label="Notifications">
             <Icon d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16zM10 22h4" />
           </button>

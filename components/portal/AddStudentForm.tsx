@@ -96,7 +96,7 @@ export default function AddStudentForm({ currency = 'USD' }: { currency?: string
 
       {created ? (
         <div>
-          <div className="warn-box" style={{ borderColor: '#9dd0b4', background: 'var(--green-soft)', color: 'var(--green)' }}>
+          <div className="warn-box" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)', color: 'var(--green)' }}>
             <strong>Account created.</strong> Share these login details with the student:
           </div>
           <div className="lesson-block" style={{ marginTop: 12, padding: 16 }}>

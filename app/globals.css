@@ -1,12 +1,12 @@
 :root{--bg:#f1f1ec;--surface:#fff;--surface-2:#f4f4ef;--ink:#16211b;--muted:#6b7671;--line:#e6e6e0;--line-strong:#d3d3ca;--brand:#0a61c9;--brand-soft:#f1f7f9;--green:#2f8f5b;--green-soft:#e7f5ec;--amber:#9a6c05;--amber-soft:#fdf3d6;--red:#c43d3d;--red-soft:#fff0f0;--shadow:0 1px 2px rgba(18,24,17,.04),0 8px 24px rgba(18,24,17,.05);--radius:14px;--sidebar:248px;
 /* KOKU 2.0 — bright, friendly learning-platform look */
---forest:#0a61c9;--forest-deep:#06336d;--c-yellow:#f2b705;--c-yellow-ink:#5b4302;--c-blue:#2d7ff9;--c-blue-ink:#0b3f8f;--c-purple:#a24ee0;--c-purple-ink:#5a1f85;--c-pink:#ef6ba8;--c-mint:#3fbfa0;--c-sky:#8fd3f4;
+--forest:#0a61c9;--forest-deep:#06336d;--c-yellow:#f2b705;--c-yellow-ink:#5b4302;--c-blue:#2d7ff9;--c-blue-ink:#0b3f8f;--c-purple:#a24ee0;--c-purple-ink:#5a1f85;--c-pink:#ef6ba8;--c-sky:#8fd3f4;
 --r-md:16px;--r-lg:22px;--r-xl:28px;--rail:78px;
 --shadow-soft:0 2px 4px rgba(20,32,25,.03),0 14px 34px rgba(20,32,25,.06);--shadow-lift:0 8px 18px rgba(20,32,25,.07),0 24px 48px rgba(20,32,25,.09)}
 *{box-sizing:border-box}
 html{background:var(--bg);scroll-behavior:smooth}
 body{margin:0;color:var(--ink);background:var(--bg);font-family:"Outfit","Plus Jakarta Sans",system-ui,sans-serif;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}button,input{font:inherit}button,a{ -webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(98,89,232,.22);outline-offset:2px}
+a{color:inherit;text-decoration:none}button,input{font:inherit}button,a{ -webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid rgba(10,97,201,.3);outline-offset:2px}
 .ui-icon{width:18px;height:18px;flex:0 0 auto}.mark{width:30px;height:30px;border-radius:9px;background:var(--ink);color:white;display:grid;place-items:center}.mark .ui-icon{width:16px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:700}.brand-word{display:block;letter-spacing:-.02em}.logo small{display:block;color:var(--muted);font-size:10px;font-weight:500;margin-top:-2px}
 .app-sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar);background:#fbfbfa;border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:30}.sidebar-top{padding:22px 20px 18px}.sidebar-scroll{padding:8px 12px;flex:1}.nav-section-label{padding:16px 10px 7px;color:#9a9e96;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.side-nav{display:grid;gap:3px}.side-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;color:#5d625a;font-weight:600;transition:.15s ease}.side-link:hover{color:var(--ink);background:var(--surface-2)}.side-link.active{color:var(--ink);background:#eceeea}.side-link span{flex:1}.side-link>.ui-icon:last-child:not(:first-child){width:14px;color:#a0a49d}.sidebar-account{border-top:1px solid var(--line);padding:15px 16px;display:flex;align-items:center;gap:10px}.account-avatar,.avatar{display:grid;place-items:center;border-radius:10px;background:var(--brand-soft);color:var(--brand);font-weight:750}.account-avatar{width:34px;height:34px}.account-copy{display:flex;flex-direction:column;min-width:0;flex:1}.account-copy strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}.account-copy small{color:var(--muted);font-size:10px}.status-dot,.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#b2b6ae;margin-right:5px}.status-dot.online,.pill.green .dot{background:var(--green)}
@@ -54,18 +54,46 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button,a{ -webkit
 .vocab-line-chips{display:flex;gap:10px;flex-wrap:wrap}
 .vocab-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:750}
 .vocab-chip i{width:7px;height:7px;border-radius:50%;display:inline-block}
-/* progress sparkline tiles */
-.spark-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px}
-.spark-tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px 4px;min-width:0}
-.spark-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.spark-label{font-size:9px;color:var(--muted);font-weight:750;text-transform:uppercase;letter-spacing:.07em}
-.spark-value{font-size:16px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
-.spark-unit{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:0}
-.spark-delta{display:block;font-size:9px;color:var(--muted);margin-top:1px}
-.spark-delta.up{color:var(--green);font-weight:700}
-.spark-delta.down{color:var(--red);font-weight:700}
-.spark-chart{margin-top:4px}
-.spark-empty{height:60px;display:grid;place-items:center;font-size:9.5px;color:var(--muted);text-align:center;padding:0 6px}
+/* ── progress, one metric at a time ──
+   Five sparklines side by side asked a student to compare things they have no
+   reason to compare, and none was big enough to read. This is a scroll-snap
+   track: the browser owns the gesture, so swiping feels like the OS and there
+   is no drag maths in the component. */
+.k-swipe{min-width:0}
+.k-swipe-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px}
+.k-swipe-tabs::-webkit-scrollbar{display:none}
+.k-swipe-tabs button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font:inherit;font-size:11.5px;font-weight:750;color:var(--muted);cursor:pointer;white-space:nowrap;transition:.16s ease}
+.k-swipe-tabs button:hover{color:var(--ink);border-color:var(--line-strong)}
+.k-swipe-tabs button.on{background:var(--on,var(--brand));border-color:var(--on,var(--brand));color:#fff}
+
+.k-swipe-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-radius:var(--r-md,12px);outline:0}
+.k-swipe-track::-webkit-scrollbar{display:none}
+.k-swipe-track:focus-visible{box-shadow:0 0 0 3px var(--brand-soft)}
+.k-swipe-slide{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;min-width:0;padding:2px 2px 0}
+
+.k-swipe-label{margin:0;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.k-swipe-value{margin:3px 0 0;font-size:34px;font-weight:800;letter-spacing:-.045em;line-height:1}
+.k-swipe-unit{font-size:15px;font-weight:600;color:var(--muted);letter-spacing:0;margin-left:2px}
+.k-swipe-delta{display:inline-block;font-size:11px;color:var(--muted);margin-top:5px;font-weight:700}
+.k-swipe-delta.up{color:var(--green)}
+.k-swipe-delta.down{color:var(--red)}
+/* Fixed height: the chart is the point, and a jumping card while you swipe is
+   worse than a chart that is always the same size. */
+.k-swipe-chart{height:190px;margin-top:12px;min-width:0}
+.k-swipe-note{margin:10px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5}
+.k-swipe-empty{height:190px;margin-top:12px;display:grid;place-items:center;text-align:center;font-size:12px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:12px}
+
+.k-swipe-dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
+.k-swipe-dots button{width:6px;height:6px;padding:0;border:0;border-radius:50%;background:var(--line-strong);cursor:pointer;transition:.2s ease}
+.k-swipe-dots button.on{width:20px;border-radius:999px}
+
+/* The head and the chart are remounted when a slide becomes live, so both
+   entrances replay on every swipe — that is the sense of progress. */
+@keyframes k-swipe-in{from{opacity:0;translate:0 10px}}
+.k-swipe-head,.k-swipe-chart{animation:k-swipe-in .45s cubic-bezier(.2,.75,.3,1) backwards}
+.k-swipe-chart{animation-delay:.05s}
+@media(max-width:520px){.k-swipe-value{font-size:29px}.k-swipe-chart,.k-swipe-empty{height:165px}}
+
 /* practice tests */
 .test-scorebar{position:sticky;top:72px;z-index:10;display:flex;align-items:center;gap:2px;padding:10px 16px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:12px;font-size:13px;box-shadow:var(--shadow)}
 .test-q{padding:14px 0;border-top:1px solid var(--line)}

@@ -3,7 +3,7 @@ export const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1']
 export const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 
 export const JLPT_COLORS: Record<string, string> = {
-  N5: '#22c55e',
+  N5: '#0a61c9',
   N4: '#3b82f6',
   N3: '#6259e8',
   N2: '#a855f7',
@@ -11,7 +11,7 @@ export const JLPT_COLORS: Record<string, string> = {
 }
 
 export const CEFR_COLORS: Record<string, string> = {
-  A1: '#22c55e', A2: '#3b82f6', B1: '#6259e8', B2: '#a855f7', C1: '#ec4899', C2: '#f97316',
+  A1: '#0a61c9', A2: '#3b82f6', B1: '#6259e8', B2: '#a855f7', C1: '#ec4899', C2: '#f97316',
 }
 
 /** Whichever scale the recap actually used — assuming JLPT charts a French

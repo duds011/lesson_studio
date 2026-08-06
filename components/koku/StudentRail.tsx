@@ -2,10 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 /**
  * Narrow icon rail for the student portal (KOKU 2.0 look). Replaces the
  * top PortalNav on student pages. Collapses to a bottom bar under 720px.
+ *
+ * It can be widened to show the labels, the same way the teacher sidebar
+ * collapses — icons alone are a guess until you have learned them, and a
+ * student sees this page far less often than their teacher sees theirs.
  */
 
 const I = ({ d }: { d: string }) => (
@@ -27,19 +32,54 @@ const LINKS = [
   { href: '/student/book', label: 'Book a lesson', icon: ICONS.book },
 ]
 
+/** Remembered per browser, and read off the root element so --rail (which the
+ *  shell's grid column is built on) widens with it. */
+const RAIL_KEY = 'rail-expanded'
+
 export default function StudentRail({ mark }: { mark?: string }) {
   const pathname = usePathname()
+  const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(RAIL_KEY) === '1'
+    setExpanded(saved)
+    document.documentElement.dataset.rail = saved ? 'expanded' : ''
+  }, [])
+
+  const toggle = () => {
+    setExpanded((was) => {
+      const next = !was
+      localStorage.setItem(RAIL_KEY, next ? '1' : '0')
+      document.documentElement.dataset.rail = next ? 'expanded' : ''
+      return next
+    })
+  }
 
   return (
     <aside className="k-rail">
-      <div className="k-rail-mark" aria-hidden>
-        {mark ? (
-          <span style={{ fontSize: mark.length > 2 ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{mark}</span>
-        ) : (
-          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 5h7v14H4zM13 5h7v9h-7z" />
+      <div className="k-rail-top">
+        <div className="k-rail-mark" aria-hidden>
+          {mark ? (
+            <span style={{ fontSize: mark.length > 2 ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{mark}</span>
+          ) : (
+            <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 5h7v14H4zM13 5h7v9h-7z" />
+            </svg>
+          )}
+        </div>
+        <button
+          type="button"
+          className="k-rail-toggle"
+          onClick={toggle}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Collapse menu' : 'Expand menu'}
+          title={expanded ? 'Collapse menu' : 'Expand menu'}
+        >
+          {/* The panel glyph: a frame with the rail drawn inside it. */}
+          <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" />
           </svg>
-        )}
+        </button>
       </div>
 
       {LINKS.map((l) => {
@@ -47,6 +87,7 @@ export default function StudentRail({ mark }: { mark?: string }) {
         return (
           <Link key={l.href} href={l.href} className={`k-rail-link ${active ? 'active' : ''}`} title={l.label} aria-label={l.label}>
             <I d={l.icon} />
+            <span className="k-rail-label">{l.label}</span>
           </Link>
         )
       })}
@@ -55,6 +96,7 @@ export default function StudentRail({ mark }: { mark?: string }) {
 
       <Link href="/logout" className="k-rail-link" title="Sign out" aria-label="Sign out">
         <I d="M15 17l5-5-5-5M20 12H9M12 4H5v16h7" />
+        <span className="k-rail-label">Sign out</span>
       </Link>
     </aside>
   )

@@ -732,7 +732,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             <input
               value={brand.accent}
               onChange={(e) => { const v = e.target.value; setSaved(false); setBrand((b) => ({ ...b, accent: HEX.test(v) ? v : v.slice(0, 7) })) }}
-              placeholder="#234f3c"
+              placeholder="#0a61c9"
               maxLength={7}
               spellCheck={false}
             />
