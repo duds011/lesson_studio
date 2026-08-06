@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import ProgressCharts from './ProgressCharts'
-import { MilestoneTrack, ScoreTrendChart, VocabLevelChart } from './BrandCharts'
+import { MilestoneTrack, ScoreTrendChart } from './BrandCharts'
+import VocabLevelBreakdown from './VocabLevelBreakdown'
 import CountUp from './CountUp'
 import LessonPillar, { PillarLesson } from './LessonPillar'
 import { levelProgress, type Brand, type BlockId } from '@/lib/brand'
@@ -66,19 +67,16 @@ function Go({ href, className, children, preview }: { href: string; className?: 
  * 12-column row — see .k-flow.
  */
 export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
-  { id: 'hero', w: 12 },
   { id: 'stats', w: 12 },
-  { id: 'milestone', w: 12 },
+  { id: 'scores', w: 7 }, { id: 'milestone', w: 5 },
   { id: 'lessons', w: 8 }, { id: 'tests', w: 4 },
   { id: 'progress', w: 12 },
-  { id: 'scores', w: 6 }, { id: 'vocab', w: 6 },
-  { id: 'speaking', w: 12 },
+  { id: 'vocab', w: 7 }, { id: 'speaking', w: 5 },
 ]
 
 /** Whether a block has anything to say for this student. */
 export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): boolean {
   switch (id) {
-    case 'hero': return brand.showHero
     case 'stats': return brand.showStats
     case 'lessons': return brand.showLessons && d.pillarLessons.length > 0
     case 'progress': return brand.showProgress && d.progressLessons.length >= 2
@@ -96,40 +94,6 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
   const milestone = levelProgress(brand.levels, d.lessonCount)
 
   switch (id) {
-    case 'hero':
-      return (
-        <section className="k-hero">
-          <h2 style={{ whiteSpace: 'pre-line' }}>{brand.headline}</h2>
-          <p>
-            {d.lessonCount > 0 && milestone.remaining > 0
-              ? `You're ${milestone.remaining} lesson${milestone.remaining === 1 ? '' : 's'} away from ${milestone.label}. Keep the streak going.`
-              : brand.welcome}
-          </p>
-          <Go href="/student/book" className="k-hero-btn" preview={preview}>{L.heroButton}</Go>
-
-          {brand.props !== 'none' && (
-            <div className="k-hero-art" aria-hidden>
-              {brand.props === 'orbs' && (
-                <>
-                  <span className="k-orb" style={{ width: 104, height: 104, right: 34, top: 26 }} />
-                  <span className="k-tube" style={{ width: 88, height: 88, right: 0, top: 74, transform: 'rotate(28deg)' }} />
-                  <span className="k-crystal" style={{ width: 52, height: 60, right: 128, top: 96 }} />
-                  <span className="k-ring" style={{ width: 44, height: 44, right: 150, top: 4 }} />
-                </>
-              )}
-              {brand.props === 'geometric' && (
-                <>
-                  <span className="k-crystal" style={{ width: 74, height: 88, right: 30, top: 20 }} />
-                  <span className="k-ring" style={{ width: 60, height: 60, right: 118, top: 76 }} />
-                  <span className="k-crystal" style={{ width: 44, height: 52, right: 132, top: 8, opacity: .8 }} />
-                </>
-              )}
-              {brand.props === 'minimal' && <span className="k-ring" style={{ width: 86, height: 86, right: 44, top: 42 }} />}
-            </div>
-          )}
-        </section>
-      )
-
     case 'stats':
       return (
         <div className="k-stats">
@@ -186,8 +150,8 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
       return (
         <>
           <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{d.totalVocab} words</span></div>
-          <div className="k-card k-chart-card">
-            <div className="k-chart-fill"><VocabLevelChart distribution={d.vocabDistribution} height="100%" /></div>
+          <div className="k-card">
+            <VocabLevelBreakdown distribution={d.vocabDistribution} totalCount={d.totalVocab} plain />
           </div>
         </>
       )

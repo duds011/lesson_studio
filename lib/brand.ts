@@ -7,23 +7,21 @@
  * the only place that decides what an unset field falls back to.
  */
 
-export type HeroStyle = 'forest' | 'accent' | 'light'
 /** Page background pattern behind the student portal. All CSS, no assets. */
 export type BackgroundStyle = 'plain' | 'dots' | 'grid' | 'blobs' | 'rings' | 'waves' | 'wash'
 /** How round everything is — cards, buttons, inputs. */
 export type ShapeStyle = 'rounded' | 'soft' | 'sharp' | 'pill'
-/** Decorative 3D props on the hero. */
+/** Decorative 3D props on page headers — the lesson recap, tests, booking. */
 export type PropStyle = 'orbs' | 'geometric' | 'minimal' | 'none'
 
 /** Blocks a teacher can arrange on the student dashboard. */
 export const DASHBOARD_BLOCKS = [
-  'hero', 'stats', 'lessons', 'progress', 'vocab',
+  'stats', 'lessons', 'progress', 'vocab',
   'milestone', 'scores', 'tests', 'speaking',
 ] as const
 export type BlockId = (typeof DASHBOARD_BLOCKS)[number]
 
 export const BLOCK_LABELS: Record<BlockId, string> = {
-  hero: 'Welcome banner',
   stats: 'Stat cards',
   lessons: 'Lesson cards',
   progress: 'Progress charts',
@@ -39,14 +37,13 @@ export const DASH_TABS = ['Overview', 'Lessons', 'Progress'] as const
 export type DashTab = (typeof DASH_TABS)[number]
 
 export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
-  hero: 'Overview', stats: 'Overview', milestone: 'Overview',
-  lessons: 'Lessons', scores: 'Lessons', tests: 'Lessons',
+  stats: 'Overview', scores: 'Overview', milestone: 'Overview',
+  lessons: 'Lessons', tests: 'Lessons',
   progress: 'Progress', vocab: 'Progress', speaking: 'Progress',
 }
 
 /** Every block a teacher can switch off, and the field that switches it. */
 export const BLOCK_TOGGLE: Record<BlockId, keyof Brand> = {
-  hero: 'showHero',
   stats: 'showStats',
   lessons: 'showLessons',
   milestone: 'showMilestone',
@@ -70,7 +67,6 @@ export const TEXT_SLOTS = {
   statLessons: 'Lessons',
   statScore: 'Avg score',
   statSpeaking: 'Speaking',
-  heroButton: 'Book a lesson',
   lessonsTitle: 'Your lessons',
   progressTitle: 'Your progress',
   vocabTitle: 'Vocabulary',
@@ -84,7 +80,6 @@ export const TEXT_SLOT_IDS = Object.keys(TEXT_SLOTS) as TextSlot[]
 
 /** Which slots belong to which block — the studio groups them that way. */
 export const BLOCK_TEXT_SLOTS: Partial<Record<BlockId, TextSlot[]>> = {
-  hero: ['heroButton'],
   stats: ['statLessons', 'statScore', 'statSpeaking'],
   lessons: ['lessonsTitle'],
   progress: ['progressTitle'],
@@ -204,15 +199,10 @@ const FONT_STACK = 'system-ui, sans-serif'
 export type Brand = {
   /** Primary colour — buttons, active states, progress fills. */
   accent: string
-  /** Big line on the student dashboard hero. */
-  headline: string
-  /** Supporting line under the headline. */
-  welcome: string
   /** Short mark shown in the rail (emoji or 1–2 letters). */
   logoText: string
   /** What the student portal is called. */
   portalName: string
-  heroStyle: HeroStyle
   background: BackgroundStyle
   shape: ShapeStyle
   props: PropStyle
@@ -221,7 +211,6 @@ export type Brand = {
   levels: Level[]
   /** Every fixed string on the portal, defaults filled in. */
   labels: Record<TextSlot, string>
-  showHero: boolean
   showStats: boolean
   showLessons: boolean
   showScores: boolean
@@ -234,18 +223,14 @@ export type Brand = {
 
 export const DEFAULT_BRAND: Brand = {
   accent: '#0a61c9',
-  headline: 'Learn today,\nsucceed tomorrow!',
-  welcome: 'Every lesson recorded, recapped, and turned into practice you can review.',
   logoText: '📚',
   portalName: 'Lesson Studio',
-  heroStyle: 'forest',
   background: 'plain',
   shape: 'rounded',
   props: 'orbs',
   font: 'modern',
   levels: DEFAULT_LEVELS,
   labels: { ...TEXT_SLOTS },
-  showHero: true,
   showStats: true,
   showLessons: true,
   showScores: true,
@@ -265,7 +250,7 @@ export type Preset = {
   id: string
   name: string
   hint: string
-  brand: Pick<Brand, 'accent' | 'heroStyle' | 'background' | 'shape' | 'props' | 'font'>
+  brand: Pick<Brand, 'accent' | 'background' | 'shape' | 'props' | 'font'>
 }
 
 export const PRESETS: Preset[] = [
@@ -274,7 +259,7 @@ export const PRESETS: Preset[] = [
     name: 'Studio',
     hint: 'The house look — signal blue on white',
     brand: {
-      accent: '#0a61c9', heroStyle: 'forest', background: 'plain', shape: 'rounded', props: 'orbs', font: 'modern',
+      accent: '#0a61c9', background: 'plain', shape: 'rounded', props: 'orbs', font: 'modern',
     },
   },
   {
@@ -282,7 +267,7 @@ export const PRESETS: Preset[] = [
     name: 'Midnight',
     hint: 'Deep indigo, tight corners, data first',
     brand: {
-      accent: '#4338ca', heroStyle: 'accent', background: 'grid', shape: 'soft', props: 'geometric', font: 'techy',
+      accent: '#4338ca', background: 'grid', shape: 'soft', props: 'geometric', font: 'techy',
     },
   },
   {
@@ -290,7 +275,7 @@ export const PRESETS: Preset[] = [
     name: 'Sunrise',
     hint: 'Warm clay, soft wash, welcoming',
     brand: {
-      accent: '#b45309', heroStyle: 'accent', background: 'wash', shape: 'rounded', props: 'orbs', font: 'friendly',
+      accent: '#b45309', background: 'wash', shape: 'rounded', props: 'orbs', font: 'friendly',
     },
   },
   {
@@ -298,7 +283,7 @@ export const PRESETS: Preset[] = [
     name: 'Editorial',
     hint: 'Serif headlines, plum accent, roomy',
     brand: {
-      accent: '#7e22ce', heroStyle: 'light', background: 'plain', shape: 'sharp', props: 'minimal', font: 'editorial',
+      accent: '#7e22ce', background: 'plain', shape: 'sharp', props: 'minimal', font: 'editorial',
     },
   },
   {
@@ -306,7 +291,7 @@ export const PRESETS: Preset[] = [
     name: 'Playful',
     hint: 'Pink, pill corners, everything in view',
     brand: {
-      accent: '#be123c', heroStyle: 'accent', background: 'dots', shape: 'pill', props: 'orbs', font: 'friendly',
+      accent: '#be123c', background: 'dots', shape: 'pill', props: 'orbs', font: 'friendly',
     },
   },
   {
@@ -314,7 +299,7 @@ export const PRESETS: Preset[] = [
     name: 'Minimal',
     hint: 'Slate, no ornament, one column',
     brand: {
-      accent: '#334155', heroStyle: 'light', background: 'plain', shape: 'soft', props: 'none', font: 'plain',
+      accent: '#334155', background: 'plain', shape: 'soft', props: 'none', font: 'plain',
     },
   },
 ]
@@ -356,18 +341,14 @@ export function resolveBrand(raw: unknown): Brand {
 
   return {
     accent: typeof b.accent === 'string' && HEX.test(b.accent) ? b.accent : DEFAULT_BRAND.accent,
-    headline: str(b.headline, DEFAULT_BRAND.headline, 90),
-    welcome: str(b.welcome, DEFAULT_BRAND.welcome, 200),
     logoText: str(b.logoText, DEFAULT_BRAND.logoText, 4),
     portalName: str(b.portalName, DEFAULT_BRAND.portalName, 40),
-    heroStyle: b.heroStyle === 'accent' || b.heroStyle === 'light' ? b.heroStyle : DEFAULT_BRAND.heroStyle,
     background: (BACKGROUNDS as readonly string[]).includes(b.background as string) ? (b.background as BackgroundStyle) : DEFAULT_BRAND.background,
     shape: (SHAPES as readonly string[]).includes(b.shape as string) ? (b.shape as ShapeStyle) : DEFAULT_BRAND.shape,
     props: (PROPS as readonly string[]).includes(b.props as string) ? (b.props as PropStyle) : DEFAULT_BRAND.props,
     font: FONTS.some((f) => f.value === b.font) ? (b.font as FontId) : DEFAULT_BRAND.font,
     levels: resolveLevels(b.levels),
     labels: resolveLabels(b.labels),
-    showHero: bool(b.showHero, DEFAULT_BRAND.showHero),
     showStats: bool(b.showStats, DEFAULT_BRAND.showStats),
     showLessons: bool(b.showLessons, DEFAULT_BRAND.showLessons),
     showScores: bool(b.showScores, DEFAULT_BRAND.showScores),

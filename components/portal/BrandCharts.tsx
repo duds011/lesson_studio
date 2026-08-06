@@ -43,14 +43,20 @@ export function ScoreTrendChart({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={points} margin={compact ? { top: 4, right: 0, left: 0, bottom: 0 } : { top: 6, right: 4, left: -22, bottom: 0 }}>
+      <BarChart
+        data={points}
+        margin={compact ? { top: 4, right: 0, left: 0, bottom: 0 } : { top: 6, right: 4, left: -22, bottom: 0 }}
+        barCategoryGap={1}
+      >
         <XAxis
           dataKey="lesson" tickLine={false} axisLine={false} tick={compact ? false : AXIS}
           height={compact ? 0 : 18} tickFormatter={(v) => `L${v}`}
         />
         <YAxis domain={[0, 10]} tickLine={false} axisLine={false} tick={compact ? false : AXIS} width={compact ? 0 : 30} />
         {!compact && <Tooltip cursor={{ fill: `${color}14` }} content={<ChartTip prefix="Lesson " suffix="/10" />} />}
-        <Bar dataKey="score" radius={[5, 5, 2, 2]} maxBarSize={compact ? 14 : 34} isAnimationActive={!compact}>
+        {/* No maxBarSize and next to no category gap: the bars butt together
+            and read as one block of lessons rather than five lonely columns. */}
+        <Bar dataKey="score" radius={[4, 4, 0, 0]} isAnimationActive={!compact}>
           {points.map((p, i) => (
             <Cell key={p.lesson} fill={color} fillOpacity={i === last ? 1 : 0.42} />
           ))}

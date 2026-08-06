@@ -24,9 +24,13 @@ export const levelColor = (level: string) => JLPT_COLORS[level] ?? CEFR_COLORS[l
 export default function VocabLevelBreakdown({
   distribution,
   totalCount,
+  plain = false,
 }: {
   distribution: Record<string, number>
   totalCount: number
+  /** Inside a card that already has a heading: drop the card chrome and the
+   *  duplicate "Vocabulary 45" label, keep the bar and the level names. */
+  plain?: boolean
 }) {
   if (!totalCount) return null
 
@@ -39,10 +43,12 @@ export default function VocabLevelBreakdown({
   if (levels.length === 0) return null
 
   return (
-    <div className="vocab-line analytics-card">
-      <span className="vocab-line-label">
-        Vocabulary <strong>{totalCount}</strong>
-      </span>
+    <div className={plain ? 'vocab-line plain' : 'vocab-line analytics-card'}>
+      {!plain && (
+        <span className="vocab-line-label">
+          Vocabulary <strong>{totalCount}</strong>
+        </span>
+      )}
       <div className="vocab-line-bar" role="img" aria-label={`Vocabulary by level: ${levels.map((l) => `${l.level} ${l.count}`).join(', ')}`}>
         {levels.map((l) => (
           <div key={l.level} style={{ width: `${l.pct}%`, background: levelColor(l.level) }} title={`${l.level}: ${l.count}`} />

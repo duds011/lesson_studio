@@ -7,7 +7,7 @@ import {
   ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
   DASH_BLOCK_TAB, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
   brandVars, backgroundClass, MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
-  type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle,
+  type Brand, type BackgroundStyle, type ShapeStyle, type PropStyle,
   type BlockId, type DashTab, type TextSlot,
 } from '@/lib/brand'
 import LessonPageTabs from './LessonPageTabs'
@@ -22,12 +22,6 @@ const HEX = /^#[0-9a-fA-F]{6}$/
  * page down rather than reflowing it.
  */
 const CANVAS_WIDTH = { desktop: 1180, mobile: 390 } as const
-
-const HERO_STYLES: { value: HeroStyle; label: string; hint: string }[] = [
-  { value: 'forest', label: 'Solid', hint: 'Filled accent panel' },
-  { value: 'accent', label: 'Gradient', hint: 'Accent fading to light' },
-  { value: 'light', label: 'Light', hint: 'Soft tint, dark text' },
-]
 
 const BACKGROUNDS: { value: BackgroundStyle; label: string }[] = [
   { value: 'plain', label: 'Plain' }, { value: 'dots', label: 'Dots' }, { value: 'grid', label: 'Grid' },
@@ -47,7 +41,6 @@ const PROPS: { value: PropStyle; label: string }[] = [
 
 /** One row per block: the switch, and whatever that block can be told. */
 const TOGGLES: { id: BlockId; hint: string }[] = [
-  { id: 'hero', hint: 'The headline panel at the top' },
   { id: 'stats', hint: 'Lessons, average score, speaking share' },
   { id: 'lessons', hint: 'The rolling list of their lessons' },
   { id: 'milestone', hint: 'Progress toward their next level' },
@@ -304,18 +297,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             ))}
           </div>
 
-          <span className="k-field-label">Hero style</span>
-          <div className="k-choices">
-            {HERO_STYLES.map((h) => (
-              <button key={h.value} type="button" className={`k-choice ${brand.heroStyle === h.value ? 'sel' : ''}`} onClick={() => set('heroStyle', h.value)}>
-                <span className="k-choice-tick" aria-hidden>✓</span>
-                <span>{h.label}<small>{h.hint}</small></span>
-              </button>
-            ))}
-          </div>
         </Tool>
 
-        <Tool id="words" icon="✍️" tone="y" title="Words" desc="The hero lines, the portal name, and what each section is called." openId={tool} onOpen={setTool}>
+        <Tool id="words" icon="✍️" tone="y" title="Words" desc="The portal name, the greeting, and what each section and tab is called." openId={tool} onOpen={setTool}>
           <label className="k-field">
             <span>Portal name</span>
             <input value={brand.portalName} onChange={(e) => set('portalName', e.target.value)} maxLength={40} placeholder="Lesson Studio" />
@@ -334,16 +318,6 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, greeting: TEXT_SLOTS.greeting }) }}
               placeholder={TEXT_SLOTS.greeting}
             />
-          </label>
-
-          <label className="k-field">
-            <span>Hero headline</span>
-            <textarea className="k-input" rows={2} value={brand.headline} onChange={(e) => set('headline', e.target.value)} maxLength={90} placeholder={DEFAULT_BRAND.headline} />
-          </label>
-
-          <label className="k-field">
-            <span>Hero subtext</span>
-            <textarea className="k-input" rows={3} value={brand.welcome} onChange={(e) => set('welcome', e.target.value)} maxLength={200} placeholder={DEFAULT_BRAND.welcome} />
           </label>
 
           <span className="k-field-label">Tab names</span>
@@ -381,7 +355,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             ))}
           </div>
 
-          <span className="k-field-label">Hero decoration</span>
+          <span className="k-field-label">Page decoration <small style={{ fontWeight: 500 }}>(lesson and test headers)</small></span>
           <div className="k-choices">
             {PROPS.map((pr) => (
               <button key={pr.value} type="button" className={`k-choice ${brand.props === pr.value ? 'sel' : ''}`} onClick={() => set('props', pr.value)}>

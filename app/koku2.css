@@ -62,14 +62,9 @@
   .k-main{padding-bottom:80px}
 }
 
-/* — hero banner — */
-.k-hero{position:relative;background:var(--forest);border-radius:var(--r-xl);padding:34px 38px;color:#fff;overflow:hidden;min-height:206px;display:flex;flex-direction:column;justify-content:center}
-.k-hero h2{font-size:clamp(24px,2.7vw,33px);line-height:1.15;letter-spacing:-.04em;margin:0 0 12px;max-width:60%;font-weight:700}
-.k-hero p{margin:0 0 22px;max-width:52%;color:rgba(255,255,255,.72);font-size:13px;line-height:1.6}
-.k-hero-btn{align-self:flex-start;background:#fff;color:var(--forest-deep);border:0;border-radius:999px;padding:13px 26px;font-weight:700;font-size:13px;cursor:pointer;transition:.16s ease;box-shadow:0 6px 18px rgba(0,0,0,.16)}
-.k-hero-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.22)}
+/* — decorative props on page headers — */
 .k-hero-art{position:absolute;right:26px;top:50%;transform:translateY(-50%);width:230px;height:170px;pointer-events:none}
-@media(max-width:860px){.k-hero h2,.k-hero p{max-width:100%}.k-hero-art{opacity:.25}}
+@media(max-width:860px){.k-hero-art{opacity:.25}}
 
 /* — CSS 3D props (stand-ins for the rendered illustrations) — */
 .k-orb{position:absolute;border-radius:50%;background:radial-gradient(circle at 32% 26%,#ffc4de 0%,#f486b8 42%,#d84f92 100%);box-shadow:inset -8px -10px 22px rgba(150,20,80,.36),0 12px 26px rgba(0,0,0,.22)}
@@ -819,8 +814,8 @@
    own type. Both vars come from brandVars(). */
 .k-shell,.k-preview-frame{font-family:var(--font-body,"Plus Jakarta Sans",system-ui,sans-serif)}
 .k-shell :is(h1,h2,h3,h4),.k-preview-frame :is(h1,h2,h3,h4),
-.k-shell :is(.k-name,.k-stat-val,.k-hero-btn,.k-course-title,.k-pscore b,.stat-card-value,.metric .mv),
-.k-preview-frame :is(.k-name,.k-stat-val,.k-hero-btn,.k-pscore b,.stat-card-value,.metric .mv,.tab)
+.k-shell :is(.k-name,.k-stat-val,.k-course-title,.k-pscore b,.stat-card-value,.metric .mv),
+.k-preview-frame :is(.k-name,.k-stat-val,.k-pscore b,.stat-card-value,.metric .mv,.tab)
 {font-family:var(--font-head,"Outfit",system-ui,sans-serif)}
 
 /* ── full presets ── */
@@ -981,7 +976,7 @@
 :is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw)>*:nth-child(n+6){animation-delay:.3s}
 /* Dragging is a live reorder — re-running entrances mid-drag would fight it. */
 
-.k-hero,.k-phead,.k-thead{animation:k-rise .55s cubic-bezier(.2,.75,.3,1) backwards}
+.k-phead,.k-thead{animation:k-rise .55s cubic-bezier(.2,.75,.3,1) backwards}
 
 /* ── bars fill instead of appearing full ── */
 .k-hw-fill,.balance-fill,.vocab-line-bar>div{transform-origin:left center;animation:k-grow .9s cubic-bezier(.2,.8,.25,1) .12s backwards}

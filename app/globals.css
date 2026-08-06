@@ -52,6 +52,12 @@ a{color:inherit;text-decoration:none}button,input{font:inherit}button,a{ -webkit
 .vocab-line-label strong{color:var(--ink);font-size:12px;margin-left:4px}
 .vocab-line-bar{display:flex;flex:1;min-width:160px;height:8px;border-radius:999px;overflow:hidden;background:var(--surface-2)}
 .vocab-line-chips{display:flex;gap:10px;flex-wrap:wrap}
+/* Inside a card that already has its heading: the bar gets the width and the
+   levels sit under it, rather than competing with a label on the same line. */
+.vocab-line.plain{flex-direction:column;align-items:stretch;gap:12px;padding:0}
+.vocab-line.plain .vocab-line-bar{height:24px;border-radius:9px;flex:0 0 auto;width:100%}
+.vocab-line.plain .vocab-line-chips{gap:14px}
+.vocab-line.plain .vocab-chip{font-size:11px}
 .vocab-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:750}
 .vocab-chip i{width:7px;height:7px;border-radius:50%;display:inline-block}
 /* ── progress, one metric at a time ──
