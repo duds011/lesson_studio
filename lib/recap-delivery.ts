@@ -71,19 +71,53 @@ export async function deliverRecapToStudent(eventId: string, rec: any): Promise<
    * Replaced rather than appended, so re-publishing an edited recap does not
    * leave the words it used to have.
    */
-  const vocab = Array.isArray(recapObj.vocabulary) ? recapObj.vocabulary : []
-  const rows = vocab
-    .map((v: any, i: number) => ({
+  const key = Array.isArray(recapObj.vocabulary) ? recapObj.vocabulary : []
+  const all = Array.isArray(recapObj.vocabulary_all) ? recapObj.vocabulary_all : []
+
+  /**
+   * A word keeps the level it was first given.
+   *
+   * Levels are the model's judgement, and asked twice it will sometimes answer
+   * A2 and sometimes B1 for the same word. Left alone that makes the level
+   * chart wander for reasons that have nothing to do with the student, so the
+   * first answer wins and later lessons reuse it.
+   */
+  const { data: known } = await admin
+    .from('vocabulary_items')
+    .select('word, jlpt_level, lessons!inner ( student_id )')
+    .eq('lessons.student_id', linked.studentId)
+    .neq('lesson_id', lessonRow.id)
+  const levelOf = new Map<string, string>()
+  for (const k of ((known ?? []) as any[])) {
+    const w = String(k.word ?? '').trim().toLocaleLowerCase()
+    if (w && k.jlpt_level && !levelOf.has(w)) levelOf.set(w, k.jlpt_level)
+  }
+
+  // Key words first (they carry the detail the recap renders), then the rest of
+  // the inventory. One row per distinct word in this lesson.
+  const seen = new Set<string>()
+  const rows: any[] = []
+  const add = (word: string, level: string | null, isKey: boolean, detail?: any) => {
+    const clean = word.trim()
+    if (!clean) return
+    const dedupe = clean.toLocaleLowerCase()
+    if (seen.has(dedupe)) return
+    seen.add(dedupe)
+    rows.push({
       lesson_id: lessonRow.id,
-      word: String(v?.word ?? '').trim(),
-      reading: v?.reading ? String(v.reading).trim() : null,
-      definition: v?.definition ? String(v.definition).trim() : null,
-      explanation: v?.explanation ? String(v.explanation).trim() : null,
-      example_sentence: v?.example_sentence ? String(v.example_sentence).trim() : null,
-      jlpt_level: v?.jlpt_level ? String(v.jlpt_level).trim() : null,
-      sort_order: i,
-    }))
-    .filter((r: any) => r.word)
+      word: clean,
+      reading: detail?.reading ? String(detail.reading).trim() : null,
+      definition: detail?.definition ? String(detail.definition).trim() : null,
+      explanation: detail?.explanation ? String(detail.explanation).trim() : null,
+      example_sentence: detail?.example_sentence ? String(detail.example_sentence).trim() : null,
+      jlpt_level: levelOf.get(dedupe) ?? (level ? String(level).trim() : null),
+      sort_order: rows.length,
+      is_key: isKey,
+    })
+  }
+
+  for (const v of key) add(String(v?.word ?? ''), v?.jlpt_level ?? null, true, v)
+  for (const v of all) add(String(v?.word ?? ''), v?.level ?? null, false)
 
   await admin.from('vocabulary_items').delete().eq('lesson_id', lessonRow.id)
   if (rows.length) {

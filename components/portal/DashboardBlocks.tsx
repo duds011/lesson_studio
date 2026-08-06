@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import ProgressCharts from './ProgressCharts'
+import VocabLevelBreakdown from './VocabLevelBreakdown'
 import { MilestoneTrack, ScoreTrendChart } from './BrandCharts'
 import CountUp from './CountUp'
 import LessonPillar, { PillarLesson } from './LessonPillar'
@@ -43,6 +44,7 @@ export type DashboardData = {
     reading: string | null
     definition: string | null
     level: string | null
+    isKey?: boolean
     firstLessonNumber: number | null
     firstDate: string | null
     lessonCount: number
@@ -168,7 +170,9 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
         <>
           <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{d.vocabWords.length} words</span></div>
           <div className="k-card">
-            <div className="k-vocab-list">
+            {/* The scale follows the words: JLPT for Japanese, CEFR otherwise. */}
+            <VocabLevelBreakdown distribution={d.vocabDistribution} totalCount={d.totalVocab} plain />
+            <div className="k-vocab-list" style={{ marginTop: 14 }}>
               {d.vocabWords.map((v, i) => (
                 <div className="k-vocab-row" key={`${v.word}-${i}`}>
                   <div className="k-vocab-main">

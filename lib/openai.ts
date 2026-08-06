@@ -56,6 +56,8 @@ export type Recap = {
   vocab_total_count: number
   vocab_level_distribution: Record<string, number>
   vocabulary: VocabItem[]
+  /** The full inventory — every word worth counting, not just the shown ten. */
+  vocabulary_all: { word: string; level: string }[]
   homework: { description: string }[]
   exercises: Exercise[]
   sections: Section[]
@@ -72,6 +74,24 @@ export type Recap = {
  * information, but it is *theirs* — and it only works because the transcript
  * is word-accurate with the speakers already separated.
  */
+/**
+ * Vocabulary comes out in two shapes on purpose.
+ *
+ * `vocabulary` is the ten the recap page shows, with everything a student
+ * needs to study a word. `vocabulary_all` is the inventory — every word worth
+ * counting, carrying only what it takes to count and level it. Before this,
+ * the totals were an integer the model estimated, which could not be checked
+ * against anything; now the number is a count of rows the student can scroll.
+ */
+const VOCAB_INVENTORY_RULES = `VOCABULARY INVENTORY — for the "vocabulary_all" array:
+EVERY vocabulary item worth tracking that appeared in this lesson — not just the ten above. Typically 25-60 for a full lesson.
+- Include content words (nouns, verbs, adjectives, adverbs), set phrases, idioms and grammar patterns that carry meaning.
+- EXCLUDE function words with no learning value on their own: articles, bare pronouns, basic conjunctions, and filler sounds.
+- Deduplicate: one entry per distinct word. List a word in its DICTIONARY form (infinitive, plain form, singular), not as it happened to be conjugated — "allait" is the word "aller", met once.
+- Every item in "vocabulary" above must also appear here.
+- Shape: {"word": "[the word]", "level": "[level]"} and nothing else — keep it compact.
+If the transcript is too noisy to be sure a word was really said, leave it out. An honest short list beats a padded one.`
+
 const CORRECTIONS_RULES = `CORRECTIONS — for the "corrections" array:
 The mistakes the STUDENT actually made that are worth fixing. 4-8 items, most useful first.
 - "said": the student's own words, quoted VERBATIM from the transcript — a short fragment (max ~12 words) containing the mistake. Copy it exactly as it appears. NEVER paraphrase it, NEVER clean it up, NEVER invent it, and NEVER quote the teacher.
@@ -124,6 +144,7 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocab_total_count": [integer — total distinct vocabulary items in this lesson],
   "vocab_level_distribution": {"N5": [count], "N4": [count], "N3": [count], "N2": [count], "N1": [count]},
   "vocabulary": [{"word": "[Japanese]", "reading": "[romaji]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[N5/N4/N3/N2/N1]", "example_sentence": "[Japanese sentence]"}],
+  "vocabulary_all": [{"word": "[Japanese]", "level": "[N5/N4/N3/N2/N1]"}],
   "homework": [{"description": "[task]"}],
   "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
   "sections": [{"title": "1. Japanese: English Title", "content": "[see SECTION FORMAT]"}],
@@ -140,11 +161,11 @@ CONFIDENCE — weighted formula:
 Self-correction (30%) + Response independence (25%) + Grammar recognition (20%) + Japanese output (15%) + Difficulty handled (10%)
 0.0-3.9 = Developing | 4.0-5.9 = Building | 6.0-7.9 = Strong Foundation | 8.0-10.0 = Confident
 
+{{VOCAB_INVENTORY_RULES}}
+
 VOCABULARY DETECTION — for vocab_total_count and vocab_level_distribution:
-- Count ALL distinct vocabulary items that appeared or were practiced in this lesson — not just the 10 key items.
-- Include words, grammar patterns, particles, expressions, set phrases, and counter words.
-- vocab_total_count: total number of distinct items found.
-- vocab_level_distribution: count of items per JLPT level. Include all 5 levels even if count is 0.
+- These must AGREE with "vocabulary_all": vocab_total_count is its length, and vocab_level_distribution is its items counted per JLPT level. Do not estimate them separately.
+- Include all 5 levels even if a count is 0.
 
 LESSON TITLE — for the "lesson_title" field:
 A short, clean, student-facing title (3-7 words, English, Title Case) naming what the lesson covered — like a textbook chapter heading. Examples: "Contrasting Ideas & Giving Reasons", "Making Comparisons and Strong Advice", "Greetings and Self Introduction". NO student/teacher names, NO dates, NO lesson numbers, NO quotes.
@@ -460,6 +481,7 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocab_total_count": [integer — total distinct vocabulary items in this lesson],
   "vocab_level_distribution": {"A1": [count], "A2": [count], "B1": [count], "B2": [count], "C1": [count], "C2": [count]},
   "vocabulary": [{"word": "[{{LANGUAGE}}]", "reading": "[pronunciation guide]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[{{LANGUAGE}} sentence]"}],
+  "vocabulary_all": [{"word": "[{{LANGUAGE}}]", "level": "[A1/A2/B1/B2/C1/C2]"}],
   "homework": [{"description": "[task]"}],
   "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
   "sections": [{"title": "1. {{LANGUAGE}} phrase: English Title", "content": "[see SECTION FORMAT]"}],
@@ -476,11 +498,11 @@ CONFIDENCE — weighted formula:
 Self-correction (30%) + Response independence (25%) + Grammar recognition (20%) + {{LANGUAGE}} output (15%) + Difficulty handled (10%)
 0.0-3.9 = Developing | 4.0-5.9 = Building | 6.0-7.9 = Strong Foundation | 8.0-10.0 = Confident
 
+{{VOCAB_INVENTORY_RULES}}
+
 VOCABULARY DETECTION — for vocab_total_count and vocab_level_distribution:
-- Count ALL distinct vocabulary items that appeared or were practiced in this lesson — not just the 10 key items.
-- Include words, grammar patterns, expressions, set phrases and connectors.
-- vocab_total_count: total number of distinct items found.
-- vocab_level_distribution: count of items per CEFR level. Include all 6 levels even if count is 0.
+- These must AGREE with "vocabulary_all": vocab_total_count is its length, and vocab_level_distribution is its items counted per CEFR level. Do not estimate them separately.
+- Include all 6 levels even if a count is 0.
 
 LESSON TITLE — for the "lesson_title" field:
 A short, clean, student-facing title (3-7 words, English, Title Case) naming what the lesson covered — like a textbook chapter heading. Examples: "Contrasting Ideas & Giving Reasons", "Making Comparisons and Strong Advice", "Talking About the Past". NO student/teacher names, NO dates, NO lesson numbers, NO quotes.
@@ -545,6 +567,7 @@ export async function generateRecap(opts: {
   const isJapanese = !lang || /^(ja|jp|japanese|日本語)$/i.test(lang)
   const content = (isJapanese ? PROMPT : GENERIC_PROMPT.replace(/\{\{LANGUAGE\}\}/g, lang))
     .replace('{{CORRECTIONS_RULES}}', CORRECTIONS_RULES)
+    .replace('{{VOCAB_INVENTORY_RULES}}', VOCAB_INVENTORY_RULES)
     .replace('{{STUDENT}}', opts.studentName)
     .replace('{{TRANSCRIPT}}', opts.transcript)
 

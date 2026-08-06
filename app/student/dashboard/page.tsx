@@ -100,7 +100,7 @@ export default async function StudentDashboard() {
    */
   const { data: vocabRows } = await supabase
     .from('vocabulary_items')
-    .select('word, reading, definition, jlpt_level, lessons!inner ( lesson_number, lesson_date )')
+    .select('word, reading, definition, jlpt_level, is_key, lessons!inner ( lesson_number, lesson_date )')
     .order('sort_order', { ascending: true })
 
   // Teacher-shared files across every lesson — the Files tab. RLS only returns
@@ -147,7 +147,7 @@ export default async function StudentDashboard() {
    */
   const vocabByWord = new Map<string, {
     word: string; reading: string | null; definition: string | null; level: string | null
-    firstLessonNumber: number | null; firstDate: string | null; lessonCount: number
+    isKey: boolean; firstLessonNumber: number | null; firstDate: string | null; lessonCount: number
   }>()
   for (const row of ((vocabRows ?? []) as any[])) {
     const lesson = Array.isArray(row.lessons) ? row.lessons[0] : row.lessons
@@ -162,6 +162,7 @@ export default async function StudentDashboard() {
         reading: row.reading ?? null,
         definition: row.definition ?? null,
         level: row.jlpt_level ?? null,
+        isKey: Boolean(row.is_key),
         firstLessonNumber: num,
         firstDate: lesson?.lesson_date ?? null,
         lessonCount: 1,
@@ -169,6 +170,12 @@ export default async function StudentDashboard() {
       continue
     }
     existing.lessonCount += 1
+    // A word shown in full on any lesson keeps its detail here.
+    if (row.is_key && !existing.isKey) {
+      existing.isKey = true
+      existing.reading = row.reading ?? existing.reading
+      existing.definition = row.definition ?? existing.definition
+    }
     // Keep the earliest sighting, whichever order the rows arrived in.
     if (num != null && (existing.firstLessonNumber == null || num < existing.firstLessonNumber)) {
       existing.firstLessonNumber = num
@@ -179,12 +186,24 @@ export default async function StudentDashboard() {
   // ES5, where iterating a Map needs downlevelIteration.
   const vocabWords: {
     word: string; reading: string | null; definition: string | null; level: string | null
-    firstLessonNumber: number | null; firstDate: string | null; lessonCount: number
+    isKey: boolean; firstLessonNumber: number | null; firstDate: string | null; lessonCount: number
   }[] = []
   vocabByWord.forEach((v) => vocabWords.push(v))
   vocabWords.sort(
     (a, b) => (b.firstLessonNumber ?? 0) - (a.firstLessonNumber ?? 0) || a.word.localeCompare(b.word),
   )
+
+  /**
+   * The level chart, counted from the words themselves rather than read from
+   * the model's own estimate — so the number above the bar and the list below
+   * it can never disagree.
+   */
+  const vocabLevels: Record<string, number> = {}
+  for (const v of vocabWords) {
+    if (!v.level) continue
+    vocabLevels[v.level] = (vocabLevels[v.level] ?? 0) + 1
+  }
+  const leveledWords = Object.values(vocabLevels).reduce((a, b) => a + b, 0)
 
   const firstName = student.full_name.split(' ')[0]
   // Most recent scored lessons, oldest-first so the chart reads left to right.
@@ -223,8 +242,10 @@ export default async function StudentDashboard() {
         responseSec: metrics.avgResponseSec ?? null,
       }
     }),
-    vocabDistribution,
-    totalVocab,
+    // Counted from the stored words, falling back to the model's estimate only
+    // for lessons published before words were kept as rows.
+    vocabDistribution: leveledWords > 0 ? vocabLevels : vocabDistribution,
+    totalVocab: vocabWords.length || totalVocab,
     vocabWords: vocabWords.map((v) => ({ ...v, firstDate: formatDateShort(v.firstDate) })),
     scoreTrend,
     tests: ((tests ?? []) as any[]).map((t) => {
