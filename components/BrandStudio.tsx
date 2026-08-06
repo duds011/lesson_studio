@@ -5,39 +5,23 @@ import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
   ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
-  DASHBOARD_BLOCKS, DASH_BLOCK_TAB, DASH_TABS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_TABS,
-  PRESETS, FONTS, TEXT_SLOTS, brandVars, backgroundClass, clampSpan, GRID_COLS, MIN_BLOCK_H, MAX_BLOCK_H,
-  MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
+  DASH_BLOCK_TAB, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
+  brandVars, backgroundClass, MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
   type Brand, type HeroStyle, type BackgroundStyle, type ShapeStyle, type PropStyle,
-  type BlockId, type DashTab, type LessonBlockId, type LessonTab, type Level, type Placement,
-  type TextSlot,
+  type BlockId, type DashTab, type TextSlot,
 } from '@/lib/brand'
-import { MilestoneTrack, MiniTrend, ScoreTrendChart, VocabLevelChart } from './portal/BrandCharts'
-import CountUp from './portal/CountUp'
+import LessonPageTabs from './LessonPageTabs'
+import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from './portal/DashboardBlocks'
 
 const HEX = /^#[0-9a-fA-F]{6}$/
-/** Must match --g on .k-flow, since span maths is done against it. */
-const GAP = 12
 
 /**
- * The canvas is a fixed page, not a fluid one: what a teacher arranges has to
- * be what a student on a laptop gets, so the widths they choose mean the same
- * thing on both. 1180 is the student portal's own content width at 1280 wide,
- * rail and padding removed. Too narrow a pane scales the whole page down
- * rather than reflowing it.
+ * The canvas is a fixed page, not a fluid one: what a teacher sees has to be
+ * what a student on a laptop gets. 1180 is the student portal's own content
+ * width at 1280 wide, rail and padding removed. A narrow pane scales the whole
+ * page down rather than reflowing it.
  */
 const CANVAS_WIDTH = { desktop: 1180, mobile: 390 } as const
-
-const BRAND_TEXT_LABELS: Record<string, string> = {
-  headline: 'Hero headline',
-  welcome: 'Hero subtext',
-  logoText: 'Portal mark',
-  portalName: 'Portal name',
-}
-
-/** Human name for whichever piece of text is being edited. */
-const textLabel = (key: string) =>
-  key.startsWith('label:') ? `“${TEXT_SLOTS[key.slice(6) as TextSlot]}”` : BRAND_TEXT_LABELS[key] ?? 'Text'
 
 const HERO_STYLES: { value: HeroStyle; label: string; hint: string }[] = [
   { value: 'forest', label: 'Solid', hint: 'Filled accent panel' },
@@ -74,26 +58,61 @@ const TOGGLES: { id: BlockId; hint: string }[] = [
   { id: 'speaking', hint: 'Pace and thinking time' },
 ]
 
-/** Stand-in data so the preview charts look like a real student's. */
-const SAMPLE_SCORES = [
-  { lesson: 8, score: 6.4 }, { lesson: 9, score: 7.1 }, { lesson: 10, score: 6.9 },
-  { lesson: 11, score: 7.8 }, { lesson: 12, score: 8.3 },
-]
-const SAMPLE_TREND = SAMPLE_SCORES.map((p) => ({ x: p.lesson, y: p.score }))
-const SAMPLE_VOCAB = { N5: 18, N4: 13, N3: 9, N2: 5 }
+/**
+ * A believable student, so the preview is the real page with the real
+ * components — not an imitation of them that can fall out of date.
+ */
+const SAMPLE: DashboardData = {
+  lessonCount: 12,
+  recentCount: 3,
+  scoredCount: 9,
+  avgScore: 7.4,
+  scoreDelta: 1.9,
+  latestTalk: 41,
+  talkDelta: 8,
+  pillarLessons: [
+    { id: 's3', number: 12, title: 'Contrasting ideas with けど', meta: '12th lesson · 2 Aug', score: 8.3, tag: 'Lesson 12' },
+    { id: 's2', number: 11, title: 'Ordering at a restaurant', meta: '11th lesson · 26 Jul', score: 7.8, tag: 'Lesson 11' },
+    { id: 's1', number: 10, title: 'Talking about last weekend', meta: '10th lesson · 19 Jul', score: 6.9, tag: 'Lesson 10' },
+  ],
+  progressLessons: [
+    { lessonNumber: 12, score: 8.3, talkPct: 41, vocabCount: 14, wpm: 96, responseSec: 1.8 },
+    { lessonNumber: 11, score: 7.8, talkPct: 38, vocabCount: 11, wpm: 92, responseSec: 2.1 },
+    { lessonNumber: 10, score: 6.9, talkPct: 35, vocabCount: 9, wpm: 88, responseSec: 2.4 },
+    { lessonNumber: 9, score: 7.1, talkPct: 33, vocabCount: 12, wpm: 84, responseSec: 2.9 },
+    { lessonNumber: 8, score: 6.4, talkPct: 30, vocabCount: 8, wpm: 79, responseSec: 3.3 },
+  ],
+  vocabDistribution: { N5: 18, N4: 13, N3: 9, N2: 5 },
+  totalVocab: 45,
+  scoreTrend: [
+    { lesson: 8, score: 6.4 }, { lesson: 9, score: 7.1 }, { lesson: 10, score: 6.9 },
+    { lesson: 11, score: 7.8 }, { lesson: 12, score: 8.3 },
+  ],
+  tests: [
+    { id: 't1', title: 'Particles — quick check', lessonNumber: 12, date: '2 Aug' },
+    { id: 't2', title: 'Restaurant phrases', lessonNumber: 11, date: '26 Jul' },
+  ],
+  avgWpm: 54,
+  avgThinkSec: 2.4,
+}
 
-type Scope = 'dash' | 'lesson'
-type Axis = 'x' | 'y' | 'xy'
-type AnyId = BlockId | LessonBlockId
-
-/** Move `id` to position `to` within a list of placements. */
-function moveTo<T extends string>(list: Placement<T>[], id: T, to: number): Placement<T>[] {
-  const from = list.findIndex((p) => p.id === id)
-  if (from < 0 || from === to) return list
-  const next = list.slice()
-  const [item] = next.splice(from, 1)
-  next.splice(Math.max(0, Math.min(next.length, to)), 0, item)
-  return next
+/** A stand-in recap, so the recap preview is the real LessonPageTabs too. */
+const SAMPLE_RECAP = {
+  talk_percentage: 41,
+  score: 8.3,
+  level: 'Confident',
+  vocab_level_distribution: { N5: 8, N4: 5, N3: 3 },
+  metrics: { studentWpm: 96, teacherWpm: 118, avgResponseSec: 1.8, grammarPer100: 4.2 },
+  sections: [
+    { title: 'What you worked on', body: 'Contrasting two ideas in one sentence, and softening a disagreement.' },
+    { title: 'Main corrections', body: 'けど joins two clauses — it does not start one.' },
+  ],
+  homework: 'Write five sentences contrasting something you like with something you do not.',
+  teacher_note: 'Much more confident this week — you corrected yourself twice without help.',
+  vocabulary: [
+    { word: 'けど', reading: 'kedo', definition: 'but, although', jlpt_level: 'N5' },
+    { word: '静か', reading: 'shizuka', definition: 'quiet', jlpt_level: 'N5' },
+  ],
 }
 
 /**
@@ -122,6 +141,20 @@ function Tool({ id, icon, tone = '', title, desc, openId, onOpen, children }: {
   )
 }
 
+/**
+ * The branding studio.
+ *
+ * It used to be a layout editor: drag blocks around, pull their edges, type
+ * onto the canvas. That bought a handful of arrangements nobody asked for and a
+ * long tail of ways to end up with a broken page — and because the canvas drew
+ * its own imitation of the portal, what a teacher designed was never quite what
+ * their student opened.
+ *
+ * So: the arrangement is ours, the styling is theirs, and the preview renders
+ * the real components (DashboardBlocks, LessonPageTabs) from the real brand.
+ * If a block changes, the preview changes with it; there is nothing left to
+ * keep in step by hand.
+ */
 export default function BrandStudio({ initial, teacherName }: { initial: Brand; teacherName: string }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -130,30 +163,18 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const [error, setError] = useState('')
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [view, setView] = useState<'dashboard' | 'lesson'>('dashboard')
-  const [lessonTab, setLessonTab] = useState<LessonTab>('Progress')
   const [dashTab, setDashTab] = useState<DashTab>('Overview')
   /** One tool open at a time — the menu is a stack of drawers, not a page. */
   const [tool, setTool] = useState<string | null>('presets')
   /** Which block's options are unfolded under its switch. */
-  const [openOptions, setOpenOptions] = useState<BlockId | null>(null)
+  const [openOptions, setOpenOptions] = useState<string | null>(null)
 
-  /** While dragging, the flow renders this working order so blocks reflow live. */
-  const [dragId, setDragId] = useState<AnyId | null>(null)
-  const [order, setOrder] = useState<Placement<any>[] | null>(null)
-  const [resizing, setResizing] = useState<AnyId | null>(null)
-  const blockEls = useRef<Partial<Record<string, HTMLDivElement | null>>>({})
-  const flowEl = useRef<HTMLDivElement | null>(null)
   const canvasEl = useRef<HTMLDivElement | null>(null)
   const frameEl = useRef<HTMLDivElement | null>(null)
   const [scale, setScale] = useState(1)
-  /** Pointer maths runs in screen pixels; sizes are stored in canvas pixels. */
-  const scaleRef = useRef(1)
-  scaleRef.current = scale
 
-  const scope: Scope = view === 'dashboard' ? 'dash' : 'lesson'
-
-  // Fit the fixed-width canvas into whatever pane it has, and keep the space
-  // it occupies in the layout equal to its scaled height.
+  // Fit the fixed-width canvas into whatever pane it has, and keep the space it
+  // occupies in the layout equal to its scaled height.
   useEffect(() => {
     const wrap = canvasEl.current
     const frame = frameEl.current
@@ -169,7 +190,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     ro.observe(wrap)
     ro.observe(frame)
     return () => ro.disconnect()
-  }, [device, view, dashTab, lessonTab, brand])
+  }, [device, view, dashTab, brand])
 
   const set = <K extends keyof Brand>(key: K, value: Brand[K]) => {
     setBrand((b) => ({ ...b, [key]: value }))
@@ -194,498 +215,34 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
     setSaved(false)
   }
 
-  // ── the placements being edited ─────────────────────────────────────────
-  /** Blocks the student won't see: switched off here, gone from the canvas. */
-  const hidden = new Set<BlockId>(DASHBOARD_BLOCKS.filter((id) => !brand[BLOCK_TOGGLE[id]]))
-
-  /**
-   * Both views are tabbed, and each tab is arranged on its own. A block that
-   * is switched off is out of scope entirely — the student's page drops it, so
-   * the canvas has to as well, or the teacher is arranging something nobody
-   * will ever see.
-   */
-  const inScope = (p: Placement<any>) =>
-    scope === 'dash'
-      ? DASH_BLOCK_TAB[p.id as BlockId] === dashTab && !hidden.has(p.id as BlockId)
-      : LESSON_BLOCK_TAB[p.id as LessonBlockId] === lessonTab
-  const stored: Placement<any>[] = scope === 'dash' ? brand.layout : brand.lessonLayout
-  const visible = stored.filter(inScope)
-  const shown = order ?? visible
-  /** The order on screen right now. The pointer handlers are registered once
-   *  per drag, so they read the live list from here rather than a closure. */
-  const listRef = useRef<Placement<any>[]>(shown)
-  listRef.current = shown
-
-  /**
-   * Write an edited subsequence back into the stored list, leaving the other
-   * tabs' blocks exactly where they were.
-   */
-  const commit = (next: Placement<any>[]) => {
-    const slots = stored.map((p, i) => (inScope(p) ? i : -1)).filter((i) => i >= 0)
-    const merged = stored.slice()
-    slots.forEach((slotIndex, k) => { if (next[k]) merged[slotIndex] = next[k] })
-    set(scope === 'dash' ? 'layout' : 'lessonLayout', merged as never)
-  }
-
-  const updateBlock = (id: AnyId, patch: Partial<Placement<any>>) =>
-    commit(visible.map((p) => (p.id === id ? { ...p, ...patch } : p)))
-
-  // ── drag to rearrange ───────────────────────────────────────────────────
-  /**
-   * Pointer events, not HTML5 drag-and-drop. The native API fires `dragover`
-   * continuously over a block that has just reflowed under the cursor, so
-   * blocks kept swapping themselves the moment two of them touched. Here a
-   * swap costs one deliberate crossing of the target's midline.
-   */
-  const startDrag = (id: AnyId, e: React.PointerEvent) => {
-    if (e.button !== 0 || resizing) return
-    e.preventDefault()
-    const originX = e.clientX, originY = e.clientY
-    let active = false
-
-    const onMove = (ev: PointerEvent) => {
-      if (!active) {
-        // A few pixels of slop so a click on a block is not a drag.
-        if (Math.abs(ev.clientX - originX) + Math.abs(ev.clientY - originY) < 5) return
-        active = true
-        setDragId(id)
-      }
-
-      const cur = listRef.current
-      const from = cur.findIndex((p) => p.id === id)
-      const dragEl = blockEls.current[id]
-      if (from < 0 || !dragEl) return
-
-      // The block under the pointer, the dragged one aside.
-      let to = -1
-      let target: DOMRect | undefined
-      for (let i = 0; i < cur.length; i++) {
-        if (i === from) continue
-        const r = blockEls.current[cur[i].id]?.getBoundingClientRect()
-        if (!r) continue
-        if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) {
-          to = i
-          target = r
-          break
-        }
-      }
-      if (to < 0 || !target) return
-
-      // Only swap once the pointer is past that block's middle, measured along
-      // the axis they meet on. Reacting to the edge instead makes a wide block
-      // and a narrow one trade places every few pixels.
-      const drag = dragEl.getBoundingClientRect()
-      const forward = from < to
-      const sameRow = Math.abs(target.top - drag.top) < Math.min(target.height, drag.height) * 0.6
-      const mid = sameRow ? target.left + target.width / 2 : target.top + target.height / 2
-      const at = sameRow ? ev.clientX : ev.clientY
-      if (forward ? at < mid : at > mid) return
-
-      const next = moveTo(cur, id, to)
-      listRef.current = next
-      setOrder(next)
-    }
-
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-      if (active) commit(listRef.current)
-      setDragId(null)
-      setOrder(null)
-    }
-
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-  }
-
-  // ── resize ──────────────────────────────────────────────────────────────
-  const clampH = (n: number) => Math.max(MIN_BLOCK_H, Math.min(MAX_BLOCK_H, Math.round(n)))
-
-  const startResize = (id: AnyId, axis: Axis, e: React.PointerEvent) => {
-    // Stops the browser starting an HTML5 drag from inside the draggable block.
-    e.preventDefault()
-    e.stopPropagation()
-    const el = blockEls.current[id]
-    const flow = flowEl.current
-    if (!el || !flow) return
-    // The canvas is scaled, so every screen measurement is divided back into
-    // canvas pixels before it is compared with a stored size.
-    const s = scaleRef.current || 1
-    const rect = el.getBoundingClientRect()
-    const startX = e.clientX, startY = e.clientY
-    const startW = rect.width / s
-    const startH = (visible.find((p) => p.id === id)?.h) ?? rect.height / s
-    // One column, including the gap that follows it.
-    const colW = (flow.getBoundingClientRect().width / s + GAP) / GRID_COLS
-    setResizing(id)
-    setSaved(false)
-
-    const onMove = (ev: PointerEvent) => {
-      const patch: Partial<Placement<any>> = {}
-      if (axis !== 'y') patch.w = clampSpan(Math.round((startW + (ev.clientX - startX) / s + GAP) / colW))
-      if (axis !== 'x') patch.h = clampH(startH + (ev.clientY - startY) / s)
-      updateBlock(id, patch)
-    }
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      setResizing(null)
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-  }
-
-  /** Double-clicking a grip hands that dimension back to the content. */
-  const clearSize = (id: AnyId, axis: Axis) => {
-    if (axis === 'x') { updateBlock(id, { w: GRID_COLS }); return }
-    const next = visible.map((p) => {
-      if (p.id !== id) return p
-      const { h, ...rest } = p
-      return axis === 'xy' ? { ...rest, w: GRID_COLS } : rest
-    })
-    commit(next)
-  }
-
-  /** Height left for a chart inside a block the teacher has sized. */
-  const chartH = (h: number | undefined, fallback: number) => (h ? Math.max(52, h - 62) : fallback)
-
-  // ── text edited on the canvas ───────────────────────────────────────────
-  /**
-   * The words are typed straight onto the preview. contentEditable owns the
-   * text while it is being typed — handing React the value back as children
-   * would rewrite the node on every keystroke and drop the caret at the front
-   * — so children are pinned to the value this field mounted with, and the
-   * effect below only writes when the value changes from somewhere else (a
-   * preset, or Reset).
-   */
-  type TextKey = 'headline' | 'welcome' | 'logoText' | 'portalName' | `label:${TextSlot}`
-  const valueOf = (key: TextKey) =>
-    key.startsWith('label:') ? brand.labels[key.slice(6) as TextSlot] : (brand as any)[key] as string
-  const writeText = (key: TextKey, text: string) => {
-    if (key.startsWith('label:')) {
-      const slot = key.slice(6) as TextSlot
-      set('labels', { ...brand.labels, [slot]: text.trim() || TEXT_SLOTS[slot] })
-    } else {
-      set(key as 'headline', text as never)
-    }
-  }
-  const textEls = useRef<Partial<Record<TextKey, HTMLElement | null>>>({})
-  const mounted = useRef<Partial<Record<TextKey, string>>>({})
-  const pin = (key: TextKey) => (mounted.current[key] ??= valueOf(key))
-
-  useEffect(() => {
-    for (const key of Object.keys(textEls.current) as TextKey[]) {
-      const el = textEls.current[key]
-      const v = valueOf(key)
-      if (el && v !== undefined && el.innerText !== v) el.innerText = v
-    }
-  })
-
-  const editable = (key: TextKey, { multiline = false, max = 120 }: { multiline?: boolean; max?: number } = {}) => ({
-    ref: (el: HTMLElement | null) => { textEls.current[key] = el },
-    contentEditable: true,
-    suppressContentEditableWarning: true,
-    spellCheck: false,
-    role: 'textbox',
-    'aria-label': textLabel(key),
-    title: `Click to edit — ${textLabel(key)}`,
-    className: 'k-inline',
-    // Editing beats dragging: this text must take the pointer, and the block
-    // underneath must not read the click as the start of a move.
-    onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
-    onKeyDown: (e: React.KeyboardEvent) => {
-      e.stopPropagation()
-      if (e.key === 'Escape' || (e.key === 'Enter' && !multiline)) {
-        e.preventDefault()
-        ;(e.target as HTMLElement).blur()
-      }
-    },
-    onPaste: (e: React.ClipboardEvent) => {
-      e.preventDefault()
-      const raw = e.clipboardData.getData('text/plain')
-      document.execCommand('insertText', false, multiline ? raw : raw.replace(/\s*[\r\n]+\s*/g, ' '))
-    },
-    onInput: (e: React.FormEvent<HTMLElement>) => {
-      const el = e.currentTarget
-      let text = el.innerText.replace(/ /g, ' ').replace(/\n$/, '')
-      if (text.length > max) {
-        text = text.slice(0, max)
-        el.innerText = text
-        const range = document.createRange()
-        range.selectNodeContents(el)
-        range.collapse(false)
-        const sel = window.getSelection()
-        sel?.removeAllRanges()
-        sel?.addRange(range)
-      }
-      writeText(key, text)
-    },
-  })
-
   // ── milestone ladder ────────────────────────────────────────────────────
-  const setLevels = (next: Level[]) => set('levels', next)
-  const patchLevel = (i: number, patch: Partial<Level>) =>
-    setLevels(brand.levels.map((l, k) => (k === i ? { ...l, ...patch } : l)))
+  const patchLevel = (i: number, patch: Partial<{ name: string; lessons: number }>) =>
+    set('levels', brand.levels.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
+  const settleLevels = () => set('levels', resolveLevels(brand.levels))
   const addLevel = () => {
     const last = brand.levels[brand.levels.length - 1]
-    setLevels([...brand.levels, { name: 'New level', lessons: Math.min(MAX_LEVEL_LESSONS, (last?.lessons ?? 0) + 5) }])
+    set('levels', [...brand.levels, { name: 'New level', lessons: Math.min(MAX_LEVEL_LESSONS, (last?.lessons ?? 0) + 10) }])
   }
-  const removeLevel = (i: number) => setLevels(brand.levels.filter((_, k) => k !== i))
-  /** Re-order and de-duplicate once the teacher has stopped typing numbers. */
-  const settleLevels = () => setLevels(resolveLevels(brand.levels))
+  const removeLevel = (i: number) => set('levels', brand.levels.filter((_, idx) => idx !== i))
 
   const vars = brandVars(brand)
-  const heroBg =
-    brand.heroStyle === 'accent' ? `linear-gradient(135deg, ${brand.accent}, ${brand.accent}dd 55%, #ffffff22)`
-    : brand.heroStyle === 'light' ? `${brand.accent}1a`
-    : brand.accent
-  const heroInk = brand.heroStyle === 'light' ? 'var(--ink)' : '#fff'
-  const heroSub = brand.heroStyle === 'light' ? 'var(--muted)' : 'rgba(255,255,255,.72)'
-
-  /** The miniature of each dashboard block, as it appears in the student view. */
-  const dashPreview = (id: BlockId, h?: number): React.ReactNode => {
-    switch (id) {
-      case 'hero':
-        return (
-          <div className="k-preview-hero" style={{ background: heroBg, color: heroInk }}>
-            <strong {...editable('headline', { multiline: true, max: 90 })} style={{ whiteSpace: 'pre-line' }}>{pin('headline')}</strong>
-            <p {...editable('welcome', { multiline: true, max: 200 })} style={{ color: heroSub }}>{pin('welcome')}</p>
-            <span className="k-preview-btn" style={{ background: brand.heroStyle === 'light' ? brand.accent : '#fff', color: brand.heroStyle === 'light' ? '#fff' : brand.accent }}>
-              <span {...editable('label:heroButton', { max: 40 })}>{pin('label:heroButton')}</span>
-            </span>
-            {brand.props !== 'none' && (
-              <div className="k-preview-props" aria-hidden>
-                {brand.props === 'orbs' && <><span className="k-orb" style={{ width: 40, height: 40, right: 8, top: 6 }} /><span className="k-tube" style={{ width: 30, height: 30, right: 44, top: 38, borderWidth: 7 }} /></>}
-                {brand.props === 'geometric' && <><span className="k-crystal" style={{ width: 28, height: 34, right: 12, top: 8 }} /><span className="k-ring" style={{ width: 26, height: 26, right: 46, top: 34, borderWidth: 6 }} /></>}
-                {brand.props === 'minimal' && <span className="k-ring" style={{ width: 34, height: 34, right: 12, top: 14, borderWidth: 6 }} />}
-              </div>
-            )}
-          </div>
-        )
-      case 'stats':
-        return (
-          <div className="k-preview-stats">
-            <div style={{ background: 'var(--c-yellow)', color: 'var(--c-yellow-ink)' }}><span {...editable('label:statLessons', { max: 24 })}>{pin('label:statLessons')}</span><b><CountUp value={12} /></b></div>
-            <div style={{ background: 'var(--c-blue)' }}><span {...editable('label:statScore', { max: 24 })}>{pin('label:statScore')}</span><b><CountUp value={7.4} decimals={1} /></b></div>
-            <div style={{ background: 'var(--c-purple)' }}><span {...editable('label:statSpeaking', { max: 24 })}>{pin('label:statSpeaking')}</span><b><CountUp value={41} suffix="%" /></b></div>
-          </div>
-        )
-      case 'lessons':
-        return (
-          <div className="k-preview-card">
-            <div className="k-preview-row"><strong {...editable('label:lessonsTitle', { max: 40 })}>{pin('label:lessonsTitle')}</strong><span>12</span></div>
-            <div className="k-preview-lessons">
-              <div><i style={{ background: brand.accent }} />Contrasting ideas<span>7.2</span></div>
-              <div><i style={{ background: `${brand.accent}66` }} />Giving reasons<span>6.8</span></div>
-            </div>
-          </div>
-        )
-      case 'progress':
-        return (
-          <div className="k-preview-card k-chart-card">
-            <div className="k-preview-row"><strong {...editable('label:progressTitle', { max: 40 })}>{pin('label:progressTitle')}</strong><span>Score</span></div>
-            <MiniTrend points={SAMPLE_TREND} color={brand.accent} height={chartH(h, 62)} />
-          </div>
-        )
-      case 'vocab':
-        return (
-          <div className="k-preview-card k-chart-card">
-            <div className="k-preview-row"><strong {...editable('label:vocabTitle', { max: 40 })}>{pin('label:vocabTitle')}</strong><span>45 words</span></div>
-            <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH(h, 72)} compact />
-          </div>
-        )
-      case 'milestone': {
-        const sample = Math.max(1, Math.round((brand.levels[brand.levels.length - 1]?.lessons ?? 10) * 0.45))
-        return (
-          <div className="k-preview-card">
-            <div className="k-preview-row"><strong {...editable('label:milestoneTitle', { max: 40 })}>{pin('label:milestoneTitle')}</strong><span>{brand.levels.find((l) => l.lessons > sample)?.name ?? brand.levels[brand.levels.length - 1]?.name}</span></div>
-            <div style={{ marginTop: 10 }}>
-              <MilestoneTrack levels={brand.levels} lessonCount={sample} color={brand.accent} />
-            </div>
-          </div>
-        )
-      }
-      case 'scores':
-        return (
-          <div className="k-preview-card k-chart-card">
-            <div className="k-preview-row"><strong {...editable('label:scoresTitle', { max: 40 })}>{pin('label:scoresTitle')}</strong><span>Last 5</span></div>
-            <ScoreTrendChart points={SAMPLE_SCORES} color={brand.accent} height={chartH(h, 74)} compact />
-          </div>
-        )
-      case 'tests':
-        return <div className="k-preview-card"><div className="k-preview-row"><strong {...editable('label:testsTitle', { max: 40 })}>{pin('label:testsTitle')}</strong><span>2</span></div></div>
-      case 'speaking':
-        return <div className="k-preview-card"><div className="k-preview-row"><strong {...editable('label:speakingTitle', { max: 40 })}>{pin('label:speakingTitle')}</strong><span>54 wpm</span></div></div>
-    }
-  }
-
-  /** The miniature of each lesson-recap section. */
-  const lessonPreview = (id: LessonBlockId, h?: number): React.ReactNode => {
-    switch (id) {
-      case 'balance':
-        return (
-          <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
-            <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
-            <div className="stat-card-value"><CountUp value={58} /><span className="stat-unit">%</span> <span className="stat-sep">/</span> <CountUp value={42} /><span className="stat-unit">%</span></div>
-            <div className="balance-bars" style={{ marginTop: 'auto' }}>
-              <div className="balance-row"><span>Derek</span><div className="balance-track"><div className="balance-fill student" style={{ width: '58%' }} /></div><span>58%</span></div>
-              <div className="balance-row"><span>{teacherName ? teacherName.split(' ')[0] : 'You'}</span><div className="balance-track"><div className="balance-fill" style={{ width: '42%' }} /></div><span>42%</span></div>
-            </div>
-          </div>
-        )
-      case 'score':
-        return (
-          <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
-            <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
-            <div className="stat-card-value" style={{ color: 'var(--green)' }}><CountUp value={8.3} decimals={1} /><span className="stat-unit">/10</span></div>
-            <span className="stat-chip" style={{ marginTop: 'auto' }}>Confident</span>
-          </div>
-        )
-      case 'grammar':
-        return (
-          <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
-            <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
-            <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>Rich</div>
-            <p className="stat-card-note" style={{ marginTop: 'auto' }}>18 vocabulary items practiced</p>
-          </div>
-        )
-      case 'metrics':
-        return (
-          <div className="corrections-card">
-            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
-            <div className="metric-grid">
-              <div className="metric"><div className="mv">54</div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
-              <div className="metric"><div className="mv">2.1s</div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
-              <div className="metric"><div className="mv">41s</div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
-              <div className="metric"><div className="mv">9</div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
-            </div>
-          </div>
-        )
-      case 'corrections':
-        return (
-          <div className="corrections-card">
-            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">Main corrections</span></div>
-            <p>「〜だけど」→「〜ですけど」 when you are being polite. You caught this yourself twice.</p>
-          </div>
-        )
-      case 'sections':
-        return (
-          <div className="lesson-block">
-            <h3>What you practised</h3>
-            <p>You used けど to contrast two ideas in the same sentence, and kept the polite form all the way through.</p>
-          </div>
-        )
-      case 'notes':
-        return (
-          <div className="lesson-block">
-            <h3>Teacher&rsquo;s Note</h3>
-            <p>Lovely progress on longer answers — next time try linking three clauses before pausing.</p>
-          </div>
-        )
-      case 'homework':
-        return (
-          <div className="lesson-block">
-            <h3>Homework</h3>
-            <ul>
-              <li>Write five sentences contrasting two habits.</li>
-              <li>Record a 60-second voice memo about your weekend.</li>
-            </ul>
-          </div>
-        )
-      case 'exercises':
-        return (
-          <div className="lesson-block">
-            <h3>Practice exercises</h3>
-            <p className="analytics-note">Fill in the blank, multiple choice and translation — marked as they answer.</p>
-          </div>
-        )
-      case 'vocabLevels':
-        return (
-          <div className="lesson-block k-chart-card">
-            <h3>Vocabulary by JLPT level</h3>
-            <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH(h, 120)} />
-          </div>
-        )
-      case 'vocabWords':
-        return (
-          <div className="lesson-block">
-            <h3>Words from this lesson</h3>
-            <div className="example">
-              <span className="jp">練習</span> <span className="romaji">renshuu</span><span className="jlpt sm"> N4</span>
-              <br />practice
-            </div>
-          </div>
-        )
-    }
-  }
-
-  const labelOf = (id: AnyId) =>
-    scope === 'dash' ? BLOCK_LABELS[id as BlockId] : LESSON_BLOCK_LABELS[id as LessonBlockId]
-
-  /** A preview block: draggable to rearrange, with grips on two edges. */
-  const block = (p: Placement<any>) => {
-    const id = p.id as AnyId
-    const off = scope === 'dash' && hidden.has(id as BlockId)
-    const isGhost = dragId === id
-    return (
-      <div
-        key={id}
-        ref={(el) => { blockEls.current[id] = el }}
-        style={{ ['--w' as any]: p.w, ...(p.h ? { height: p.h } : null) }}
-        className={['k-pblock', p.h ? 'k-fit' : '', off ? 'off' : '', isGhost ? 'ghost' : '', resizing === id ? 'resizing' : ''].join(' ')}
-        title={`Drag to move ${labelOf(id)}`}
-        onPointerDown={(e) => startDrag(id, e)}
-      >
-        <span className="k-pblock-tag">
-          {labelOf(id)}{off ? ' · hidden' : ''} · {p.w}/{GRID_COLS}{p.h ? ` · ${p.h}px` : ''}
-        </span>
-        <div className="k-pblock-body k-fit-body">
-          {scope === 'dash' ? dashPreview(id as BlockId, p.h) : lessonPreview(id as LessonBlockId, p.h)}
-        </div>
-        {(['y', 'x', 'xy'] as Axis[]).map((axis) => (
-          <span
-            key={axis}
-            className={axis === 'y' ? 'k-presize' : axis === 'x' ? 'k-presize-x' : 'k-presize-xy'}
-            role="separator"
-            aria-label={`Resize ${labelOf(id)} ${axis === 'y' ? 'height' : axis === 'x' ? 'width' : 'both'}`}
-            title={axis === 'y' ? 'Drag to change height — double-click to fit content'
-              : axis === 'x' ? 'Drag to change width — double-click for full width'
-              : 'Drag to resize — double-click to reset'}
-            draggable={false}
-            onDragStart={(e) => { e.preventDefault(); e.stopPropagation() }}
-            onPointerDown={(e) => startResize(id, axis, e)}
-            onDoubleClick={(e) => { e.stopPropagation(); clearSize(id, axis) }}
-          />
-        ))}
-      </div>
-    )
-  }
-
-  /** The arrangeable canvas — shared by the dashboard and the recap preview. */
-  const flow = () => (
-    <div
-      ref={flowEl}
-      key={`${scope}-${lessonTab}-${device}`}
-      className={`k-flow ${device === 'mobile' ? 'narrow' : ''} ${dragId ? 'dragging' : ''}`}
-    >
-      {shown.map((p) => block(p))}
-      {shown.length === 0 && <div className="k-flow-empty">Nothing on this tab</div>}
-    </div>
-  )
+  const L = brand.labels
 
   const activePreset = PRESETS.find(
     (p) => p.brand.accent.toLowerCase() === brand.accent.toLowerCase()
       && p.brand.font === brand.font && p.brand.shape === brand.shape && p.brand.background === brand.background,
   )
 
+  /** The blocks this tab shows, exactly as the student's page decides it. */
+  const tabBlocks = DASHBOARD_LAYOUT.filter(
+    ({ id }) => DASH_BLOCK_TAB[id] === dashTab && blockHasContent(id, brand, SAMPLE),
+  )
+
   return (
     <div className="k-studio">
       {/* ── controls ── */}
       <div className="k-studio-controls">
-        <Tool id="presets" icon="✨" tone="" title="Presets" desc="A complete look — colour, type, texture and how the blocks are arranged." openId={tool} onOpen={setTool}>
-
+        <Tool id="presets" icon="✨" tone="" title="Presets" desc="A complete look — colour, type and texture in one go." openId={tool} onOpen={setTool}>
           <div className="k-presets">
             {PRESETS.map((p) => {
               const font = FONTS.find((f) => f.value === p.brand.font) ?? FONTS[0]
@@ -712,7 +269,6 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         </Tool>
 
         <Tool id="colour" icon="🎨" tone="" title="Colour &amp; type" desc="Used for buttons, active states and headings." openId={tool} onOpen={setTool}>
-
           <div className="k-swatches">
             {ACCENT_PRESETS.map((p) => (
               <button
@@ -759,8 +315,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </div>
         </Tool>
 
-        <Tool id="words" icon="✍️" tone="y" title="Words" desc="The hero lines and the portal name — or click them on the preview and type there." openId={tool} onOpen={setTool}>
-
+        <Tool id="words" icon="✍️" tone="y" title="Words" desc="The hero lines, the portal name, and what each section is called." openId={tool} onOpen={setTool}>
           <label className="k-field">
             <span>Portal name</span>
             <input value={brand.portalName} onChange={(e) => set('portalName', e.target.value)} maxLength={40} placeholder="Lesson Studio" />
@@ -772,6 +327,16 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </label>
 
           <label className="k-field">
+            <span>Greeting</span>
+            <input
+              value={L.greeting}
+              onChange={(e) => set('labels', { ...L, greeting: e.target.value.slice(0, 40) })}
+              onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, greeting: TEXT_SLOTS.greeting }) }}
+              placeholder={TEXT_SLOTS.greeting}
+            />
+          </label>
+
+          <label className="k-field">
             <span>Hero headline</span>
             <textarea className="k-input" rows={2} value={brand.headline} onChange={(e) => set('headline', e.target.value)} maxLength={90} placeholder={DEFAULT_BRAND.headline} />
           </label>
@@ -780,10 +345,22 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             <span>Hero subtext</span>
             <textarea className="k-input" rows={3} value={brand.welcome} onChange={(e) => set('welcome', e.target.value)} maxLength={200} placeholder={DEFAULT_BRAND.welcome} />
           </label>
+
+          <span className="k-field-label">Tab names</span>
+          {(['tabOverview', 'tabLessons', 'tabProgress'] as TextSlot[]).map((slot) => (
+            <label className="k-field" key={slot}>
+              <span>{TEXT_SLOTS[slot]}</span>
+              <input
+                value={L[slot]}
+                onChange={(e) => set('labels', { ...L, [slot]: e.target.value.slice(0, 40) })}
+                onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, [slot]: TEXT_SLOTS[slot] }) }}
+                placeholder={TEXT_SLOTS[slot]}
+              />
+            </label>
+          ))}
         </Tool>
 
         <Tool id="texture" icon="🖼️" tone="b" title="Background &amp; shape" desc="The texture behind the portal and how round everything is." openId={tool} onOpen={setTool}>
-
           <span className="k-field-label" style={{ marginTop: 0 }}>Background</span>
           <div className="k-preset-grid">
             {BACKGROUNDS.map((b) => (
@@ -815,7 +392,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </div>
         </Tool>
 
-        <Tool id="sections" icon="🧩" tone="p" title="Sections" desc="Switch off anything that doesn't fit how you teach — it leaves the canvas and the student's page together. Each one keeps its own settings under Options." openId={tool} onOpen={setTool}>
+        <Tool id="sections" icon="🧩" tone="p" title="Sections" desc="Switch off anything that doesn't fit how you teach — it leaves the preview and the student's page together." openId={tool} onOpen={setTool}>
           <div className="k-toggles">
             {TOGGLES.map((t) => {
               const key = BLOCK_TOGGLE[t.id]
@@ -831,12 +408,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                       <div className="k-hw-due">{t.hint}</div>
                     </div>
                     {hasOptions && (
-                      <button
-                        type="button"
-                        className="k-opt-btn"
-                        aria-expanded={unfolded}
-                        onClick={() => setOpenOptions(unfolded ? null : t.id)}
-                      >
+                      <button type="button" className="k-opt-btn" aria-expanded={unfolded} onClick={() => setOpenOptions(unfolded ? null : t.id)}>
                         Options <span aria-hidden>▾</span>
                       </button>
                     )}
@@ -856,9 +428,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                         <label className="k-field" key={slot}>
                           <span>{TEXT_SLOTS[slot]}</span>
                           <input
-                            value={brand.labels[slot]}
-                            onChange={(e) => set('labels', { ...brand.labels, [slot]: e.target.value.slice(0, 40) })}
-                            onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...brand.labels, [slot]: TEXT_SLOTS[slot] }) }}
+                            value={L[slot]}
+                            onChange={(e) => set('labels', { ...L, [slot]: e.target.value.slice(0, 40) })}
+                            onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, [slot]: TEXT_SLOTS[slot] }) }}
                             placeholder={TEXT_SLOTS[slot]}
                           />
                         </label>
@@ -907,33 +479,6 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
               )
             })}
           </div>
-
-          <div className="k-toggle-block" style={{ marginTop: 4 }}>
-            <div className="k-toggle-row">
-              <div>
-                <div className="k-hw-title">Tab names</div>
-                <div className="k-hw-due">What the three tabs are called</div>
-              </div>
-              <button type="button" className="k-opt-btn" aria-expanded={openOptions === ('tabs' as any)} onClick={() => setOpenOptions(openOptions === ('tabs' as any) ? null : ('tabs' as any))}>
-                Options <span aria-hidden>▾</span>
-              </button>
-            </div>
-            {openOptions === ('tabs' as any) && (
-              <div className="k-toggle-opts">
-                {(['tabOverview', 'tabLessons', 'tabProgress'] as TextSlot[]).map((slot) => (
-                  <label className="k-field" key={slot}>
-                    <span>{TEXT_SLOTS[slot]}</span>
-                    <input
-                      value={brand.labels[slot]}
-                      onChange={(e) => set('labels', { ...brand.labels, [slot]: e.target.value.slice(0, 40) })}
-                      onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...brand.labels, [slot]: TEXT_SLOTS[slot] }) }}
-                      placeholder={TEXT_SLOTS[slot]}
-                    />
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
         </Tool>
 
         {error && <p className="k-error">{error}</p>}
@@ -947,11 +492,11 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         </div>
       </div>
 
-      {/* ── live, directly-editable preview ── */}
+      {/* ── the real portal, at the real widths ── */}
       <div className="k-studio-preview">
         <div className="k-preview-bar">
           <span className="k-preview-label">
-            {view === 'dashboard' ? 'Student dashboard' : 'Lesson recap'} · click the words to edit, drag to arrange, pull an edge to resize
+            {view === 'dashboard' ? 'Student dashboard' : 'Lesson recap'} · exactly what your students see
           </span>
           <div className="k-preview-switches">
             <div className="k-seg" style={{ margin: 0, width: 210 }}>
@@ -966,71 +511,62 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         </div>
 
         <div className="k-canvas" ref={canvasEl}>
-        <div
-          ref={frameEl}
-          className={`k-preview-frame ${device} ${backgroundClass(brand)}`}
-          style={{ ...vars, ['--canvas-w' as any]: `${CANVAS_WIDTH[device]}px`, ['--canvas-scale' as any]: scale }}
-        >
-          {view === 'dashboard' ? (
-            <>
-              <div className="k-preview-top">
-                <span {...editable('logoText', { max: 4 })} className="k-preview-mark k-inline" style={{ background: `${brand.accent}22`, color: brand.accent }}>{pin('logoText')}</span>
-                <div>
-                  <div {...editable('label:greeting', { max: 40 })} className="k-inline k-preview-hello">{pin('label:greeting')}</div>
-                  <div className="k-preview-name">Derek</div>
-                </div>
-                <span {...editable('portalName', { max: 40 })} className="k-inline k-preview-portal">{pin('portalName')}</span>
-              </div>
-              <div className="k-dtabs">
-                {DASH_TABS.map((t) => {
-                  const slot = `tab${t}` as TextSlot
-                  return (
-                    <button key={t} type="button" className={dashTab === t ? 'on' : ''} onClick={() => setDashTab(t)}>
-                      <span {...editable(`label:${slot}`, { max: 24 })} onPointerDown={(e) => { e.stopPropagation() }}>{pin(`label:${slot}`)}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              {flow()}
-            </>
-          ) : (
-            <div className="k-lpview">
-              <span className="k-back">← Dashboard</span>
-
-              <header className="k-phead">
-                <div>
-                  <div className="k-phead-eyebrow">Lesson 12 · Recap</div>
-                  <h1>Contrasting ideas with けど</h1>
-                  <div className="k-pmeta"><span>12th lesson</span><span>2 Aug</span><span>Confident</span></div>
-                </div>
-                <div className="k-pscore"><div><b>8.3</b><small>OUT OF 10</small></div></div>
-                {brand.props !== 'none' && (
-                  <div className="k-hero-art" style={{ right: -20, opacity: .5 }} aria-hidden>
-                    <span className="k-orb" style={{ width: 60, height: 60, right: 8, top: 8 }} />
-                    <span className="k-tube" style={{ width: 46, height: 46, right: 56, top: 54, transform: 'rotate(40deg)' }} />
+          <div
+            ref={frameEl}
+            className={`k-preview-frame ${device} ${backgroundClass(brand)}`}
+            style={{ ...vars, ['--canvas-w' as any]: `${CANVAS_WIDTH[device]}px`, ['--canvas-scale' as any]: scale }}
+          >
+            {view === 'dashboard' ? (
+              <>
+                <div className="k-top">
+                  <div>
+                    <p className="k-hello">{L.greeting}</p>
+                    <h1 className="k-name">Derek</h1>
                   </div>
-                )}
-              </header>
+                  <div className="k-top-tools">
+                    <div className="k-whoami">
+                      <span className="k-whoami-mark" aria-hidden>{brand.logoText}</span>
+                      <span className="k-whoami-name">{brand.portalName}</span>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="tabs" role="tablist" aria-label="Lesson recap sections">
-                {LESSON_TABS.map((t) => (
-                  <button key={t} type="button" role="tab" aria-selected={lessonTab === t} className={`tab ${lessonTab === t ? 'sel' : ''}`} onClick={() => setLessonTab(t)}>{t}</button>
-                ))}
+                <div className="k-dtabs">
+                  {DASH_TABS.map((t) => (
+                    <button key={t} type="button" className={dashTab === t ? 'on' : ''} onClick={() => setDashTab(t)}>
+                      {L[`tab${t}` as 'tabOverview' | 'tabLessons' | 'tabProgress']}
+                    </button>
+                  ))}
+                </div>
+
+                <div className={`k-flow ${device === 'mobile' ? 'narrow' : ''}`} key={`${dashTab}-${device}`}>
+                  {tabBlocks.map(({ id, w }) => (
+                    <div key={id} style={{ ['--w' as any]: w }}>
+                      <DashboardBlock id={id} brand={brand} data={SAMPLE} preview />
+                    </div>
+                  ))}
+                  {tabBlocks.length === 0 && <div className="k-flow-empty">Every section on this tab is switched off</div>}
+                </div>
+              </>
+            ) : (
+              <div className="k-lpview">
+                <span className="k-back">← Dashboard</span>
+                <LessonPageTabs
+                  lesson={{ id: 'preview', lessonNumber: 12, date: '2 Aug', title: 'Contrasting ideas with けど', recap: SAMPLE_RECAP }}
+                  studentFirst="Derek"
+                  teacherFirst={teacherName || 'Your teacher'}
+                  brand={brand}
+                />
               </div>
-
-              {flow()}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </div>
 
         <p className="k-fine" style={{ textAlign: 'left' }}>
-          Click any of your own words — the headline, the line under it, the mark, the portal name — and type
-          straight onto the page. Drag a block to move it. Pull its bottom edge for height, its right edge for
-          width, the corner for both; the text inside scales to whatever size you give it, and blocks share the
-          height of the row they land in. Double-click an edge to hand that dimension back to the content.
-          {view === 'lesson' && ' Each recap tab is arranged separately.'}
-          {' '}This is {teacherName ? `${teacherName}'s` : 'your'} student portal; save to publish it.
+          This is the student portal itself, rendered with your styling — not a mock-up of it. Choose a colour, a
+          typeface, a texture and what each section is called; switch off anything you don&rsquo;t teach with. The
+          arrangement is fixed so it stays readable on a phone.
+          {' '}Save to publish it to {teacherName ? `${teacherName}'s` : 'your'} students.
         </p>
       </div>
     </div>

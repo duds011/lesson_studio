@@ -9,8 +9,9 @@ export type PillarLesson = {
   tag: string
 }
 
-/** The student's lessons, stacked earliest first. */
-export default function LessonPillar({ lessons }: { lessons: PillarLesson[] }) {
+/** The student's lessons, stacked earliest first. `preview` is the branding
+ *  studio's canvas, where nothing should navigate. */
+export default function LessonPillar({ lessons, preview }: { lessons: PillarLesson[]; preview?: boolean }) {
   if (lessons.length === 0) {
     return (
       <div className="k-empty">
@@ -23,20 +24,27 @@ export default function LessonPillar({ lessons }: { lessons: PillarLesson[] }) {
 
   return (
     <div className="k-pillar">
-      {lessons.map((l) => (
-        <Link key={l.id} href={`/student/lessons/${l.id}`} className="k-pillar-card">
-          <span className="k-pillar-num">{l.tag}</span>
-          <span className="k-pillar-title">{l.title}</span>
-          <span className="k-pillar-meta">{l.meta}</span>
-          {l.score != null && (
-            <span className="k-pillar-foot">
-              <span className="k-hw-track"><i style={{ width: `${Math.round((l.score / 10) * 100)}%` }} /></span>
-              <b>{l.score}/10</b>
-            </span>
-          )}
-          <span className="k-pillar-go" aria-hidden>→</span>
-        </Link>
-      ))}
+      {lessons.map((l) => {
+        const body = (
+          <>
+            <span className="k-pillar-num">{l.tag}</span>
+            <span className="k-pillar-title">{l.title}</span>
+            <span className="k-pillar-meta">{l.meta}</span>
+            {l.score != null && (
+              <span className="k-pillar-foot">
+                <span className="k-hw-track"><i style={{ width: `${Math.round((l.score / 10) * 100)}%` }} /></span>
+                <b>{l.score}/10</b>
+              </span>
+            )}
+            <span className="k-pillar-go" aria-hidden>→</span>
+          </>
+        )
+        return preview ? (
+          <div key={l.id} className="k-pillar-card">{body}</div>
+        ) : (
+          <Link key={l.id} href={`/student/lessons/${l.id}`} className="k-pillar-card">{body}</Link>
+        )
+      })}
     </div>
   )
 }

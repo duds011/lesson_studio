@@ -6,7 +6,7 @@ import LessonExercises from './LessonExercises'
 import { VocabLevelChart } from './portal/BrandCharts'
 import CountUp from './portal/CountUp'
 import {
-  DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_TABS,
+  DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_LAYOUT, LESSON_TABS,
   type Brand, type LessonBlockId, type LessonTab,
 } from '@/lib/brand'
 
@@ -38,14 +38,13 @@ export default function LessonPageTabs({
   const dist: Record<string, number> = r.vocab_level_distribution || {}
 
   /** Height a chart gets inside a block the teacher sized (card chrome removed). */
-  const chartH = (h: number | undefined, fallback: number) => (h ? Math.max(60, h - 74) : fallback)
 
   /**
    * Every arrangeable section of this page, keyed the same way as the studio
    * preview. A section that has nothing to show returns null and drops out of
    * the flow entirely.
    */
-  const section = (id: LessonBlockId, h?: number): React.ReactNode => {
+  const section = (id: LessonBlockId): React.ReactNode => {
     switch (id) {
       case 'balance':
         return (
@@ -145,7 +144,7 @@ export default function LessonPageTabs({
         return (
           <div className="lesson-block k-chart-card">
             <h3>Vocabulary by level</h3>
-            <VocabLevelChart distribution={dist} height={chartH(h, 150)} />
+            <VocabLevelChart distribution={dist} height={150} />
           </div>
         )
       }
@@ -167,8 +166,9 @@ export default function LessonPageTabs({
     }
   }
 
-  // The teacher's arrangement for this tab, in their order and at their sizes.
-  const placements = brand.lessonLayout.filter((p) => LESSON_BLOCK_TAB[p.id] === tab)
+  // Our arrangement for this tab. The teacher styles the recap; they do not
+  // rearrange it — see LESSON_LAYOUT in lib/brand.
+  const placements = LESSON_LAYOUT.filter((p) => LESSON_BLOCK_TAB[p.id] === tab)
 
   return (
     <div>
@@ -182,18 +182,10 @@ export default function LessonPageTabs({
           their entrance again — the page answers the click. */}
       <div className="k-flow" role="tabpanel" key={tab}>
         {tab === 'Progress' && <h3 className="dashboard-title" style={{ ['--w' as any]: 12 }}>How this lesson went</h3>}
-        {placements.map(({ id, w, h }) => {
-          const content = section(id, h)
+        {placements.map(({ id, w }) => {
+          const content = section(id)
           if (!content) return null
-          return (
-            <div
-              key={id}
-              style={{ ['--w' as any]: w, ...(h ? { height: h } : null) }}
-              className={h ? 'k-fit' : undefined}
-            >
-              {h ? <div className="k-fit-body k-block-sized">{content}</div> : content}
-            </div>
-          )
+          return <div key={id} style={{ ['--w' as any]: w }}>{content}</div>
         })}
       </div>
     </div>

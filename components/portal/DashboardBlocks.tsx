@@ -1,0 +1,254 @@
+import Link from 'next/link'
+import ProgressCharts from './ProgressCharts'
+import { MilestoneTrack, ScoreTrendChart, VocabLevelChart } from './BrandCharts'
+import CountUp from './CountUp'
+import LessonPillar, { PillarLesson } from './LessonPillar'
+import { levelProgress, type Brand, type BlockId } from '@/lib/brand'
+
+/**
+ * Every block on the student dashboard, in one place.
+ *
+ * The branding studio used to draw its own imitation of this page — a second
+ * set of components that looked roughly like the real ones. They drifted:
+ * change a chart here and the teacher's preview kept showing the old one, so
+ * what a teacher designed was never quite what their student opened. Both
+ * sides now render this, so they cannot disagree.
+ *
+ * Nothing in here reads from the database. The real page passes a student's
+ * numbers, the studio passes made-up ones, and the markup is identical.
+ */
+
+export type DashboardData = {
+  lessonCount: number
+  recentCount: number
+  scoredCount: number
+  avgScore: number | null
+  scoreDelta: number | null
+  latestTalk: number | null
+  talkDelta: number | null
+  pillarLessons: PillarLesson[]
+  progressLessons: {
+    lessonNumber: number
+    score: number | null
+    talkPct: number | null
+    vocabCount: number
+    wpm?: number | null
+    responseSec?: number | null
+  }[]
+  vocabDistribution: Record<string, number>
+  totalVocab: number
+  scoreTrend: { lesson: number; score: number }[]
+  tests: { id: string; title: string; lessonNumber: number | null; date: string | null }[]
+  avgWpm: number | null
+  avgThinkSec: number | null
+}
+
+/** The studio's canvas is a picture of a page, not the page — nothing in it
+ *  should navigate, and its charts should not animate on every re-render. */
+type Mode = { preview?: boolean }
+
+const Icon = ({ d }: { d: string }) => (
+  <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+    <path d={d} />
+  </svg>
+)
+
+/** A link on the real page, inert text in the preview. */
+function Go({ href, className, children, preview }: { href: string; className?: string; children: React.ReactNode; preview?: boolean }) {
+  if (preview) return <span className={className}>{children}</span>
+  return <Link href={href} className={className}>{children}</Link>
+}
+
+/**
+ * The fixed arrangement. The teacher used to drag these around and pull their
+ * edges; a layout they could break in a hundred ways bought less than it cost,
+ * so the shape is ours and the styling is theirs. `w` is the share of a
+ * 12-column row — see .k-flow.
+ */
+export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
+  { id: 'hero', w: 12 },
+  { id: 'stats', w: 12 },
+  { id: 'milestone', w: 12 },
+  { id: 'lessons', w: 8 }, { id: 'tests', w: 4 },
+  { id: 'progress', w: 12 },
+  { id: 'scores', w: 6 }, { id: 'vocab', w: 6 },
+  { id: 'speaking', w: 12 },
+]
+
+/** Whether a block has anything to say for this student. */
+export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): boolean {
+  switch (id) {
+    case 'hero': return brand.showHero
+    case 'stats': return brand.showStats
+    case 'lessons': return brand.showLessons && d.pillarLessons.length > 0
+    case 'progress': return brand.showProgress && d.progressLessons.length >= 2
+    case 'vocab': return brand.showVocab && d.totalVocab > 0
+    case 'milestone': return brand.showMilestone
+    case 'scores': return brand.showScores && d.scoreTrend.length > 0
+    case 'tests': return brand.showTests && d.tests.length > 0
+    case 'speaking': return brand.showSpeaking && (d.avgWpm != null || d.avgThinkSec != null)
+    default: return false
+  }
+}
+
+export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; brand: Brand; data: DashboardData } & Mode) {
+  const L = brand.labels
+  const milestone = levelProgress(brand.levels, d.lessonCount)
+
+  switch (id) {
+    case 'hero':
+      return (
+        <section className="k-hero">
+          <h2 style={{ whiteSpace: 'pre-line' }}>{brand.headline}</h2>
+          <p>
+            {d.lessonCount > 0 && milestone.remaining > 0
+              ? `You're ${milestone.remaining} lesson${milestone.remaining === 1 ? '' : 's'} away from ${milestone.label}. Keep the streak going.`
+              : brand.welcome}
+          </p>
+          <Go href="/student/book" className="k-hero-btn" preview={preview}>{L.heroButton}</Go>
+
+          {brand.props !== 'none' && (
+            <div className="k-hero-art" aria-hidden>
+              {brand.props === 'orbs' && (
+                <>
+                  <span className="k-orb" style={{ width: 104, height: 104, right: 34, top: 26 }} />
+                  <span className="k-tube" style={{ width: 88, height: 88, right: 0, top: 74, transform: 'rotate(28deg)' }} />
+                  <span className="k-crystal" style={{ width: 52, height: 60, right: 128, top: 96 }} />
+                  <span className="k-ring" style={{ width: 44, height: 44, right: 150, top: 4 }} />
+                </>
+              )}
+              {brand.props === 'geometric' && (
+                <>
+                  <span className="k-crystal" style={{ width: 74, height: 88, right: 30, top: 20 }} />
+                  <span className="k-ring" style={{ width: 60, height: 60, right: 118, top: 76 }} />
+                  <span className="k-crystal" style={{ width: 44, height: 52, right: 132, top: 8, opacity: .8 }} />
+                </>
+              )}
+              {brand.props === 'minimal' && <span className="k-ring" style={{ width: 86, height: 86, right: 44, top: 42 }} />}
+            </div>
+          )}
+        </section>
+      )
+
+    case 'stats':
+      return (
+        <div className="k-stats">
+          <div className="k-stat yellow">
+            <div className="k-stat-head"><Icon d="M4 5h16v14H4zM4 9h16M9 9v10" /><span>{L.statLessons}</span></div>
+            <div className="k-stat-val">
+              <b><CountUp value={d.lessonCount} /></b>
+              {d.recentCount > 0 && <span className="k-chip">+{d.recentCount}</span>}
+            </div>
+            <p className="k-stat-sub">{d.recentCount > 0 ? `${d.recentCount} in the last 30 days` : 'Total lessons completed'}</p>
+          </div>
+
+          <div className="k-stat blue">
+            <div className="k-stat-head"><Icon d="M12 3v18M5 10l7-7 7 7" /><span>{L.statScore}</span></div>
+            <div className="k-stat-val">
+              <b>{d.avgScore != null ? <CountUp value={d.avgScore} decimals={1} /> : '—'}</b>
+              {d.scoreDelta != null && d.scoreDelta !== 0 && (
+                <span className="k-chip">{d.scoreDelta > 0 ? '▲' : '▼'} {Math.abs(d.scoreDelta).toFixed(1)}</span>
+              )}
+            </div>
+            <p className="k-stat-sub">out of 10 across {d.scoredCount} scored lesson{d.scoredCount === 1 ? '' : 's'}</p>
+          </div>
+
+          <div className="k-stat purple">
+            <div className="k-stat-head"><Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" /><span>{L.statSpeaking}</span></div>
+            <div className="k-stat-val">
+              <b>{d.latestTalk != null ? <CountUp value={d.latestTalk} /> : '—'}<span style={{ fontSize: 19 }}>%</span></b>
+              {d.talkDelta != null && d.talkDelta !== 0 && (
+                <span className="k-chip">{d.talkDelta > 0 ? '▲' : '▼'} {Math.abs(d.talkDelta)}%</span>
+              )}
+            </div>
+            <p className="k-stat-sub">of the last lesson was you talking</p>
+          </div>
+        </div>
+      )
+
+    case 'lessons':
+      return (
+        <>
+          <div className="k-sec-head"><h2>{L.lessonsTitle}</h2><span className="k-link">{d.pillarLessons.length} in all</span></div>
+          <LessonPillar lessons={d.pillarLessons} preview={preview} />
+        </>
+      )
+
+    case 'progress':
+      return (
+        <>
+          <div className="k-sec-head"><h2>{L.progressTitle}</h2></div>
+          <div className="k-card"><ProgressCharts lessons={d.progressLessons} /></div>
+        </>
+      )
+
+    case 'vocab':
+      return (
+        <>
+          <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{d.totalVocab} words</span></div>
+          <div className="k-card k-chart-card">
+            <div className="k-chart-fill"><VocabLevelChart distribution={d.vocabDistribution} height="100%" /></div>
+          </div>
+        </>
+      )
+
+    case 'milestone':
+      return (
+        <div className="k-card">
+          <div className="k-card-head"><h3>{L.milestoneTitle}</h3><span className="k-link">{milestone.label}</span></div>
+          <MilestoneTrack levels={brand.levels} lessonCount={d.lessonCount} color={brand.accent} />
+          <p className="k-course-meta" style={{ marginTop: 11 }}>
+            {milestone.remaining > 0
+              ? `${d.lessonCount} of ${milestone.target} lessons towards ${milestone.label}`
+              : `Every level cleared — ${d.lessonCount} lessons in.`}
+          </p>
+        </div>
+      )
+
+    case 'scores':
+      return (
+        <div className="k-card k-chart-card">
+          <div className="k-card-head"><h3>{L.scoresTitle}</h3><span className="k-link">Last {d.scoreTrend.length}</span></div>
+          <div className="k-chart-fill"><ScoreTrendChart points={d.scoreTrend} color={brand.accent} height="100%" /></div>
+        </div>
+      )
+
+    case 'tests':
+      return (
+        <div className="k-card">
+          <div className="k-card-head"><h3>{L.testsTitle}</h3><span className="k-link">{d.tests.length}</span></div>
+          <div className="k-hw">
+            {d.tests.map((t) => (
+              <Go key={t.id} href={`/student/tests/${t.id}`} className="k-hw-row" preview={preview}>
+                <div className="k-hw-top">
+                  <div>
+                    <div className="k-hw-title">{t.title}</div>
+                    <div className="k-hw-due">{t.lessonNumber ? `From lesson ${t.lessonNumber} · ` : ''}{t.date}</div>
+                  </div>
+                  <span className="k-btn-pill">Start</span>
+                </div>
+              </Go>
+            ))}
+          </div>
+        </div>
+      )
+
+    case 'speaking':
+      return (
+        <div className="k-card">
+          <div className="k-card-head"><h3>{L.speakingTitle}</h3></div>
+          <div style={{ display: 'grid', gap: 11, flex: 1, alignContent: 'center' }}>
+            {d.avgWpm != null && (
+              <div className="k-hw-top"><div className="k-hw-title">Pace</div><div className="k-score">{Math.round(d.avgWpm)} wpm</div></div>
+            )}
+            {d.avgThinkSec != null && (
+              <div className="k-hw-top"><div className="k-hw-title">Thinking time</div><div className="k-score">{d.avgThinkSec.toFixed(1)}s</div></div>
+            )}
+          </div>
+        </div>
+      )
+
+    default:
+      return null
+  }
+}

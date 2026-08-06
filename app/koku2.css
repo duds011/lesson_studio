@@ -696,54 +696,17 @@
 .k-flow>*{flex:var(--w,12) 1 calc((100% + var(--g)) * var(--w,12) / 12 - var(--g));min-width:0}
 /* Blocks on the same row share its height. Left to itself a short block beside
    a tall one leaves a hole underneath it — the row is as tall as its tallest
-   block either way, so the short one may as well fill it. The studio's own
-   .k-pblock is excluded: its last child is a resize grip, not content. */
-.k-flow>*:not(.k-pblock){display:flex;flex-direction:column}
-.k-flow>*:not(.k-pblock)>:only-child,
-.k-flow>*:not(.k-pblock)>:last-child:not(:only-child){flex:1 1 auto;min-height:0}
+   block either way, so the short one may as well fill it. */
+.k-flow>*{display:flex;flex-direction:column}
+.k-flow>*>:only-child,
+.k-flow>*>:last-child:not(:only-child){flex:1 1 auto;min-height:0}
 .k-flow.narrow>*{flex-basis:100%}
 @media(max-width:760px){.k-flow>*{flex-basis:100%}}
 .k-flow-empty{width:100%!important;border:1.5px dashed var(--line-strong);border-radius:11px;padding:14px;text-align:center;font-size:10px;color:var(--muted)}
 
 /* ── directly-draggable preview blocks ── */
-.k-pblock{position:relative;cursor:grab;border-radius:12px;transition:opacity .14s ease}
-.k-pblock:hover{outline:2px solid var(--forest);outline-offset:2px}
-.k-pblock:active{cursor:grabbing}
-.k-pblock.off{opacity:.45}
-.k-pblock.resizing{outline:2px solid var(--forest);outline-offset:2px}
 /* The dragged block, shown where it would land. The rest of the flow has
    already reflowed around it, so the drop target is the layout itself. */
-.k-pblock.ghost{outline:2px dashed var(--forest);outline-offset:2px;opacity:.5}
-.k-pblock.ghost .k-pblock-body{filter:grayscale(.4)}
-.k-pblock>*{pointer-events:none}
-.k-pblock-body{height:100%;min-height:0;display:grid;overflow:hidden;border-radius:12px}
-.k-pblock-body>*{min-height:0}
-.k-pblock-tag{position:absolute;top:-8px;left:6px;z-index:4;background:var(--forest);color:#fff;border-radius:999px;padding:2px 8px;font-size:8.5px;font-weight:800;letter-spacing:.02em;opacity:0;transition:.14s ease;white-space:nowrap;pointer-events:none}
-.k-pblock:hover .k-pblock-tag,.k-pblock.resizing .k-pblock-tag,.k-pblock.ghost .k-pblock-tag{opacity:1}
-
-/* Resize grips: bottom for height, right for width, corner for both. They need
-   pointer events back — the rule above turns them off for every other child so
-   drags land on the block itself. */
-.k-presize,.k-presize-x,.k-presize-xy{position:absolute;z-index:3;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
-.k-presize::after,.k-presize-x::after,.k-presize-xy::after{content:"";border-radius:999px;background:var(--forest);opacity:0;transition:opacity .14s ease}
-.k-presize{left:8px;right:8px;bottom:-6px;height:13px;cursor:ns-resize}
-.k-presize::after{width:38px;height:4px}
-.k-presize-x{top:8px;bottom:8px;right:-6px;width:13px;cursor:ew-resize}
-.k-presize-x::after{width:4px;height:38px}
-.k-presize-xy{right:-7px;bottom:-7px;width:16px;height:16px;cursor:nwse-resize}
-.k-presize-xy::after{width:9px;height:9px;border-radius:3px}
-.k-pblock:hover .k-presize::after,.k-pblock:hover .k-presize-x::after,.k-pblock:hover .k-presize-xy::after,
-.k-pblock.resizing .k-presize::after,.k-pblock.resizing .k-presize-x::after,.k-pblock.resizing .k-presize-xy::after{opacity:.9}
-
-/* ── text typed straight onto the canvas ──
-   Editing has to beat dragging, so these take pointer events back from the
-   .k-pblock>* rule that turns them off for everything else. */
-.k-inline{pointer-events:auto;cursor:text;border-radius:6px;outline:0;transition:box-shadow .14s ease,background .14s ease;-webkit-user-select:text;user-select:text}
-.k-pblock .k-inline{position:relative;z-index:2}
-.k-inline:hover{box-shadow:0 0 0 2px rgba(255,255,255,.45),0 0 0 3px var(--forest)}
-.k-inline:focus{box-shadow:0 0 0 2px rgba(255,255,255,.55),0 0 0 3px var(--forest);background:rgba(255,255,255,.1)}
-.k-inline:empty::before{content:attr(data-placeholder);opacity:.5}
-.k-preview-portal{margin-left:auto;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:-.01em;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ── the studio menu: one drawer at a time ── */
 .k-tool{padding:0;overflow:hidden}
@@ -773,58 +736,6 @@
 .k-level-row{display:grid;grid-template-columns:minmax(0,1fr) 68px auto;gap:6px;align-items:center}
 .k-level-row input{width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:11px;padding:9px 11px;font:inherit;font-size:12.5px;color:var(--ink);outline:0}
 .k-level-row input:focus{border-color:var(--forest)}
-
-/* ── content that fits its rectangle ──
-   A block the teacher sized becomes a size container, and everything inside is
-   expressed in `em` off a font-size derived from the box. Shrink the block and
-   the numbers, labels and padding shrink with it; the clamp stops a small block
-   from becoming unreadable for the student. */
-/* The size container is the block; the scaling lives on the child, because an
-   element's own styles resolve container units against its *ancestor*
-   container, not itself — putting the clamp on .k-fit pinned it to the max. */
-.k-fit{container-type:size}
-.k-fit>.k-fit-body{height:100%;min-height:0;font-size:clamp(8.5px,min(9cqh,5.5cqw),20px)}
-.k-fit .k-preview-card{padding:1.15em 1.3em;display:flex;flex-direction:column}
-.k-fit .k-preview-row{font-size:1em}
-.k-fit .k-preview-row span{font-size:.85em}
-.k-fit .k-preview-hero{padding:1.9em 2em;min-height:0}
-.k-fit .k-preview-hero strong{font-size:1.75em}
-.k-fit .k-preview-hero p{font-size:.92em;margin:.6em 0 1.1em}
-.k-fit .k-preview-btn{padding:.72em 1.5em;font-size:.88em}
-.k-fit .k-preview-props{width:8em}
-.k-fit .k-preview-stats{gap:.6em}
-.k-fit .k-preview-stats>div{padding:1.05em 1.15em;min-height:0}
-.k-fit .k-preview-stats span{font-size:.8em}
-.k-fit .k-preview-stats b{font-size:1.9em;margin-top:.2em}
-.k-fit .k-preview-lessons{gap:.5em;margin-top:.65em}
-.k-fit .k-preview-lessons>div{font-size:.88em;gap:.7em}
-.k-fit .k-preview-lessons i{width:2em;height:2em;border-radius:.65em}
-.k-fit .k-chart-card .recharts-wrapper{margin-top:.5em}
-/* the real portal's own blocks */
-.k-fit .k-card{padding:1.15em 1.25em}
-.k-fit .k-card-head h3{font-size:1.08em}
-.k-fit .k-link,.k-fit .k-chip{font-size:.8em}
-.k-fit .k-stats{gap:.7em}
-.k-fit .k-stat{padding:1.1em 1.2em;min-height:0}
-.k-fit .k-stat-val b{font-size:2em}
-.k-fit .k-stat-sub{font-size:.8em}
-.k-fit .k-sec-head h2{font-size:1.35em}
-.k-fit .k-course{padding:.8em .9em}
-.k-fit .k-course-title{font-size:.95em}
-.k-fit .k-course-meta,.k-fit .k-hw-due{font-size:.8em}
-.k-fit .k-hw-title{font-size:.9em}
-.k-fit .k-hero{padding:1.8em 2em;min-height:0}
-.k-fit .k-hero h2{font-size:2.1em}
-.k-fit .k-hero p{font-size:.95em}
-.k-fit .stat-card{padding:1.1em 1.2em;min-height:0}
-.k-fit .stat-card-value{font-size:1.9em}
-.k-fit .stat-card-label{font-size:.72em}
-.k-fit .lesson-block,.k-fit .corrections-card{padding:1.2em 1.35em;margin-bottom:0}
-.k-fit .lesson-block h3{font-size:1.05em}
-.k-fit .lesson-block p,.k-fit .lesson-block li,.k-fit .example{font-size:.9em}
-.k-fit .metric{padding:.75em .8em}
-.k-fit .metric .mv{font-size:1.4em}
-.k-fit .metric .mk,.k-fit .metric .mn{font-size:.72em}
 
 /* studio: controls + live preview */
 /* The student view is the subject of this page: it takes the stage, and the
@@ -875,30 +786,6 @@
 .k-canvas{position:relative;z-index:1}
 .k-preview-frame{border-radius:var(--r-xl);padding:22px;box-shadow:var(--shadow-soft);display:grid;gap:14px;overflow:hidden;
   width:var(--canvas-w,1180px);transform:scale(var(--canvas-scale,1));transform-origin:top left}
-.k-preview-top{display:flex;align-items:center;gap:11px}
-.k-preview-mark{width:42px;height:42px;border-radius:var(--r-md);display:grid;place-items:center;font-size:18px;font-weight:800}
-.k-preview-hello{font-size:12px;color:var(--muted);font-weight:600}
-.k-preview-name{font-size:24px;font-weight:700;letter-spacing:-.035em;line-height:1.1}
-.k-preview-hero{border-radius:var(--r-lg);padding:26px 28px;min-height:150px;display:flex;flex-direction:column;justify-content:center}
-.k-preview-hero{position:relative;overflow:hidden}
-.k-preview-props{position:absolute;right:0;top:0;bottom:0;width:110px;pointer-events:none}
-.k-preview-hero strong{display:block;font-size:24px;line-height:1.18;letter-spacing:-.035em;position:relative;z-index:1;max-width:60%}
-.k-preview-hero p{margin:9px 0 16px;font-size:12.5px;line-height:1.55;max-width:56%;position:relative;z-index:1}
-.k-preview-btn{display:inline-block;align-self:flex-start;border-radius:999px;padding:10px 20px;font-size:12px;font-weight:800;position:relative;z-index:1}
-.k-preview-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.k-preview-stats>div{border-radius:var(--r-md);padding:15px 16px;color:#fff;min-width:0;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
-.k-preview-stats span{display:block;font-size:11px;font-weight:700;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.k-preview-stats b{display:block;font-size:26px;font-weight:800;letter-spacing:-.035em;margin-top:5px}
-.k-preview-card{background:var(--surface);border-radius:var(--r-md);padding:16px 18px}
-.k-preview-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px}
-.k-preview-row strong{font-weight:700}
-.k-preview-row span{color:var(--muted);font-size:11.5px;font-weight:700}
-.k-preview-lessons{display:grid;gap:7px;margin-top:9px}
-.k-preview-lessons>div{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600}
-.k-preview-lessons i{width:28px;height:28px;border-radius:9px;flex:0 0 auto}
-.k-preview-lessons span{margin-left:auto;font-weight:800;color:var(--muted)}
-.k-preview-spark{display:flex;align-items:flex-end;gap:6px;height:62px;margin-top:12px}
-.k-preview-spark i{flex:1;height:34%;border-radius:5px 5px 0 0;opacity:.85}
 
 /* A card given a whole row's height spends it, rather than clumping its
    content at the top of an empty rectangle: charts grow into it, lists sit in
@@ -921,15 +808,9 @@
 .k-gauge-mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none;line-height:1.1}
 .k-gauge-mid b{font-size:22px;font-weight:800;letter-spacing:-.035em}
 .k-gauge-mid small{display:block;font-size:9.5px;font-weight:700;color:var(--muted);margin-top:3px}
-.k-pblock .k-gauge-mid b{font-size:16px}
 /* A block the teacher gave a fixed height keeps it and scrolls its overflow. */
-.k-block-sized{overflow:auto;min-width:0}
 
 /* Height chips — a resized block is listed so it can be handed back. */
-.k-hlist{display:flex;flex-wrap:wrap;gap:6px}
-.k-hchip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 10px;font:inherit;font-size:10.5px;font-weight:700;color:var(--muted);cursor:pointer;transition:.14s ease}
-.k-hchip:hover{border-color:var(--forest);color:var(--forest)}
-.k-hchip b{color:var(--ink)}
 
 .k-preview-switches{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
@@ -939,7 +820,7 @@
 .k-shell,.k-preview-frame{font-family:var(--font-body,"Plus Jakarta Sans",system-ui,sans-serif)}
 .k-shell :is(h1,h2,h3,h4),.k-preview-frame :is(h1,h2,h3,h4),
 .k-shell :is(.k-name,.k-stat-val,.k-hero-btn,.k-course-title,.k-pscore b,.stat-card-value,.metric .mv),
-.k-preview-frame :is(.k-preview-name,.k-preview-hero strong,.k-preview-stats b,.k-preview-row strong,.k-pscore b,.stat-card-value,.metric .mv,.tab)
+.k-preview-frame :is(.k-name,.k-stat-val,.k-hero-btn,.k-pscore b,.stat-card-value,.metric .mv,.tab)
 {font-family:var(--font-head,"Outfit",system-ui,sans-serif)}
 
 /* ── full presets ── */
@@ -1090,17 +971,15 @@
 
 /* ── entrances ──
    Cards arrive in sequence rather than all at once. */
-:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw,.k-preview-stats)>*{
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw)>*{
   animation:k-rise .5s cubic-bezier(.2,.75,.3,1) backwards;
 }
-:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw,.k-preview-stats)>*:nth-child(2){animation-delay:.06s}
-:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw,.k-preview-stats)>*:nth-child(3){animation-delay:.12s}
-:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw,.k-preview-stats)>*:nth-child(4){animation-delay:.18s}
-:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw,.k-preview-stats)>*:nth-child(5){animation-delay:.24s}
-:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw,.k-preview-stats)>*:nth-child(n+6){animation-delay:.3s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw)>*:nth-child(2){animation-delay:.06s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw)>*:nth-child(3){animation-delay:.12s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw)>*:nth-child(4){animation-delay:.18s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw)>*:nth-child(5){animation-delay:.24s}
+:is(.k-stats,.k-tstats,.stat-cards,.k-courses,.metric-grid,.k-flow,.k-hw)>*:nth-child(n+6){animation-delay:.3s}
 /* Dragging is a live reorder — re-running entrances mid-drag would fight it. */
-.k-flow.dragging{user-select:none}
-.k-flow.dragging>*{animation:none;cursor:grabbing}
 
 .k-hero,.k-phead,.k-thead{animation:k-rise .55s cubic-bezier(.2,.75,.3,1) backwards}
 
@@ -1108,7 +987,7 @@
 .k-hw-fill,.balance-fill,.vocab-line-bar>div{transform-origin:left center;animation:k-grow .9s cubic-bezier(.2,.8,.25,1) .12s backwards}
 
 /* ── hover life ── */
-.k-stat,.stat-card,.k-preview-stats>div{transition:translate .18s ease,box-shadow .18s ease}
+.k-stat,.stat-card{transition:translate .18s ease,box-shadow .18s ease}
 .k-stat:hover,.stat-card:hover{translate:0 -3px;box-shadow:var(--shadow-lift)}
 .tab{transition:background .16s ease,color .16s ease,translate .16s ease}
 .tab:hover:not(.sel){translate:0 -1px}

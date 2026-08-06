@@ -129,19 +129,22 @@ export const LESSON_BLOCK_TAB: Record<LessonBlockId, LessonTab> = {
 }
 
 /**
- * Blocks flow left to right and wrap, each one `w` of 12 columns wide with an
- * optional pixel height. Shrinking a block therefore leaves room beside it and
- * the next block moves up into that space — no columns to keep in sync.
+ * Blocks flow left to right and wrap, each `w` of 12 columns wide — see
+ * .k-flow. The arrangement is ours, not the teacher's: they used to drag and
+ * resize every block, which bought a handful of layouts nobody asked for and a
+ * long tail of ways to end up with a broken page. They style it instead.
  */
-export const GRID_COLS = 12
-export const MIN_SPAN = 3
-export type Placement<T extends string = BlockId> = { id: T; w: number; h?: number }
-export type Layout = Placement<BlockId>[]
-export type LessonLayout = Placement<LessonBlockId>[]
+export type Placement<T extends string = BlockId> = { id: T; w: number }
 
-/** A block left unset sizes to its content; these bound a deliberate resize. */
-export const MIN_BLOCK_H = 90
-export const MAX_BLOCK_H = 560
+/** The recap page's fixed arrangement. The dashboard's is DASHBOARD_LAYOUT,
+ *  next to the components it places. */
+export const LESSON_LAYOUT: Placement<LessonBlockId>[] = [
+  { id: 'balance', w: 4 }, { id: 'score', w: 4 }, { id: 'grammar', w: 4 },
+  { id: 'metrics', w: 12 }, { id: 'corrections', w: 12 },
+  { id: 'sections', w: 12 }, { id: 'notes', w: 12 },
+  { id: 'homework', w: 6 }, { id: 'exercises', w: 6 },
+  { id: 'vocabLevels', w: 5 }, { id: 'vocabWords', w: 7 },
+]
 
 /**
  * The milestone ladder. Each rung is a name the student reaches at `lessons`
@@ -214,8 +217,6 @@ export type Brand = {
   shape: ShapeStyle
   props: PropStyle
   font: FontId
-  layout: Layout
-  lessonLayout: LessonLayout
   /** Milestone ladder, easiest first. */
   levels: Level[]
   /** Every fixed string on the portal, defaults filled in. */
@@ -231,23 +232,6 @@ export type Brand = {
   showSpeaking: boolean
 }
 
-/** Wide block beside a narrow one — the two-column look, without columns. */
-const DEFAULT_LAYOUT: Layout = [
-  { id: 'hero', w: 12 },
-  { id: 'stats', w: 8 }, { id: 'milestone', w: 4 },
-  { id: 'lessons', w: 8 }, { id: 'scores', w: 4 },
-  { id: 'progress', w: 8 }, { id: 'tests', w: 4 },
-  { id: 'vocab', w: 8 }, { id: 'speaking', w: 4 },
-]
-
-const DEFAULT_LESSON_LAYOUT: LessonLayout = [
-  { id: 'balance', w: 4 }, { id: 'score', w: 4 }, { id: 'grammar', w: 4 },
-  { id: 'metrics', w: 12 }, { id: 'corrections', w: 12 },
-  { id: 'sections', w: 12 }, { id: 'notes', w: 12 },
-  { id: 'homework', w: 6 }, { id: 'exercises', w: 6 },
-  { id: 'vocabLevels', w: 5 }, { id: 'vocabWords', w: 7 },
-]
-
 export const DEFAULT_BRAND: Brand = {
   accent: '#0a61c9',
   headline: 'Learn today,\nsucceed tomorrow!',
@@ -259,8 +243,6 @@ export const DEFAULT_BRAND: Brand = {
   shape: 'rounded',
   props: 'orbs',
   font: 'modern',
-  layout: DEFAULT_LAYOUT,
-  lessonLayout: DEFAULT_LESSON_LAYOUT,
   levels: DEFAULT_LEVELS,
   labels: { ...TEXT_SLOTS },
   showHero: true,
@@ -283,7 +265,7 @@ export type Preset = {
   id: string
   name: string
   hint: string
-  brand: Pick<Brand, 'accent' | 'heroStyle' | 'background' | 'shape' | 'props' | 'font' | 'layout' | 'lessonLayout'>
+  brand: Pick<Brand, 'accent' | 'heroStyle' | 'background' | 'shape' | 'props' | 'font'>
 }
 
 export const PRESETS: Preset[] = [
@@ -293,7 +275,6 @@ export const PRESETS: Preset[] = [
     hint: 'The house look — signal blue on white',
     brand: {
       accent: '#0a61c9', heroStyle: 'forest', background: 'plain', shape: 'rounded', props: 'orbs', font: 'modern',
-      layout: DEFAULT_LAYOUT, lessonLayout: DEFAULT_LESSON_LAYOUT,
     },
   },
   {
@@ -302,21 +283,6 @@ export const PRESETS: Preset[] = [
     hint: 'Deep indigo, tight corners, data first',
     brand: {
       accent: '#4338ca', heroStyle: 'accent', background: 'grid', shape: 'soft', props: 'geometric', font: 'techy',
-      layout: [
-        { id: 'stats', w: 12 },
-        { id: 'progress', w: 8 }, { id: 'scores', w: 4 },
-        { id: 'hero', w: 12 },
-        { id: 'lessons', w: 8 }, { id: 'milestone', w: 4 },
-        { id: 'vocab', w: 6 }, { id: 'speaking', w: 6 },
-        { id: 'tests', w: 12 },
-      ],
-      lessonLayout: [
-        { id: 'score', w: 3 }, { id: 'balance', w: 5 }, { id: 'grammar', w: 4 },
-        { id: 'metrics', w: 12 }, { id: 'corrections', w: 12 },
-        { id: 'sections', w: 12 }, { id: 'notes', w: 12 },
-        { id: 'homework', w: 5 }, { id: 'exercises', w: 7 },
-        { id: 'vocabLevels', w: 6 }, { id: 'vocabWords', w: 6 },
-      ],
     },
   },
   {
@@ -325,15 +291,6 @@ export const PRESETS: Preset[] = [
     hint: 'Warm clay, soft wash, welcoming',
     brand: {
       accent: '#b45309', heroStyle: 'accent', background: 'wash', shape: 'rounded', props: 'orbs', font: 'friendly',
-      layout: [
-        { id: 'hero', w: 12 },
-        { id: 'stats', w: 12 },
-        { id: 'lessons', w: 12 },
-        { id: 'milestone', w: 4 }, { id: 'scores', w: 4 }, { id: 'speaking', w: 4 },
-        { id: 'progress', w: 8 }, { id: 'tests', w: 4 },
-        { id: 'vocab', w: 12 },
-      ],
-      lessonLayout: DEFAULT_LESSON_LAYOUT,
     },
   },
   {
@@ -342,21 +299,6 @@ export const PRESETS: Preset[] = [
     hint: 'Serif headlines, plum accent, roomy',
     brand: {
       accent: '#7e22ce', heroStyle: 'light', background: 'plain', shape: 'sharp', props: 'minimal', font: 'editorial',
-      layout: [
-        { id: 'hero', w: 12 },
-        { id: 'lessons', w: 12 },
-        { id: 'stats', w: 8 }, { id: 'milestone', w: 4 },
-        { id: 'progress', w: 12 },
-        { id: 'vocab', w: 6 }, { id: 'scores', w: 6 },
-        { id: 'tests', w: 6 }, { id: 'speaking', w: 6 },
-      ],
-      lessonLayout: [
-        { id: 'score', w: 4 }, { id: 'balance', w: 8 },
-        { id: 'grammar', w: 4 }, { id: 'metrics', w: 8 },
-        { id: 'corrections', w: 12 }, { id: 'sections', w: 12 }, { id: 'notes', w: 12 },
-        { id: 'homework', w: 12 }, { id: 'exercises', w: 12 },
-        { id: 'vocabLevels', w: 12 }, { id: 'vocabWords', w: 12 },
-      ],
     },
   },
   {
@@ -365,14 +307,6 @@ export const PRESETS: Preset[] = [
     hint: 'Pink, pill corners, everything in view',
     brand: {
       accent: '#be123c', heroStyle: 'accent', background: 'dots', shape: 'pill', props: 'orbs', font: 'friendly',
-      layout: [
-        { id: 'hero', w: 8 }, { id: 'milestone', w: 4 },
-        { id: 'stats', w: 12 },
-        { id: 'scores', w: 4 }, { id: 'speaking', w: 4 }, { id: 'tests', w: 4 },
-        { id: 'lessons', w: 12 },
-        { id: 'progress', w: 6 }, { id: 'vocab', w: 6 },
-      ],
-      lessonLayout: DEFAULT_LESSON_LAYOUT,
     },
   },
   {
@@ -381,12 +315,6 @@ export const PRESETS: Preset[] = [
     hint: 'Slate, no ornament, one column',
     brand: {
       accent: '#334155', heroStyle: 'light', background: 'plain', shape: 'soft', props: 'none', font: 'plain',
-      layout: [
-        { id: 'hero', w: 12 }, { id: 'stats', w: 12 }, { id: 'lessons', w: 12 },
-        { id: 'progress', w: 12 }, { id: 'scores', w: 6 }, { id: 'milestone', w: 6 },
-        { id: 'vocab', w: 12 }, { id: 'tests', w: 6 }, { id: 'speaking', w: 6 },
-      ],
-      lessonLayout: DEFAULT_LESSON_LAYOUT,
     },
   },
 ]
@@ -437,8 +365,6 @@ export function resolveBrand(raw: unknown): Brand {
     shape: (SHAPES as readonly string[]).includes(b.shape as string) ? (b.shape as ShapeStyle) : DEFAULT_BRAND.shape,
     props: (PROPS as readonly string[]).includes(b.props as string) ? (b.props as PropStyle) : DEFAULT_BRAND.props,
     font: FONTS.some((f) => f.value === b.font) ? (b.font as FontId) : DEFAULT_BRAND.font,
-    layout: resolveLayout(b.layout, b.heights),
-    lessonLayout: resolveLessonLayout(b.lessonLayout),
     levels: resolveLevels(b.levels),
     labels: resolveLabels(b.labels),
     showHero: bool(b.showHero, DEFAULT_BRAND.showHero),
@@ -451,70 +377,6 @@ export function resolveBrand(raw: unknown): Brand {
     showTests: bool(b.showTests, DEFAULT_BRAND.showTests),
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
   }
-}
-
-export const clampSpan = (n: unknown, fallback = GRID_COLS) => {
-  const v = Math.round(Number(n))
-  return Number.isFinite(v) ? Math.max(MIN_SPAN, Math.min(GRID_COLS, v)) : fallback
-}
-
-const clampHeight = (n: unknown): number | undefined => {
-  const v = Math.round(Number(n))
-  if (!Number.isFinite(v) || v < MIN_BLOCK_H || v > MAX_BLOCK_H) return undefined
-  return v
-}
-
-/**
- * Normalise a stored layout: drop unknown ids and duplicates, clamp spans and
- * heights, and append any block the teacher has never positioned so new
- * features still appear.
- *
- * Also migrates the two shapes this field had before: the `{ main, rail }`
- * column pair, and the separate top-level `heights` map.
- */
-function resolvePlacements<T extends string>(
-  raw: unknown,
-  known: readonly T[],
-  defaults: Placement<T>[],
-  legacyHeights?: unknown,
-): Placement<T>[] {
-  const knownSet = new Set<string>(known)
-  const seen = new Set<string>()
-  const out: Placement<T>[] = []
-  const defaultOf = (id: T) => defaults.find((p) => p.id === id)
-
-  const heights = (legacyHeights && typeof legacyHeights === 'object' ? legacyHeights : {}) as Record<string, unknown>
-
-  const push = (id: string, w: unknown, h: unknown) => {
-    if (!knownSet.has(id) || seen.has(id)) return
-    seen.add(id)
-    const height = clampHeight(h ?? heights[id])
-    out.push({ id: id as T, w: clampSpan(w, defaultOf(id as T)?.w ?? GRID_COLS), ...(height ? { h: height } : {}) })
-  }
-
-  if (Array.isArray(raw)) {
-    for (const p of raw) {
-      if (typeof p === 'string') push(p, undefined, undefined)
-      else if (p && typeof p === 'object') push((p as any).id, (p as any).w, (p as any).h)
-    }
-  } else if (raw && typeof raw === 'object') {
-    // Legacy `{ main: BlockId[], rail: BlockId[] }`. The wide column was 8 of
-    // 12 and the side rail 4, so interleaving them one for one reproduces the
-    // two-column layout this teacher already had: each row is 8 + 4.
-    const l = raw as { main?: unknown; rail?: unknown }
-    const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
-    const main = list(l.main)
-    const rail = list(l.rail)
-    for (let i = 0; i < Math.max(main.length, rail.length); i++) {
-      if (main[i]) push(main[i], 8, undefined)
-      if (rail[i]) push(rail[i], 4, undefined)
-    }
-  }
-
-  // Anything never placed keeps its default size, appended in default order.
-  for (const p of defaults) if (!seen.has(p.id)) { seen.add(p.id); out.push({ ...p, ...(clampHeight(heights[p.id]) ? { h: clampHeight(heights[p.id]) } : {}) }) }
-
-  return out
 }
 
 /** Stored overrides merged onto the default wording, unknown slots dropped. */
@@ -549,14 +411,6 @@ export function resolveLevels(raw: unknown): Level[] {
   }
   if (out.length === 0) return DEFAULT_LEVELS
   return out.sort((a, b) => a.lessons - b.lessons).slice(0, MAX_LEVELS)
-}
-
-export function resolveLayout(raw: unknown, legacyHeights?: unknown): Layout {
-  return resolvePlacements(raw, DASHBOARD_BLOCKS, DEFAULT_LAYOUT, legacyHeights)
-}
-
-export function resolveLessonLayout(raw: unknown): LessonLayout {
-  return resolvePlacements(raw, LESSON_BLOCKS, DEFAULT_LESSON_LAYOUT)
 }
 
 /** Darken a hex colour for hover/pressed states. */
@@ -599,7 +453,3 @@ export function backgroundClass(brand: Brand): string {
   return `k-bg-${brand.background}`
 }
 
-/** Inline width for a block spanning `w` of 12 columns in a wrapping row. */
-export function spanStyle(w: number): React.CSSProperties {
-  return { ['--w' as any]: clampSpan(w) }
-}
