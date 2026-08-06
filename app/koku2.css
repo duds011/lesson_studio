@@ -364,6 +364,45 @@
 .k-thead.slim .k-thead-title,.k-thead.slim .k-thead-actions{position:relative;z-index:1}
 .k-thead.slim .k-hero-art{width:150px;height:120px}
 
+/* …and on a page that opens with numbers, the band carries them. Title left,
+   figures in the middle, actions right — one line instead of a panel, a
+   sentence, and a row of stat cards repeating what the panel just said. */
+.k-thead.one{padding:16px 24px;border-radius:var(--r-lg);margin-bottom:0;align-items:center;gap:18px 24px;flex-wrap:wrap}
+.k-thead.one>*{position:relative;z-index:1}
+.k-thead.one .k-thead-title{display:flex;align-items:center;gap:13px;min-width:0}
+.k-thead.one .k-phead-eyebrow{color:rgba(255,255,255,.58);font-size:9.5px}
+.k-thead.one h1{font-size:22px;letter-spacing:-.035em;line-height:1.2;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k-thead.one .k-thead-meta{margin:3px 0 0;font-size:11.5px;color:rgba(255,255,255,.62);line-height:1.4}
+.k-thead.one .btn{padding:8px 14px;font-size:12px}
+.k-thead.one .avatar{background:rgba(255,255,255,.16);color:#fff;flex:0 0 auto}
+/* A select that belongs on the band rather than on the page under it. */
+.k-thead-select{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:999px;padding:9px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;outline:0}
+.k-thead-select:disabled{opacity:.6;cursor:not-allowed}
+.k-thead-select option{color:var(--ink)}
+.k-thead.one .k-hero-art{width:150px;height:120px;opacity:.32}
+
+/* The numbers. Separated by a rule rather than boxed, so they read as one row
+   of figures and not as three more cards. */
+.k-thead-figures{display:flex;align-items:flex-end;flex-wrap:wrap;margin-left:auto}
+.k-thead-figures>div{padding:0 22px;border-left:1px solid rgba(255,255,255,.22)}
+.k-thead-figures>div:first-child{border-left:0;padding-left:0}
+.k-thead-figures>div:last-child{padding-right:0}
+.k-thead-figures span{display:block;font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);white-space:nowrap}
+.k-thead-figures b{display:block;font-size:23px;font-weight:800;letter-spacing:-.045em;line-height:1.1;margin-top:4px;white-space:nowrap}
+/* Units ride the number without competing with it — "/10", "%". */
+.k-thead-figures b i{font-style:normal;font-size:14px;font-weight:600;color:rgba(255,255,255,.6);margin-left:1px}
+/* Once the figures wrap under the title they stop being a right-hand column. */
+@media(max-width:1080px){
+  .k-thead-figures{margin-left:0;width:100%;border-top:1px solid rgba(255,255,255,.16);padding-top:14px}
+  .k-thead-figures>div:first-child{padding-left:0}
+}
+@media(max-width:560px){
+  .k-thead.one{padding:14px 16px}
+  .k-thead-figures>div{padding:0 14px}
+  .k-thead-figures b{font-size:19px}
+  .k-thead.one .k-thead-actions{width:100%}
+}
+
 /* Calendar on the left at full height, the numbers beside it on the right. */
 .k-overview{display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:14px;align-items:start}
 @media(max-width:1100px){.k-overview{grid-template-columns:minmax(0,1fr)}}
@@ -383,11 +422,14 @@
 @media(max-width:760px){
   .k-overview-rail .k-tstats{grid-template-columns:minmax(0,1fr)}
 }
-.k-thead .btn{border-radius:999px;font-size:12.5px;padding:11px 18px;border:0}
-.k-thead .btn-ghost{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
-.k-thead .btn-ghost:hover{background:rgba(255,255,255,.24);color:#fff}
-.k-thead .btn-primary{background:#fff;color:var(--forest-deep)}
-.k-thead .btn-primary:hover{background:#f2f2ec}
+/* Scoped under .wrap as well, because `.wrap .btn-primary` further down this
+   file is the same specificity and would otherwise win on source order —
+   painting a blue button onto the blue band, which is invisible. */
+.k-thead .btn,.wrap .k-thead .btn{border-radius:999px;font-size:12.5px;padding:11px 18px;border:0}
+.k-thead .btn-ghost,.wrap .k-thead .btn-ghost{background:rgba(255,255,255,.15);color:#fff;box-shadow:none}
+.k-thead .btn-ghost:hover,.wrap .k-thead .btn-ghost:hover{background:rgba(255,255,255,.24);color:#fff}
+.k-thead .btn-primary,.wrap .k-thead .btn-primary{background:#fff;color:var(--forest-deep)}
+.k-thead .btn-primary:hover,.wrap .k-thead .btn-primary:hover{background:#eef2f7}
 
 /* ── sidebar collapse ──
    Same shape as the <=900px responsive rules, but driven by the toggle in the

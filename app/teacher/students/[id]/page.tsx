@@ -7,6 +7,7 @@ import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 import GenerateTestButton from '@/components/portal/GenerateTestButton'
+import PageHeader from '@/components/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,31 +68,30 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
 
   return (
     <div className="k-page" style={{ display: 'grid', gap: 16 }}>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-          <Link href="/teacher/dashboard" className="btn btn-ghost btn-sm">← All students</Link>
-          <StudentAdminActions studentId={student.id} hasLogin={!!student.profile_id} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div className="avatar lg">{student.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>
-          <div>
-            <h1 className="title" style={{ margin: 0 }}>{student.full_name}</h1>
-            <p className="sub" style={{ margin: 0 }}>{student.email} · {student.level} · {student.language}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-              <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : 'var(--brand-soft)', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
-                {credits.purchased > 0 || credits.used > 0 ? `${credits.remaining} lesson${credits.remaining === 1 ? '' : 's'} left / ${credits.purchased} bought` : 'No lessons purchased yet'}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
-              </span>
-              <Link href="/teacher/payments" className="btn btn-ghost btn-sm">Manage payments →</Link>
-            </div>
-          </div>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <Link href="/teacher/dashboard" className="btn btn-ghost btn-sm">← All students</Link>
+        <StudentAdminActions studentId={student.id} hasLogin={!!student.profile_id} />
       </div>
 
-      <div className="analytics-grid">
-        <div className="analytics-card"><span className="analytics-label">Lessons</span><div className="analytics-value" style={{ color: 'var(--brand)' }}>{lessonCount}</div></div>
-        <div className="analytics-card"><span className="analytics-label">Avg Score</span><div className="analytics-value" style={{ color: 'var(--brand)' }}>{avgScore != null ? avgScore.toFixed(1) : '—'}<span style={{ fontSize: 15, fontWeight: 400, color: 'var(--muted)' }}>/10</span></div></div>
-        <div className="analytics-card"><span className="analytics-label">Latest Talk</span><div className="analytics-value" style={{ color: 'var(--brand)' }}>{latestTalk ?? '—'}<span style={{ fontSize: 15, fontWeight: 400, color: 'var(--muted)' }}>%</span></div></div>
-        <div className="analytics-card"><span className="analytics-label">Vocab items</span><div className="analytics-value" style={{ color: 'var(--brand)' }}>{totalVocab}</div></div>
+      <PageHeader
+        lead={<div className="avatar lg">{student.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>}
+        title={student.full_name}
+        meta={`${student.email} · ${student.level} · ${student.language}`}
+        figures={[
+          { label: 'Lessons', value: lessonCount },
+          { label: 'Avg score', value: <>{avgScore != null ? avgScore.toFixed(1) : '—'}<i>/10</i></> },
+          { label: 'Latest talk', value: <>{latestTalk ?? '—'}<i>%</i></> },
+          { label: 'Vocab items', value: totalVocab },
+        ]}
+      />
+
+      {/* Lesson credits — the one number that changes what a teacher does next,
+          so it keeps its own colour rather than joining the band. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : 'var(--brand-soft)', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
+          {credits.purchased > 0 || credits.used > 0 ? `${credits.remaining} lesson${credits.remaining === 1 ? '' : 's'} left / ${credits.purchased} bought` : 'No lessons purchased yet'}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
+        </span>
+        <Link href="/teacher/payments" className="btn btn-ghost btn-sm">Manage payments →</Link>
       </div>
 
 

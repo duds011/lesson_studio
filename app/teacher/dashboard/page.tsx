@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getCreditsByStudent } from '@/lib/credits'
 import AddStudentForm from '@/components/portal/AddStudentForm'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
+import PageHeader from '@/components/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,20 +45,16 @@ export default async function TeacherDashboard() {
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
-      <div className="page-head" style={{ marginBottom: 0 }}>
-        <div>
-          <span className="eyebrow">Teacher</span>
-          <h1 className="title" style={{ margin: '6px 0 4px' }}>Your students</h1>
-          <p className="sub">Create student accounts, manage logins, and track progress built from lesson recaps.</p>
-        </div>
-        <div className="page-actions"><AddStudentForm currency={currency} /></div>
-      </div>
-
-      <div className="dashboard-summary">
-        <div className="summary-stat"><span>Students</span><strong>{rows.length}</strong></div>
-        <div className="summary-stat"><span>With login</span><strong>{rows.filter((r) => r.profile_id).length}</strong></div>
-        <div className="summary-stat"><span>Lessons recorded</span><strong>{totalLessons}</strong></div>
-      </div>
+      <PageHeader
+        eyebrow="Teacher"
+        title="Your students"
+        figures={[
+          { label: 'Students', value: rows.length },
+          { label: 'With login', value: rows.filter((r) => r.profile_id).length },
+          { label: 'Lessons recorded', value: totalLessons },
+        ]}
+        actions={<AddStudentForm currency={currency} />}
+      />
 
       {lowStudents.length > 0 && (
         <div className="warn-box" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>

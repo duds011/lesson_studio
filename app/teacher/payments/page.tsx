@@ -42,21 +42,7 @@ export default async function PaymentsPage() {
   const credits: Record<string, Credit> = {}
   for (const s of studentOptions) credits[s.id] = creditMap.get(s.id) ?? { purchased: 0, used: 0, remaining: 0, low: true }
 
-  return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <header className="k-thead">
-        <div>
-          <span className="k-phead-eyebrow">Teacher</span>
-          <h1>Payments</h1>
-          <p>All student payments in one place — track revenue, lesson packages, and who&rsquo;s running low.</p>
-        </div>
-        <div className="k-hero-art" style={{ right: -30, opacity: .45 }} aria-hidden>
-          <span className="k-orb" style={{ width: 84, height: 84, right: 18, top: 12 }} />
-          <span className="k-tube" style={{ width: 62, height: 62, right: 92, top: 82, transform: 'rotate(38deg)' }} />
-        </div>
-      </header>
-
-      <PaymentsManager students={studentOptions} credits={credits} payments={managed} currency={currency} />
-    </div>
-  )
+  // No header here: PaymentsManager renders it, because the figures set in the
+  // band are the totals it already computes from these rows.
+  return <PaymentsManager students={studentOptions} credits={credits} payments={managed} currency={currency} />
 }

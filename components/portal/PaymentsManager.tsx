@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { addPayment, updatePayment, deletePayment, markPaymentPaid, updateTeacherCurrency, PaymentInput } from '@/app/actions/payments'
 import { formatMoney, currencySymbol, CURRENCIES } from '@/lib/currency'
+import PageHeader from '@/components/PageHeader'
 
 export interface StudentOption { id: string; fullName: string }
 export interface Credit { purchased: number; used: number; remaining: number; low: boolean }
@@ -93,24 +94,31 @@ export default function PaymentsManager({
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
-      {/* Summary */}
-      <div className="k-pay-stats">
-        <div className="k-stat yellow">
-          <div className="k-stat-head"><span>This month</span></div>
-          <div className="k-stat-val"><b>{formatMoney(thisMonth, currency)}</b></div>
-          <p className="k-stat-sub">received since the 1st</p>
-        </div>
-        <div className="k-stat blue">
-          <div className="k-stat-head"><span>Received all-time</span></div>
-          <div className="k-stat-val"><b>{formatMoney(totalReceived, currency)}</b></div>
-          <p className="k-stat-sub">across every student</p>
-        </div>
-        <div className="k-stat purple">
-          <div className="k-stat-head"><span>Outstanding</span></div>
-          <div className="k-stat-val"><b>{formatMoney(totalOutstanding, currency)}</b></div>
-          <p className="k-stat-sub">{totalOutstanding > 0 ? 'still to collect' : 'nothing owed — nice'}</p>
-        </div>
-      </div>
+      {/* The page header lives here, because the numbers set in it are computed
+          here — and the currency picker and Add button ride along with them. */}
+      <PageHeader
+        eyebrow="Teacher"
+        title="Payments"
+        figures={[
+          { label: 'This month', value: formatMoney(thisMonth, currency) },
+          { label: 'Received all-time', value: formatMoney(totalReceived, currency) },
+          { label: 'Outstanding', value: formatMoney(totalOutstanding, currency) },
+        ]}
+        actions={
+          <>
+            <select
+              aria-label="Currency"
+              className="k-thead-select"
+              value={currency}
+              disabled={pending}
+              onChange={(e) => startTransition(async () => { await updateTeacherCurrency(e.target.value); router.refresh() })}
+            >
+              {CURRENCIES.map(c => <option key={c} value={c}>{c} ({currencySymbol(c)})</option>)}
+            </select>
+            <button className="btn btn-primary" onClick={() => openAdd()}>+ Add payment</button>
+          </>
+        }
+      />
 
       {/* Revenue chart */}
       {hasRevenue && (
@@ -118,7 +126,7 @@ export default function PaymentsManager({
           <p className="analytics-label" style={{ marginBottom: 12 }}>💰 Revenue — last 12 months</p>
           <ResponsiveContainer width="100%" height={170}>
             <BarChart data={buckets} margin={{ top: 4, right: 4, left: -18, bottom: 0 }} barSize={20}>
-              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#234f3c" /><stop offset="100%" stopColor="#3fbfa0" stopOpacity={0.75} /></linearGradient></defs>
+              <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0a61c9" /><stop offset="100%" stopColor="#749dc8" stopOpacity={0.75} /></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={44} tickFormatter={(v) => `${currencySymbol(currency)}${v}`} />
@@ -129,17 +137,8 @@ export default function PaymentsManager({
         </div>
       )}
 
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <h2 className="section-heading" style={{ margin: 0 }}>Students</h2>
-        <label style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-          Currency
-          <select value={currency} disabled={pending} onChange={(e) => startTransition(async () => { await updateTeacherCurrency(e.target.value); router.refresh() })} style={{ ...inputStyle, width: 'auto', padding: '6px 8px' }}>
-            {CURRENCIES.map(c => <option key={c} value={c}>{c} ({currencySymbol(c)})</option>)}
-          </select>
-        </label>
-        <button className="btn btn-primary btn-sm" onClick={() => openAdd()}>+ Add payment</button>
-      </div>
+      {/* Currency and Add payment moved into the header — this is just a label. */}
+      <h2 className="section-heading" style={{ margin: 0 }}>Students</h2>
 
       {/* Per-student table */}
       <div className="k-table">
