@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { FormattedContent } from './RecapView'
 import LessonExercises from './LessonExercises'
+import LessonCorrections from './LessonCorrections'
 import { VocabLevelChart } from './portal/BrandCharts'
 import CountUp from './portal/CountUp'
 import {
@@ -32,8 +33,12 @@ export default function LessonPageTabs({
   const teacherTalk = 100 - studentTalk
 
   const allSections: any[] = r.sections || []
-  const corrections = allSections.find((s) => /main corrections|refinement|takeaway/i.test(s.title))
+  // Recaps built before corrections were structured carry them as a free-text
+  // section instead. Both shapes render, so published lessons keep working.
+  const legacyCorrections = allSections.find((s) => /main corrections|refinement|takeaway/i.test(s.title))
   const lessonSections = allSections.filter((s) => !/main corrections|refinement|takeaway/i.test(s.title))
+  const corrections: any[] = Array.isArray(r.corrections) ? r.corrections : []
+  const didWell: any[] = Array.isArray(r.did_well) ? r.did_well : []
 
   const dist: Record<string, number> = r.vocab_level_distribution || {}
 
@@ -94,11 +99,19 @@ export default function LessonPageTabs({
           </div>
         )
       case 'corrections':
-        if (!corrections) return null
+        if (corrections.length > 0 || didWell.length > 0) {
+          return (
+            <div className="corrections-card">
+              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">Corrections</span></div>
+              <LessonCorrections corrections={corrections} didWell={didWell} who={studentFirst} />
+            </div>
+          )
+        }
+        if (!legacyCorrections) return null
         return (
           <div className="corrections-card">
-            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{corrections.title.replace(/^\d+\.\s*/, '')}</span></div>
-            <FormattedContent content={corrections.content} />
+            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{legacyCorrections.title.replace(/^\d+\.\s*/, '')}</span></div>
+            <FormattedContent content={legacyCorrections.content} />
           </div>
         )
       case 'sections':

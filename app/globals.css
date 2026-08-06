@@ -194,3 +194,24 @@ th.is-today .notes-day{color:var(--brand)}
 .notes-cell:hover .notes-plus{opacity:.5}
 .notes-entry{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fafbf9}
 .notes-entry[data-pinned]{border-color:#ead7a5;background:var(--amber-soft)}
+/* corrections — what the student said, and what it should have been */
+.cx-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.cx-tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.cx-tab:hover{border-color:var(--line-strong,#d5d8d2);color:var(--ink)}
+.cx-tab.sel{border-color:var(--ink);color:var(--ink);background:var(--surface)}
+.cx-count{background:var(--surface-2);border-radius:999px;padding:1px 7px;font-size:11px;font-weight:800}
+.cx-tab.sel .cx-count{background:var(--brand-soft);color:var(--brand)}
+.cx-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.cx-card{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--surface)}
+.cx-label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px}
+.cx-line{margin:0 0 14px;font-size:14px;line-height:1.55;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.cx-fix{font-weight:600}
+/* Both selectors below must out-rank `.cx-card mark`, which kills the browser's
+   default mark styling — a bare `.cx-was` loses to it and only its padding lands. */
+.cx-card mark{background:transparent;color:inherit}
+.cx-card mark.cx-was{background:#fdf3cf;border-radius:3px;padding:0 2px}
+.cx-card mark.cx-now{text-decoration:underline;text-underline-offset:3px;font-weight:800}
+.cx-why strong{display:block;font-size:13px;margin-bottom:5px}
+.cx-why p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.55}
+.cx-card:last-child .cx-line:last-of-type{margin-bottom:0}
+.cx-good .cx-line{border-bottom-color:var(--green-soft)}

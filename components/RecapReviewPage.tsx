@@ -43,6 +43,11 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   )
   const [note, setNote] = useState<string>(r.teacher_note || '')
   const [homework, setHomework] = useState<string[]>(((r.homework || []) as any[]).map((h) => h?.description || '').filter(Boolean))
+  // Corrections are quotes the model pulled from the transcript, so they are
+  // the most likely thing to be wrong. The teacher can drop any of them; there
+  // is nothing to edit beyond that, because a rewritten "quote" is not a quote.
+  const [corrections, setCorrections] = useState<any[]>(Array.isArray(r.corrections) ? r.corrections : [])
+  const [didWell, setDidWell] = useState<any[]>(Array.isArray(r.did_well) ? r.did_well : [])
   const [busy, setBusy] = useState<'' | 'save' | 'publish' | 'delete'>('')
   const [rebuilding, setRebuilding] = useState(false)
   const [msg, setMsg] = useState('')
@@ -53,7 +58,10 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const setSection = (i: number, patch: Partial<Section>) => setSections(sections.map((s, j) => (j === i ? { ...s, ...patch } : s)))
   const cleanSections = () => sections.map((s) => ({ title: s.title.trim(), content: s.content.trim() })).filter((s) => s.title || s.content)
   const cleanHomework = () => homework.filter((d) => d.trim()).map((d) => ({ description: d.trim() }))
-  const payload = () => ({ eventId: rec.eventId, recap: body, sections: cleanSections(), teacher_note: note, homework: cleanHomework() })
+  const payload = () => ({
+    eventId: rec.eventId, recap: body, sections: cleanSections(), teacher_note: note,
+    homework: cleanHomework(), corrections, did_well: didWell,
+  })
 
   async function save() {
     setBusy('save'); setMsg('')
@@ -160,6 +168,52 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 8px' }}>A short overview {first} sees first. Keep it to a couple of sentences.</p>
               <AutoTextarea value={body} onChange={setBody} placeholder="Short lesson summary…" minRows={3} />
             </section>
+
+            {(corrections.length > 0 || didWell.length > 0) && (
+              <section className="block">
+                <h4>Corrections</h4>
+                <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 12px' }}>
+                  Quoted from the recording. Remove anything the model got wrong — {first} sees exactly what is left.
+                </p>
+
+                <div className="cx-grid">
+                  {corrections.map((c, i) => (
+                    <div className="cx-card" key={`c${i}`}>
+                      <span className="cx-label">{first} said</span>
+                      <p className="cx-line">…{c.said}</p>
+                      <span className="cx-label">Correction</span>
+                      <p className="cx-line cx-fix">{c.correction}</p>
+                      <div className="cx-why">
+                        {Array.isArray(c.categories) && c.categories.length > 0 && <strong>{c.categories.join(', ')}</strong>}
+                        {c.explanation && <p>{c.explanation}</p>}
+                      </div>
+                      <button
+                        className="btn btn-danger-ghost btn-sm"
+                        style={{ marginTop: 10 }}
+                        onClick={() => setCorrections(corrections.filter((_, j) => j !== i))}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+
+                  {didWell.map((s, i) => (
+                    <div className="cx-card cx-good" key={`w${i}`}>
+                      <span className="cx-label">{first} said · did well</span>
+                      <p className="cx-line">…{s.said}</p>
+                      <div className="cx-why"><p>{s.note}</p></div>
+                      <button
+                        className="btn btn-danger-ghost btn-sm"
+                        style={{ marginTop: 10 }}
+                        onClick={() => setDidWell(didWell.filter((_, j) => j !== i))}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {cleanSections().length > 0 && (
               <section className="block">

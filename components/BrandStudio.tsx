@@ -105,6 +105,13 @@ const SAMPLE_RECAP = {
     { title: 'What you worked on', body: 'Contrasting two ideas in one sentence, and softening a disagreement.' },
     { title: 'Main corrections', body: 'けど joins two clauses — it does not start one.' },
   ],
+  corrections: [
+    { said: 'I go to go to Vancouver', correction: 'I have to go to Vancouver', categories: ['Verb form'], explanation: 'Replaced the repeated verb with "have to", which states necessity.' },
+    { said: 'I am meeting up airport', correction: "I'm meeting up at the airport", categories: ['Preposition'], explanation: 'Added "at the" to mark the place, keeping the casual "meeting up".' },
+  ],
+  did_well: [
+    { said: 'I have never been abroad before', note: 'Present perfect used correctly for life experience.' },
+  ],
   homework: 'Write five sentences contrasting something you like with something you do not.',
   teacher_note: 'Much more confident this week — you corrected yourself twice without help.',
   vocabulary: [

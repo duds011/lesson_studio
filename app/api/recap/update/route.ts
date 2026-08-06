@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRecaps, saveRecap } from '@/lib/store'
+import { cleanCorrections, cleanStrengths } from '@/lib/openai'
 
 export const dynamic = 'force-dynamic'
 
 // Teacher edits a draft recap before approving: the recap body, any section,
-// homework, and the teacher's note. Every field is optional — only supplied
-// keys are overwritten.
+// homework, the teacher's note, and which corrections survive review. Every
+// field is optional — only supplied keys are overwritten.
 export async function POST(req: NextRequest) {
-  const { eventId, recap: body, sections, teacher_note, homework } = await req.json()
+  const { eventId, recap: body, sections, teacher_note, homework, corrections, did_well } = await req.json()
   if (!eventId) return NextResponse.json({ ok: false, error: 'Missing eventId' }, { status: 400 })
 
   const all = await getRecaps()
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
       .filter((s: any) => s.title || s.content)
   }
   if (typeof teacher_note === 'string') recap.teacher_note = teacher_note
+  // Same validation the generator runs, so a hand-edited list cannot put a
+  // half-empty card in front of the student.
+  if (Array.isArray(corrections)) recap.corrections = cleanCorrections(corrections)
+  if (Array.isArray(did_well)) recap.did_well = cleanStrengths(did_well)
   if (Array.isArray(homework)) {
     recap.homework = homework
       .map((h: any) => ({ description: String(h?.description ?? '').trim() }))

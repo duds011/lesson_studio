@@ -17,6 +17,31 @@ export type VocabItem = {
 export type Exercise = { type: string; prompt: string; data: any }
 export type Section = { title: string; content: string }
 
+/**
+ * One thing the student got wrong, quoted back to them.
+ *
+ * `said` is verbatim from the transcript — that is the whole point. A recap
+ * that paraphrases the mistake is a recap the student cannot recognise as
+ * their own, and the transcript is word-accurate, so there is no reason to.
+ */
+export type Correction = {
+  said: string
+  correction: string
+  /** 1-2 labels naming the kind of error, from CORRECTION_CATEGORIES. */
+  categories: string[]
+  explanation: string
+}
+
+/** The counterweight: something they genuinely got right, quoted the same way. */
+export type Strength = { said: string; note: string }
+
+/** A closed list, so the labels stay comparable across lessons and languages. */
+export const CORRECTION_CATEGORIES = [
+  'Verb form', 'Verb tense', 'Word order', 'Preposition', 'Article', 'Agreement',
+  'Pronoun', 'Plural', 'Negation', 'Question form', 'Word choice', 'Register',
+  'Particle', 'Conjugation', 'Spelling', 'Pronunciation',
+] as const
+
 export type Recap = {
   lesson_title: string
   recap: string
@@ -32,7 +57,31 @@ export type Recap = {
   homework: { description: string }[]
   exercises: Exercise[]
   sections: Section[]
+  corrections: Correction[]
+  did_well: Strength[]
 }
+
+/**
+ * The corrections half of both prompts.
+ *
+ * This used to be a free-text section ("Main Corrections & Refinements") of
+ * bullet points, which read as advice about the language rather than about the
+ * student. Quoting them verbatim and naming the error type is the same
+ * information, but it is *theirs* — and it only works because the transcript
+ * is word-accurate with the speakers already separated.
+ */
+const CORRECTIONS_RULES = `CORRECTIONS — for the "corrections" array:
+The mistakes the STUDENT actually made that are worth fixing. 4-8 items, most useful first.
+- "said": the student's own words, quoted VERBATIM from the transcript — a short fragment (max ~12 words) containing the mistake. Copy it exactly as it appears. NEVER paraphrase it, NEVER clean it up, NEVER invent it, and NEVER quote the teacher.
+- "correction": that same fragment written correctly, changing as little as possible. Keep their wording and register everywhere it was already fine.
+- "categories": 1-2 labels naming the kind of error, taken from EXACTLY this list: Verb form, Verb tense, Word order, Preposition, Article, Agreement, Pronoun, Plural, Negation, Question form, Word choice, Register, Particle, Conjugation, Spelling, Pronunciation.
+- "explanation": ONE sentence, max 25 words, saying what changed and why.
+If the student made no real mistakes, return an empty array. Never invent a mistake to fill the list, and never correct something they said correctly.
+
+DID WELL — for the "did_well" array:
+1-3 things the student genuinely got RIGHT, quoted the same way. This is not flattery — only include something if the transcript shows them handling it well.
+- "said": verbatim quote of the student doing it.
+- "note": ONE sentence, max 25 words, naming what was good about it.`
 
 const PROMPT = `Analyze this Japanese lesson transcript and return ONLY valid JSON.
 
@@ -75,7 +124,9 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocabulary": [{"word": "[Japanese]", "reading": "[romaji]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[N5/N4/N3/N2/N1]", "example_sentence": "[Japanese sentence]"}],
   "homework": [{"description": "[task]"}],
   "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
-  "sections": [{"title": "1. Japanese: English Title", "content": "[see SECTION FORMAT]"}]
+  "sections": [{"title": "1. Japanese: English Title", "content": "[see SECTION FORMAT]"}],
+  "corrections": [{"said": "[verbatim student quote]", "correction": "[fixed]", "categories": ["[label]"], "explanation": "[one sentence]"}],
+  "did_well": [{"said": "[verbatim student quote]", "note": "[one sentence]"}]
 }
 
 SCORING:
@@ -108,9 +159,8 @@ SECTION FORMAT — one section per DISTINCT grammar point/topic. Include ALL of 
 - Tips: Natural note: text OR Important: text
 - NO sub-headers. SHORT sentences only.
 
-LAST SECTION — REQUIRED — titled exactly "Main Corrections & Refinements":
-8-10 bullet points only. Each bullet: **hiragana word or pattern** / romaji: one short English sentence (max 12 words).
-All Japanese in hiragana only. NEVER use kanji.
+{{CORRECTIONS_RULES}}
+All Japanese in the corrections must be in hiragana/katakana only — NEVER kanji — so it matches the rest of the recap.
 
 AUDIO SCRIPT — for the "audio_script" field:
 Write based on the recap. One paragraph per topic, no transitions between paragraphs.
@@ -410,7 +460,9 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocabulary": [{"word": "[{{LANGUAGE}}]", "reading": "[pronunciation guide]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[{{LANGUAGE}} sentence]"}],
   "homework": [{"description": "[task]"}],
   "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
-  "sections": [{"title": "1. {{LANGUAGE}} phrase: English Title", "content": "[see SECTION FORMAT]"}]
+  "sections": [{"title": "1. {{LANGUAGE}} phrase: English Title", "content": "[see SECTION FORMAT]"}],
+  "corrections": [{"said": "[verbatim student quote]", "correction": "[fixed]", "categories": ["[label]"], "explanation": "[one sentence]"}],
+  "did_well": [{"said": "[verbatim student quote]", "note": "[one sentence]"}]
 }
 
 SCORING:
@@ -443,9 +495,7 @@ SECTION FORMAT — one section per DISTINCT grammar point/topic. Include ALL of 
 - Tips: Natural note: text OR Important: text
 - NO sub-headers. SHORT sentences only.
 
-LAST SECTION — REQUIRED — titled exactly "Main Corrections & Refinements":
-8-10 bullet points only. Each bullet: **word or pattern in {{LANGUAGE}}** / pronunciation: one short English sentence (max 12 words).
-Base these on mistakes the student actually made and the teacher actually corrected in this transcript.
+{{CORRECTIONS_RULES}}
 
 AUDIO SCRIPT — for the "audio_script" field:
 Write based on the recap. One paragraph per topic, no transitions between paragraphs.
@@ -474,7 +524,7 @@ Anchor: A1: greetings, numbers, everyday nouns, basic present tense | A2: past t
 4. Only assign C1 or C2 if absent from a standard B2-level textbook.
 
 IF THIS TRANSCRIPT IS NOT A LESSON:
-Say so plainly. Set score to 0, leave vocabulary, sections, homework and exercises empty, and use "recap" to state in one sentence what the recording actually contains. Never invent teaching that did not happen.
+Say so plainly. Set score to 0, leave vocabulary, sections, homework, exercises, corrections and did_well empty, and use "recap" to state in one sentence what the recording actually contains. Never invent teaching that did not happen.
 
 Transcript:
 {{TRANSCRIPT}}`
@@ -492,6 +542,7 @@ export async function generateRecap(opts: {
   // Absent language keeps the existing behaviour, so the bot path is untouched.
   const isJapanese = !lang || /^(ja|jp|japanese|日本語)$/i.test(lang)
   const content = (isJapanese ? PROMPT : GENERIC_PROMPT.replace(/\{\{LANGUAGE\}\}/g, lang))
+    .replace('{{CORRECTIONS_RULES}}', CORRECTIONS_RULES)
     .replace('{{STUDENT}}', opts.studentName)
     .replace('{{TRANSCRIPT}}', opts.transcript)
 
@@ -507,5 +558,50 @@ export async function generateRecap(opts: {
   })
   if (!res.ok) throw new Error(`OpenAI failed (${res.status}): ${await res.text()}`)
   const j = await res.json()
-  return JSON.parse(j.choices[0].message.content) as Recap
+  const recap = JSON.parse(j.choices[0].message.content) as Recap
+  recap.corrections = cleanCorrections((recap as any).corrections)
+  recap.did_well = cleanStrengths((recap as any).did_well)
+  return recap
+}
+
+/**
+ * Keep only corrections that are actually usable.
+ *
+ * A correction whose quote equals its fix teaches nothing, and one missing
+ * either half renders as a blank card — both are worse than one fewer item.
+ */
+export function cleanCorrections(raw: unknown): Correction[] {
+  if (!Array.isArray(raw)) return []
+  const allowed = new Set<string>(CORRECTION_CATEGORIES as readonly string[])
+  const out: Correction[] = []
+  for (const c of raw) {
+    if (!c || typeof c !== 'object') continue
+    const said = String((c as any).said ?? '').trim()
+    const correction = String((c as any).correction ?? '').trim()
+    if (!said || !correction || said === correction) continue
+    const categories = (Array.isArray((c as any).categories) ? (c as any).categories : [])
+      .map((x: unknown) => String(x ?? '').trim())
+      .filter((x: string) => allowed.has(x))
+      .slice(0, 2)
+    out.push({
+      said,
+      correction,
+      categories,
+      explanation: String((c as any).explanation ?? '').trim(),
+    })
+  }
+  return out.slice(0, 12)
+}
+
+export function cleanStrengths(raw: unknown): Strength[] {
+  if (!Array.isArray(raw)) return []
+  const out: Strength[] = []
+  for (const s of raw) {
+    if (!s || typeof s !== 'object') continue
+    const said = String((s as any).said ?? '').trim()
+    const note = String((s as any).note ?? '').trim()
+    if (!said || !note) continue
+    out.push({ said, note })
+  }
+  return out.slice(0, 6)
 }
