@@ -137,9 +137,17 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
             <span className="k-sec-icon p" aria-hidden>🕒</span>
             <div>
               <h3>Availability</h3>
-              <p className="desc">When students can book you. Times are {config.tz.replace('_', ' ')}.</p>
+              <p className="desc">
+                When students can book you. Times are {config.tz.replace('_', ' ')}. What you set here is exactly
+                what the booking page offers them.
+              </p>
             </div>
-            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto', flex: '0 0 auto' }} onClick={copyMondayToWeekdays} title="Copy Monday's hours to Tue–Fri">Copy Mon → weekdays</button>
+            {/* The booking page is the result of this panel, so its preview
+                belongs here rather than as its own item in the sidebar. */}
+            <div style={{ marginLeft: 'auto', flex: '0 0 auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn btn-ghost btn-sm" onClick={copyMondayToWeekdays} title="Copy Monday's hours to Tue–Fri">Copy Mon → weekdays</button>
+              <a className="btn btn-primary btn-sm" href="/book" target="_blank" rel="noreferrer">Preview booking page ↗</a>
+            </div>
           </div>
 
           <div className="k-week">

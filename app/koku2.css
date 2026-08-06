@@ -109,15 +109,6 @@
 .k-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);border-radius:999px;padding:4px;margin-bottom:16px}
 .k-seg button{border:0;background:transparent;border-radius:999px;padding:9px;font-weight:700;font-size:12px;color:var(--muted);cursor:pointer;transition:.16s ease}
 .k-seg button.on{background:var(--forest);color:#fff}
-.k-cal-month{font-size:24px;font-weight:700;letter-spacing:-.035em;margin:0 0 16px}
-.k-cal-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
-.k-cal-dow{font-size:10px;font-weight:700;color:var(--muted);padding-bottom:8px}
-.k-cal-day{aspect-ratio:1;display:grid;place-items:center;font-size:12.5px;font-weight:600;border-radius:50%;position:relative}
-.k-cal-day.dim{color:#b9c0bb}
-.k-cal-day.on{background:var(--forest);color:#fff;font-weight:800}
-.k-cal-day.has::after{content:"";position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--c-yellow)}
-.k-cal-day.on.has::after{background:#fff}
-.k-cal-band{background:var(--brand-soft);border-radius:14px;padding:4px;margin-top:6px}
 
 .k-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .k-card-head h3{font-size:14.5px;font-weight:700;letter-spacing:-.02em;margin:0}
@@ -755,7 +746,6 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 .k-fit .k-preview-lessons{gap:.5em;margin-top:.65em}
 .k-fit .k-preview-lessons>div{font-size:.88em;gap:.7em}
 .k-fit .k-preview-lessons i{width:2em;height:2em;border-radius:.65em}
-.k-fit .k-preview-cal{gap:.22em;margin-top:.6em}
 .k-fit .k-chart-card .recharts-wrapper{margin-top:.5em}
 /* the real portal's own blocks */
 .k-fit .k-card{padding:1.15em 1.25em}
@@ -782,8 +772,6 @@ html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 .k-fit .metric{padding:.75em .8em}
 .k-fit .metric .mv{font-size:1.4em}
 .k-fit .metric .mk,.k-fit .metric .mn{font-size:.72em}
-.k-preview-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
-.k-preview-cal i{aspect-ratio:1;border-radius:50%;background:var(--surface-2);display:block}
 
 /* studio: controls + live preview */
 /* The student view is the subject of this page: it takes the stage, and the

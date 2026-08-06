@@ -66,7 +66,6 @@ const TOGGLES: { id: BlockId; hint: string }[] = [
   { id: 'hero', hint: 'The headline panel at the top' },
   { id: 'stats', hint: 'Lessons, average score, speaking share' },
   { id: 'lessons', hint: 'The rolling list of their lessons' },
-  { id: 'calendar', hint: 'The month, with lesson days marked' },
   { id: 'milestone', hint: 'Progress toward their next level' },
   { id: 'scores', hint: 'The last few lesson scores' },
   { id: 'progress', hint: 'Score, talk-time and vocabulary trends' },
@@ -495,17 +494,6 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           <div className="k-preview-card k-chart-card">
             <div className="k-preview-row"><strong {...editable('label:vocabTitle', { max: 40 })}>{pin('label:vocabTitle')}</strong><span>45 words</span></div>
             <VocabLevelChart distribution={SAMPLE_VOCAB} height={chartH(h, 72)} compact />
-          </div>
-        )
-      case 'calendar':
-        return (
-          <div className="k-preview-card">
-            <div className="k-preview-row"><strong {...editable('label:calendarTitle', { max: 40 })}>{pin('label:calendarTitle')}</strong><span>22</span></div>
-            <div className="k-preview-cal" aria-hidden>
-              {Array.from({ length: 14 }).map((_, i) => (
-                <i key={i} style={i === 4 ? { background: brand.accent } : undefined} />
-              ))}
-            </div>
           </div>
         )
       case 'milestone': {

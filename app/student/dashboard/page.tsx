@@ -11,7 +11,6 @@ import CountUp from '@/components/portal/CountUp'
 import LessonPillar, { PillarLesson } from '@/components/portal/LessonPillar'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
 import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
-import CalendarCard from '@/components/koku/CalendarCard'
 import DashboardTabs from '@/components/portal/DashboardTabs'
 import { DASH_BLOCK_TAB, DASH_TABS, levelProgress, resolveBrand, type BlockId, type DashTab } from '@/lib/brand'
 
@@ -281,11 +280,6 @@ export default async function StudentDashboard() {
           )}
       </>
     ),
-    calendar: (
-      <>
-          <CalendarCard lessonDates={rows.map((l) => l.lesson_date).filter(Boolean)} />
-      </>
-    ),
     milestone: (
       <>
           {brand.showMilestone && <div className="k-card">
@@ -380,7 +374,6 @@ export default async function StudentDashboard() {
     lessons: brand.showLessons,
     progress: brand.showProgress && lessonCount >= 2,
     vocab: brand.showVocab && totalVocab > 0,
-    calendar: brand.showCalendar,
     milestone: brand.showMilestone,
     scores: brand.showScores && scoreTrend.length > 0,
     tests: brand.showTests && (tests ?? []).length > 0,

@@ -18,7 +18,7 @@ export type PropStyle = 'orbs' | 'geometric' | 'minimal' | 'none'
 /** Blocks a teacher can arrange on the student dashboard. */
 export const DASHBOARD_BLOCKS = [
   'hero', 'stats', 'lessons', 'progress', 'vocab',
-  'calendar', 'milestone', 'scores', 'tests', 'speaking',
+  'milestone', 'scores', 'tests', 'speaking',
 ] as const
 export type BlockId = (typeof DASHBOARD_BLOCKS)[number]
 
@@ -28,7 +28,6 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   lessons: 'Lesson cards',
   progress: 'Progress charts',
   vocab: 'Vocabulary',
-  calendar: 'Calendar',
   milestone: 'Milestone',
   scores: 'Recent scores',
   tests: 'Practice tests',
@@ -40,7 +39,7 @@ export const DASH_TABS = ['Overview', 'Lessons', 'Progress'] as const
 export type DashTab = (typeof DASH_TABS)[number]
 
 export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
-  hero: 'Overview', stats: 'Overview', calendar: 'Overview', milestone: 'Overview',
+  hero: 'Overview', stats: 'Overview', milestone: 'Overview',
   lessons: 'Lessons', scores: 'Lessons', tests: 'Lessons',
   progress: 'Progress', vocab: 'Progress', speaking: 'Progress',
 }
@@ -50,7 +49,6 @@ export const BLOCK_TOGGLE: Record<BlockId, keyof Brand> = {
   hero: 'showHero',
   stats: 'showStats',
   lessons: 'showLessons',
-  calendar: 'showCalendar',
   milestone: 'showMilestone',
   scores: 'showScores',
   progress: 'showProgress',
@@ -80,7 +78,6 @@ export const TEXT_SLOTS = {
   scoresTitle: 'Recent scores',
   testsTitle: 'Practice tests',
   speakingTitle: 'Speaking habits',
-  calendarTitle: 'Calendar',
 } as const
 export type TextSlot = keyof typeof TEXT_SLOTS
 export const TEXT_SLOT_IDS = Object.keys(TEXT_SLOTS) as TextSlot[]
@@ -92,7 +89,6 @@ export const BLOCK_TEXT_SLOTS: Partial<Record<BlockId, TextSlot[]>> = {
   lessons: ['lessonsTitle'],
   progress: ['progressTitle'],
   vocab: ['vocabTitle'],
-  calendar: ['calendarTitle'],
   milestone: ['milestoneTitle'],
   scores: ['scoresTitle'],
   tests: ['testsTitle'],
@@ -227,7 +223,6 @@ export type Brand = {
   showHero: boolean
   showStats: boolean
   showLessons: boolean
-  showCalendar: boolean
   showScores: boolean
   showMilestone: boolean
   showProgress: boolean
@@ -238,7 +233,7 @@ export type Brand = {
 
 /** Wide block beside a narrow one — the two-column look, without columns. */
 const DEFAULT_LAYOUT: Layout = [
-  { id: 'hero', w: 8 }, { id: 'calendar', w: 4 },
+  { id: 'hero', w: 12 },
   { id: 'stats', w: 8 }, { id: 'milestone', w: 4 },
   { id: 'lessons', w: 8 }, { id: 'scores', w: 4 },
   { id: 'progress', w: 8 }, { id: 'tests', w: 4 },
@@ -271,7 +266,6 @@ export const DEFAULT_BRAND: Brand = {
   showHero: true,
   showStats: true,
   showLessons: true,
-  showCalendar: true,
   showScores: true,
   showMilestone: true,
   showProgress: true,
@@ -314,7 +308,7 @@ export const PRESETS: Preset[] = [
         { id: 'hero', w: 12 },
         { id: 'lessons', w: 8 }, { id: 'milestone', w: 4 },
         { id: 'vocab', w: 6 }, { id: 'speaking', w: 6 },
-        { id: 'calendar', w: 6 }, { id: 'tests', w: 6 },
+        { id: 'tests', w: 12 },
       ],
       lessonLayout: [
         { id: 'score', w: 3 }, { id: 'balance', w: 5 }, { id: 'grammar', w: 4 },
@@ -334,7 +328,7 @@ export const PRESETS: Preset[] = [
       layout: [
         { id: 'hero', w: 12 },
         { id: 'stats', w: 12 },
-        { id: 'lessons', w: 7 }, { id: 'calendar', w: 5 },
+        { id: 'lessons', w: 12 },
         { id: 'milestone', w: 4 }, { id: 'scores', w: 4 }, { id: 'speaking', w: 4 },
         { id: 'progress', w: 8 }, { id: 'tests', w: 4 },
         { id: 'vocab', w: 12 },
@@ -354,7 +348,7 @@ export const PRESETS: Preset[] = [
         { id: 'stats', w: 8 }, { id: 'milestone', w: 4 },
         { id: 'progress', w: 12 },
         { id: 'vocab', w: 6 }, { id: 'scores', w: 6 },
-        { id: 'calendar', w: 6 }, { id: 'tests', w: 3 }, { id: 'speaking', w: 3 },
+        { id: 'tests', w: 6 }, { id: 'speaking', w: 6 },
       ],
       lessonLayout: [
         { id: 'score', w: 4 }, { id: 'balance', w: 8 },
@@ -375,7 +369,7 @@ export const PRESETS: Preset[] = [
         { id: 'hero', w: 8 }, { id: 'milestone', w: 4 },
         { id: 'stats', w: 12 },
         { id: 'scores', w: 4 }, { id: 'speaking', w: 4 }, { id: 'tests', w: 4 },
-        { id: 'lessons', w: 7 }, { id: 'calendar', w: 5 },
+        { id: 'lessons', w: 12 },
         { id: 'progress', w: 6 }, { id: 'vocab', w: 6 },
       ],
       lessonLayout: DEFAULT_LESSON_LAYOUT,
@@ -390,7 +384,7 @@ export const PRESETS: Preset[] = [
       layout: [
         { id: 'hero', w: 12 }, { id: 'stats', w: 12 }, { id: 'lessons', w: 12 },
         { id: 'progress', w: 12 }, { id: 'scores', w: 6 }, { id: 'milestone', w: 6 },
-        { id: 'vocab', w: 12 }, { id: 'calendar', w: 6 }, { id: 'tests', w: 3 }, { id: 'speaking', w: 3 },
+        { id: 'vocab', w: 12 }, { id: 'tests', w: 6 }, { id: 'speaking', w: 6 },
       ],
       lessonLayout: DEFAULT_LESSON_LAYOUT,
     },
@@ -450,7 +444,6 @@ export function resolveBrand(raw: unknown): Brand {
     showHero: bool(b.showHero, DEFAULT_BRAND.showHero),
     showStats: bool(b.showStats, DEFAULT_BRAND.showStats),
     showLessons: bool(b.showLessons, DEFAULT_BRAND.showLessons),
-    showCalendar: bool(b.showCalendar, DEFAULT_BRAND.showCalendar),
     showScores: bool(b.showScores, DEFAULT_BRAND.showScores),
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
