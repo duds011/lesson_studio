@@ -29,14 +29,13 @@ const ICONS = {
 
 const LINKS = [
   { href: '/student/dashboard', label: 'Dashboard', icon: ICONS.home },
-  { href: '/student/book', label: 'Book a lesson', icon: ICONS.book },
 ]
 
 /** Remembered per browser, and read off the root element so --rail (which the
  *  shell's grid column is built on) widens with it. */
 const RAIL_KEY = 'rail-expanded'
 
-export default function StudentRail({ mark }: { mark?: string }) {
+export default function StudentRail({ mark, name }: { mark?: string; name?: string }) {
   const pathname = usePathname()
   const [expanded, setExpanded] = useState(false)
 
@@ -58,7 +57,7 @@ export default function StudentRail({ mark }: { mark?: string }) {
   return (
     <aside className="k-rail">
       <div className="k-rail-top">
-        <div className="k-rail-mark" aria-hidden>
+        <div className="k-rail-mark" aria-hidden title={name}>
           {mark ? (
             <span style={{ fontSize: mark.length > 2 ? 13 : 16, fontWeight: 800, lineHeight: 1 }}>{mark}</span>
           ) : (
@@ -67,6 +66,8 @@ export default function StudentRail({ mark }: { mark?: string }) {
             </svg>
           )}
         </div>
+        {/* The teacher's name for this space — what the whole portal is called. */}
+        {name && <span className="k-rail-name">{name}</span>}
         <button
           type="button"
           className="k-rail-toggle"
@@ -94,10 +95,12 @@ export default function StudentRail({ mark }: { mark?: string }) {
 
       <div className="k-rail-spacer" />
 
-      <Link href="/logout" className="k-rail-link" title="Sign out" aria-label="Sign out">
+      {/* Plain <a>, never <Link>: Link prefetches its href on sight, and a
+          prefetch of /logout signs the student out seconds after login. */}
+      <a href="/logout" className="k-rail-link" title="Sign out" aria-label="Sign out">
         <I d="M15 17l5-5-5-5M20 12H9M12 4H5v16h7" />
         <span className="k-rail-label">Sign out</span>
-      </Link>
+      </a>
     </aside>
   )
 }

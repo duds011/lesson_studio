@@ -24,6 +24,10 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
 
   if (!student) notFound()
 
+  // The teaching language decides which kind of test the generator offers.
+  const { data: teacherProfile } = await supabase.from('profiles').select('teaching_language').eq('id', user.id).single()
+  const teachingLanguage = (teacherProfile as any)?.teaching_language || 'Japanese'
+
   // Teacher RLS returns all their students' lessons, including drafts.
   const { data: lessons } = await supabase
     .from('lessons')
@@ -140,13 +144,13 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, margin: '0 0 11px' }}>
           <h2 className="section-heading" style={{ margin: 0 }}>Practice tests</h2>
-          <GenerateTestButton studentId={student.id} lessons={testableLessons} />
+          <GenerateTestButton studentId={student.id} lessons={testableLessons} language={teachingLanguage} />
         </div>
         {(tests ?? []).length === 0 ? (
           <div className="empty" style={{ padding: 26 }}>
             <strong style={{ color: 'var(--ink)' }}>No tests yet</strong>
             <br />
-            Generate an N5-style practice test from any lesson recap. You review it before the student sees it.
+            Generate an exam-style practice test from any lesson recap. You review it before the student sees it.
           </div>
         ) : (
           <div>

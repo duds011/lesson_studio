@@ -49,6 +49,7 @@ const TOGGLES: { id: BlockId; hint: string }[] = [
   { id: 'vocab', hint: 'Words learned by level' },
   { id: 'tests', hint: 'Tests you publish to them' },
   { id: 'speaking', hint: 'Pace and thinking time' },
+  { id: 'files', hint: 'Every file you share, in one place' },
 ]
 
 /**
@@ -64,9 +65,9 @@ const SAMPLE: DashboardData = {
   latestTalk: 41,
   talkDelta: 8,
   pillarLessons: [
-    { id: 's3', number: 12, title: 'Contrasting ideas with けど', meta: '12th lesson · 2 Aug', score: 8.3, tag: 'Lesson 12' },
-    { id: 's2', number: 11, title: 'Ordering at a restaurant', meta: '11th lesson · 26 Jul', score: 7.8, tag: 'Lesson 11' },
-    { id: 's1', number: 10, title: 'Talking about last weekend', meta: '10th lesson · 19 Jul', score: 6.9, tag: 'Lesson 10' },
+    { id: 's3', number: 12, title: 'Contrasting ideas with けど', meta: '12th lesson · 2 Aug', score: 8.3, tag: 'Lesson 12', desc: 'Joining two ideas in one sentence, and softening a disagreement politely.' },
+    { id: 's2', number: 11, title: 'Ordering at a restaurant', meta: '11th lesson · 26 Jul', score: 7.8, tag: 'Lesson 11', desc: 'Asking for a table, ordering, and checking the bill without switching to English.' },
+    { id: 's1', number: 10, title: 'Talking about last weekend', meta: '10th lesson · 19 Jul', score: 6.9, tag: 'Lesson 10', desc: 'Past-tense practice: what you did, where you went, and how it was.' },
   ],
   progressLessons: [
     { lessonNumber: 12, score: 8.3, talkPct: 41, vocabCount: 14, wpm: 96, responseSec: 1.8 },
@@ -87,6 +88,10 @@ const SAMPLE: DashboardData = {
   ],
   avgWpm: 54,
   avgThinkSec: 2.4,
+  files: [
+    { id: 'f1', fileName: 'Restaurant phrases — cheat sheet.pdf', lessonId: 's2', lessonNumber: 11, date: '26 Jul' },
+    { id: 'f2', fileName: 'Weekend vocabulary.docx', lessonId: 's1', lessonNumber: 10, date: '19 Jul' },
+  ],
 }
 
 /** A stand-in recap, so the recap preview is the real LessonPageTabs too. */
@@ -321,7 +326,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </label>
 
           <span className="k-field-label">Tab names</span>
-          {(['tabOverview', 'tabLessons', 'tabProgress'] as TextSlot[]).map((slot) => (
+          {(['tabOverview', 'tabLessons', 'tabProgress', 'tabFiles', 'tabTests'] as TextSlot[]).map((slot) => (
             <label className="k-field" key={slot}>
               <span>{TEXT_SLOTS[slot]}</span>
               <input
@@ -508,7 +513,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                 <div className="k-dtabs">
                   {DASH_TABS.map((t) => (
                     <button key={t} type="button" className={dashTab === t ? 'on' : ''} onClick={() => setDashTab(t)}>
-                      {L[`tab${t}` as 'tabOverview' | 'tabLessons' | 'tabProgress']}
+                      {L[`tab${t}` as 'tabOverview' | 'tabLessons' | 'tabProgress' | 'tabFiles' | 'tabTests']}
                     </button>
                   ))}
                 </div>

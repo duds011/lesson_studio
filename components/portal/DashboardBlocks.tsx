@@ -42,6 +42,7 @@ export type DashboardData = {
   tests: { id: string; title: string; lessonNumber: number | null; date: string | null }[]
   avgWpm: number | null
   avgThinkSec: number | null
+  files: { id: string; fileName: string; lessonId: string; lessonNumber: number | null; date: string | null }[]
 }
 
 /** The studio's canvas is a picture of a page, not the page — nothing in it
@@ -69,10 +70,12 @@ function Go({ href, className, children, preview }: { href: string; className?: 
 export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
   { id: 'stats', w: 12 },
   { id: 'scores', w: 7 }, { id: 'milestone', w: 5 },
-  { id: 'lessons', w: 8 }, { id: 'tests', w: 4 },
+  { id: 'lessons', w: 12 },
   { id: 'vocab', w: 12 },
   { id: 'progress', w: 12 },
   { id: 'speaking', w: 12 },
+  { id: 'files', w: 12 },
+  { id: 'tests', w: 12 },
 ]
 
 /** Whether a block has anything to say for this student. */
@@ -86,6 +89,7 @@ export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): bo
     case 'scores': return brand.showScores && d.scoreTrend.length > 0
     case 'tests': return brand.showTests && d.tests.length > 0
     case 'speaking': return brand.showSpeaking && (d.avgWpm != null || d.avgThinkSec != null)
+    case 'files': return brand.showFiles && d.files.length > 0
     default: return false
   }
 }
@@ -199,18 +203,72 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
       )
 
     case 'speaking':
+      // Same colourful rectangles as the overview stats, so the page reads as
+      // one system rather than a card of small print at the bottom.
       return (
-        <div className="k-card">
-          <div className="k-card-head"><h3>{L.speakingTitle}</h3></div>
-          <div style={{ display: 'grid', gap: 11, flex: 1, alignContent: 'center' }}>
+        <>
+          <div className="k-sec-head"><h2>{L.speakingTitle}</h2></div>
+          <div className="k-speak-grid">
             {d.avgWpm != null && (
-              <div className="k-hw-top"><div className="k-hw-title">Pace</div><div className="k-score">{Math.round(d.avgWpm)} wpm</div></div>
+              <div className="k-stat blue">
+                <div className="k-stat-head"><Icon d="M13 3 4 14h6l-1 7 9-11h-6z" /><span>Pace</span></div>
+                <div className="k-stat-val">
+                  <b><CountUp value={Math.round(d.avgWpm)} /><span style={{ fontSize: 17 }}> wpm</span></b>
+                </div>
+                <p className="k-stat-sub">words per minute when you speak</p>
+              </div>
             )}
             {d.avgThinkSec != null && (
-              <div className="k-hw-top"><div className="k-hw-title">Thinking time</div><div className="k-score">{d.avgThinkSec.toFixed(1)}s</div></div>
+              <div className="k-stat purple">
+                <div className="k-stat-head"><Icon d="M12 8v4l3 3M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /><span>Thinking time</span></div>
+                <div className="k-stat-val">
+                  <b><CountUp value={d.avgThinkSec} decimals={1} /><span style={{ fontSize: 17 }}> s</span></b>
+                </div>
+                <p className="k-stat-sub">average pause before you answer</p>
+              </div>
+            )}
+            {d.latestTalk != null && (
+              <div className="k-stat yellow">
+                <div className="k-stat-head"><Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" /><span>Your share</span></div>
+                <div className="k-stat-val">
+                  <b><CountUp value={d.latestTalk} /><span style={{ fontSize: 17 }}>%</span></b>
+                </div>
+                <p className="k-stat-sub">of the last lesson was you talking</p>
+              </div>
             )}
           </div>
-        </div>
+        </>
+      )
+
+    case 'files':
+      // Everything the teacher has shared, newest first. Each file also lives
+      // on its lesson's recap — this is the one place to find them all.
+      return (
+        <>
+          <div className="k-sec-head"><h2>{L.filesTitle}</h2><span className="k-link">{d.files.length}</span></div>
+          <div className="k-card">
+            <div className="k-hw">
+              {d.files.map((f) => (
+                <div key={f.id} className="k-hw-row" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span className="k-file-ic" aria-hidden>
+                    <Icon d="M14 3v5h5M6 3h8l5 5v13H6z" />
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="k-hw-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.fileName}</div>
+                    <div className="k-hw-due">
+                      {f.lessonNumber != null ? `Lesson ${f.lessonNumber}` : 'Lesson'}{f.date ? ` · ${f.date}` : ''}
+                    </div>
+                  </div>
+                  {preview ? (
+                    <span className="k-btn-pill">Download</span>
+                  ) : (
+                    <a className="k-btn-pill" href={`/api/portal/download?kind=file&id=${f.id}`}>Download</a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )
 
     default:

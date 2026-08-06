@@ -1,7 +1,8 @@
 /**
  * OpenAI recap generation — schema + prompt mirror the live n8n workflow
  * "GENOA_Drive_Monitor" so recaps match the teacher-portal / GENOA Library format.
- * Input here is a diarized meeting transcript (Recall) instead of a Drive doc.
+ * Input here is a diarized meeting transcript (extension recording → Whisper)
+ * instead of a Drive doc.
  */
 const OPENAI_MODEL = 'gpt-4.1'
 
@@ -245,15 +246,104 @@ STRICT RULES:
 - Question style like the real JLPT: meaning selection, correct-particle choice, correct-conjugation choice, sentence completion, ordering by meaning.
 - Base questions on the lesson content — vocabulary from its vocab list, grammar from its sections. Do not invent unrelated advanced material.`
 
-export async function generateTest(opts: { studentName: string; lessonTitle: string; lessonContent: string; script?: TestScript }): Promise<TestJson> {
+/**
+ * The same exam for English and French lessons. Identical JSON shape, so every
+ * page renders unchanged; JLPT becomes CEFR and the script rules (a Japanese
+ * writing-system concern) disappear.
+ */
+const TEST_PROMPT_GENERIC = `You are creating a CEFR-style practice test for a student learning {{LANGUAGE}}, based on ONE specific lesson they took. Return ONLY valid JSON.
+
+Student: {{STUDENT}}
+Lesson title: {{LESSON_TITLE}}
+Lesson content (recap of what was taught — base EVERY question on this material):
+{{LESSON_CONTENT}}
+
+Build a LONG, thorough test in classic language-exam style, testing ONLY grammar, vocabulary, and patterns that appear in the lesson content above (plus the fundamentals needed to form the sentences). Difficulty: match the lesson content's CEFR level (default A2 if unclear).
+
+Return this exact structure:
+{
+  "title": "[short test title based on the lesson]",
+  "level": "[CEFR level, e.g. A2]",
+  "intro": "[2 warm sentences in English telling the student what the test covers and encouraging them]",
+  "parts": [
+    {
+      "key": "vocabulary",
+      "title": "Part 1 · Vocabulary",
+      "instructions": "Choose the best meaning or word.",
+      "questions": [ {"type": "multiple_choice", "question": "...", "options": ["...","...","...","..."], "answer": 0, "explanation": "..."} ]
+    },
+    {
+      "key": "grammar",
+      "title": "Part 2 · Grammar",
+      "instructions": "Choose the correct form, or fill the gap.",
+      "questions": [
+        {"type": "multiple_choice", "question": "...", "options": ["...","...","...","..."], "answer": 0, "explanation": "..."},
+        {"type": "fill_blank", "before": "[{{LANGUAGE}} before gap]", "after": "[{{LANGUAGE}} after gap]", "options": ["...","...","..."], "answer": "[must exactly match one option]", "en": "[English translation of full sentence]"}
+      ]
+    },
+    {
+      "key": "reading",
+      "title": "Part 3 · Reading",
+      "instructions": "Read each passage, then answer the questions.",
+      "passages": [
+        {"passage": "[4-6 sentence {{LANGUAGE}} passage using the lesson's grammar]", "passage_en": "[English translation]", "questions": [ {"type": "multiple_choice", "question": "...", "options": ["...","...","...","..."], "answer": 0, "explanation": "..."} ]}
+      ]
+    },
+    {
+      "key": "speaking",
+      "title": "Part 4 · Speaking",
+      "instructions": "Answer each prompt out loud in {{LANGUAGE}}. Record or practice with your teacher.",
+      "prompts": [ {"prompt_jp": "[question in {{LANGUAGE}}]", "prompt_en": "[English]", "hint": "[which grammar/vocab from the lesson to use]"} ]
+    }
+  ]
+}
+
+REQUIRED LENGTH — this is a full practice exam, not a quiz:
+- Part 1 vocabulary: exactly 10 multiple_choice questions.
+- Part 2 grammar: exactly 10 multiple_choice + 8 fill_blank questions (18 total), covering EVERY distinct grammar point in the lesson content.
+- Part 3 reading: exactly 2 passages, each with 3-4 multiple_choice questions.
+- Part 4 speaking: exactly 6 prompts.
+
+STRICT RULES:
+- Questions and instructions are written in English; the tested material is in {{LANGUAGE}}.
+- multiple_choice: exactly 4 options, exactly one correct, "answer" is the 0-based index of the correct option. Vary the correct index — do not cluster on 0.
+- Wrong options must be plausible (common learner mistakes), not silly.
+- fill_blank: exactly 3 options; "answer" must match one option character-for-character.
+- "explanation": ONE short English sentence saying why the answer is right (shown to the teacher, and to the student after they answer).
+- If the student's own language and the taught language coincide (an English test for an English learner), still keep instructions plain and simple.
+- Base questions on the lesson content — vocabulary from its vocab list, grammar from its sections. Do not invent unrelated advanced material.`
+
+/** Languages the test builder has a dedicated prompt for. */
+export const TEST_LANGUAGES = ['Japanese', 'English', 'French'] as const
+
+export async function generateTest(opts: {
+  studentName: string
+  lessonTitle: string
+  lessonContent: string
+  script?: TestScript
+  /** The teacher's teaching language — decides which prompt builds the test. */
+  language?: string | null
+}): Promise<TestJson> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
 
-  const content = TEST_PROMPT
-    .replace('{{STUDENT}}', opts.studentName)
-    .replace('{{LESSON_TITLE}}', opts.lessonTitle)
-    .replace('{{LESSON_CONTENT}}', opts.lessonContent)
-    .replace('{{SCRIPT_RULES}}', SCRIPT_RULES[opts.script ?? 'hiragana'])
+  // Japanese keeps its dedicated JLPT prompt (script rules and all); English
+  // and French share the CEFR prompt. Anything else falls back to Japanese
+  // behaviour only if it literally says Japanese — otherwise generic.
+  const lang = (opts.language ?? 'Japanese').trim()
+  const isJapanese = /japanese/i.test(lang) || lang === ''
+
+  const content = isJapanese
+    ? TEST_PROMPT
+        .replace('{{STUDENT}}', opts.studentName)
+        .replace('{{LESSON_TITLE}}', opts.lessonTitle)
+        .replace('{{LESSON_CONTENT}}', opts.lessonContent)
+        .replace('{{SCRIPT_RULES}}', SCRIPT_RULES[opts.script ?? 'hiragana'])
+    : TEST_PROMPT_GENERIC
+        .replace(/\{\{LANGUAGE\}\}/g, lang)
+        .replace('{{STUDENT}}', opts.studentName)
+        .replace('{{LESSON_TITLE}}', opts.lessonTitle)
+        .replace('{{LESSON_CONTENT}}', opts.lessonContent)
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

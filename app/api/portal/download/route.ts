@@ -20,12 +20,14 @@ export async function GET(req: Request) {
   if (!table) return NextResponse.json({ error: 'Bad kind' }, { status: 400 })
 
   // RLS on these tables ensures the caller can only read rows they're allowed to.
-  const { data: row } = await supabase.from(table).select('bucket, path, file_name').eq('id', id).single()
+  const { data: row } = await supabase.from(table).select('bucket, path, file_name, content_type').eq('id', id).single()
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const admin = createAdminClient()
-  // Files download as attachments; audio streams inline so <audio> can play it.
-  const signOpts = kind === 'file' ? { download: row.file_name ?? undefined } : {}
+  // Documents download as attachments; anything audio (student submissions AND
+  // teacher voice memos stored as files) streams inline so <audio> can play it.
+  const isAudio = (row.content_type ?? '').startsWith('audio/')
+  const signOpts = kind === 'file' && !isAudio ? { download: row.file_name ?? undefined } : {}
   const { data: signed, error } = await admin.storage.from(row.bucket).createSignedUrl(row.path, 3600, signOpts)
   if (error || !signed) return NextResponse.json({ error: error?.message ?? 'Sign failed' }, { status: 500 })
 

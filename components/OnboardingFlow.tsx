@@ -24,13 +24,9 @@ type Props = {
   zoomConnected: boolean
 }
 
-const LANGUAGES = [
-  'Arabic', 'Cantonese', 'Dutch', 'English', 'French', 'German', 'Greek', 'Hebrew', 'Hindi',
-  'Indonesian', 'Italian', 'Japanese', 'Korean', 'Mandarin', 'Polish', 'Portuguese', 'Russian',
-  'Spanish', 'Swedish', 'Thai', 'Turkish', 'Ukrainian', 'Vietnamese',
-]
-/** Sentinel for the dropdown's last row, which reveals a free-text field. */
-const OTHER = '__other__'
+// The three languages the recap/test generation is tuned for. Everything else
+// is off the menu until the prompts are built and tested for it.
+const LANGUAGES = ['English', 'French', 'Japanese']
 
 const ZONES = [
   'Asia/Tokyo', 'Asia/Seoul', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Dubai',
@@ -48,11 +44,10 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
   // Resume where they left off, but never past the last step.
   const [step, setStep] = useState(Math.min(initial.step, STEPS.length - 1))
-  const known = initial.teachingLanguage && LANGUAGES.includes(initial.teachingLanguage)
+  // A language saved before the list narrowed to three gets re-picked here.
   const [language, setLanguage] = useState(
-    initial.teachingLanguage ? (known ? initial.teachingLanguage : OTHER) : ''
+    initial.teachingLanguage && LANGUAGES.includes(initial.teachingLanguage) ? initial.teachingLanguage : ''
   )
-  const [customLanguage, setCustomLanguage] = useState(known ? '' : (initial.teachingLanguage ?? ''))
   const [timezone, setTimezone] = useState(initial.timezone)
   const [platform, setPlatform] = useState<TeachingPlatform>(initial.teachingPlatform)
   // A calendar already connected is an answer in itself; otherwise they choose.
@@ -62,7 +57,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
   const [accent, setAccent] = useState(initial.brand.accent)
   const [portalName, setPortalName] = useState(initial.brand.portalName)
 
-  const effectiveLanguage = language === OTHER ? customLanguage.trim() : language
+  const effectiveLanguage = language
   /** A marketplace teacher has no link for us to make and may have no calendar. */
   const external = isExternalPlatform(platform)
 
@@ -76,7 +71,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
   const next = () => {
     if (step === 0) {
-      if (!effectiveLanguage) { setError('Pick the language you teach, or type your own.'); return }
+      if (!effectiveLanguage) { setError('Pick the language you teach.'); return }
       persist({ teachingLanguage: effectiveLanguage, timezone, step: 1 }, () => setStep(1))
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
@@ -140,22 +135,11 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 <select className="k-input" value={language} onChange={(e) => setLanguage(e.target.value)}>
                   <option value="" disabled>Choose a language…</option>
                   {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
-                  <option value={OTHER}>Something else…</option>
                 </select>
               </label>
-
-              {language === OTHER && (
-                <label className="k-field">
-                  <span>Which language?</span>
-                  <input
-                    value={customLanguage}
-                    onChange={(e) => setCustomLanguage(e.target.value)}
-                    placeholder="e.g. Swedish"
-                    maxLength={60}
-                    autoFocus
-                  />
-                </label>
-              )}
+              <p className="k-onb-lead" style={{ fontSize: 12, marginTop: -4 }}>
+                More languages are coming — these three are the ones our recaps and tests are tuned for today.
+              </p>
 
               <label className="k-field">
                 <span>Your timezone</span>

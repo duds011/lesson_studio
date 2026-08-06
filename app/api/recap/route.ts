@@ -29,15 +29,19 @@ export async function POST(req: NextRequest) {
 
   // Bridge the built recap to the student's Supabase record.
   let delivered = false
+  let lessonId: string | null = null
   try {
     const res = await deliverRecapToStudent(eventId, rec)
     delivered = res.delivered
+    if (res.delivered) lessonId = res.lessonId
   } catch (e: any) {
     console.error('recap publish bridge failed', e?.message || e)
     return NextResponse.json({ ok: true, delivered: false, warning: 'Published, but could not deliver to the student portal.' })
   }
 
-  return NextResponse.json({ ok: true, delivered })
+  // lessonId lets the review page attach anything recorded during review —
+  // a voice memo made before the lesson row existed.
+  return NextResponse.json({ ok: true, delivered, lessonId })
 }
 
 // Delete a draft recap that the teacher does not want to review/send.

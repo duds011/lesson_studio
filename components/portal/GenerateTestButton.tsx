@@ -13,10 +13,12 @@ const SCRIPT_OPTIONS = [
   { value: 'kanji', label: 'Kanji + kana', sub: 'Kanji with readings' },
 ] as const
 
-// Teacher picks a lesson, we ask GPT for a full N5-style test, then land on
+// Teacher picks a lesson, we ask GPT for a full exam-style test, then land on
 // the draft review page. Generation takes a while — keep the modal open with
-// a clear progress state.
-export default function GenerateTestButton({ studentId, lessons }: { studentId: string; lessons: TestLessonOption[] }) {
+// a clear progress state. `language` is the teacher's teaching language; the
+// script picker only exists for Japanese.
+export default function GenerateTestButton({ studentId, lessons, language = 'Japanese' }: { studentId: string; lessons: TestLessonOption[]; language?: string }) {
+  const isJapanese = /japanese/i.test(language)
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [lessonId, setLessonId] = useState(lessons[0]?.id ?? '')
@@ -56,7 +58,7 @@ export default function GenerateTestButton({ studentId, lessons }: { studentId: 
               {!busy && <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>✕</button>}
             </div>
             <p className="sub" style={{ marginTop: 0, marginBottom: 14, fontSize: 12 }}>
-              A full N5-style test (vocabulary, grammar, reading, speaking) built from one lesson. You review it as a draft — nothing reaches the student until you publish.
+              A full {isJapanese ? 'JLPT-style' : 'CEFR-style'} test (vocabulary, grammar, reading, speaking) built from one lesson. You review it as a draft — nothing reaches the student until you publish.
             </p>
 
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }} htmlFor="test-lesson">
@@ -72,25 +74,29 @@ export default function GenerateTestButton({ studentId, lessons }: { studentId: 
               {lessons.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
             </select>
 
-            <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-              Japanese script
-            </span>
-            <div className="script-picker" role="radiogroup" aria-label="Japanese script" style={{ marginBottom: 14 }}>
-              {SCRIPT_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={script === o.value}
-                  className={`script-opt ${script === o.value ? 'sel' : ''}`}
-                  disabled={busy}
-                  onClick={() => setScript(o.value)}
-                >
-                  <strong>{o.label}</strong>
-                  <span>{o.sub}</span>
-                </button>
-              ))}
-            </div>
+            {isJapanese && (
+              <>
+                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Japanese script
+                </span>
+                <div className="script-picker" role="radiogroup" aria-label="Japanese script" style={{ marginBottom: 14 }}>
+                  {SCRIPT_OPTIONS.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={script === o.value}
+                      className={`script-opt ${script === o.value ? 'sel' : ''}`}
+                      disabled={busy}
+                      onClick={() => setScript(o.value)}
+                    >
+                      <strong>{o.label}</strong>
+                      <span>{o.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {error && <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 10px' }}>{error}</p>}
 

@@ -1,19 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/auth'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { getStudentCredits } from '@/lib/credits'
-import BookingCalendar from '@/components/portal/BookingCalendar'
+import { redirect } from 'next/navigation'
 
-export const dynamic = 'force-dynamic'
-
-export default async function StudentBookPage() {
-  const supabase = await createClient()
-  const user = await requireUser(supabase, '/student/book')
-
-  const admin = createAdminClient()
-  const { data: student } = await admin.from('students').select('id').eq('profile_id', user.id).single()
-  const credits = student ? await getStudentCredits(admin, student.id) : { purchased: 0, used: 0, remaining: 0, low: true }
-  const hasPkg = credits.purchased > 0 || credits.used > 0
-
-  return <BookingCalendar remaining={hasPkg ? credits.remaining : null} />
+// Booking was removed from the student portal — lessons are arranged with the
+// teacher directly. The route stays so old links land somewhere sensible.
+export default function StudentBookPage() {
+  redirect('/student/dashboard')
 }

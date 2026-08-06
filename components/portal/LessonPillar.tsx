@@ -7,6 +7,8 @@ export type PillarLesson = {
   meta: string
   score: number | null
   tag: string
+  /** One line on what the lesson covered, from the recap. */
+  desc?: string
 }
 
 /** The student's lessons, stacked earliest first. `preview` is the branding
@@ -29,6 +31,7 @@ export default function LessonPillar({ lessons, preview }: { lessons: PillarLess
           <>
             <span className="k-pillar-num">{l.tag}</span>
             <span className="k-pillar-title">{l.title}</span>
+            {l.desc && <span className="k-pillar-desc">{l.desc}</span>}
             <span className="k-pillar-meta">{l.meta}</span>
             {l.score != null && (
               <span className="k-pillar-foot">

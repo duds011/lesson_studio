@@ -22,7 +22,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   return (
     <div className={`k-shell ${backgroundClass(brand)}`} style={brandVars(brand)}>
-      <StudentRail mark={brand.logoText} />
+      <StudentRail mark={brand.logoText} name={brand.portalName} />
       <main className="k-main page-fade">{children}</main>
     </div>
   )

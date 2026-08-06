@@ -1,8 +1,9 @@
 import { formatDateShort } from '@/lib/portal-utils'
 import TeacherFileUpload from '@/components/portal/TeacherFileUpload'
 import StudentAudioUpload from '@/components/portal/StudentAudioUpload'
+import TeacherVoiceMemo from '@/components/portal/TeacherVoiceMemo'
 
-type Row = { id: string; file_name: string | null; created_at: string }
+type Row = { id: string; file_name: string | null; created_at: string; content_type?: string | null }
 
 /**
  * Two-way content exchange for a lesson:
@@ -20,6 +21,26 @@ export default function LessonExchange({
   files: Row[]
   audios: Row[]
 }) {
+  // Teacher voice memos are attachments too — split them from documents so
+  // they play inline instead of hiding behind a download button.
+  const isMemo = (f: Row) => (f.content_type ?? '').startsWith('audio/')
+  const memos = files.filter(isMemo)
+  const docs = files.filter((f) => !isMemo(f))
+
+  const memoList = memos.length > 0 && (
+    <div style={{ display: 'grid', gap: 10 }}>
+      {memos.map((a) => (
+        <div key={a.id} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 10, background: 'var(--surface-2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+            <span style={{ fontWeight: 600 }}>{a.file_name || 'voice memo'}</span>
+            <span>{formatDateShort(a.created_at)}</span>
+          </div>
+          <audio controls preload="none" style={{ width: '100%', height: 38 }} src={`/api/portal/download?kind=file&id=${a.id}`} />
+        </div>
+      ))}
+    </div>
+  )
+
   const audioList = audios.length > 0 && (
     <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
       {audios.map((a) => (
@@ -36,7 +57,7 @@ export default function LessonExchange({
 
   const fileList = (
     <div style={{ display: 'grid', gap: 8 }}>
-      {files.map((f) => (
+      {docs.map((f) => (
         <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface-2)' }}>
           <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.file_name || 'file'}</span>
           <a className="btn btn-ghost btn-sm" href={`/api/portal/download?kind=file&id=${f.id}`} target="_blank" rel="noopener">Download</a>
@@ -49,6 +70,13 @@ export default function LessonExchange({
   if (role === 'student') {
     return (
       <div style={{ marginTop: 20, display: 'grid', gap: 14 }}>
+        {memos.length > 0 && (
+          <div className="lesson-block" style={{ padding: 14 }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 13 }}>💬 Voice memos from your teacher</h3>
+            {memoList}
+          </div>
+        )}
+
         <div className="lesson-block" style={{ padding: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 700, fontSize: 13 }}>🎙️ Practice audio <span style={{ color: 'var(--muted)', fontWeight: 400 }}>— record yourself, your teacher hears it</span></span>
@@ -57,7 +85,7 @@ export default function LessonExchange({
           {audioList}
         </div>
 
-        {files.length > 0 && (
+        {docs.length > 0 && (
           <div className="lesson-block">
             <h3 style={{ margin: '0 0 12px' }}>📎 Files from your teacher</h3>
             {fileList}
@@ -75,9 +103,16 @@ export default function LessonExchange({
           <h3 style={{ margin: 0 }}>📎 Files for the student</h3>
           <TeacherFileUpload lessonId={lessonId} />
         </div>
-        {files.length === 0 ? (
+        {docs.length === 0 ? (
           <p className="analytics-note" style={{ margin: 0 }}>No files shared yet. Upload a presentation or PDF for this lesson.</p>
         ) : fileList}
+      </div>
+
+      <div className="lesson-block">
+        <h3 style={{ margin: '0 0 4px' }}>💬 Voice memo for the student</h3>
+        <p className="analytics-note" style={{ margin: '0 0 14px' }}>A quick spoken note — they hear it right on this lesson&rsquo;s recap.</p>
+        <TeacherVoiceMemo lessonId={lessonId} />
+        {memoList && <div style={{ marginTop: 12 }}>{memoList}</div>}
       </div>
 
       <div className="lesson-block">

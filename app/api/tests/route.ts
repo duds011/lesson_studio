@@ -38,9 +38,10 @@ export async function POST(req: NextRequest) {
   const { supabase, user } = await requireTeacher()
   if (!user) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
 
-  const [{ data: student }, { data: lesson }] = await Promise.all([
+  const [{ data: student }, { data: lesson }, { data: teacherProfile }] = await Promise.all([
     supabase.from('students').select('id, full_name, teacher_id').eq('id', studentId).single(),
     supabase.from('lessons').select('id, title, lesson_number, student_id, lesson_summaries ( recap_json )').eq('id', lessonId).single(),
+    supabase.from('profiles').select('teaching_language').eq('id', user.id).single(),
   ])
   if (!student || !lesson || (lesson as any).student_id !== student.id) {
     return NextResponse.json({ ok: false, error: 'Lesson or student not found' }, { status: 404 })
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
   if (!recap) return NextResponse.json({ ok: false, error: 'This lesson has no recap to base a test on' }, { status: 400 })
 
   const lessonTitle = lessonDisplayTitle(recap, l.title, l.lesson_number)
+  const language = (teacherProfile as any)?.teaching_language || 'Japanese'
+  const isJapanese = /japanese/i.test(language)
 
   try {
     const testJson = await generateTest({
@@ -59,11 +62,13 @@ export async function POST(req: NextRequest) {
       lessonTitle,
       lessonContent: recapToContent(recap),
       script,
+      language,
     })
     if (!Array.isArray(testJson?.parts) || testJson.parts.length === 0) {
       throw new Error('Model returned no test parts')
     }
-    testJson.script = script
+    // The script choice is a Japanese writing-system concern only.
+    if (isJapanese) testJson.script = script
 
     const { data: row, error } = await supabase
       .from('tests')
@@ -72,7 +77,7 @@ export async function POST(req: NextRequest) {
         student_id: student.id,
         lesson_id: l.id,
         title: testJson.title || `Practice Test — ${lessonTitle}`,
-        level: testJson.level || 'N5',
+        level: testJson.level || (isJapanese ? 'N5' : 'A2'),
         status: 'draft',
         test_json: testJson,
       })

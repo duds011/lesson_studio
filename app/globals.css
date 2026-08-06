@@ -167,3 +167,30 @@ footer{max-width:1120px;margin:0 auto;padding:24px;color:var(--muted);font-size:
 .stat-card-note{font-size:11px;color:var(--muted);margin:0;line-height:1.5}
 .corrections-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
 @media(max-width:720px){.stat-cards{grid-template-columns:1fr}}
+/* teacher notes — the month grid (students down, days across) */
+.notes-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.notes-grid{border-collapse:collapse;font-size:12px;min-width:100%}
+.notes-grid th{border-bottom:1px solid var(--line);padding:7px 0;width:40px;min-width:40px;text-align:center;background:var(--surface)}
+.notes-grid th.is-today{background:var(--brand-soft)}
+.notes-grid th.is-weekend{background:#fafbf9}
+.notes-grid td{border-top:1px solid var(--line);border-right:1px solid #f1f2f0;padding:0;width:40px;min-width:40px;height:38px}
+.notes-grid td.is-weekend{background:#fafbf9}
+.notes-name-col{position:sticky;left:0;z-index:2;background:var(--surface)!important;border-right:1px solid var(--line)!important;padding:8px 12px!important;width:150px!important;min-width:150px!important;max-width:150px;text-align:left!important}
+.notes-name-col a{font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notes-name-col a:hover{color:var(--brand)}
+.notes-day{font-size:13px;font-weight:800;line-height:1}
+th.is-today .notes-day{color:var(--brand)}
+.notes-dow{font-size:9px;color:var(--muted);margin-top:2px}
+.notes-cell{display:flex;align-items:center;justify-content:center;width:100%;height:38px;border:0;background:transparent;cursor:pointer}
+.notes-cell:hover{background:var(--brand-soft)}
+.notes-cell.has-note{background:var(--brand-soft)}
+.notes-cell.has-note:hover{background:#dbe7f7}
+.notes-cell.has-pin{background:var(--amber-soft)}
+.notes-cell .notes-dot{width:8px;height:8px;border-radius:999px;background:var(--brand)}
+.notes-cell.has-pin .notes-dot{background:var(--amber)}
+.notes-cell b{font-size:11px;color:var(--brand)}
+.notes-cell.has-pin b{color:var(--amber)}
+.notes-cell .notes-plus{opacity:0;color:var(--muted)}
+.notes-cell:hover .notes-plus{opacity:.5}
+.notes-entry{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fafbf9}
+.notes-entry[data-pinned]{border-color:#ead7a5;background:var(--amber-soft)}

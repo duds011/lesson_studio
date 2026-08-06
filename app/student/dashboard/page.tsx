@@ -3,7 +3,7 @@ import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStudentCredits } from '@/lib/credits'
 import { getTeacherPaymentMethods } from '@/lib/payment-methods'
-import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
+import { formatDateShort, lessonBlurb, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import { PillarLesson } from '@/components/portal/LessonPillar'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from '@/components/portal/DashboardBlocks'
 import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
@@ -90,6 +90,14 @@ export default async function StudentDashboard() {
     .eq('student_id', student.id)
     .order('published_at', { ascending: false })
 
+  // Teacher-shared files across every lesson — the Files tab. RLS only returns
+  // rows for this student.
+  const { data: attachments } = await supabase
+    .from('lesson_attachments')
+    .select('id, file_name, created_at, content_type, lesson_id, lessons ( lesson_number, lesson_date )')
+    .eq('student_id', student.id)
+    .order('created_at', { ascending: false })
+
   const admin = createAdminClient()
   const [credits, paymentMethods, { data: pkgRows }, { data: teacherProfile }] = await Promise.all([
     getStudentCredits(admin, student.id),
@@ -112,6 +120,7 @@ export default async function StudentDashboard() {
         id: lesson.id as string,
         number: lesson.lesson_number as number,
         title: lessonDisplayTitle(s?.recap_json, lesson.title, lesson.lesson_number),
+        desc: lessonBlurb(s?.recap_json),
         meta: `${ordinal(lesson.lesson_number)} lesson · ${formatDateShort(lesson.lesson_date)}`,
         score: s?.score != null ? Number(s.score) : null,
         tag: `Lesson ${lesson.lesson_number}`,
@@ -164,6 +173,20 @@ export default async function StudentDashboard() {
     }),
     avgWpm,
     avgThinkSec,
+    // Voice memos are audio attachments that live on their lesson's recap —
+    // the Files tab is for documents.
+    files: ((attachments ?? []) as any[])
+      .filter((f) => !(f.content_type ?? '').startsWith('audio/'))
+      .map((f) => {
+        const lesson = Array.isArray(f.lessons) ? f.lessons[0] : f.lessons
+        return {
+          id: f.id,
+          fileName: f.file_name,
+          lessonId: f.lesson_id,
+          lessonNumber: lesson?.lesson_number ?? null,
+          date: formatDateShort(lesson?.lesson_date ?? f.created_at),
+        }
+      }),
   }
 
   /** The fixed arrangement, minus anything switched off or with nothing to
@@ -172,7 +195,7 @@ export default async function StudentDashboard() {
   const tabs = DASH_TABS
     .map((tab) => ({
       id: tab as DashTab,
-      label: L[`tab${tab}` as 'tabOverview' | 'tabLessons' | 'tabProgress'],
+      label: L[`tab${tab}` as 'tabOverview' | 'tabLessons' | 'tabProgress' | 'tabFiles' | 'tabTests'],
       blocks: placed.filter(({ id }) => DASH_BLOCK_TAB[id] === tab),
     }))
     .filter((t) => t.blocks.length > 0)

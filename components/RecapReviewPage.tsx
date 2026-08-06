@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import LessonExercises from './LessonExercises'
 import LessonTopics from './LessonTopics'
+import TeacherVoiceMemo, { type HeldMemo } from './portal/TeacherVoiceMemo'
+import { uploadPortalFile } from '@/lib/portal-upload'
 import type { DraftRecap } from './RecapReview'
 
 type Section = { title: string; content: string }
@@ -44,6 +46,9 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const [busy, setBusy] = useState<'' | 'save' | 'publish' | 'delete'>('')
   const [rebuilding, setRebuilding] = useState(false)
   const [msg, setMsg] = useState('')
+  // A voice memo recorded during review. The lesson row doesn't exist until
+  // publish, so the blob waits here and is uploaded right after.
+  const memoRef = useRef<HeldMemo | null>(null)
 
   const setSection = (i: number, patch: Partial<Section>) => setSections(sections.map((s, j) => (j === i ? { ...s, ...patch } : s)))
   const cleanSections = () => sections.map((s) => ({ title: s.title.trim(), content: s.content.trim() })).filter((s) => s.title || s.content)
@@ -60,6 +65,15 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
     await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
     const res = await fetch('/api/recap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId: rec.eventId }) }).then((x) => x.json())
     if (!res.delivered && res.warning) { setBusy(''); setMsg(res.warning); return }
+    // Publishing created the lesson — attach the memo recorded during review.
+    if (memoRef.current && res.lessonId) {
+      try {
+        await uploadPortalFile('teacher-file', res.lessonId, memoRef.current.blob, memoRef.current.name)
+      } catch {
+        setBusy(''); setMsg('Recap sent, but the voice memo failed to upload — record it again from the lesson page.')
+        return
+      }
+    }
     router.push('/'); router.refresh()
   }
 
@@ -172,6 +186,13 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
             <section className="block">
               <h4>Your note to {first}</h4>
               <AutoTextarea value={note} onChange={setNote} placeholder="A personal note for the student…" minRows={3} />
+            </section>
+            <section className="block">
+              <h4>🎙️ Voice memo for {first}</h4>
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
+                A quick spoken note — encouragement, pronunciation, anything text can&rsquo;t carry. It goes out with the recap when you approve.
+              </p>
+              <TeacherVoiceMemo onHold={(m) => { memoRef.current = m }} />
             </section>
           </div>
         )}

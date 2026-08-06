@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse'
+type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note'
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -18,6 +18,7 @@ function Icon({ name }: { name: IconName }) {
     external: <><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h7"/></>,
     wallet: <><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M21 12a2 2 0 0 0-2-2h-5a2 2 0 0 0 0 4h5a2 2 0 0 0 2-2Z"/></>,
     clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
+    note: <><path d="M5 3h14v14l-4 4H5z"/><path d="M15 21v-4h4M9 8h6M9 12h4"/></>,
     // The panel glyph, not a chevron: a frame with the rail drawn inside it, so
     // the button shows the thing it collapses rather than a direction.
     collapse: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
@@ -32,6 +33,7 @@ export function LogoMark() {
 const LINKS = [
   { href: '/', label: 'Overview', icon: 'home' as IconName },
   { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName },
+  { href: '/teacher/notes', label: 'Notes', icon: 'note' as IconName },
   { href: '/teacher/branding', label: 'Student view', icon: 'eye' as IconName },
   { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName },
 ]

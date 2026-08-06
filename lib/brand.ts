@@ -17,7 +17,7 @@ export type PropStyle = 'orbs' | 'geometric' | 'minimal' | 'none'
 /** Blocks a teacher can arrange on the student dashboard. */
 export const DASHBOARD_BLOCKS = [
   'stats', 'lessons', 'progress', 'vocab',
-  'milestone', 'scores', 'tests', 'speaking',
+  'milestone', 'scores', 'tests', 'speaking', 'files',
 ] as const
 export type BlockId = (typeof DASHBOARD_BLOCKS)[number]
 
@@ -30,16 +30,19 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   scores: 'Recent scores',
   tests: 'Practice tests',
   speaking: 'Speaking habits',
+  files: 'Lesson files',
 }
 
 /** The student dashboard is tabbed; each block belongs to one tab. */
-export const DASH_TABS = ['Overview', 'Lessons', 'Progress'] as const
+export const DASH_TABS = ['Overview', 'Lessons', 'Progress', 'Files', 'Tests'] as const
 export type DashTab = (typeof DASH_TABS)[number]
 
 export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
   stats: 'Overview', scores: 'Overview', milestone: 'Overview',
-  lessons: 'Lessons', tests: 'Lessons',
+  lessons: 'Lessons',
   progress: 'Progress', vocab: 'Progress', speaking: 'Progress',
+  files: 'Files',
+  tests: 'Tests',
 }
 
 /** Every block a teacher can switch off, and the field that switches it. */
@@ -52,6 +55,7 @@ export const BLOCK_TOGGLE: Record<BlockId, keyof Brand> = {
   vocab: 'showVocab',
   tests: 'showTests',
   speaking: 'showSpeaking',
+  files: 'showFiles',
 }
 
 /**
@@ -64,6 +68,8 @@ export const TEXT_SLOTS = {
   tabOverview: 'Overview',
   tabLessons: 'Lessons',
   tabProgress: 'Progress',
+  tabFiles: 'Files',
+  tabTests: 'Tests',
   statLessons: 'Lessons',
   statScore: 'Avg score',
   statSpeaking: 'Speaking',
@@ -74,6 +80,7 @@ export const TEXT_SLOTS = {
   scoresTitle: 'Recent scores',
   testsTitle: 'Practice tests',
   speakingTitle: 'Speaking habits',
+  filesTitle: 'Lesson files',
 } as const
 export type TextSlot = keyof typeof TEXT_SLOTS
 export const TEXT_SLOT_IDS = Object.keys(TEXT_SLOTS) as TextSlot[]
@@ -88,6 +95,7 @@ export const BLOCK_TEXT_SLOTS: Partial<Record<BlockId, TextSlot[]>> = {
   scores: ['scoresTitle'],
   tests: ['testsTitle'],
   speaking: ['speakingTitle'],
+  files: ['filesTitle'],
 }
 
 /** Tabs on the student's lesson recap page. */
@@ -219,6 +227,7 @@ export type Brand = {
   showVocab: boolean
   showTests: boolean
   showSpeaking: boolean
+  showFiles: boolean
 }
 
 export const DEFAULT_BRAND: Brand = {
@@ -239,6 +248,7 @@ export const DEFAULT_BRAND: Brand = {
   showVocab: true,
   showTests: true,
   showSpeaking: true,
+  showFiles: true,
 }
 
 /**
@@ -357,6 +367,7 @@ export function resolveBrand(raw: unknown): Brand {
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
     showTests: bool(b.showTests, DEFAULT_BRAND.showTests),
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
+    showFiles: bool(b.showFiles, DEFAULT_BRAND.showFiles),
   }
 }
 

@@ -37,6 +37,20 @@ export function lessonDisplayTitle(recapJson: any, rawTitle?: string | null, les
   return lessonNumber != null ? `Lesson ${lessonNumber}` : 'Lesson'
 }
 
+// One quiet line under a lesson title: what the lesson was about, from the
+// recap overview (or the first section), cut at a word boundary.
+export function lessonBlurb(recapJson: any, max = 110): string {
+  const raw =
+    (typeof recapJson?.recap === 'string' && recapJson.recap.trim()) ||
+    (Array.isArray(recapJson?.sections) && typeof recapJson.sections[0]?.body === 'string'
+      ? recapJson.sections[0].body.trim()
+      : '')
+  if (!raw) return ''
+  if (raw.length <= max) return raw
+  const cut = raw.slice(0, max)
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 60))}…`
+}
+
 // Playful "level" label unlocked by lesson count — mirrors the milestone track.
 export function getLevelLabel(lessonCount: number): string {
   if (lessonCount >= 50) return 'Master'

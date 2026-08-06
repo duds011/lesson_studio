@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { formatMoney } from '@/lib/currency'
 
 export interface BuyPkg { id: string; name: string; lessons_count: number; amount: number; currency: string }
@@ -16,9 +15,9 @@ export default function StudentLessonsBar({ credits, packages }: { credits: Cred
   const out = hasPkg && credits.remaining <= 0
   const low = credits.low && !out
   const color = out ? 'var(--red)' : low ? 'var(--amber)' : 'var(--brand)'
-  const note = out ? 'Out of prepaid lessons — top up to keep booking.'
+  const note = out ? 'Out of prepaid lessons — top up to keep going.'
     : low ? 'Last lesson — consider topping up.'
-    : 'Book your next lesson any time.'
+    : 'Prepaid lessons on your account.'
 
   async function buy(id: string) {
     setBusy(id); setError('')
@@ -53,7 +52,6 @@ export default function StudentLessonsBar({ credits, packages }: { credits: Cred
               Buy more lessons
             </button>
           )}
-          <Link href="/student/book" className="btn btn-primary btn-sm">Book a lesson →</Link>
         </div>
       </div>
 
