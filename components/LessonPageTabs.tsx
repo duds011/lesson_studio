@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { FormattedContent } from './RecapView'
 import LessonExercises from './LessonExercises'
 import LessonCorrections from './LessonCorrections'
-import { VocabLevelChart } from './portal/BrandCharts'
 import CountUp from './portal/CountUp'
 import {
   DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_LAYOUT, LESSON_TABS,
@@ -39,8 +38,6 @@ export default function LessonPageTabs({
   const lessonSections = allSections.filter((s) => !/main corrections|refinement|takeaway/i.test(s.title))
   const corrections: any[] = Array.isArray(r.corrections) ? r.corrections : []
   const didWell: any[] = Array.isArray(r.did_well) ? r.did_well : []
-
-  const dist: Record<string, number> = r.vocab_level_distribution || {}
 
   /** Height a chart gets inside a block the teacher sized (card chrome removed). */
 
@@ -151,16 +148,6 @@ export default function LessonPageTabs({
             <LessonExercises exercises={r.exercises || []} />
           </div>
         )
-      case 'vocabLevels': {
-        const total = Object.values(dist).reduce((a, b) => a + Number(b || 0), 0)
-        if (!total) return null
-        return (
-          <div className="lesson-block k-chart-card">
-            <h3>Vocabulary by level</h3>
-            <VocabLevelChart distribution={dist} height={150} />
-          </div>
-        )
-      }
       case 'vocabWords':
         if ((r.vocabulary || []).length === 0) return null
         return (

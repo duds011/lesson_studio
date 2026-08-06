@@ -105,7 +105,7 @@ export type LessonTab = (typeof LESSON_TABS)[number]
 /** Arrangeable sections of the lesson recap page. */
 export const LESSON_BLOCKS = [
   'balance', 'score', 'grammar', 'metrics', 'corrections',
-  'sections', 'notes', 'homework', 'exercises', 'vocabLevels', 'vocabWords',
+  'sections', 'notes', 'homework', 'exercises', 'vocabWords',
 ] as const
 export type LessonBlockId = (typeof LESSON_BLOCKS)[number]
 
@@ -119,7 +119,6 @@ export const LESSON_BLOCK_LABELS: Record<LessonBlockId, string> = {
   notes: 'Teacher’s note',
   homework: 'Homework',
   exercises: 'Practice exercises',
-  vocabLevels: 'Vocabulary by level',
   vocabWords: 'Word list',
 }
 
@@ -128,7 +127,7 @@ export const LESSON_BLOCK_TAB: Record<LessonBlockId, LessonTab> = {
   balance: 'Progress', score: 'Progress', grammar: 'Progress', metrics: 'Progress', corrections: 'Progress',
   sections: 'Lesson', notes: 'Lesson',
   homework: 'Practice', exercises: 'Practice',
-  vocabLevels: 'Vocabulary', vocabWords: 'Vocabulary',
+  vocabWords: 'Vocabulary',
 }
 
 /**
@@ -145,8 +144,10 @@ export const LESSON_LAYOUT: Placement<LessonBlockId>[] = [
   { id: 'balance', w: 4 }, { id: 'score', w: 4 }, { id: 'grammar', w: 4 },
   { id: 'metrics', w: 12 }, { id: 'corrections', w: 12 },
   { id: 'sections', w: 12 }, { id: 'notes', w: 12 },
-  { id: 'homework', w: 6 }, { id: 'exercises', w: 6 },
-  { id: 'vocabLevels', w: 5 }, { id: 'vocabWords', w: 7 },
+  // Homework reads first and on its own line: it is the short list of things
+  // to actually go and do, and beside a stack of exercises it got skimmed past.
+  { id: 'homework', w: 12 }, { id: 'exercises', w: 12 },
+  { id: 'vocabWords', w: 12 },
 ]
 
 /**
