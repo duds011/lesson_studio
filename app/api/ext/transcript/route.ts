@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authenticateExtension } from '@/lib/ext-auth'
-import { transcribeTracksDetailed, renderLines } from '@/lib/whisper'
-import { normalizeSegments } from '@/lib/recall'
+import { transcribeTracksDetailed, renderLines, toWhisperLanguage } from '@/lib/whisper'
+import { normalizeSegments } from '@/lib/transcript'
 import { RECORDING_BUCKET, trackPath } from '@/lib/ext-storage'
 
 export const dynamic = 'force-dynamic'
@@ -37,10 +37,17 @@ export async function POST(req: Request) {
       tracks.push({ blob: data, speaker: `${w.speaker} (${w.track})`, isHost: w.isHost })
     }
 
-    const { perTrack, all, filtered } = await transcribeTracksDetailed(tracks, language)
+    // The name has to become an ISO code first. Passed raw, Whisper rejected
+    // "French" and this route silently diagnosed a transcript that had been
+    // auto-detected — the opposite of what it is for.
+    const code = toWhisperLanguage(language)
+    const { perTrack, all, filtered } = await transcribeTracksDetailed(tracks, code)
     const t = normalizeSegments(filtered)
 
     return NextResponse.json({
+      // What Whisper was actually told. Null means it guessed, which is the
+      // first thing to check when a transcript comes back as gibberish.
+      language: code ?? null,
       tracks: perTrack.map((p) => ({
         speaker: p.speaker,
         segments: p.segments.length,

@@ -56,7 +56,8 @@ export async function POST(req: Request) {
     if (!tracks.length) return NextResponse.json({ error: 'Both tracks were empty.' }, { status: 422 })
 
     // Tell Whisper the language rather than letting it guess per track.
-    const segments = await transcribeTracks(tracks, toWhisperLanguage(language))
+    const code = toWhisperLanguage(language)
+    const segments = await transcribeTracks(tracks, code)
     const t = normalizeSegments(segments)
     if (!t.plain.trim()) return NextResponse.json({ error: 'Nothing was said on either track.' }, { status: 422 })
 
@@ -95,6 +96,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       eventId,
+      // Null means the name did not resolve and Whisper auto-detected. The
+      // recap is still built, but that is the reason to distrust it.
+      language: code ?? null,
       seconds: seconds ?? null,
       studentTalkPct: t.studentTalkPct,
       speakers: t.talk.map((s) => s.name),
