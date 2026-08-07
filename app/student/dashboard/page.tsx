@@ -86,6 +86,20 @@ export default async function StudentDashboard() {
     .eq('student_id', student.id)
     .order('published_at', { ascending: false })
 
+  // Attempts for those tests, newest first. Fetched as one list rather than per
+  // test so the card can show a score without N queries; the newest row per
+  // test_id wins, which is what `bestByTest` below picks out.
+  const { data: attempts } = await supabase
+    .from('test_attempts')
+    .select('test_id, score, correct, total, submitted_at')
+    .eq('student_id', student.id)
+    .order('submitted_at', { ascending: false })
+
+  const latestAttempt = new Map<string, { score: number; correct: number; total: number; submitted_at: string }>()
+  for (const a of (attempts ?? []) as any[]) {
+    if (!latestAttempt.has(a.test_id)) latestAttempt.set(a.test_id, a)
+  }
+
   /**
    * Every word this student has met, with the lesson it came from.
    *
@@ -242,7 +256,18 @@ export default async function StudentDashboard() {
     scoreTrend,
     tests: ((tests ?? []) as any[]).map((t) => {
       const lesson = Array.isArray(t.lessons) ? t.lessons[0] : t.lessons
-      return { id: t.id, title: t.title, lessonNumber: lesson?.lesson_number ?? null, date: formatDateShort(t.published_at) }
+      const done = latestAttempt.get(t.id)
+      return {
+        id: t.id,
+        title: t.title,
+        level: t.level ?? null,
+        lessonNumber: lesson?.lesson_number ?? null,
+        date: formatDateShort(t.published_at),
+        score: done?.score ?? null,
+        correct: done?.correct ?? null,
+        total: done?.total ?? null,
+        takenOn: done ? formatDateShort(done.submitted_at) : null,
+      }
     }),
     avgWpm,
     avgThinkSec,

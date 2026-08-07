@@ -20,6 +20,16 @@ export default async function StudentTestPage({ params }: { params: { id: string
 
   if (!test) notFound()
 
+  // The most recent attempt, if there is one. RLS scopes this to the signed-in
+  // student, so no ownership filter is needed here.
+  const { data: lastAttempt } = await supabase
+    .from('test_attempts')
+    .select('score, correct, total, submitted_at')
+    .eq('test_id', params.id)
+    .order('submitted_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   const t = test as any
   const lesson = Array.isArray(t.lessons) ? t.lessons[0] : t.lessons
   const parts = (t.test_json?.parts ?? []) as any[]
@@ -51,7 +61,12 @@ export default async function StudentTestPage({ params }: { params: { id: string
         </div>
       </header>
 
-      <TestView test={t.test_json} mode="take" />
+      <TestView
+        test={t.test_json}
+        mode="take"
+        testId={t.id}
+        savedScore={(lastAttempt as any)?.score ?? null}
+      />
     </div>
   )
 }

@@ -51,7 +51,12 @@ export type DashboardData = {
     lessonCount: number
   }[]
   scoreTrend: { lesson: number; score: number }[]
-  tests: { id: string; title: string; lessonNumber: number | null; date: string | null }[]
+  tests: {
+    id: string; title: string; level: string | null
+    lessonNumber: number | null; date: string | null
+    /** Null until the student has finished it — that is what splits the two states. */
+    score: number | null; correct: number | null; total: number | null; takenOn: string | null
+  }[]
   avgWpm: number | null
   avgThinkSec: number | null
   files: { id: string; fileName: string; lessonId: string; lessonNumber: number | null; date: string | null }[]
@@ -221,18 +226,36 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
       return (
         <div className="k-card">
           <div className="k-card-head"><h3>{L.testsTitle}</h3><span className="k-link">{d.tests.length}</span></div>
-          <div className="k-hw">
-            {d.tests.map((t) => (
-              <Go key={t.id} href={`/student/tests/${t.id}`} className="k-hw-row" preview={preview}>
-                <div className="k-hw-top">
-                  <div>
-                    <div className="k-hw-title">{t.title}</div>
-                    <div className="k-hw-due">{t.lessonNumber ? `From lesson ${t.lessonNumber} · ` : ''}{t.date}</div>
-                  </div>
-                  <span className="k-btn-pill">Start</span>
-                </div>
-              </Go>
-            ))}
+          {/* Deliberately not the homework row used elsewhere: a test is an
+              event, not another line in a list, and it has two states worth
+              telling apart at a glance — waiting to be taken, or scored. */}
+          <div className="k-tests">
+            {d.tests.map((t) => {
+              const done = t.score !== null
+              // A score is feedback, so it should not all look like praise —
+              // 45% rendered in the same green as 82% tells the student they
+              // did well when they did not.
+              const tone = !done ? '' : t.score! >= 70 ? ' is-good' : t.score! >= 50 ? ' is-mid' : ' is-low'
+              return (
+                <Go
+                  key={t.id}
+                  href={`/student/tests/${t.id}`}
+                  className={`k-test${done ? ' is-done' : ''}${tone}`}
+                  preview={preview}
+                >
+                  <span className="k-test-mark" aria-hidden>{done ? `${t.score}%` : '✎'}</span>
+                  <span className="k-test-body">
+                    <span className="k-test-title">{t.title}</span>
+                    <span className="k-test-meta">
+                      {t.level ? `${t.level} · ` : ''}
+                      {t.lessonNumber ? `Lesson ${t.lessonNumber} · ` : ''}
+                      {done ? `Scored ${t.correct}/${t.total} on ${t.takenOn}` : t.date}
+                    </span>
+                  </span>
+                  <span className="k-test-cta">{done ? 'Review' : 'Start'}</span>
+                </Go>
+              )
+            })}
           </div>
         </div>
       )

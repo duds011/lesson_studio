@@ -89,9 +89,17 @@ const SAMPLE: DashboardData = {
     { lesson: 8, score: 6.4 }, { lesson: 9, score: 7.1 }, { lesson: 10, score: 6.9 },
     { lesson: 11, score: 7.8 }, { lesson: 12, score: 8.3 },
   ],
+  // One of each state, so the preview shows both the waiting card and the
+  // scored one rather than only half of what a student actually sees.
   tests: [
-    { id: 't1', title: 'Particles — quick check', lessonNumber: 12, date: '2 Aug' },
-    { id: 't2', title: 'Restaurant phrases', lessonNumber: 11, date: '26 Jul' },
+    {
+      id: 't1', title: 'Particles — quick check', level: 'N4', lessonNumber: 12, date: '2 Aug',
+      score: null, correct: null, total: null, takenOn: null,
+    },
+    {
+      id: 't2', title: 'Restaurant phrases', level: 'N5', lessonNumber: 11, date: '26 Jul',
+      score: 82, correct: 9, total: 11, takenOn: '27 Jul',
+    },
   ],
   avgWpm: 54,
   avgThinkSec: 2.4,

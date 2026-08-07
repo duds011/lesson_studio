@@ -186,6 +186,30 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-hw-fill{height:100%;border-radius:999px;background:var(--forest);transition:width .7s ease}
 .k-hw-pct{font-size:11px;font-weight:800;color:var(--muted);min-width:30px;text-align:right}
 
+/* — practice tests —
+   A test used to render as a homework row and read as one more line in a list.
+   It gets a bordered tile and a score medallion instead, so an untaken test is
+   obviously a thing to go and do, and a finished one leads with its result. */
+.k-tests{display:grid;gap:10px}
+.k-test{display:flex;align-items:center;gap:13px;padding:13px 15px;border:1.5px solid var(--line);
+  border-radius:var(--r-md,14px);background:var(--surface);text-decoration:none;color:inherit;
+  transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+.k-test:hover{border-color:var(--accent,#0a61c9);transform:translateY(-1px);box-shadow:var(--shadow-soft)}
+/* The medallion: a pencil while it waits, the score once it exists. */
+.k-test-mark{flex:0 0 auto;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;
+  background:var(--surface-2);color:var(--muted);font-weight:800;font-size:13px;letter-spacing:-.02em}
+/* The medallion carries the verdict, not just the number. */
+.k-test.is-good .k-test-mark{background:var(--green-soft,#e7f5ec);color:var(--green,#2f8f5b)}
+.k-test.is-mid  .k-test-mark{background:var(--amber-soft,#fdf4e3);color:var(--amber,#9a6b12)}
+.k-test.is-low  .k-test-mark{background:var(--red-soft,#fff0f0);color:var(--red,#c43d3d)}
+.k-test-body{display:grid;gap:2px;min-width:0;flex:1}
+.k-test-title{font-weight:700;font-size:13.5px;letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-test-meta{font-size:11px;color:var(--muted)}
+.k-test-cta{flex:0 0 auto;font-size:11px;font-weight:800;padding:6px 12px;border-radius:999px;
+  background:var(--accent,#0a61c9);color:#fff}
+.k-test.is-done .k-test-cta{background:var(--surface-2);color:var(--muted)}
+
 /* — course / lesson cards — */
 .k-sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 13px}
 .k-sec-head h2{font-size:17px;font-weight:700;letter-spacing:-.028em;margin:0}

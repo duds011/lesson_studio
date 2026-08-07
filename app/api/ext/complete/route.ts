@@ -23,12 +23,13 @@ export async function POST(req: Request) {
   const caller = await authenticateExtension(req)
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { recordingId, studentId, micIs, seconds, lessonDate, heard, language } = await req.json().catch(() => ({}))
+  const { recordingId, studentId, micIs, seconds, lessonDate, heard, language, spokenLanguage } =
+    await req.json().catch(() => ({}))
   if (!recordingId || !studentId) return NextResponse.json({ error: 'Missing recordingId or studentId' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data: student } = await admin
-    .from('students').select('id, full_name').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
+    .from('students').select('id, full_name, language').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
   if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
 
   try {
@@ -55,13 +56,32 @@ export async function POST(req: Request) {
     }
     if (!tracks.length) return NextResponse.json({ error: 'Both tracks were empty.' }, { status: 422 })
 
-    // Tell Whisper the language rather than letting it guess per track.
-    const code = toWhisperLanguage(language)
+    /**
+     * Two different questions, which used to share one answer.
+     *
+     * Whisper needs the language that is actually SPOKEN in the room. In a
+     * beginner lesson most of that is the language teacher and student share,
+     * not the one being taught — and forcing the target language onto it does
+     * not skip those parts, it renders them as target-language nonsense.
+     *
+     * The recap needs the language being LEARNED, so it knows what counts as a
+     * learner error rather than ordinary conversation.
+     *
+     * `spokenLanguage` is what the recorder now asks for; `language` is the old
+     * single field, kept so an extension that has not updated yet still works.
+     */
+    const code = toWhisperLanguage(spokenLanguage ?? language)
+    const targetLanguage = student.language ?? language ?? null
+
     const segments = await transcribeTracks(tracks, code)
     const t = normalizeSegments(segments)
     if (!t.plain.trim()) return NextResponse.json({ error: 'Nothing was said on either track.' }, { status: 422 })
 
-    const recap: any = await generateRecap({ studentName: student.full_name, transcript: t.plain, language })
+    const recap: any = await generateRecap({
+      studentName: student.full_name,
+      transcript: t.plain,
+      language: targetLanguage ?? undefined,
+    })
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics
 
@@ -96,9 +116,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       eventId,
-      // Null means the name did not resolve and Whisper auto-detected. The
-      // recap is still built, but that is the reason to distrust it.
+      // What Whisper was told. Null means the name did not resolve and it
+      // auto-detected — the recap is still built, but that is the reason to
+      // distrust it. `target` is what the recap was graded against.
       language: code ?? null,
+      target: targetLanguage,
       seconds: seconds ?? null,
       studentTalkPct: t.studentTalkPct,
       speakers: t.talk.map((s) => s.name),

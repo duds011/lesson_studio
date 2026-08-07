@@ -1,13 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useTransition } from 'react'
+import { submitTestAttempt } from '@/app/actions/tests'
+// Aliased: MCQuestion and GapQuestion each declare their own `isCorrect` for a
+// single option, which is a different question from "did the student get this
+// right". Same name, same file, two meanings is how you misread code later.
+import { gradeableQuestions, isCorrect as answerIsCorrect, type Answers } from '@/lib/test-grading'
 
 // Renders a generated test. `review` mode (teacher): every answer highlighted
 // with its explanation. `take` mode (student): interactive — pick an option,
 // get instant right/wrong feedback, running score at the top.
 type Mode = 'review' | 'take'
-
-type Answers = Record<string, number | string>
 
 function MCQuestion({
   q, num, id, mode, answers, onAnswer,
@@ -83,31 +86,41 @@ function GapQuestion({
   )
 }
 
-export default function TestView({ test, mode }: { test: any; mode: Mode }) {
+export default function TestView({
+  test, mode, testId, savedScore,
+}: {
+  test: any
+  mode: Mode
+  /** Present in `take` mode: lets the finished attempt be recorded. */
+  testId?: string
+  /** A score already on record, if this test has been taken before. */
+  savedScore?: number | null
+}) {
   const [answers, setAnswers] = useState<Answers>({})
   const onAnswer = (id: string, v: number | string) => setAnswers((a) => ({ ...a, [id]: v }))
+  const [saved, setSaved] = useState<number | null>(savedScore ?? null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, startSaving] = useTransition()
 
   const parts: any[] = Array.isArray(test?.parts) ? test.parts : []
 
-  // Every gradeable question, keyed the same way the render below keys them.
-  const gradeable = useMemo(() => {
-    const list: { id: string; correct: number | string }[] = []
-    parts.forEach((part, pi) => {
-      if (part.key === 'reading') {
-        (part.passages ?? []).forEach((pas: any, xi: number) => {
-          (pas.questions ?? []).forEach((q: any, qi: number) => list.push({ id: `p${pi}-x${xi}-q${qi}`, correct: q.answer }))
-        })
-      } else if (part.key !== 'speaking') {
-        (part.questions ?? []).forEach((q: any, qi: number) => {
-          list.push({ id: `p${pi}-q${qi}`, correct: q.type === 'fill_blank' ? q.answer : q.answer })
-        })
-      }
-    })
-    return list
-  }, [parts])
+  // The same grader the server uses, so the number on screen while answering is
+  // the number that gets recorded.
+  const gradeable = useMemo(() => gradeableQuestions(test), [test])
 
   const answered = gradeable.filter((g) => answers[g.id] !== undefined)
-  const correct = answered.filter((g) => answers[g.id] === g.correct)
+  const correct = answered.filter((g) => answerIsCorrect(answers[g.id], g.correct))
+  const allAnswered = gradeable.length > 0 && answered.length === gradeable.length
+
+  const finish = () => {
+    if (!testId) return
+    setSaveError(null)
+    startSaving(async () => {
+      const res = await submitTestAttempt(testId, answers)
+      if (res.success) setSaved(res.score ?? null)
+      else setSaveError(res.error ?? 'Could not save your score.')
+    })
+  }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -117,12 +130,30 @@ export default function TestView({ test, mode }: { test: any; mode: Mode }) {
         <div className="test-scorebar">
           <strong>{correct.length}</strong>&nbsp;correct of&nbsp;<strong>{answered.length}</strong>&nbsp;answered
           <span style={{ color: 'var(--muted)' }}>&nbsp;· {gradeable.length} questions total</span>
-          {answered.length === gradeable.length && (
+
+          {/* Saved wins over the live count: once a score is on record, that is
+              the number that matters. */}
+          {saved !== null ? (
             <span className="pill" style={{ marginLeft: 'auto', background: 'var(--green-soft)', color: 'var(--green)' }}>
-              Done! {Math.round((correct.length / gradeable.length) * 100)}%
+              ✓ Saved — {saved}%
             </span>
-          )}
+          ) : allAnswered && testId ? (
+            <button
+              className="btn btn-primary btn-sm"
+              style={{ marginLeft: 'auto' }}
+              onClick={finish}
+              disabled={saving}
+            >
+              {saving ? 'Saving…' : `Finish — ${Math.round((correct.length / gradeable.length) * 100)}%`}
+            </button>
+          ) : null}
         </div>
+      )}
+
+      {saveError && (
+        <p className="sub" style={{ margin: 0, color: 'var(--red)' }}>
+          {saveError} Your answers are still on screen — try Finish again.
+        </p>
       )}
 
       {parts.map((part, pi) => (
