@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import ProgressCharts from './ProgressCharts'
 import VocabLevelBreakdown from './VocabLevelBreakdown'
+import VocabByLevel from './VocabByLevel'
 import { MilestoneTrack, ScoreTrendChart } from './BrandCharts'
 import CountUp from './CountUp'
 import LessonPillar, { PillarLesson } from './LessonPillar'
@@ -88,9 +89,10 @@ export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
   { id: 'vocabTotals', w: 12 },
   { id: 'scores', w: 12 },
   { id: 'lessons', w: 12 },
+  // Progress opens with how they sound, then the trends, then the words.
+  { id: 'speaking', w: 12 },
   { id: 'progress', w: 12 },
   { id: 'vocab', w: 12 },
-  { id: 'speaking', w: 12 },
   { id: 'files', w: 12 },
   { id: 'tests', w: 12 },
 ]
@@ -182,32 +184,14 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
       )
 
     case 'vocab':
-      // Every word, and where it came from. "Lesson 7 · 12 Jul" is the thing a
-      // student actually wants from a word list — it turns a vocabulary pile
-      // back into the lesson they remember learning it in.
+      // The bar first, the words on request. Listing all of them made this a
+      // wall of text people scrolled past; "how much, at what level" is the
+      // question a glance asks, and a level opens to answer "which words".
       return (
         <>
           <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{d.vocabWords.length} words</span></div>
           <div className="k-card">
-            {/* The scale follows the words: JLPT for Japanese, CEFR otherwise. */}
-            <VocabLevelBreakdown distribution={d.vocabDistribution} totalCount={d.totalVocab} plain />
-            <div className="k-vocab-list" style={{ marginTop: 14 }}>
-              {d.vocabWords.map((v, i) => (
-                <div className="k-vocab-row" key={`${v.word}-${i}`}>
-                  <div className="k-vocab-main">
-                    <span className="k-vocab-word">{v.word}</span>
-                    {v.reading && <span className="k-vocab-reading">{v.reading}</span>}
-                    {v.level && <span className="k-vocab-level">{v.level}</span>}
-                  </div>
-                  {v.definition && <p className="k-vocab-def">{v.definition}</p>}
-                  <p className="k-vocab-when">
-                    {v.firstLessonNumber != null ? `First seen in lesson ${v.firstLessonNumber}` : 'First seen'}
-                    {v.firstDate ? ` · ${v.firstDate}` : ''}
-                    {v.lessonCount > 1 ? ` · came back in ${v.lessonCount - 1} more lesson${v.lessonCount - 1 === 1 ? '' : 's'}` : ''}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <VocabByLevel words={d.vocabWords} />
           </div>
         </>
       )
