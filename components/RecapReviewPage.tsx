@@ -41,7 +41,6 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const [sections, setSections] = useState<Section[]>(
     ((r.sections || []) as any[]).map((s) => ({ title: s?.title || '', content: asText(s?.content) })),
   )
-  const [note, setNote] = useState<string>(r.teacher_note || '')
   const [homework, setHomework] = useState<string[]>(((r.homework || []) as any[]).map((h) => h?.description || '').filter(Boolean))
   // Corrections are quotes the model pulled from the transcript, so they are
   // the most likely thing to be wrong. The teacher can drop any of them; there
@@ -59,7 +58,9 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const cleanSections = () => sections.map((s) => ({ title: s.title.trim(), content: s.content.trim() })).filter((s) => s.title || s.content)
   const cleanHomework = () => homework.filter((d) => d.trim()).map((d) => ({ description: d.trim() }))
   const payload = () => ({
-    eventId: rec.eventId, recap: body, sections: cleanSections(), teacher_note: note,
+    // No teacher_note: the written note was replaced by the voice memo, and
+    // omitting the field leaves whatever a past recap stored untouched.
+    eventId: rec.eventId, recap: body, sections: cleanSections(),
     homework: cleanHomework(), corrections, did_well: didWell,
   })
 
@@ -224,7 +225,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
           </div>
         )}
 
-        {/* ── LESSON: editable sections + note ── */}
+        {/* ── LESSON: editable sections + the voice memo ── */}
         {tab === 'Lesson' && (
           <div role="tabpanel" style={{ display: 'grid', gap: 16, paddingTop: 4 }}>
             {sections.map((s, i) => (
@@ -237,10 +238,6 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
               </section>
             ))}
             <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => setSections([...sections, { title: '', content: '' }])}>+ Add section</button>
-            <section className="block">
-              <h4>Your note to {first}</h4>
-              <AutoTextarea value={note} onChange={setNote} placeholder="A personal note for the student…" minRows={3} />
-            </section>
             <section className="block">
               <h4>🎙️ Voice memo for {first}</h4>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>

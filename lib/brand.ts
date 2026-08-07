@@ -103,35 +103,38 @@ export const BLOCK_TEXT_SLOTS: Partial<Record<BlockId, TextSlot[]>> = {
 }
 
 /** Tabs on the student's lesson recap page. */
-export const LESSON_TABS = ['Progress', 'Lesson', 'Practice', 'Vocabulary'] as const
+export const LESSON_TABS = ['Progress', 'Lesson', 'Practice', 'Vocabulary', 'Files'] as const
 export type LessonTab = (typeof LESSON_TABS)[number]
 
 /** Arrangeable sections of the lesson recap page. */
 export const LESSON_BLOCKS = [
-  'balance', 'score', 'grammar', 'metrics', 'corrections',
-  'sections', 'notes', 'homework', 'exercises', 'vocabWords',
+  'memo', 'balance', 'score', 'grammar', 'metrics', 'corrections',
+  'sections', 'homework', 'exercises', 'vocabWords', 'files',
 ] as const
 export type LessonBlockId = (typeof LESSON_BLOCKS)[number]
 
 export const LESSON_BLOCK_LABELS: Record<LessonBlockId, string> = {
+  memo: 'Voice memo',
   balance: 'Speaking balance',
   score: 'Score',
   grammar: 'Grammar density',
   metrics: 'Speaking, measured',
   corrections: 'Corrections',
   sections: 'Lesson notes',
-  notes: 'Teacher’s note',
   homework: 'Homework',
   exercises: 'Practice exercises',
   vocabWords: 'Word list',
+  files: 'Files',
 }
 
 /** A recap block belongs to one tab; arranging happens inside that tab. */
 export const LESSON_BLOCK_TAB: Record<LessonBlockId, LessonTab> = {
+  memo: 'Progress',
   balance: 'Progress', score: 'Progress', grammar: 'Progress', metrics: 'Progress', corrections: 'Progress',
-  sections: 'Lesson', notes: 'Lesson',
+  sections: 'Lesson',
   homework: 'Practice', exercises: 'Practice',
   vocabWords: 'Vocabulary',
+  files: 'Files',
 }
 
 /**
@@ -145,13 +148,17 @@ export type Placement<T extends string = BlockId> = { id: T; w: number }
 /** The recap page's fixed arrangement. The dashboard's is DASHBOARD_LAYOUT,
  *  next to the components it places. */
 export const LESSON_LAYOUT: Placement<LessonBlockId>[] = [
+  // The voice memo leads: it is the teacher speaking to this student about
+  // this lesson, and it should not sit below a wall of numbers.
+  { id: 'memo', w: 12 },
   { id: 'balance', w: 4 }, { id: 'score', w: 4 }, { id: 'grammar', w: 4 },
   { id: 'metrics', w: 12 }, { id: 'corrections', w: 12 },
-  { id: 'sections', w: 12 }, { id: 'notes', w: 12 },
+  { id: 'sections', w: 12 },
   // Homework reads first and on its own line: it is the short list of things
   // to actually go and do, and beside a stack of exercises it got skimmed past.
   { id: 'homework', w: 12 }, { id: 'exercises', w: 12 },
   { id: 'vocabWords', w: 12 },
+  { id: 'files', w: 12 },
 ]
 
 /**

@@ -20,9 +20,13 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 }
 
 export default function LessonPageTabs({
-  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND,
+  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, memo, files,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
+  /** The teacher's voice memo, opening the Progress tab. Omitted = no block. */
+  memo?: React.ReactNode
+  /** File exchange, filling the Files tab. Omitted = no tab. */
+  files?: React.ReactNode
 }) {
   const r = lesson.recap
   const m = r.metrics as any
@@ -129,9 +133,10 @@ export default function LessonPageTabs({
             )}
           </div>
         )
-      case 'notes':
-        if (!r.teacher_note) return null
-        return <div className="lesson-block"><h3>Teacher’s Note</h3><p>{r.teacher_note}</p></div>
+      case 'memo':
+        return memo ?? null
+      case 'files':
+        return files ?? null
       case 'homework':
         return (
           <div className="lesson-block">
@@ -166,26 +171,35 @@ export default function LessonPageTabs({
     }
   }
 
-  // Our arrangement for this tab. The teacher styles the recap; they do not
+  // Our arrangement, block by block. The teacher styles the recap; they do not
   // rearrange it — see LESSON_LAYOUT in lib/brand.
-  const placements = LESSON_LAYOUT.filter((p) => LESSON_BLOCK_TAB[p.id] === tab)
+  //
+  // Rendered up front rather than per tab so a tab with nothing in it can be
+  // left off the bar entirely: a student whose teacher shared no files should
+  // not be offered a Files tab that opens onto an apology.
+  const built = LESSON_LAYOUT
+    .map(({ id, w }) => ({ id, w, tab: LESSON_BLOCK_TAB[id], content: section(id) }))
+    .filter((b) => b.content)
+
+  const tabs = LESSON_TABS.filter((t) => built.some((b) => b.tab === t))
+  // The remembered tab can vanish — a memo deleted, the last file removed.
+  const active = tabs.includes(tab) ? tab : tabs[0]
+  if (!active) return null
 
   return (
     <div>
       <div className="tabs" role="tablist" aria-label="Lesson recap sections">
-        {LESSON_TABS.map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} className={`tab ${tab === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{t}</button>
+        {tabs.map((t) => (
+          <button key={t} role="tab" aria-selected={active === t} className={`tab ${active === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{t}</button>
         ))}
       </div>
 
       {/* Keyed on the tab so switching remounts the panel and its cards run
           their entrance again — the page answers the click. */}
-      <div className="k-flow" role="tabpanel" key={tab}>
-        {placements.map(({ id, w }) => {
-          const content = section(id)
-          if (!content) return null
-          return <div key={id} style={{ ['--w' as any]: w }}>{content}</div>
-        })}
+      <div className="k-flow" role="tabpanel" key={active}>
+        {built.filter((b) => b.tab === active).map(({ id, w, content }) => (
+          <div key={id} style={{ ['--w' as any]: w }}>{content}</div>
+        ))}
       </div>
     </div>
   )

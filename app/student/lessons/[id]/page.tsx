@@ -8,6 +8,7 @@ import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils
 import LessonPageTabs from '@/components/LessonPageTabs'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
+import LessonMemo, { isMemo } from '@/components/portal/LessonMemo'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,9 +80,9 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         studentFirst={studentName.split(' ')[0] || 'You'}
         teacherFirst={teacherFirst}
         brand={brand}
+        memo={<LessonMemo memos={(files || []).filter(isMemo)} lessonId={l.id} role="student" teacherFirst={teacherFirst} />}
+        files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={audios || []} />}
       />
-
-      <LessonExchange lessonId={l.id} role="student" files={files || []} audios={audios || []} />
     </div>
   )
 }
