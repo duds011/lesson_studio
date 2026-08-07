@@ -1,13 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getStudentCredits } from '@/lib/credits'
-import { getTeacherPaymentMethods } from '@/lib/payment-methods'
 import { formatDateShort, lessonBlurb, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import { PillarLesson } from '@/components/portal/LessonPillar'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from '@/components/portal/DashboardBlocks'
-import PaymentMethodsPanel from '@/components/portal/PaymentMethodsPanel'
-import StudentLessonsBar, { BuyPkg } from '@/components/portal/StudentLessonsBar'
 import DashboardTabs from '@/components/portal/DashboardTabs'
 import { DASH_BLOCK_TAB, DASH_TABS, resolveBrand, type DashTab } from '@/lib/brand'
 
@@ -112,16 +108,12 @@ export default async function StudentDashboard() {
     .order('created_at', { ascending: false })
 
   const admin = createAdminClient()
-  const [credits, paymentMethods, { data: pkgRows }, { data: teacherProfile }] = await Promise.all([
-    getStudentCredits(admin, student.id),
-    getTeacherPaymentMethods(admin, student.teacher_id),
-    admin.from('lesson_packages').select('id, name, lessons_count, amount, currency').eq('teacher_id', student.teacher_id).eq('active', true).order('amount', { ascending: true }),
-    admin.from('profiles').select('brand').eq('id', student.teacher_id).single(),
-  ])
+  // Credits, payment methods and buyable packages used to be fetched here for
+  // the two panels above the tabs. The student portal is about the learning, so
+  // those panels are gone and the queries with them.
+  const { data: teacherProfile } = await admin
+    .from('profiles').select('brand').eq('id', student.teacher_id).single()
   const brand = resolveBrand((teacherProfile as any)?.brand)
-  const buyPackages: BuyPkg[] = (pkgRows ?? []).map((p: any) => ({
-    id: p.id, name: p.name, lessons_count: p.lessons_count, amount: Number(p.amount), currency: p.currency,
-  }))
 
   // The pillar reads earliest lesson first — `rows` comes back newest first.
   const pillarLessons: PillarLesson[] = rows
@@ -301,13 +293,6 @@ export default async function StudentDashboard() {
           <button className="k-bell" aria-label="Notifications">
             <Icon d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16zM10 22h4" />
           </button>
-        </div>
-      </div>
-
-      <div className="k-flow" style={{ marginTop: 16 }}>
-        <div style={{ ['--w' as any]: 12 }}>
-          <StudentLessonsBar credits={credits} packages={buyPackages} />
-          <PaymentMethodsPanel methods={paymentMethods} />
         </div>
       </div>
 

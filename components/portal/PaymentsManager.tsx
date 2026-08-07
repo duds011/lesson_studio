@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { addPayment, updatePayment, deletePayment, markPaymentPaid, updateTeacherCurrency, PaymentInput } from '@/app/actions/payments'
 import { formatMoney, currencySymbol, CURRENCIES } from '@/lib/currency'
 import PageHeader from '@/components/PageHeader'
+import DragScroller from '@/components/portal/DragScroller'
 
 export interface StudentOption { id: string; fullName: string }
 export interface Credit { purchased: number; used: number; remaining: number; low: boolean }
@@ -140,8 +141,11 @@ export default function PaymentsManager({
       {/* Currency and Add payment moved into the header — this is just a label. */}
       <h2 className="section-heading" style={{ margin: 0 }}>Students</h2>
 
-      {/* Per-student table */}
-      <div className="k-table">
+      {/* Per-student table. The min-width is what makes it overflow rather than
+          crush its columns on a narrow window — which is what gives the drag
+          something to pan. */}
+      <DragScroller>
+      <div className="k-table" style={{ minWidth: 620 }}>
         <div className="k-table-head" style={{ gridTemplateColumns: 'minmax(160px,1.6fr) 110px 150px 110px' }}>
           <span>Student</span><span>Paid</span><span>Lessons</span><span></span>
         </div>
@@ -162,12 +166,14 @@ export default function PaymentsManager({
         })}
         {sortedStudents.length === 0 && <div className="k-row" style={{ color: 'var(--muted)' }}>No students yet.</div>}
       </div>
+      </DragScroller>
 
       {/* Recent payments */}
       {recent.length > 0 && (
         <div>
           <h2 className="section-heading">Recent payments</h2>
-          <div className="k-table">
+          <DragScroller>
+          <div className="k-table" style={{ minWidth: 720 }}>
             {recent.map(p => (
               <button key={p.id} className="k-row" style={{ gridTemplateColumns: '92px minmax(120px,1.4fr) 100px 90px 1fr', textAlign: 'left', background: 'none', border: 0, borderTop: '1px solid var(--line)', cursor: 'pointer', width: '100%' }} onClick={() => openEdit(p)}>
                 <span style={{ fontSize: 11, color: 'var(--muted)' }}>{(p.payment_date || p.due_date || p.created_at).slice(0, 10)}</span>
@@ -178,6 +184,7 @@ export default function PaymentsManager({
               </button>
             ))}
           </div>
+          </DragScroller>
         </div>
       )}
 
