@@ -2,32 +2,62 @@
  * Auth for the browser-extension recorder.
  *
  * The extension is not a browser session — there are no cookies to send — so it
- * carries a bearer token instead. One shared token identifies one teacher,
- * which is right for a single-teacher install; a per-teacher token column is
- * the obvious upgrade when this ships to more than one person.
+ * carries a bearer token instead. Each teacher has their OWN token, which is
+ * what makes the recorder safe to hand to more than one person: the token says
+ * whose lesson this is, rather than the server having to guess.
+ *
+ * It used to compare against a single shared EXT_API_TOKEN and then work out
+ * the teacher by looking for "the only teacher on this install". That returned
+ * 401 for everyone the moment a second teacher signed up, and would have filed
+ * every teacher's recordings under one account if it hadn't.
  */
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export type ExtCaller = { teacherId: string }
 
-export async function authenticateExtension(req: Request): Promise<ExtCaller | null> {
-  const expected = process.env.EXT_API_TOKEN
-  if (!expected) return null
-
+function bearer(req: Request): string {
   const header = req.headers.get('authorization') || ''
-  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : ''
-  // Length check first so the comparison below cannot leak length by timing.
-  if (!token || token.length !== expected.length) return null
+  return header.startsWith('Bearer ') ? header.slice(7).trim() : ''
+}
+
+/** Constant-time compare, so a wrong token cannot be found by timing it. */
+function sameToken(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false
   let diff = 0
-  for (let i = 0; i < token.length; i++) diff |= token.charCodeAt(i) ^ expected.charCodeAt(i)
-  if (diff !== 0) return null
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
+}
 
-  const teacherId = process.env.EXT_TEACHER_ID
-  if (teacherId) return { teacherId }
+export async function authenticateExtension(req: Request): Promise<ExtCaller | null> {
+  const token = bearer(req)
+  if (!token || token.length < 20) return null
 
-  // Not pinned to a teacher: fall back to the only teacher on the install.
   const admin = createAdminClient()
-  const { data } = await admin.from('profiles').select('id').eq('role', 'teacher').limit(2)
-  if (!data || data.length !== 1) return null
-  return { teacherId: data[0].id }
+
+  // The teacher this token belongs to. Unique index, so this is exact.
+  const { data: row } = await admin
+    .from('teacher_ext_tokens')
+    .select('teacher_id')
+    .eq('token', token)
+    .maybeSingle()
+
+  if (row?.teacher_id) {
+    // Best-effort: lets a teacher see whether their extension is actually
+    // talking to us, without failing the request if the write does.
+    admin.from('teacher_ext_tokens')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('teacher_id', row.teacher_id)
+      .then(undefined, () => {})
+    return { teacherId: row.teacher_id }
+  }
+
+  // Legacy single-token install: only honoured when it says WHICH teacher it
+  // means. Without that it is ambiguous, and guessing is what broke before.
+  const legacy = process.env.EXT_API_TOKEN
+  const legacyTeacher = process.env.EXT_TEACHER_ID
+  if (legacy && legacyTeacher && sameToken(token, legacy)) {
+    return { teacherId: legacyTeacher }
+  }
+
+  return null
 }

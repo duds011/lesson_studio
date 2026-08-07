@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authenticateExtension } from '@/lib/ext-auth'
-import { transcribeTracks } from '@/lib/whisper'
-import { normalizeSegments } from '@/lib/recall'
+import { transcribeTracks, toWhisperLanguage } from '@/lib/whisper'
+import { normalizeSegments } from '@/lib/transcript'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
 import { runAsTeacher } from '@/lib/teacher-scope'
@@ -16,8 +16,8 @@ export const maxDuration = 300
  * Turns an uploaded extension recording into a draft recap.
  *
  * The recap is stored under a synthetic `ext:` event id and linked to the
- * student through lesson_event_links, so it lands in the same "Recaps to
- * review" queue as a bot recording and publishes through the same path.
+ * student through lesson_event_links, so it lands in the "Recaps to review"
+ * queue and publishes through the same path as calendar-linked lessons.
  */
 export async function POST(req: Request) {
   const caller = await authenticateExtension(req)
@@ -55,7 +55,8 @@ export async function POST(req: Request) {
     }
     if (!tracks.length) return NextResponse.json({ error: 'Both tracks were empty.' }, { status: 422 })
 
-    const segments = await transcribeTracks(tracks)
+    // Tell Whisper the language rather than letting it guess per track.
+    const segments = await transcribeTracks(tracks, toWhisperLanguage(language))
     const t = normalizeSegments(segments)
     if (!t.plain.trim()) return NextResponse.json({ error: 'Nothing was said on either track.' }, { status: 422 })
 

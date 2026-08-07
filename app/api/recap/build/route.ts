@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { currentUser } from '@/lib/auth'
-import { transcribeTracks } from '@/lib/whisper'
+import { transcribeTracks, toWhisperLanguage } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/transcript'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     // The student's own language, not the teacher's: it is the field that says
     // what THIS student is being taught, and it picks the prompt.
     const language = student.language || undefined
-    const segments = await transcribeTracks(tracks)
+    const segments = await transcribeTracks(tracks, toWhisperLanguage(language))
     const t = normalizeSegments(segments)
     if (!t.plain.trim()) return NextResponse.json({ ok: false, error: 'Nothing was said on either track.' }, { status: 422 })
 

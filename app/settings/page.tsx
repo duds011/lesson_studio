@@ -10,6 +10,7 @@ import AppNav from '@/components/AppNav'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
 import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
+import ExtTokenPanel from '@/components/ExtTokenPanel'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,11 @@ export default async function SettingsPage() {
     ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode').eq('id', user.id).single()
     : { data: null }
   const calendarMode = resolveCalendarMode((profile as any)?.calendar_mode)
+  // The teacher's own recorder token, read with their own client so RLS
+  // confirms it is theirs rather than the page taking the id on trust.
+  const { data: extToken } = user
+    ? await supabase.from('teacher_ext_tokens').select('token, last_used_at').eq('teacher_id', user.id).maybeSingle()
+    : { data: null }
   const stripe = {
     connected: Boolean((profile as any)?.stripe_account_id),
     chargesEnabled: Boolean((profile as any)?.stripe_charges_enabled),
@@ -60,6 +66,21 @@ export default async function SettingsPage() {
         <SettingsTabs calendar={calendarMode !== 'none'}>
           {/* ── Connections ─────────────────────────────────────────── */}
           <SettingsPanel id="connections">
+            <section className="k-sec" style={{ marginBottom: 18 }}>
+              <div className="k-sec-head">
+                <span className="k-sec-icon" aria-hidden>🎙️</span>
+                <div>
+                  <h3>Lesson recorder</h3>
+                  <p className="desc">The Chrome extension that records a lesson and turns it into a recap.</p>
+                </div>
+              </div>
+              <ExtTokenPanel
+                token={(extToken as any)?.token ?? null}
+                lastUsedAt={(extToken as any)?.last_used_at ?? null}
+                appUrl="https://koku-library.app"
+              />
+            </section>
+
             <section className="k-sec">
               <div className="k-sec-head">
                 <span className="k-sec-icon" aria-hidden>🔗</span>
