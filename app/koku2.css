@@ -1055,3 +1055,15 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-vocab-level{font-size:10px;font-weight:800;letter-spacing:.04em;background:var(--brand-soft);color:var(--forest);border-radius:999px;padding:2px 8px}
 .k-vocab-def{margin:3px 0 0;font-size:13px;line-height:1.5}
 .k-vocab-when{margin:5px 0 0;font-size:11.5px;color:var(--muted)}
+
+/* — student portal without the rail: one column, and a slim header — */
+.k-shell.solo{grid-template-columns:minmax(0,1fr)}
+.k-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:6px}
+.k-bar-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.k-bar-mark{width:34px;height:34px;flex:0 0 auto;border-radius:11px;background:var(--forest);color:#fff;display:grid;place-items:center}
+.k-bar-mark .ui-icon{width:17px;height:17px}
+.k-bar-name{font-weight:750;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-bar-out{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;box-shadow:var(--shadow-soft);transition:.15s ease}
+.k-bar-out:hover{color:var(--ink)}
+.k-bar-out .ui-icon{width:16px;height:16px}
+@media(max-width:560px){.k-bar-out span{display:none}.k-bar-out{padding:9px}}

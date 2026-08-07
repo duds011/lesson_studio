@@ -2,6 +2,7 @@ import { formatDateShort } from '@/lib/portal-utils'
 import TeacherFileUpload from '@/components/portal/TeacherFileUpload'
 import StudentAudioUpload from '@/components/portal/StudentAudioUpload'
 import { isMemo } from '@/components/portal/LessonMemo'
+import AudioPlayer from '@/components/portal/AudioPlayer'
 
 type Row = { id: string; file_name: string | null; created_at: string; content_type?: string | null }
 
@@ -29,13 +30,12 @@ export default function LessonExchange({
   const audioList = audios.length > 0 && (
     <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
       {audios.map((a) => (
-        <div key={a.id} style={{ border: '1px solid var(--line)', borderRadius: 10, padding: 10, background: 'var(--surface-2)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
-            <span style={{ fontWeight: 600 }}>{a.file_name || 'recording'}</span>
-            <span>{formatDateShort(a.created_at)}</span>
-          </div>
-          <audio controls preload="none" style={{ width: '100%', height: 38 }} src={`/api/portal/download?kind=audio&id=${a.id}`} />
-        </div>
+        <AudioPlayer
+          key={a.id}
+          src={`/api/portal/download?kind=audio&id=${a.id}`}
+          title={a.file_name || 'Recording'}
+          meta={formatDateShort(a.created_at)}
+        />
       ))}
     </div>
   )

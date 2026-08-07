@@ -129,7 +129,8 @@ export const LESSON_BLOCK_LABELS: Record<LessonBlockId, string> = {
 
 /** A recap block belongs to one tab; arranging happens inside that tab. */
 export const LESSON_BLOCK_TAB: Record<LessonBlockId, LessonTab> = {
-  memo: 'Progress',
+  // The memo sits with the lesson itself, not the measurements.
+  memo: 'Lesson',
   balance: 'Progress', score: 'Progress', grammar: 'Progress', metrics: 'Progress', corrections: 'Progress',
   sections: 'Lesson',
   homework: 'Practice', exercises: 'Practice',
@@ -148,8 +149,8 @@ export type Placement<T extends string = BlockId> = { id: T; w: number }
 /** The recap page's fixed arrangement. The dashboard's is DASHBOARD_LAYOUT,
  *  next to the components it places. */
 export const LESSON_LAYOUT: Placement<LessonBlockId>[] = [
-  // The voice memo leads: it is the teacher speaking to this student about
-  // this lesson, and it should not sit below a wall of numbers.
+  // The voice memo leads its tab: it is the teacher speaking to this student
+  // about this lesson, and it should come before the write-up of it.
   { id: 'memo', w: 12 },
   { id: 'balance', w: 4 }, { id: 'score', w: 4 }, { id: 'grammar', w: 4 },
   { id: 'metrics', w: 12 }, { id: 'corrections', w: 12 },

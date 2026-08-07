@@ -219,3 +219,16 @@ th.is-today .notes-day{color:var(--brand)}
 .k-memo-row{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--surface-2)}
 .k-memo-meta{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);margin-bottom:7px}
 .k-memo-meta span:first-child{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* audio player — the portal's own, replacing the browser's grey default */
+.k-audio{display:flex;align-items:center;gap:14px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.k-audio-play{flex:0 0 auto;width:42px;height:42px;border:0;border-radius:999px;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer;transition:.15s ease}
+.k-audio-play:hover{transform:scale(1.05)}
+.k-audio-play svg{width:19px;height:19px;margin-left:1px}
+.k-audio-body{flex:1;min-width:0}
+.k-audio-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:7px}
+.k-audio-title{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-audio-meta{font-size:11px;color:var(--muted);flex:0 0 auto}
+.k-audio-track{position:relative;height:6px;border-radius:999px;background:var(--surface-2);cursor:pointer}
+.k-audio-track i{display:block;height:100%;border-radius:999px;background:var(--brand)}
+.k-audio-dot{position:absolute;top:50%;width:12px;height:12px;margin-left:-6px;border-radius:999px;background:#fff;border:2px solid var(--brand);transform:translateY(-50%);pointer-events:none}
+.k-audio-times{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}

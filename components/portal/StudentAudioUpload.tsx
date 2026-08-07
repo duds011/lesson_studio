@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadPortalFile } from '@/lib/portal-upload'
+import AudioPlayer from '@/components/portal/AudioPlayer'
 
 function pickMime() {
   if (typeof MediaRecorder === 'undefined') return ''
@@ -107,7 +108,7 @@ export default function StudentAudioUpload({ lessonId }: { lessonId: string }) {
       {pending && (
         <div className="surface" style={{ padding: 12, display: 'grid', gap: 10 }}>
           <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>Preview — {pending.name}</div>
-          <audio controls src={pending.url} style={{ width: '100%', height: 38 }} />
+          <AudioPlayer src={pending.url} title={pending.name} />
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-primary btn-sm" disabled={busy} onClick={submit}>{busy ? 'Sending…' : 'Submit to teacher'}</button>
             <button className="btn btn-ghost btn-sm" disabled={busy} onClick={discard}>Discard &amp; redo</button>

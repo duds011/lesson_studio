@@ -1,5 +1,6 @@
 import { formatDateShort } from '@/lib/portal-utils'
 import TeacherVoiceMemo from '@/components/portal/TeacherVoiceMemo'
+import AudioPlayer from '@/components/portal/AudioPlayer'
 
 type Row = { id: string; file_name: string | null; created_at: string; content_type?: string | null }
 
@@ -24,13 +25,12 @@ export default function LessonMemo({
   if (role === 'student' && memos.length === 0) return null
 
   const players = memos.map((m) => (
-    <div key={m.id} className="k-memo-row">
-      <div className="k-memo-meta">
-        <span>{m.file_name || 'Voice memo'}</span>
-        <span>{formatDateShort(m.created_at)}</span>
-      </div>
-      <audio controls preload="none" style={{ width: '100%', height: 38 }} src={`/api/portal/download?kind=file&id=${m.id}`} />
-    </div>
+    <AudioPlayer
+      key={m.id}
+      src={`/api/portal/download?kind=file&id=${m.id}`}
+      title={m.file_name || 'Voice memo'}
+      meta={formatDateShort(m.created_at)}
+    />
   ))
 
   if (role === 'student') {
