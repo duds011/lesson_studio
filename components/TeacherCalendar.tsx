@@ -5,8 +5,7 @@ import Link from 'next/link'
 import LessonRow, { type LessonView } from '@/components/LessonRow'
 import LessonTools from '@/components/portal/LessonTools'
 
-type Bot = { botId: string; status: string; label: string; state: string } | null
-export type CalEvent = LessonView & { attendees?: string[]; bot: Bot; recapStatus: 'draft' | 'published' | null }
+export type CalEvent = LessonView & { attendees?: string[]; recapStatus: 'draft' | 'published' | null }
 type View = 'day' | 'week' | 'month' | 'list'
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -29,9 +28,6 @@ function monthGrid(anchor: Date): Date[] {
 const statusDot = (e: CalEvent): { c: string; t: string } | null => {
   if (e.recapStatus === 'published') return { c: 'var(--green)', t: 'Recap published' }
   if (e.recapStatus === 'draft') return { c: 'var(--brand)', t: 'Recap draft' }
-  if (e.bot?.state === 'recording') return { c: 'var(--red)', t: 'Recording' }
-  if (e.bot?.state === 'joining') return { c: 'var(--amber)', t: 'Bot joining' }
-  if (e.bot?.state === 'done') return { c: 'var(--brand)', t: 'Recorded' }
   return null
 }
 
@@ -195,14 +191,14 @@ function WeekView({ days, today, byDay, onPick, onDay }: {
   )
 }
 
-/* ── Day: full lesson rows with Join / Record actions visible inline ── */
+/* ── Day: full lesson rows with Join / recap actions visible inline ── */
 function DayView({ day, events }: { day: Date; events: CalEvent[] }) {
   if (events.length === 0) return <div className="empty"><strong>Nothing on {day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}.</strong><br />No lessons scheduled this day.</div>
   return (
     <div className="day-group">
       <div className="day-head"><span className="day-label">{day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span></div>
       {events.map((e) => (
-        <LessonRow key={e.id} lesson={{ id: e.id, title: e.title, start: e.start, end: e.end, tz: e.tz, platform: e.platform, meetingUrl: e.meetingUrl, attendees: e.attendees }} initialBot={e.bot} initialRecapStatus={e.recapStatus} />
+        <LessonRow key={e.id} lesson={{ id: e.id, title: e.title, start: e.start, end: e.end, tz: e.tz, platform: e.platform, meetingUrl: e.meetingUrl, attendees: e.attendees }} initialRecapStatus={e.recapStatus} />
       ))}
     </div>
   )
@@ -224,7 +220,7 @@ function ListView({ byDay, today }: { byDay: Map<string, CalEvent[]>; today: Dat
         <div className="day-group" key={k}>
           <div className="day-head"><span className="day-label">{dayLabel(k)}</span></div>
           {byDay.get(k)!.map((e) => (
-            <LessonRow key={e.id} lesson={{ id: e.id, title: e.title, start: e.start, end: e.end, tz: e.tz, platform: e.platform, meetingUrl: e.meetingUrl, attendees: e.attendees }} initialBot={e.bot} initialRecapStatus={e.recapStatus} />
+            <LessonRow key={e.id} lesson={{ id: e.id, title: e.title, start: e.start, end: e.end, tz: e.tz, platform: e.platform, meetingUrl: e.meetingUrl, attendees: e.attendees }} initialRecapStatus={e.recapStatus} />
           ))}
         </div>
       ))}
@@ -244,7 +240,7 @@ function EventModal({ event, onClose }: { event: CalEvent; onClose: () => void }
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
-        <LessonRow lesson={{ id: event.id, title: event.title, start: event.start, end: event.end, tz: event.tz, platform: event.platform, meetingUrl: event.meetingUrl, attendees: event.attendees }} initialBot={event.bot} initialRecapStatus={event.recapStatus} />
+        <LessonRow lesson={{ id: event.id, title: event.title, start: event.start, end: event.end, tz: event.tz, platform: event.platform, meetingUrl: event.meetingUrl, attendees: event.attendees }} initialRecapStatus={event.recapStatus} />
         <LessonTools eventId={event.id} attendees={event.attendees ?? []} />
       </div>
     </div>
