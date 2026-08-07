@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { levelScale } from './portal/VocabLevelBreakdown'
 
 export type LessonView = {
   id: string
@@ -12,7 +13,6 @@ export type LessonView = {
   meetingUrl: string | null
   attendees?: string[]
 }
-type Bot = { botId: string; status: string; label: string; state: string } | null
 
 const PLAT: Record<LessonView['platform'], { label: string; color: string }> = {
   meet: { label: 'Google Meet', color: '#00832d' },
@@ -36,83 +36,15 @@ function studentName(title: string) {
   return clean
 }
 
-const pillClass: Record<string, string> = {
-  joining: 'blue', recording: 'red rec', done: 'green', error: 'red', idle: 'gray',
-}
-
 export default function LessonRow({
-  lesson, initialBot, initialRecapStatus,
+  lesson, initialRecapStatus,
 }: {
   lesson: LessonView
-  initialBot: Bot
   initialRecapStatus: 'draft' | 'published' | null
 }) {
-  const [bot, setBot] = useState<Bot>(initialBot)
-  const [sending, setSending] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
-  const [building, setBuilding] = useState(false)
-  const [err, setErr] = useState('')
   const [recap, setRecap] = useState<any>(null)
   const [recapStatus, setRecapStatus] = useState<'draft' | 'published' | null>(initialRecapStatus)
   const [open, setOpen] = useState(false)
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  useEffect(() => {
-    const active = bot && bot.state !== 'done' && bot.state !== 'error'
-    if (!active) return
-    timer.current = setInterval(async () => {
-      try {
-        const j = await (await fetch('/api/recall/status', { cache: 'no-store' })).json()
-        const mine = j.bots?.[lesson.id]
-        if (mine) setBot(mine)
-      } catch {}
-    }, 6000)
-    return () => { if (timer.current) clearInterval(timer.current) }
-  }, [bot, lesson.id])
-
-  async function sendBot() {
-    if (!lesson.meetingUrl) return
-    setSending(true); setErr('')
-    try {
-      const j = await (await fetch('/api/recall/send-bot', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, meetingUrl: lesson.meetingUrl, botName: 'Lesson Recorder', attendees: lesson.attendees ?? [], studentName: studentName(lesson.title), lessonTitle: lesson.title, lessonDate: lesson.start }),
-      })).json()
-      if (!j.ok) { setErr(j.error || 'Failed'); return }
-      setBot({ botId: j.botId, status: j.status, label: 'Bot joining…', state: 'joining' })
-    } catch { setErr('Failed to send bot') } finally { setSending(false) }
-  }
-
-  async function cancelBot() {
-    if (!bot || bot.state !== 'joining') return
-    if (!window.confirm('Cancel the lesson recorder? It will leave the waiting room or meeting.')) return
-    setCancelling(true); setErr('')
-    try {
-      const response = await fetch('/api/recall/cancel-bot', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id }),
-      })
-      const json = await response.json()
-      if (!response.ok || !json.ok) { setErr(json.error || 'Could not cancel recorder'); return }
-      setBot(null)
-    } catch {
-      setErr('Could not cancel recorder')
-    } finally {
-      setCancelling(false)
-    }
-  }
-
-  async function buildRecap() {
-    setBuilding(true); setErr('')
-    try {
-      const j = await (await fetch('/api/recap/build', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: lesson.id, studentName: studentName(lesson.title), lessonDate: lesson.start, lessonTitle: lesson.title, attendees: lesson.attendees ?? [] }),
-      })).json()
-      if (!j.ok) { setErr(j.error || 'Recap failed'); return }
-      setRecap(j.recap); setRecapStatus('draft'); setOpen(true)
-    } catch { setErr('Recap failed') } finally { setBuilding(false) }
-  }
 
   async function openRecap() {
     if (!recap) {
@@ -133,12 +65,10 @@ export default function LessonRow({
   }
 
   const p = PLAT[lesson.platform]
-  const live = bot && (bot.state === 'joining' || bot.state === 'recording')
-  const botDone = bot && bot.state === 'done'
 
   return (
     <>
-      <div className={`lesson-row ${live ? 'live' : ''}`}>
+      <div className="lesson-row">
         <div className="lesson-time">
           <div>{fmtTime(lesson.start, lesson.tz)}</div>
           <small>{fmtDur(lesson.start, lesson.end)}</small>
@@ -160,27 +90,9 @@ export default function LessonRow({
             <button className="btn btn-ghost btn-sm" onClick={openRecap}>View recap</button>
           ) : recapStatus === 'draft' ? (
             <button className="btn btn-primary btn-sm" onClick={openRecap}>Review recap</button>
-          ) : botDone ? (
-            <button className="btn btn-primary btn-sm" disabled={building} onClick={buildRecap}>
-              {building ? 'Building…' : 'Build recap'}
-            </button>
-          ) : bot ? (
-            <>
-              <span className={`pill ${pillClass[bot.state] || 'gray'}`}><span className="dot" />{bot.label}</span>
-              {bot.state === 'joining' && (
-                <button className="btn btn-danger-ghost btn-sm" disabled={cancelling} onClick={cancelBot}>
-                  {cancelling ? 'Cancelling…' : 'Cancel bot'}
-                </button>
-              )}
-            </>
-          ) : lesson.meetingUrl ? (
-            <button className="btn btn-primary btn-sm" disabled={sending} onClick={sendBot}>
-              {sending ? 'Sending…' : 'Record lesson'}
-            </button>
-          ) : (
+          ) : !lesson.meetingUrl ? (
             <span className="pill amber"><span className="dot" />No link</span>
-          )}
-          {err && <span style={{ color: 'var(--red)', fontSize: '.76rem', fontWeight: 600 }}>{err}</span>}
+          ) : null}
         </div>
       </div>
 
@@ -282,8 +194,9 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
           {recap.vocabulary?.length > 0 && (
             <div className="block">
               <h4>Vocabulary {recap.vocab_total_count ? `· ${recap.vocab_total_count} items` : ''}</h4>
+              {/* Scale follows the language, not always Japanese. */}
               {Object.keys(dist).length > 0 && (
-                <div className="jlpt-row">{['N5', 'N4', 'N3', 'N2', 'N1'].map((lv) => <span key={lv} className="jlpt">{lv}: {dist[lv] ?? 0}</span>)}</div>
+                <div className="jlpt-row">{levelScale(dist).map((lv) => <span key={lv} className="jlpt">{lv}: {dist[lv] ?? 0}</span>)}</div>
               )}
               <ul className="fc-list">
                 {recap.vocabulary.map((v: any, i: number) => (
@@ -328,7 +241,7 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
             <div className="block"><h4>Teacher’s note</h4><p>{recap.teacher_note}</p></div>
           )}
           <div style={{ fontSize: '.76rem', color: 'var(--muted)', textAlign: 'center', padding: '.5rem' }}>
-            Source: Recall.ai recording → OpenAI (gpt-4.1) recap
+            Source: extension recording → Whisper transcript → OpenAI (gpt-4.1) recap
           </div>
         </div>
         <div className="drawer-foot">

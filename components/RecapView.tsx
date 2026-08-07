@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { levelScale } from './portal/VocabLevelBreakdown'
 
 /* ── Formatted-content renderer ──
    The model emits section content with single newlines (not blank-line blocks),
@@ -95,8 +96,10 @@ export function RecapBody({ recap }: { recap: any }) {
       {recap.vocabulary?.length > 0 && (
         <div className="block">
           <h4>Vocabulary {recap.vocab_total_count ? `· ${recap.vocab_total_count} items` : ''}</h4>
+          {/* The scale follows the language — JLPT hardcoded here showed a
+              French lesson five zeros. */}
           {Object.keys(dist).length > 0 && (
-            <div className="jlpt-row">{['N5', 'N4', 'N3', 'N2', 'N1'].map((lv) => <span key={lv} className="jlpt">{lv}: {dist[lv] ?? 0}</span>)}</div>
+            <div className="jlpt-row">{levelScale(dist).map((lv) => <span key={lv} className="jlpt">{lv}: {dist[lv] ?? 0}</span>)}</div>
           )}
           <ul className="fc-list">
             {recap.vocabulary.map((v: any, i: number) => (

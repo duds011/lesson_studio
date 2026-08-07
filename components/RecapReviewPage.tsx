@@ -6,12 +6,12 @@ import Link from 'next/link'
 import LessonExercises from './LessonExercises'
 import LessonTopics from './LessonTopics'
 import TeacherVoiceMemo, { type HeldMemo } from './portal/TeacherVoiceMemo'
+import PendingFiles from './portal/PendingFiles'
 import { uploadPortalFile } from '@/lib/portal-upload'
 import type { DraftRecap } from './RecapReview'
 
 type Section = { title: string; content: string }
 const asText = (c: any) => (Array.isArray(c) ? c.join('\n') : typeof c === 'string' ? c : '')
-const JLPT = ['N5', 'N4', 'N3', 'N2', 'N1'] as const
 
 /** Textarea that grows to fit its content so nothing is hidden behind a scrollbar. */
 function AutoTextarea({ value, onChange, placeholder, minRows = 3 }: {
@@ -53,6 +53,8 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   // A voice memo recorded during review. The lesson row doesn't exist until
   // publish, so the blob waits here and is uploaded right after.
   const memoRef = useRef<HeldMemo | null>(null)
+  // Same deal for attachments: no lesson row to hang them on until publish.
+  const filesRef = useRef<File[]>([])
 
   const setSection = (i: number, patch: Partial<Section>) => setSections(sections.map((s, j) => (j === i ? { ...s, ...patch } : s)))
   const cleanSections = () => sections.map((s) => ({ title: s.title.trim(), content: s.content.trim() })).filter((s) => s.title || s.content)
@@ -74,12 +76,20 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
     await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
     const res = await fetch('/api/recap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId: rec.eventId }) }).then((x) => x.json())
     if (!res.delivered && res.warning) { setBusy(''); setMsg(res.warning); return }
-    // Publishing created the lesson — attach the memo recorded during review.
-    if (memoRef.current && res.lessonId) {
+    // Publishing created the lesson — now the memo and files have somewhere to
+    // go. The recap is already sent at this point, so a failure here reports
+    // what is missing rather than pretending the whole thing failed.
+    if (res.lessonId) {
       try {
-        await uploadPortalFile('teacher-file', res.lessonId, memoRef.current.blob, memoRef.current.name)
+        if (memoRef.current) {
+          await uploadPortalFile('teacher-file', res.lessonId, memoRef.current.blob, memoRef.current.name)
+        }
+        for (const f of filesRef.current) {
+          await uploadPortalFile('teacher-file', res.lessonId, f, f.name)
+        }
       } catch {
-        setBusy(''); setMsg('Recap sent, but the voice memo failed to upload — record it again from the lesson page.')
+        setBusy('')
+        setMsg('Recap sent, but an attachment failed to upload — add it from the lesson page.')
         return
       }
     }
@@ -112,8 +122,6 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const first = rec.studentName.split(' ')[0]
   const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : ''
   const m = r.metrics as any
-  const dist: Record<string, number> = r.vocab_level_distribution || {}
-  const distMax = Math.max(1, ...JLPT.map((l) => dist[l] ?? 0))
   const vocab: any[] = r.vocabulary || []
   const label = (t: Tab) => t === 'Lesson' ? 'Recap' : t
 
@@ -245,6 +253,13 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
               </p>
               <TeacherVoiceMemo onHold={(m) => { memoRef.current = m }} />
             </section>
+            <section className="block">
+              <h4>📎 Files for {first}</h4>
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
+                Slides, a worksheet, anything from the lesson. They go out with the recap when you approve.
+              </p>
+              <PendingFiles studentFirst={first} onChange={(f) => { filesRef.current = f }} />
+            </section>
           </div>
         )}
 
@@ -275,16 +290,6 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
         {/* ── VOCABULARY (read-only) ── */}
         {tab === 'Vocabulary' && (
           <div role="tabpanel" style={{ display: 'grid', gap: 16, paddingTop: 4 }}>
-            <section className="block">
-              <h4>By JLPT level</h4>
-              {JLPT.map((lv) => (
-                <div className="balance-row" key={lv} style={{ gridTemplateColumns: '40px 1fr 32px', display: 'grid', alignItems: 'center', gap: 8, padding: '3px 0' }}>
-                  <span>{lv}</span>
-                  <div className="balance-track"><div className="balance-fill student" style={{ width: `${((dist[lv] ?? 0) / distMax) * 100}%` }} /></div>
-                  <span>{dist[lv] ?? 0}</span>
-                </div>
-              ))}
-            </section>
             <section className="block">
               <h4>Words from this lesson {vocab.length ? `· ${vocab.length}` : ''}</h4>
               {vocab.length === 0 ? <p className="sub" style={{ margin: 0 }}>No vocabulary captured.</p> : (
