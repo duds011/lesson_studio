@@ -34,6 +34,20 @@ export async function authenticateExtension(req: Request): Promise<ExtCaller | n
 
   const admin = createAdminClient()
 
+  /**
+   * A signed-in teacher: the extension signs in with the same email and
+   * password as the app and sends the session token, so there is no key to
+   * copy across and no second credential to lose. Three dots' worth of JWT is
+   * the tell — a stored token is opaque and has none.
+   */
+  if (token.split('.').length === 3) {
+    const { data: authed } = await admin.auth.getUser(token)
+    if (!authed?.user) return null
+    const { data: profile } = await admin
+      .from('profiles').select('role').eq('id', authed.user.id).maybeSingle()
+    return profile?.role === 'teacher' ? { teacherId: authed.user.id } : null
+  }
+
   // The teacher this token belongs to. Unique index, so this is exact.
   const { data: row } = await admin
     .from('teacher_ext_tokens')

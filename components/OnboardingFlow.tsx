@@ -35,7 +35,7 @@ const ZONES = [
   'Australia/Sydney',
 ]
 
-const STEPS = ['What you teach', 'Where you meet', 'Your calendar', 'Your student view'] as const
+const STEPS = ['What you teach', 'Where you meet', 'Your calendar', 'Your student view', 'Your recorder'] as const
 
 export default function OnboardingFlow({ initial, googleConnected, zoomConnected }: Props) {
   const router = useRouter()
@@ -78,6 +78,10 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     } else if (step === 2) {
       if (!calendarMode) { setError('Tell us whether your lessons live on a calendar.'); return }
       persist({ calendarMode, step: 3 }, () => setStep(3))
+    } else if (step === 3) {
+      // The look is saved on the way past, so the recorder step is the only
+      // thing between here and finishing.
+      persist({ brand: { accent, portalName }, step: 4 }, () => setStep(4))
     }
   }
 
@@ -288,6 +292,38 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 <span>{portalName || 'Lesson Studio'}</span>
                 <strong>Learn today, succeed tomorrow!</strong>
               </div>
+            </>
+          )}
+
+          {/* ── 5. The recorder ── */}
+          {step === 4 && (
+            <>
+              <h1>Install the recorder</h1>
+              <p className="k-onb-lead">
+                This is the part that does the work: a Chrome extension that records your lesson
+                and writes the recap. No bot joins the call, and nothing is installed on your
+                student&rsquo;s side.
+              </p>
+
+              <ol className="k-onb-list">
+                <li><strong>Open the install page</strong> and follow the five steps — it takes a minute, once.</li>
+                <li><strong>Sign in inside the extension</strong> with this same email and password. There is nothing to copy across.</li>
+                <li><strong>Record a lesson</strong>: pick the student, hit start, hit stop at the end.</li>
+              </ol>
+
+              <a
+                href="/recorder"
+                target="_blank"
+                rel="noopener"
+                className="k-onb-cta"
+              >
+                Open the install page ↗
+              </a>
+
+              <p className="k-onb-fine">
+                You can do this later — it&rsquo;s at <strong>Settings → Lesson recorder</strong> whenever
+                you&rsquo;re ready.
+              </p>
             </>
           )}
 

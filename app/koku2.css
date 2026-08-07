@@ -1080,3 +1080,10 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-vlv-chip:hover{border-color:var(--line-strong)}
 .k-vlv-chip.sel{border-color:var(--lv);color:var(--ink);background:var(--surface-2)}
 .k-vlv-hint{margin:12px 0 0;font-size:11.5px;color:var(--muted)}
+
+/* — onboarding: the recorder step — */
+.k-onb-list{margin:18px 0 0;padding-left:20px;display:grid;gap:9px;font-size:13px;line-height:1.55}
+.k-onb-list strong{font-weight:750}
+.k-onb-cta{display:inline-flex;align-items:center;justify-content:center;margin-top:20px;padding:12px 20px;border-radius:999px;background:var(--forest);color:#fff;font-weight:750;font-size:13px}
+.k-onb-cta:hover{background:var(--forest-deep)}
+.k-onb-fine{margin:14px 0 0;font-size:11.5px;color:var(--muted)}
