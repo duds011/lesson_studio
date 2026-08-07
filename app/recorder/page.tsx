@@ -68,16 +68,25 @@ export default async function RecorderPage() {
 
       <section className="lesson-block">
         <h3 style={{ marginTop: 0 }}>Before you record someone</h3>
-        <p className="sub" style={{ margin: 0 }}>
+        <p className="sub" style={{ marginTop: 0 }}>
           Tell your student you are recording and get their agreement. Some places require
           everyone on a call to consent, and Preply and italki each have their own terms about
           recording lessons — worth a look before you make this part of how you teach.
         </p>
+        <p className="sub" style={{ margin: 0 }}>
+          The recorder captures both voices. Nothing is uploaded until you press{' '}
+          <strong>Send to Lesson Studio</strong>, audio is transcribed by OpenAI to write the
+          recap, and the files are deleted 30 days later. The full detail is in our{' '}
+          <Link href="/privacy">privacy policy</Link>.
+        </p>
       </section>
 
-      <p style={{ marginTop: 22 }}>
+      <p style={{ marginTop: 22, display: 'flex', gap: 10, alignItems: 'center' }}>
         <Link href={user ? '/' : '/login'} className="btn btn-ghost btn-sm">
           {user ? '← Back to your overview' : 'Sign in to Lesson Studio'}
+        </Link>
+        <Link href="/privacy" className="sub" style={{ fontSize: 12.5 }}>
+          Privacy policy
         </Link>
       </p>
     </main>
