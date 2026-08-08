@@ -42,6 +42,12 @@ export default function LessonPageTabs({
   const lessonSections = allSections.filter((s) => !/main corrections|refinement|takeaway/i.test(s.title))
   const corrections: any[] = Array.isArray(r.corrections) ? r.corrections : []
   const didWell: any[] = Array.isArray(r.did_well) ? r.did_well : []
+  // Checked by type, not by .length. A string has a length too, so a recap
+  // whose homework came back as prose rather than a list sailed past the old
+  // `homework?.length > 0` guard and then threw on .map, white-screening the
+  // whole page. The model writes this JSON; it does not always write it twice
+  // the same way.
+  const homework: any[] = Array.isArray(r.homework) ? r.homework : []
 
   /** Height a chart gets inside a block the teacher sized (card chrome removed). */
 
@@ -141,8 +147,8 @@ export default function LessonPageTabs({
         return (
           <div className="lesson-block">
             <h3>Homework</h3>
-            {(r.homework?.length ?? 0) === 0 ? <p className="analytics-note">No homework for this lesson.</p> : (
-              <ul>{r.homework.map((hw: any, i: number) => <li key={i}>{hw.description}</li>)}</ul>
+            {homework.length === 0 ? <p className="analytics-note">No homework for this lesson.</p> : (
+              <ul>{homework.map((hw: any, i: number) => <li key={i}>{hw.description ?? String(hw)}</li>)}</ul>
             )}
           </div>
         )

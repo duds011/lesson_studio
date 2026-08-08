@@ -8,6 +8,7 @@ import LessonTopics from './LessonTopics'
 import TeacherVoiceMemo, { type HeldMemo } from './portal/TeacherVoiceMemo'
 import PendingFiles from './portal/PendingFiles'
 import { uploadPortalFile } from '@/lib/portal-upload'
+import { asHomework } from '@/lib/portal-utils'
 import type { DraftRecap } from './RecapReview'
 
 type Section = { title: string; content: string }
@@ -41,7 +42,9 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   const [sections, setSections] = useState<Section[]>(
     ((r.sections || []) as any[]).map((s) => ({ title: s?.title || '', content: asText(s?.content) })),
   )
-  const [homework, setHomework] = useState<string[]>(((r.homework || []) as any[]).map((h) => h?.description || '').filter(Boolean))
+  // See asHomework: `|| []` does not save this, because a string is truthy and
+  // then throws on .map.
+  const [homework, setHomework] = useState<string[]>(asHomework(r.homework))
   // Corrections are quotes the model pulled from the transcript, so they are
   // the most likely thing to be wrong. The teacher can drop any of them; there
   // is nothing to edit beyond that, because a rewritten "quote" is not a quote.

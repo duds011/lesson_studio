@@ -209,11 +209,12 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
             </div>
           )}
 
-          {/* homework */}
-          {recap.homework?.length > 0 && (
+          {/* homework — Array.isArray, not .length: a string has a length and
+              then throws on .map. Same fix as LessonPageTabs. */}
+          {Array.isArray(recap.homework) && recap.homework.length > 0 && (
             <div className="block">
               <h4>Homework</h4>
-              <ul className="fc-list">{recap.homework.map((h: any, i: number) => <li key={i}>{h.description}</li>)}</ul>
+              <ul className="fc-list">{recap.homework.map((h: any, i: number) => <li key={i}>{h?.description ?? String(h)}</li>)}</ul>
             </div>
           )}
 

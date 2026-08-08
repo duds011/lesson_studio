@@ -59,3 +59,20 @@ export function getLevelLabel(lessonCount: number): string {
   if (lessonCount >= 5) return 'Blooming'
   return 'Sprouting'
 }
+
+/**
+ * Homework as an editable list of strings, whatever shape the model produced.
+ *
+ * A recap's homework is meant to be `[{ description }]`, but the JSON is
+ * written by a language model and it sometimes comes back as a single string.
+ * That used to be fatal rather than untidy: every render site guarded with
+ * `homework?.length > 0`, a string has a length, and the `.map` that followed
+ * threw and took the page down with it.
+ */
+export function asHomework(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((h: any) => (typeof h === 'string' ? h : h?.description || '')).filter(Boolean)
+  }
+  if (typeof value === 'string' && value.trim()) return [value.trim()]
+  return []
+}

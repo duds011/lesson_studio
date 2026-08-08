@@ -127,7 +127,13 @@ const SAMPLE_RECAP = {
   did_well: [
     { said: 'I have never been abroad before', note: 'Present perfect used correctly for life experience.' },
   ],
-  homework: 'Write five sentences contrasting something you like with something you do not.',
+  // Array of { description }, matching a real recap. It was a bare string here,
+  // and LessonPageTabs maps over it — so opening the lesson view of this studio
+  // threw "homework.map is not a function" and took the whole page down.
+  homework: [
+    { description: 'Write five sentences contrasting something you like with something you do not.' },
+    { description: 'Record a voice memo introducing your week using けど twice.' },
+  ],
   teacher_note: 'Much more confident this week — you corrected yourself twice without help.',
   vocabulary: [
     { word: 'けど', reading: 'kedo', definition: 'but, although', jlpt_level: 'N5' },

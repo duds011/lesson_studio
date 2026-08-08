@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { asHomework } from '@/lib/portal-utils'
 
 export type DraftRecap = {
   eventId: string
@@ -28,7 +29,10 @@ export default function RecapReview({ rec, onClose, onPublished }: {
     ((r.sections || []) as any[]).map((s) => ({ title: s?.title || '', content: asText(s?.content) })),
   )
   const [note, setNote] = useState<string>(r.teacher_note || '')
-  const [homework, setHomework] = useState<string[]>(((r.homework || []) as any[]).map((h) => h?.description || '').filter(Boolean))
+  // `|| []` does not save this: a string is truthy and then .map throws. A
+  // recap whose homework came back as prose becomes one editable line instead
+  // of a blank screen.
+  const [homework, setHomework] = useState<string[]>(asHomework(r.homework))
   const [busy, setBusy] = useState<'' | 'save' | 'publish'>('')
   const [msg, setMsg] = useState('')
 
