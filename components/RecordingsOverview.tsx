@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import CountUp from '@/components/portal/CountUp'
+import HowLessonsReachYou from '@/components/HowLessonsReachYou'
 
 export type RecentLesson = {
   id: string
@@ -51,29 +52,8 @@ export default function RecordingsOverview({
 
       <div className="k-overview">
         <div className="k-overview-main">
-          <section className="k-sec">
-            <div className="k-sec-head">
-              <span className="k-sec-icon" aria-hidden>🎙️</span>
-              <div>
-                <h3>How lessons reach you</h3>
-                <p className="desc">
-                  You teach in {platformLabel}, so nothing is scheduled here. A lesson enters Lesson Studio
-                  the moment its recording does.
-                </p>
-              </div>
-            </div>
-
-            {[
-              ['Record the lesson', 'Use the browser recorder, or upload the file your platform gives you.'],
-              ['We build the recap', 'Summary, vocabulary, corrections and practice, drafted from the transcript.'],
-              ['You review and publish', 'Edit anything, then send it — the student sees it in their portal.'],
-            ].map(([title, note], i) => (
-              <div key={title} className="k-onb-ok" style={i > 0 ? { marginTop: 10 } : undefined}>
-                <span aria-hidden>{i + 1}</span>
-                <div><strong>{title}</strong><small>{note}</small></div>
-              </div>
-            ))}
-          </section>
+          {/* Closes, and stays closed — see HowLessonsReachYou. */}
+          <HowLessonsReachYou platformLabel={platformLabel} />
 
           <section className="k-sec">
             <div className="k-sec-head">
