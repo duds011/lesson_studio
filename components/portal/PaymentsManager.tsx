@@ -68,7 +68,50 @@ export default function PaymentsManager({
   const recent = useMemo(() => [...payments].sort((a, b) =>
     (b.payment_date || b.due_date || b.created_at).localeCompare(a.payment_date || a.due_date || a.created_at)).slice(0, 40), [payments])
 
-  function openAdd(preset?: string) { setForm(emptyForm()); setStudentId(preset ?? ''); setEditing(null); setError(''); setMode('add') }
+  /**
+   * The last twelve months, oldest first — the columns of the grid.
+   *
+   * Months rather than the notes grid's days: a payment happens once or twice a
+   * month, so a day grid would be an acre of empty cells to find two marks in.
+   */
+  const months = useMemo(() => {
+    const now = new Date()
+    const nowKey = todayIso().slice(0, 7)
+    const out: { key: string; label: string; year: string; isNow: boolean }[] = []
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      out.push({
+        key,
+        label: d.toLocaleDateString('en-US', { month: 'short' }),
+        year: String(d.getFullYear()).slice(2),
+        isNow: key === nowKey,
+      })
+    }
+    return out
+  }, [])
+
+  /** studentId|YYYY-MM → what was paid and what is still owed that month. */
+  const byCell = useMemo(() => {
+    const m = new Map<string, { paid: number; pending: number }>()
+    for (const p of payments) {
+      const when = (p.payment_date || p.due_date || p.created_at).slice(0, 7)
+      const k = `${p.studentId}|${when}`
+      const cur = m.get(k) ?? { paid: 0, pending: 0 }
+      if (p.status === 'paid') cur.paid += p.amount
+      else cur.pending += p.amount
+      m.set(k, cur)
+    }
+    return m
+  }, [payments])
+
+  function openAdd(preset?: string, month?: string) {
+    const f = emptyForm()
+    // Clicking a cell means "a payment in that month", so the form opens dated
+    // there — today if it is the current month, otherwise the 1st.
+    if (month) f.payment_date = month === todayIso().slice(0, 7) ? todayIso() : `${month}-01`
+    setForm(f); setStudentId(preset ?? ''); setEditing(null); setError(''); setMode('add')
+  }
   function openEdit(p: ManagedPayment) {
     setForm({ amount: String(p.amount), status: p.status, description: p.description ?? '', lessons_covered: p.lessons_covered != null ? String(p.lessons_covered) : '', payment_date: p.payment_date ?? todayIso(), due_date: p.due_date ?? '', method: p.method ?? '' })
     setStudentId(p.studentId); setEditing(p); setError(''); setMode('edit')
@@ -141,32 +184,80 @@ export default function PaymentsManager({
       {/* Currency and Add payment moved into the header — this is just a label. */}
       <h2 className="section-heading" style={{ margin: 0 }}>Students</h2>
 
-      {/* Per-student table. The min-width is what makes it overflow rather than
-          crush its columns on a narrow window — which is what gives the drag
-          something to pan. */}
-      <DragScroller>
-      <div className="k-table" style={{ minWidth: 620 }}>
-        <div className="k-table-head" style={{ gridTemplateColumns: 'minmax(160px,1.6fr) 110px 150px 110px' }}>
-          <span>Student</span><span>Paid</span><span>Lessons</span><span></span>
+      {/* Students down, months across — the same shape as the notes grid, so a
+          teacher reads both the same way. Any cell is a place to add a payment,
+          which is why an empty one still offers a +. */}
+      {sortedStudents.length === 0 ? (
+        <div className="empty">
+          <strong style={{ color: 'var(--ink)' }}>No students yet</strong>
+          <br />
+          Add students before recording payments.
         </div>
-        {sortedStudents.map(s => {
-          const c = credits[s.id] ?? { purchased: 0, used: 0, remaining: 0, low: true }
-          return (
-            <div key={s.id} className="k-row" style={{ gridTemplateColumns: 'minmax(160px,1.6fr) 110px 150px 110px' }}>
-              <Link href={`/teacher/students/${s.id}`} className="sc-name" style={{ color: 'inherit' }}>{s.fullName}</Link>
-              <span style={{ fontWeight: 700 }}>{formatMoney(paidByStudent.get(s.id) ?? 0, currency)}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <strong style={{ color: c.remaining <= 0 ? 'var(--red)' : c.low ? 'var(--amber)' : 'var(--forest)' }}>{c.remaining}</strong>
-                <span style={{ fontSize: 11, color: 'var(--muted)' }}>left / {c.purchased} bought</span>
-                {c.low && <span className="pill" style={{ background: c.remaining <= 0 ? 'var(--red-soft)' : 'var(--amber-soft)', color: c.remaining <= 0 ? 'var(--red)' : 'var(--amber)' }}>⚠️</span>}
-              </span>
-              <button className="btn btn-ghost btn-sm" onClick={() => openAdd(s.id)}>+ Payment</button>
-            </div>
-          )
-        })}
-        {sortedStudents.length === 0 && <div className="k-row" style={{ color: 'var(--muted)' }}>No students yet.</div>}
-      </div>
-      </DragScroller>
+      ) : (
+        <DragScroller className="notes-scroll">
+          <table className="pay-grid">
+            <thead>
+              <tr>
+                <th className="notes-name-col">Student</th>
+                {months.map((m) => (
+                  <th key={m.key} className={m.isNow ? 'is-now' : ''}>
+                    <div className="pay-mon">{m.label}</div>
+                    <div className="pay-yr">’{m.year}</div>
+                  </th>
+                ))}
+                <th className="pay-total-col">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedStudents.map((s) => {
+                const c = credits[s.id] ?? { purchased: 0, used: 0, remaining: 0, low: true }
+                return (
+                  <tr key={s.id}>
+                    <td className="notes-name-col">
+                      <Link href={`/teacher/students/${s.id}`} title={s.fullName}>{s.fullName}</Link>
+                      {/* Lessons left had its own column before. It matters
+                          (who has run out) but not enough to cost a column. */}
+                      <span
+                        className="pay-credits"
+                        style={{ color: c.remaining <= 0 ? 'var(--red)' : c.low ? 'var(--amber)' : 'var(--muted)' }}
+                      >
+                        {c.remaining} left / {c.purchased} bought
+                      </span>
+                    </td>
+
+                    {months.map((m) => {
+                      const cell = byCell.get(`${s.id}|${m.key}`)
+                      const has = Boolean(cell && (cell.paid || cell.pending))
+                      return (
+                        <td key={m.key} className={m.isNow ? 'is-now' : ''}>
+                          <button
+                            className={`pay-cell${has ? ' has-pay' : ''}${cell?.pending ? ' is-owed' : ''}`}
+                            onClick={() => openAdd(s.id, m.key)}
+                            title={
+                              has
+                                ? `${formatMoney(cell!.paid, currency)} paid${cell!.pending ? `, ${formatMoney(cell!.pending, currency)} owed` : ''} — click to add another`
+                                : `Add a payment for ${m.label} ’${m.year}`
+                            }
+                          >
+                            {has
+                              ? <>
+                                  {cell!.paid > 0 && <b>{formatMoney(cell!.paid, currency)}</b>}
+                                  {cell!.pending > 0 && <i className="pay-owed">{formatMoney(cell!.pending, currency)}</i>}
+                                </>
+                              : <span className="notes-plus">+</span>}
+                          </button>
+                        </td>
+                      )
+                    })}
+
+                    <td className="pay-total-col">{formatMoney(paidByStudent.get(s.id) ?? 0, currency)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </DragScroller>
+      )}
 
       {/* Recent payments */}
       {recent.length > 0 && (

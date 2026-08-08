@@ -21,6 +21,8 @@ async function currentTeacher() {
 
 export type OnboardingPatch = {
   teachingLanguage?: string
+  /** What the teacher explains in — not necessarily what they teach. */
+  speakingLanguage?: string
   timezone?: string
   teachingPlatform?: TeachingPlatform
   calendarMode?: CalendarMode
@@ -39,6 +41,7 @@ export async function saveOnboarding(patch: OnboardingPatch): Promise<Result> {
 
   const update: Record<string, unknown> = {}
   if (typeof patch.teachingLanguage === 'string') update.teaching_language = patch.teachingLanguage.trim().slice(0, 60) || null
+  if (typeof patch.speakingLanguage === 'string') update.speaking_language = patch.speakingLanguage.trim().slice(0, 60) || null
   if (typeof patch.timezone === 'string' && patch.timezone.trim()) update.timezone = patch.timezone.trim().slice(0, 60)
   if (isTeachingPlatform(patch.teachingPlatform)) {
     update.teaching_platform = patch.teachingPlatform

@@ -16,7 +16,7 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name, teaching_language, timezone, teaching_platform, meeting_platform, calendar_mode, onboarding_step, onboarding_completed_at, brand')
+    .select('role, full_name, teaching_language, speaking_language, timezone, teaching_platform, meeting_platform, calendar_mode, onboarding_step, onboarding_completed_at, brand')
     .eq('id', user.id)
     .single()
 
@@ -33,6 +33,7 @@ export default async function OnboardingPage() {
       initial={{
         fullName: profile.full_name ?? '',
         teachingLanguage: profile.teaching_language ?? null,
+        speakingLanguage: profile.speaking_language ?? null,
         timezone: profile.timezone ?? 'Asia/Tokyo',
         teachingPlatform: resolveTeachingPlatform(profile.teaching_platform ?? profile.meeting_platform),
         // Deliberately not defaulted: the step asks for an answer, and a

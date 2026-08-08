@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const admin = createAdminClient()
   const [{ data, error }, { data: profile }] = await Promise.all([
     admin.from('students').select('id, full_name, language').eq('teacher_id', caller.teacherId).order('full_name'),
-    admin.from('profiles').select('full_name, teaching_language').eq('id', caller.teacherId).maybeSingle(),
+    admin.from('profiles').select('full_name, teaching_language, speaking_language').eq('id', caller.teacherId).maybeSingle(),
   ])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -26,7 +26,11 @@ export async function GET(req: Request) {
     students: data ?? [],
     teacher: {
       name: (profile as any)?.full_name ?? null,
+      // `language` is what they teach; `speaking` is what they explain in. The
+      // recorder needs the second to guess what a lesson will actually sound
+      // like, which for a beginner is not the language being learned.
       language: (profile as any)?.teaching_language ?? null,
+      speaking: (profile as any)?.speaking_language ?? null,
     },
   })
 }

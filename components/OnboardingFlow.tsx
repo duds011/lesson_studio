@@ -13,6 +13,8 @@ type Props = {
   initial: {
     fullName: string
     teachingLanguage: string | null
+    /** What they explain in. Null until they have been through this step. */
+    speakingLanguage: string | null
     timezone: string
     teachingPlatform: TeachingPlatform
     /** null until they answer — this step has no safe default. */
@@ -27,6 +29,21 @@ type Props = {
 // The three languages the recap/test generation is tuned for. Everything else
 // is off the menu until the prompts are built and tested for it.
 const LANGUAGES = ['English', 'French', 'Japanese']
+
+/**
+ * What the teacher can pick as the language they explain in.
+ *
+ * Deliberately much wider than LANGUAGES: that list is narrow because recaps
+ * and tests have to be *generated* in those languages. This one is only ever
+ * read — it says what the room sounds like — so the only requirement is that
+ * lib/whisper can turn it into an ISO code.
+ */
+const SPOKEN_LANGUAGES = [
+  'English', 'French', 'Japanese', 'Spanish', 'German', 'Italian', 'Portuguese',
+  'Chinese', 'Korean', 'Russian', 'Arabic', 'Dutch', 'Polish', 'Turkish',
+  'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Greek', 'Hebrew', 'Hindi',
+  'Indonesian', 'Thai', 'Vietnamese', 'Ukrainian', 'Czech', 'Romanian', 'Hungarian',
+]
 
 const ZONES = [
   'Asia/Tokyo', 'Asia/Seoul', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Dubai',
@@ -48,6 +65,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
   const [language, setLanguage] = useState(
     initial.teachingLanguage && LANGUAGES.includes(initial.teachingLanguage) ? initial.teachingLanguage : ''
   )
+  const [spokenLanguage, setSpokenLanguage] = useState(initial.speakingLanguage ?? '')
   const [timezone, setTimezone] = useState(initial.timezone)
   const [platform, setPlatform] = useState<TeachingPlatform>(initial.teachingPlatform)
   // A calendar already connected is an answer in itself; otherwise they choose.
@@ -72,7 +90,13 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
   const next = () => {
     if (step === 0) {
       if (!effectiveLanguage) { setError('Pick the language you teach.'); return }
-      persist({ teachingLanguage: effectiveLanguage, timezone, step: 1 }, () => setStep(1))
+      // Blank means "same as what I teach", which is stored as the teaching
+      // language rather than as null — a value the recorder can use directly
+      // beats one every reader has to know how to resolve.
+      persist(
+        { teachingLanguage: effectiveLanguage, speakingLanguage: spokenLanguage || effectiveLanguage, timezone, step: 1 },
+        () => setStep(1),
+      )
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
@@ -143,6 +167,23 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               </label>
               <p className="k-onb-lead" style={{ fontSize: 12, marginTop: -4 }}>
                 More languages are coming — these three are the ones our recaps and tests are tuned for today.
+              </p>
+
+              <label className="k-field">
+                <span>The language you explain in</span>
+                <select
+                  className="k-input"
+                  value={spokenLanguage}
+                  onChange={(e) => setSpokenLanguage(e.target.value)}
+                >
+                  <option value="">Same as what I teach</option>
+                  {SPOKEN_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </label>
+              <p className="k-onb-lead" style={{ fontSize: 12, marginTop: -4 }}>
+                With beginners most of a lesson is the language you share, not the one being
+                learned. Telling us which it is keeps the transcript honest — and it is what the
+                recorder offers first for a new student.
               </p>
 
               <label className="k-field">

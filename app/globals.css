@@ -194,6 +194,35 @@ th.is-today .notes-day{color:var(--brand)}
 .notes-cell:hover .notes-plus{opacity:.5}
 .notes-entry{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fafbf9}
 .notes-entry[data-pinned]{border-color:#ead7a5;background:var(--amber-soft)}
+
+/* payments grid — the notes matrix with months instead of days.
+   Reuses .notes-scroll and .notes-name-col so the two read as one idea; only
+   the cells differ, because a month column has to hold an amount, not a dot. */
+.pay-grid{border-collapse:collapse;font-size:12px;min-width:100%}
+.pay-grid th{border-bottom:1px solid var(--line);padding:7px 0;width:74px;min-width:74px;
+  text-align:center;background:var(--surface)}
+.pay-grid th.is-now{background:var(--brand-soft)}
+.pay-grid td{border-top:1px solid var(--line);border-right:1px solid #f1f2f0;padding:0;
+  width:74px;min-width:74px;height:44px}
+.pay-grid td.is-now{background:#fbfcfe}
+.pay-mon{font-size:12px;font-weight:800;line-height:1}
+.pay-grid th.is-now .pay-mon{color:var(--brand)}
+.pay-yr{font-size:9px;color:var(--muted);margin-top:2px}
+/* Lessons-left, tucked under the name instead of owning a column. */
+.pay-credits{display:block;font-size:9.5px;margin-top:2px;white-space:nowrap}
+.pay-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  width:100%;height:44px;border:0;background:transparent;cursor:pointer;padding:0 4px}
+.pay-cell:hover{background:var(--brand-soft)}
+.pay-cell.has-pay{background:var(--brand-soft)}
+.pay-cell.has-pay:hover{background:#dbe7f7}
+.pay-cell b{font-size:11px;font-weight:800;color:var(--brand)}
+/* Owed money is not paid money — it must not read as income at a glance. */
+.pay-cell.is-owed{background:var(--amber-soft)}
+.pay-cell .pay-owed{font-size:9.5px;font-style:normal;font-weight:700;color:var(--amber)}
+.pay-cell .notes-plus{opacity:0;color:var(--muted)}
+.pay-cell:hover .notes-plus{opacity:.5}
+.pay-total-col{text-align:center!important;font-weight:800;background:var(--surface)!important;
+  border-left:1px solid var(--line)!important;width:92px!important;min-width:92px!important}
 /* corrections — what the student said, and what it should have been */
 .cx-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
 .cx-tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:7px}
