@@ -59,8 +59,8 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-whoami-mark{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--brand-soft);color:var(--forest);display:grid;place-items:center;font-size:12px;font-weight:800;letter-spacing:.01em}
 .k-whoami-name{font-size:13px;font-weight:750;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:620px){.k-whoami{padding:5px;gap:0}.k-whoami-name{display:none}}
-.k-bell{width:42px;height:42px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--ink);box-shadow:var(--shadow-soft);position:relative;border:0;cursor:pointer}
-.k-bell::after{content:"";position:absolute;top:11px;right:12px;width:7px;height:7px;border-radius:50%;background:var(--c-pink);border:2px solid var(--surface)}
+/* .k-bell removed with the button it styled: it carried an unread dot that was
+   always on and opened nothing. */
 
 /* — dashboard grid — */
 .k-grid{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(300px,.9fr);gap:16px;align-items:start}

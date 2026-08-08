@@ -198,9 +198,12 @@ export default async function Home() {
             <span className="k-phead-eyebrow">Overview</span>
             <h1>Your teaching calendar</h1>
           </div>
+          {/* No booking-page link. These teachers get their students from
+              Preply, italki or their own calendar — none of them is going to
+              send a booking link — so it was a door nobody opened. /book still
+              exists for anyone who wants the URL. */}
           <div className="k-thead-actions">
             <Link className="btn btn-ghost" href="/settings">Manage connections</Link>
-            <Link className="btn btn-primary" href="/book" target="_blank">Open booking page ↗</Link>
           </div>
         </header>
 

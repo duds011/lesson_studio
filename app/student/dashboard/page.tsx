@@ -9,12 +9,6 @@ import { DASH_BLOCK_TAB, DASH_TABS, resolveBrand, type DashTab } from '@/lib/bra
 
 export const dynamic = 'force-dynamic'
 
-const Icon = ({ d }: { d: string }) => (
-  <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-    <path d={d} />
-  </svg>
-)
-
 export default async function StudentDashboard() {
   const supabase = await createClient()
   const user = await requireUser(supabase, '/student/dashboard')
@@ -306,19 +300,10 @@ export default async function StudentDashboard() {
           <p className="k-hello">{L.greeting}</p>
           <h1 className="k-name">{firstName}</h1>
         </div>
-        <div className="k-top-tools">
-          {/* The search box searched nothing — it was a box with a magnifier in
-              it. Whose portal this is says more. */}
-          <div className="k-whoami">
-            <span className="k-whoami-mark" aria-hidden>
-              {student.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}
-            </span>
-            <span className="k-whoami-name">{student.full_name}</span>
-          </div>
-          <button className="k-bell" aria-label="Notifications">
-            <Icon d="M18 16V11a6 6 0 1 0-12 0v5l-2 3h16zM10 22h4" />
-          </button>
-        </div>
+        {/* Nothing on the right any more. The name was already the headline
+            two lines up, so repeating it in a chip said it twice; the bell had
+            no notifications behind it and never opened anything. A search box
+            that searched nothing went the same way earlier. */}
       </div>
 
       {/* One tab at a time, so the page is a screen rather than a scroll. */}
