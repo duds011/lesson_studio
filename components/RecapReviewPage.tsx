@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import LessonExercises from './LessonExercises'
+import ExerciseEditor from './ExerciseEditor'
 import LessonTopics from './LessonTopics'
 import TeacherVoiceMemo, { type HeldMemo } from './portal/TeacherVoiceMemo'
 import PendingFiles from './portal/PendingFiles'
@@ -50,6 +50,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
   // is nothing to edit beyond that, because a rewritten "quote" is not a quote.
   const [corrections, setCorrections] = useState<any[]>(Array.isArray(r.corrections) ? r.corrections : [])
   const [didWell, setDidWell] = useState<any[]>(Array.isArray(r.did_well) ? r.did_well : [])
+  const [exercises, setExercises] = useState<any[]>(Array.isArray(r.exercises) ? r.exercises : [])
   const [busy, setBusy] = useState<'' | 'save' | 'publish' | 'delete'>('')
   const [rebuilding, setRebuilding] = useState(false)
   const [msg, setMsg] = useState('')
@@ -66,7 +67,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
     // No teacher_note: the written note was replaced by the voice memo, and
     // omitting the field leaves whatever a past recap stored untouched.
     eventId: rec.eventId, recap: body, sections: cleanSections(),
-    homework: cleanHomework(), corrections, did_well: didWell,
+    homework: cleanHomework(), corrections, did_well: didWell, exercises,
   })
 
   async function save() {
@@ -284,8 +285,11 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
             </section>
             <section className="block">
               <h4>Practice exercises</h4>
-              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>Auto-generated from this lesson and sent with the recap. This is exactly what {first} will practice.</p>
-              <LessonExercises exercises={r.exercises || []} />
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
+                Auto-generated from this lesson. Fix any wording, move the right answer, or
+                remove an exercise — what survives is exactly what {first} will practice.
+              </p>
+              <ExerciseEditor exercises={exercises} onChange={setExercises} />
             </section>
           </div>
         )}

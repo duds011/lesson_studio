@@ -190,7 +190,7 @@ Write based on the recap. One paragraph per topic, no transitions between paragr
 Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic (hiragana [romaji] — meaning — short example). Homework sentence. Personal closing line.
 Total: 45-75 seconds when read aloud.
 
-EXERCISES — generate exactly 7 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud, 1 speak, 3 multiple_choice, 2 fill_blank.
+EXERCISES — generate exactly 10 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud (with 4 sentences), 2 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
 All Japanese in hiragana/katakana only — NEVER kanji. Keep everything at this student's level.
 The "data" object depends on "type":
 - read_aloud → prompt: "Read these sentences aloud". data: {"focus": "[grammar focus]", "sentences": [{"jp": "[hiragana sentence]", "en": "[English]"}, {"jp":"...","en":"..."}, {"jp":"...","en":"..."}]}
@@ -255,7 +255,7 @@ const SCRIPT_RULES: Record<TestScript, string> = {
 
 
 
-const TEST_PROMPT = `You are creating a JLPT-N5-style practice test for a Japanese student, based on ONE specific lesson they took. Return ONLY valid JSON.
+const TEST_PROMPT = `You are creating a JLPT-N5-style practice test for a Japanese student, based on the specific lesson(s) they took. Return ONLY valid JSON.
 
 Student: {{STUDENT}}
 Lesson title: {{LESSON_TITLE}}
@@ -302,11 +302,12 @@ Return this exact structure:
   ]
 }
 
-REQUIRED LENGTH — this is a full practice exam, not a quiz:
-- Part 1 vocabulary: exactly 10 multiple_choice questions.
-- Part 2 grammar: exactly 10 multiple_choice + 8 fill_blank questions (18 total), covering EVERY distinct grammar point in the lesson content.
-- Part 3 reading: exactly 2 passages, each with 3-4 multiple_choice questions.
-- Part 4 speaking: exactly 6 prompts.
+REQUIRED LENGTH — this is a full practice exam, not a quiz. It covers {{LESSON_COUNT}} lesson(s), and the length scales with that:
+- Part 1 vocabulary: exactly {{N_VOCAB}} multiple_choice questions.
+- Part 2 grammar: exactly {{N_GRAMMAR_MC}} multiple_choice + {{N_GRAMMAR_FB}} fill_blank questions, covering EVERY distinct grammar point in the lesson content.
+- Part 3 reading: exactly {{N_PASSAGES}} passages, each with 3-4 multiple_choice questions.
+- Part 4 speaking: exactly {{N_SPEAKING}} prompts.
+- Spread coverage across ALL the lessons provided — do not let one lesson dominate.
 
 JAPANESE SCRIPT — the teacher chose how this student reads Japanese. Follow these rules for EVERY piece of Japanese in the test:
 {{SCRIPT_RULES}}
@@ -324,7 +325,7 @@ STRICT RULES:
  * page renders unchanged; JLPT becomes CEFR and the script rules (a Japanese
  * writing-system concern) disappear.
  */
-const TEST_PROMPT_GENERIC = `You are creating a CEFR-style practice test for a student learning {{LANGUAGE}}, based on ONE specific lesson they took. Return ONLY valid JSON.
+const TEST_PROMPT_GENERIC = `You are creating a CEFR-style practice test for a student learning {{LANGUAGE}}, based on the specific lesson(s) they took. Return ONLY valid JSON.
 
 Student: {{STUDENT}}
 Lesson title: {{LESSON_TITLE}}
@@ -371,11 +372,12 @@ Return this exact structure:
   ]
 }
 
-REQUIRED LENGTH — this is a full practice exam, not a quiz:
-- Part 1 vocabulary: exactly 10 multiple_choice questions.
-- Part 2 grammar: exactly 10 multiple_choice + 8 fill_blank questions (18 total), covering EVERY distinct grammar point in the lesson content.
-- Part 3 reading: exactly 2 passages, each with 3-4 multiple_choice questions.
-- Part 4 speaking: exactly 6 prompts.
+REQUIRED LENGTH — this is a full practice exam, not a quiz. It covers {{LESSON_COUNT}} lesson(s), and the length scales with that:
+- Part 1 vocabulary: exactly {{N_VOCAB}} multiple_choice questions.
+- Part 2 grammar: exactly {{N_GRAMMAR_MC}} multiple_choice + {{N_GRAMMAR_FB}} fill_blank questions, covering EVERY distinct grammar point in the lesson content.
+- Part 3 reading: exactly {{N_PASSAGES}} passages, each with 3-4 multiple_choice questions.
+- Part 4 speaking: exactly {{N_SPEAKING}} prompts.
+- Spread coverage across ALL the lessons provided — do not let one lesson dominate.
 
 STRICT RULES:
 - Questions and instructions are written in English; the tested material is in {{LANGUAGE}}.
@@ -396,9 +398,26 @@ export async function generateTest(opts: {
   script?: TestScript
   /** The teacher's teaching language — decides which prompt builds the test. */
   language?: string | null
+  /** How many lessons the content spans — the test's length scales with it. */
+  lessonCount?: number
 }): Promise<TestJson> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
+
+  /**
+   * More lessons, longer test — but sub-linearly, because a 3-lesson review
+   * revisits overlapping material rather than tripling it. Capped so a
+   * ten-lesson review is a long exam, not an afternoon.
+   */
+  const n = Math.max(1, Math.min(10, Math.round(opts.lessonCount ?? 1)))
+  const scale = (base: number, per: number, cap: number) => String(Math.min(cap, base + per * (n - 1)))
+  const fillCounts = (s: string) => s
+    .replace('{{LESSON_COUNT}}', String(n))
+    .replace('{{N_VOCAB}}', scale(10, 4, 24))
+    .replace('{{N_GRAMMAR_MC}}', scale(10, 4, 22))
+    .replace('{{N_GRAMMAR_FB}}', scale(8, 3, 16))
+    .replace('{{N_PASSAGES}}', scale(2, 1, 4))
+    .replace('{{N_SPEAKING}}', scale(6, 2, 12))
 
   // Japanese keeps its dedicated JLPT prompt (script rules and all); English
   // and French share the CEFR prompt. Anything else falls back to Japanese
@@ -407,12 +426,12 @@ export async function generateTest(opts: {
   const isJapanese = /japanese/i.test(lang) || lang === ''
 
   const content = isJapanese
-    ? TEST_PROMPT
+    ? fillCounts(TEST_PROMPT)
         .replace('{{STUDENT}}', opts.studentName)
         .replace('{{LESSON_TITLE}}', opts.lessonTitle)
         .replace('{{LESSON_CONTENT}}', opts.lessonContent)
         .replace('{{SCRIPT_RULES}}', SCRIPT_RULES[opts.script ?? 'hiragana'])
-    : TEST_PROMPT_GENERIC
+    : fillCounts(TEST_PROMPT_GENERIC)
         .replace(/\{\{LANGUAGE\}\}/g, lang)
         .replace('{{STUDENT}}', opts.studentName)
         .replace('{{LESSON_TITLE}}', opts.lessonTitle)
@@ -526,7 +545,7 @@ Write based on the recap. One paragraph per topic, no transitions between paragr
 Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic ({{LANGUAGE}} word [pronunciation] — meaning — short example). Homework sentence. Personal closing line.
 Total: 45-75 seconds when read aloud.
 
-EXERCISES — generate exactly 7 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud, 1 speak, 3 multiple_choice, 2 fill_blank.
+EXERCISES — generate exactly 10 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud (with 4 sentences), 2 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
 Keep everything at this student's level. The JSON keys below are structural — keep them exactly as written even though the content is {{LANGUAGE}}.
 The "data" object depends on "type":
 - read_aloud → prompt: "Read these sentences aloud". data: {"focus": "[grammar focus]", "sentences": [{"jp": "[sentence in {{LANGUAGE}}]", "en": "[English]"}, {"jp":"...","en":"..."}, {"jp":"...","en":"..."}]}

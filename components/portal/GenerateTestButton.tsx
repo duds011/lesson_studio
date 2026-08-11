@@ -23,19 +23,24 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
   const isJapanese = /japanese|日本語/i.test(language)
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [lessonId, setLessonId] = useState(lessons[0]?.id ?? '')
+  // Multi-select: one lesson makes a quiz, several make a review, and the
+  // test's length scales with how many are ticked.
+  const [picked, setPicked] = useState<string[]>(lessons[0] ? [lessons[0].id] : [])
   const [script, setScript] = useState<string>('hiragana')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  const toggle = (id: string) =>
+    setPicked((was) => (was.includes(id) ? was.filter((x) => x !== id) : [...was, id]))
+
   async function generate() {
-    if (!lessonId) return
+    if (picked.length === 0) return
     setBusy(true); setError('')
     try {
       const res = await fetch('/api/tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, lessonId, script }),
+        body: JSON.stringify({ studentId, lessonIds: picked, script }),
       })
       const json = await res.json()
       if (!json.ok) throw new Error(json.error || 'Generation failed')
@@ -60,21 +65,20 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
               {!busy && <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>✕</button>}
             </div>
             <p className="sub" style={{ marginTop: 0, marginBottom: 14, fontSize: 12 }}>
-              A full {isJapanese ? 'JLPT-style' : 'CEFR-style'} test (vocabulary, grammar, reading, speaking) built from one lesson. You review it as a draft — nothing reaches the student until you publish.
+              A full {isJapanese ? 'JLPT-style' : 'CEFR-style'} test (vocabulary, grammar, reading, speaking) built from the lessons you tick. You review it as a draft — nothing reaches the student until you publish.
             </p>
 
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }} htmlFor="test-lesson">
-              Base it on
-            </label>
-            <select
-              id="test-lesson"
-              value={lessonId}
-              onChange={(e) => setLessonId(e.target.value)}
-              disabled={busy}
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface)', marginBottom: 14 }}
-            >
-              {lessons.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
-            </select>
+            <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }}>
+              Base it on ({picked.length} lesson{picked.length === 1 ? '' : 's'} — more lessons, longer test)
+            </span>
+            <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 10, marginBottom: 14 }}>
+              {lessons.map((l) => (
+                <label key={l.id} style={{ display: 'flex', gap: 9, alignItems: 'center', padding: '9px 12px', borderBottom: '1px solid var(--line)', cursor: 'pointer', fontSize: 13 }}>
+                  <input type="checkbox" checked={picked.includes(l.id)} disabled={busy} onChange={() => toggle(l.id)} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.label}</span>
+                </label>
+              ))}
+            </div>
 
             {isJapanese && (
               <>
@@ -102,7 +106,7 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
 
             {error && <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 10px' }}>{error}</p>}
 
-            <button className="btn btn-primary" style={{ width: '100%' }} onClick={generate} disabled={busy || !lessonId}>
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={generate} disabled={busy || picked.length === 0}>
               {busy ? 'Generating… this can take a minute ⏳' : 'Generate draft test'}
             </button>
           </div>

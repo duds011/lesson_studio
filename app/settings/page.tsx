@@ -11,6 +11,7 @@ import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
 import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
 import ExtTokenPanel from '@/components/ExtTokenPanel'
+import ReplayTourButton from '@/components/ReplayTourButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +80,10 @@ export default async function SettingsPage() {
                 lastUsedAt={(extToken as any)?.last_used_at ?? null}
                 appUrl="https://koku-library.app"
               />
+              <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <ReplayTourButton />
+                <span className="desc" style={{ fontSize: 12 }}>Forgot what a page is for? The walkthrough runs again from here.</span>
+              </div>
             </section>
 
             <section className="k-sec">

@@ -129,6 +129,48 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-stat.yellow .k-chip{background:rgba(91,67,2,.16)}
 .k-stat-sub{font-size:12px;margin:7px 0 0;opacity:.82;line-height:1.45}
 
+/* — lesson flashcards — */
+.fc-wrap{display:grid;gap:10px;margin-bottom:18px}
+.fc-meta{display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.05em}
+.fc-card{position:relative;display:grid;place-items:center;min-height:150px;padding:26px 20px 34px;
+  border:1.5px solid var(--line);border-radius:16px;background:var(--surface-2);cursor:pointer;
+  font:inherit;transition:border-color .15s ease,transform .15s ease;width:100%}
+.fc-card:hover{border-color:var(--accent,#0a61c9);transform:translateY(-1px)}
+.fc-card.is-flipped{background:var(--surface);border-color:var(--accent,#0a61c9)}
+.fc-front{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.fc-back{display:grid;gap:5px;justify-items:center}
+.fc-reading{font-size:14px;color:var(--muted)}
+.fc-def{font-size:17px;font-weight:700}
+.fc-hint{position:absolute;bottom:11px;font-size:10px;color:var(--muted);opacity:.7}
+.fc-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fc-btn{border:1.5px solid var(--line);border-radius:999px;padding:11px;font:inherit;font-size:13px;
+  font-weight:800;cursor:pointer;background:var(--surface);transition:.15s ease}
+.fc-btn.ok{color:var(--green,#2f8f5b)}
+.fc-btn.ok:hover{background:var(--green-soft,#e7f5ec);border-color:var(--green,#2f8f5b)}
+.fc-btn.no{color:var(--amber,#9a6b12)}
+.fc-btn.no:hover{background:var(--amber-soft,#fdf4e3);border-color:var(--amber,#9a6b12)}
+.fc-done{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;
+  background:var(--green-soft,#e7f5ec);font-size:13px;margin-bottom:18px}
+
+/* — guided tour —
+   One element makes both the hole and the darkness: the spotlight's oversized
+   box-shadow is the backdrop, so the dimming can never disagree with the hole
+   it is supposed to leave. */
+.tour-layer{position:fixed;inset:0;z-index:220}
+.tour-spot{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(16,24,32,.62);
+  transition:all .28s cubic-bezier(.3,.8,.3,1);pointer-events:none}
+.tour-card{position:fixed;background:var(--surface);border-radius:16px;padding:18px 20px;
+  box-shadow:0 18px 50px rgba(16,24,32,.35);animation:tour-in .25s ease}
+.tour-card h3{margin:6px 0 6px;font-size:16px;letter-spacing:-.02em}
+.tour-card p{margin:0 0 14px;font-size:13px;line-height:1.6;color:var(--muted)}
+.tour-count{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--muted)}
+.tour-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tour-skip{border:0;background:none;font:inherit;font-size:12px;color:var(--muted);
+  cursor:pointer;text-decoration:underline;padding:0}
+.tour-skip:hover{color:var(--ink)}
+@keyframes tour-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
 /* — student dashboard tabs — */
 .k-dtabs{display:flex;gap:5px;background:var(--surface);border-radius:999px;padding:5px;box-shadow:var(--shadow-soft);margin:16px 0 14px;overflow-x:auto;scrollbar-width:none}
 .k-dtabs::-webkit-scrollbar{display:none}

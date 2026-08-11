@@ -31,28 +31,52 @@ function recapToContent(recap: any): string {
 
 // Generate a draft test from a lesson.
 export async function POST(req: NextRequest) {
-  const { studentId, lessonId, script: rawScript } = await req.json()
-  if (!studentId || !lessonId) return NextResponse.json({ ok: false, error: 'Missing studentId or lessonId' }, { status: 400 })
+  const { studentId, lessonId, lessonIds: rawIds, script: rawScript } = await req.json()
+  // One test can now span several lessons; the single-lesson field stays
+  // accepted so nothing that still sends it breaks.
+  const lessonIds: string[] = Array.isArray(rawIds) && rawIds.length
+    ? rawIds.map(String).slice(0, 10)
+    : lessonId ? [String(lessonId)] : []
+  if (!studentId || lessonIds.length === 0) return NextResponse.json({ ok: false, error: 'Missing studentId or lessons' }, { status: 400 })
   const script: TestScript = ['beginner', 'hiragana', 'kanji'].includes(rawScript) ? rawScript : 'hiragana'
 
   const { supabase, user } = await requireTeacher()
   if (!user) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
 
-  const [{ data: student }, { data: lesson }, { data: teacherProfile }] = await Promise.all([
+  const [{ data: student }, { data: lessonRows }, { data: teacherProfile }] = await Promise.all([
     supabase.from('students').select('id, full_name, teacher_id, language').eq('id', studentId).single(),
-    supabase.from('lessons').select('id, title, lesson_number, student_id, lesson_summaries ( recap_json )').eq('id', lessonId).single(),
+    supabase.from('lessons').select('id, title, lesson_number, student_id, lesson_summaries ( recap_json )').in('id', lessonIds),
     supabase.from('profiles').select('teaching_language').eq('id', user.id).single(),
   ])
-  if (!student || !lesson || (lesson as any).student_id !== student.id) {
+  const lessons = ((lessonRows ?? []) as any[])
+    .filter((l) => l.student_id === (student as any)?.id)
+    .sort((a, b) => (a.lesson_number ?? 0) - (b.lesson_number ?? 0))
+  if (!student || lessons.length === 0) {
     return NextResponse.json({ ok: false, error: 'Lesson or student not found' }, { status: 404 })
   }
 
-  const l = lesson as any
-  const summary = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
-  const recap = summary?.recap_json
-  if (!recap) return NextResponse.json({ ok: false, error: 'This lesson has no recap to base a test on' }, { status: 400 })
+  const withRecaps = lessons
+    .map((l) => {
+      const summary = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
+      return { l, recap: summary?.recap_json }
+    })
+    .filter((x) => x.recap)
+  if (withRecaps.length === 0) return NextResponse.json({ ok: false, error: 'These lessons have no recaps to base a test on' }, { status: 400 })
 
-  const lessonTitle = lessonDisplayTitle(recap, l.title, l.lesson_number)
+  const l = withRecaps[0].l
+  const recap = withRecaps[0].recap
+  // One lesson keeps its own title; a span reads as the review it is.
+  const numbers = withRecaps.map((x) => x.l.lesson_number).filter(Boolean)
+  const lessonTitle = withRecaps.length === 1
+    ? lessonDisplayTitle(recap, l.title, l.lesson_number)
+    : numbers.length
+      ? `Lessons ${Math.min(...numbers)}–${Math.max(...numbers)} review`
+      : 'Multi-lesson review'
+  // Each lesson's material labelled with its number, so the model can spread
+  // coverage across all of them rather than blending everything together.
+  const combinedContent = withRecaps
+    .map((x) => `=== LESSON ${x.l.lesson_number}: ${lessonDisplayTitle(x.recap, x.l.title, x.l.lesson_number)} ===\n${recapToContent(x.recap)}`)
+    .join('\n\n')
   // The test is for this student, so their language decides its kind — a
   // teacher can have students in different languages. Falling back to
   // 'Japanese' here is what put hiragana options in front of French teachers:
@@ -64,9 +88,10 @@ export async function POST(req: NextRequest) {
     const testJson = await generateTest({
       studentName: student.full_name,
       lessonTitle,
-      lessonContent: recapToContent(recap),
+      lessonContent: combinedContent,
       script,
       language,
+      lessonCount: withRecaps.length,
     })
     if (!Array.isArray(testJson?.parts) || testJson.parts.length === 0) {
       throw new Error('Model returned no test parts')

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FormattedContent } from './RecapView'
 import LessonExercises from './LessonExercises'
 import LessonCorrections from './LessonCorrections'
+import Flashcards from './Flashcards'
 import CountUp from './portal/CountUp'
 import {
   DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_LAYOUT, LESSON_TABS,
@@ -156,6 +157,9 @@ export default function LessonPageTabs({
         return (
           <div className="lesson-block">
             <h3>Practice exercises</h3>
+            {/* Flashcards first: a warm-up over the lesson's own words before
+                the graded questions that use them. */}
+            <Flashcards vocabulary={r.vocabulary || []} />
             <LessonExercises exercises={r.exercises || []} />
           </div>
         )

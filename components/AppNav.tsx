@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import GuidedTour from '@/components/GuidedTour'
 
 type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note'
 
@@ -30,12 +31,13 @@ export function LogoMark() {
   return <span className="mark" aria-hidden="true"><Icon name="book" /></span>
 }
 
+// `tour` is the anchor the guided walkthrough spotlights — see GuidedTour.
 const LINKS = [
-  { href: '/', label: 'Overview', icon: 'home' as IconName },
-  { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName },
-  { href: '/teacher/notes', label: 'Notes', icon: 'note' as IconName },
-  { href: '/teacher/branding', label: 'Student view', icon: 'eye' as IconName },
-  { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName },
+  { href: '/', label: 'Overview', icon: 'home' as IconName, tour: 'overview' },
+  { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName, tour: 'students' },
+  { href: '/teacher/notes', label: 'Notes', icon: 'note' as IconName, tour: 'notes' },
+  { href: '/teacher/branding', label: 'Student view', icon: 'eye' as IconName, tour: 'student-view' },
+  { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName, tour: 'payments' },
 ]
 
 /** Remembered per browser, and read straight off the root element so the
@@ -70,6 +72,11 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
   }
 
   return (
+    <>
+    {/* Mounted here because this nav is on every teacher page — the tour can
+        start on first sign-in and be replayed from Settings without either
+        page knowing about it. */}
+    <GuidedTour />
     <aside className="app-sidebar" aria-label="Teacher workspace navigation">
       <div className="sidebar-top">
         <Link className="logo" href="/" aria-label="Lesson Studio overview">
@@ -92,7 +99,7 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         <div className="nav-section-label">Workspace</div>
         <nav className="side-nav">
           {LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className={`side-link ${isActive(link.href) ? 'active' : ''}`}>
+            <Link key={link.href} href={link.href} data-tour={link.tour} className={`side-link ${isActive(link.href) ? 'active' : ''}`}>
               <Icon name={link.icon} /><span>{link.label}</span>
             </Link>
           ))}
@@ -107,7 +114,7 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
               <Icon name="clock" /><span>Availability</span>
             </Link>
           )}
-          <Link href="/settings" className={`side-link ${isActive('/settings') ? 'active' : ''}`}>
+          <Link href="/settings" data-tour="settings" className={`side-link ${isActive('/settings') ? 'active' : ''}`}>
             <Icon name="settings" /><span>Settings</span>
           </Link>
         </nav>
@@ -127,6 +134,7 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         </a>
       </div>
     </aside>
+    </>
   )
 }
 
