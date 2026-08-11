@@ -179,17 +179,19 @@ A short, clean, student-facing title (3-7 words, English, Title Case) naming wha
 RECAP FORMAT — for the "recap" field:
 Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name what the lesson actually consisted of — the material read (and its subject), the topics discussed — and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, romaji blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
 
-SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT sections FIRST:
-(A) CONTENT sections — one per activity or discussion topic (typically 1-4), in lesson order. Title: "Activity: Subject", e.g. "1. Reading: Article About Work Styles" or "2. Discussion: Weekend Plans". Content: 2-4 short sentences saying what the material or discussion was actually ABOUT — including its key facts and figures — and what the student did with it, then any notable expressions it introduced as vocab bullets.
-(B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
-- Title: "3. Japanese: English" (e.g. "3. いきます: To Go Somewhere")
-Formatting for every section:
+SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT sections FIRST.
+
+MANDATORY LAYOUT for the "content" string of EVERY section, both kinds. Each element goes on its OWN line — put real newlines inside the JSON string; NEVER run bullets, examples, or callouts together into one paragraph:
 - Start with 1-3 short plain English sentences.
-- Vocab bullets: - **hiragana** *romaji* — English meaning
-- Example sentences as 3-line blocks.
-- Grammar callouts: **Pattern:** structure
-- Tips: Natural note: text OR Important: text
+- Vocab bullets, ONE PER LINE: - **hiragana** *romaji* — English meaning
+- Example sentences as a block, one sentence per line.
+- Grammar callouts on their own line: **Pattern:** structure
+- Tips on their own line: Natural note: text OR Important: text
 - NO sub-headers. SHORT sentences only.
+A section whose bullets and Pattern line are glued into one paragraph is WRONG — the app renders each line separately and the formatting is lost.
+
+(A) CONTENT sections — one per activity or discussion topic (typically 1-4), in lesson order. Title: "Activity: Subject", e.g. "1. Reading: Article About Work Styles" or "2. Discussion: Weekend Plans". Body: 2-4 short sentences saying what the material or discussion was actually ABOUT — including its key facts and figures — and what the student did with it, then the notable expressions it introduced as vocab bullets (one per line), and 1-2 example sentences from the material as a block.
+(B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson. Title: "3. Japanese: English" (e.g. "3. いきます: To Go Somewhere"). Body: explanation sentences, vocab bullets, an example block, and a **Pattern:** line, per the layout above.
 
 {{CORRECTIONS_RULES}}
 All Japanese in the corrections must be in hiragana/katakana only — NEVER kanji — so it matches the rest of the recap.
@@ -574,17 +576,19 @@ A short, clean, student-facing title (3-7 words, English, Title Case) naming wha
 RECAP FORMAT — for the "recap" field:
 Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name what the lesson actually consisted of — the material read (and its subject), the topics discussed — and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, pronunciation blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
 
-SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT sections FIRST:
-(A) CONTENT sections — one per activity or discussion topic (typically 1-4), in lesson order. Title: "Activity: Subject", e.g. "1. Reading: Japan Work Survey" or "2. Discussion: Working Culture and Peer Pressure". Content: 2-4 short sentences saying what the material or discussion was actually ABOUT — including its key facts and figures — and what the student did with it, then any notable expressions it introduced as vocab bullets.
-(B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
-- Title: "3. {{LANGUAGE}} phrase: English" (e.g. "3. il faut que: You Have To")
-Formatting for every section:
+SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT sections FIRST.
+
+MANDATORY LAYOUT for the "content" string of EVERY section, both kinds. Each element goes on its OWN line — put real newlines inside the JSON string; NEVER run bullets, examples, or callouts together into one paragraph:
 - Start with 1-3 short plain English sentences.
-- Vocab bullets: - **word in {{LANGUAGE}}** *pronunciation* — English meaning
-- Example sentences as 3-line blocks.
-- Grammar callouts: **Pattern:** structure
-- Tips: Natural note: text OR Important: text
+- Vocab bullets, ONE PER LINE: - **word in {{LANGUAGE}}** *pronunciation* — English meaning
+- Example sentences as a block, one sentence per line.
+- Grammar callouts on their own line: **Pattern:** structure
+- Tips on their own line: Natural note: text OR Important: text
 - NO sub-headers. SHORT sentences only.
+A section whose bullets and Pattern line are glued into one paragraph is WRONG — the app renders each line separately and the formatting is lost.
+
+(A) CONTENT sections — one per activity or discussion topic (typically 1-4), in lesson order. Title: "Activity: Subject", e.g. "1. Reading: Japan Work Survey" or "2. Discussion: Working Culture and Peer Pressure". Body: 2-4 short sentences saying what the material or discussion was actually ABOUT — including its key facts and figures — and what the student did with it, then the notable expressions it introduced as vocab bullets (one per line), and 1-2 example sentences from the material as a block.
+(B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson. Title: "3. {{LANGUAGE}} phrase: English" (e.g. "3. il faut que: You Have To"). Body: explanation sentences, vocab bullets, an example block, and a **Pattern:** line, per the layout above.
 
 {{CORRECTIONS_RULES}}
 
