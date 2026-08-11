@@ -30,6 +30,16 @@ export default async function StudentTestPage({ params }: { params: { id: string
     .limit(1)
     .maybeSingle()
 
+  // Speaking takes already sent, keyed by prompt. RLS again: own rows only.
+  const { data: takes } = await supabase
+    .from('student_audio_submissions')
+    .select('id, prompt_index, created_at')
+    .eq('test_id', params.id)
+  const speakingTakes: Record<number, { id: string; createdAt: string | null }> = {}
+  for (const a of (takes ?? []) as any[]) {
+    if (a.prompt_index != null) speakingTakes[a.prompt_index] = { id: a.id, createdAt: a.created_at }
+  }
+
   const t = test as any
   const lesson = Array.isArray(t.lessons) ? t.lessons[0] : t.lessons
   const parts = (t.test_json?.parts ?? []) as any[]
@@ -66,6 +76,7 @@ export default async function StudentTestPage({ params }: { params: { id: string
         mode="take"
         testId={t.id}
         savedScore={(lastAttempt as any)?.score ?? null}
+        speakingTakes={speakingTakes}
       />
     </div>
   )

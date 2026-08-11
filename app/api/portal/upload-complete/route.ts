@@ -8,10 +8,29 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-  const { kind, lessonId, path, fileName, contentType, size, note } = await req.json()
-  if (!kind || !lessonId || !path) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  const { kind, lessonId, testId, path, fileName, contentType, size, note, promptIndex } = await req.json()
+  if (!kind || !path || (!lessonId && !testId)) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
 
   const admin = createAdminClient()
+
+  if (kind === 'test-audio') {
+    const { data: test } = await admin.from('tests').select('id, student_id, status').eq('id', testId).single()
+    if (!test || test.status !== 'published') return NextResponse.json({ error: 'Test not found' }, { status: 404 })
+    const { data: student } = await admin.from('students').select('id').eq('id', test.student_id).eq('profile_id', user.id).single()
+    if (!student) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // One recording per prompt: a re-record replaces, so the teacher hears the
+    // student's best take rather than an accidental pile of false starts.
+    if (typeof promptIndex === 'number') {
+      await admin.from('student_audio_submissions').delete().eq('test_id', testId).eq('prompt_index', promptIndex)
+    }
+    const { error } = await admin.from('student_audio_submissions').insert({
+      test_id: testId, lesson_id: null, student_id: student.id, prompt_index: promptIndex ?? null,
+      bucket: 'student-audio', path, file_name: fileName ?? null, content_type: contentType ?? null, size_bytes: size ?? null, note: note ?? null,
+    })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
   const { data: lesson } = await admin.from('lessons').select('id, student_id, teacher_id').eq('id', lessonId).single()
   if (!lesson) return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
 

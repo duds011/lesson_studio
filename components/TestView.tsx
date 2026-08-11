@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { submitTestAttempt } from '@/app/actions/tests'
+import TestSpeakingRecorder from '@/components/TestSpeakingRecorder'
 // Aliased: MCQuestion and GapQuestion each declare their own `isCorrect` for a
 // single option, which is a different question from "did the student get this
 // right". Same name, same file, two meanings is how you misread code later.
@@ -87,7 +88,7 @@ function GapQuestion({
 }
 
 export default function TestView({
-  test, mode, testId, savedScore,
+  test, mode, testId, savedScore, speakingTakes,
 }: {
   test: any
   mode: Mode
@@ -95,6 +96,8 @@ export default function TestView({
   testId?: string
   /** A score already on record, if this test has been taken before. */
   savedScore?: number | null
+  /** Prompt index → the student's stored recording, for the speaking part. */
+  speakingTakes?: Record<number, { id: string; createdAt?: string | null }>
 }) {
   const [answers, setAnswers] = useState<Answers>({})
   const onAnswer = (id: string, v: number | string) => setAnswers((a) => ({ ...a, [id]: v }))
@@ -184,6 +187,15 @@ export default function TestView({
                 </p>
                 <p className="test-explain" style={{ marginTop: 2 }}>{pr.prompt_en}</p>
                 {pr.hint && <p className="test-hint">💡 {pr.hint}</p>}
+                {/* The student answers out loud, here — a speaking part the
+                    teacher can never hear is homework on the honour system. */}
+                {mode === 'take' && testId && (
+                  <TestSpeakingRecorder
+                    testId={testId}
+                    promptIndex={qi}
+                    existing={speakingTakes?.[qi] ?? null}
+                  />
+                )}
               </div>
             ))
           ) : (

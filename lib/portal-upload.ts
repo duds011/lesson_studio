@@ -34,3 +34,30 @@ export async function uploadPortalFile(
   })
   if (!completeRes.ok) throw new Error((await completeRes.json()).error || 'Could not save upload')
 }
+
+/**
+ * A speaking answer on a test: same signed-upload dance, keyed to a test and a
+ * prompt rather than a lesson. Re-recording a prompt replaces the old take.
+ */
+export async function uploadTestAudio(testId: string, promptIndex: number, blob: Blob, fileName: string) {
+  const initRes = await fetch('/api/portal/upload-init', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kind: 'test-audio', testId, fileName }),
+  })
+  if (!initRes.ok) throw new Error((await initRes.json()).error || 'Could not start upload')
+  const { bucket, path, token } = await initRes.json()
+
+  const supabase = createClient()
+  const { error } = await supabase.storage.from(bucket).uploadToSignedUrl(path, token, blob, {
+    contentType: (blob as File).type || 'audio/webm',
+  })
+  if (error) throw new Error(error.message)
+
+  const completeRes = await fetch('/api/portal/upload-complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kind: 'test-audio', testId, promptIndex, path, fileName, contentType: (blob as File).type, size: blob.size }),
+  })
+  if (!completeRes.ok) throw new Error((await completeRes.json()).error || 'Could not save upload')
+}

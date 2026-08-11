@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDateShort } from '@/lib/portal-utils'
 import TestView from '@/components/TestView'
 import TestAdminActions from '@/components/portal/TestAdminActions'
+import AudioPlayer from '@/components/portal/AudioPlayer'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +24,26 @@ export default async function TeacherTestReviewPage({ params }: { params: { id: 
 
   const t = test as any
   const lesson = Array.isArray(t.lessons) ? t.lessons[0] : t.lessons
+
+  // The student's speaking answers. Read with the teacher's client (RLS says
+  // their tests only), then signed for playback with the admin client.
+  const { data: takes } = await supabase
+    .from('student_audio_submissions')
+    .select('id, prompt_index, path, bucket, created_at')
+    .eq('test_id', t.id)
+    .order('prompt_index')
+  const admin = createAdminClient()
+  const speakingPart = (t.test_json?.parts ?? []).find((p: any) => p.key === 'speaking')
+  const answers = await Promise.all(((takes ?? []) as any[]).map(async (a) => {
+    const { data } = await admin.storage.from(a.bucket).createSignedUrl(a.path, 3600)
+    return {
+      id: a.id,
+      promptIndex: a.prompt_index as number | null,
+      url: data?.signedUrl ?? null,
+      date: a.created_at ? formatDateShort(a.created_at) : '',
+      prompt: a.prompt_index != null ? speakingPart?.prompts?.[a.prompt_index] : null,
+    }
+  }))
 
   return (
     <div className="page-fade" style={{ maxWidth: 860 }}>
@@ -48,6 +70,34 @@ export default async function TeacherTestReviewPage({ params }: { params: { id: 
       <p className="analytics-note" style={{ margin: '0 0 16px', fontSize: 12 }}>
         Teacher review — correct answers are highlighted and explanations shown. The student gets the interactive version.
       </p>
+
+      {answers.length > 0 && (
+        <div className="lesson-block" style={{ marginBottom: 16 }}>
+          <h3 style={{ marginTop: 0 }}>🎙️ Speaking answers ({answers.length})</h3>
+          <p className="analytics-note" style={{ margin: '0 0 12px', fontSize: 12 }}>
+            What the student recorded for the speaking part. A re-record replaces the earlier take.
+          </p>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {answers.map((a) => (
+              <div key={a.id}>
+                <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700 }}>
+                  {a.promptIndex != null ? `${a.promptIndex + 1}. ` : ''}
+                  {a.prompt?.prompt_jp ?? 'Speaking answer'}
+                </p>
+                {a.prompt?.prompt_en && <p className="analytics-note" style={{ margin: '0 0 6px', fontSize: 12 }}>{a.prompt.prompt_en}</p>}
+                {a.url
+                  ? <AudioPlayer src={a.url} title="Student's answer" meta={a.date} />
+                  : <p className="analytics-note">Recording exists but could not be signed for playback.</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {answers.length === 0 && t.status === 'published' && (
+        <p className="analytics-note" style={{ margin: '0 0 16px', fontSize: 12 }}>
+          No speaking answers recorded yet — they will appear here once the student records them.
+        </p>
+      )}
 
       <TestView test={t.test_json} mode="review" />
     </div>
