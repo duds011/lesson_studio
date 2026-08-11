@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveBrand } from '@/lib/brand'
-import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
+import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
@@ -54,10 +54,10 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         <div>
           <div className="k-phead-eyebrow">Lesson {l.lesson_number} · Recap</div>
           <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
+          {/* Date only — "1st lesson" repeated the eyebrow and the confidence
+              label crowded the band (same trim as the teacher's copy). */}
           <div className="k-pmeta">
-            <span>{ordinal(l.lesson_number)} lesson</span>
             <span>{formatDateShort(l.lesson_date)}</span>
-            {recap.confidence_label && <span>{recap.confidence_label}</span>}
           </div>
         </div>
         {recap.score != null && (
@@ -69,9 +69,11 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
           </div>
         )}
 
-        <div className="k-hero-art" style={{ right: -30, opacity: .5 }} aria-hidden>
-          <span className="k-orb" style={{ width: 84, height: 84, right: 10, top: 12 }} />
-          <span className="k-tube" style={{ width: 66, height: 66, right: 74, top: 76, transform: 'rotate(40deg)' }} />
+        {/* Shifted left of the score bubble — at right:-30 the orb floated
+            straight over the score, and the translucent bubble let it through. */}
+        <div className="k-hero-art" style={{ right: 150, opacity: .4 }} aria-hidden>
+          <span className="k-orb" style={{ width: 70, height: 70, right: 0, top: 10 }} />
+          <span className="k-tube" style={{ width: 56, height: 56, right: 60, top: 74, transform: 'rotate(40deg)' }} />
         </div>
       </header>
 
