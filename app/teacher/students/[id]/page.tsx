@@ -91,15 +91,18 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
           { label: 'Latest talk', value: <>{latestTalk ?? '—'}<i>%</i></> },
           { label: 'Vocab items', value: totalVocab },
         ]}
+        wideActions
         actions={
           <>
             <InstructionLanguageEditor studentId={student.id} value={(student as any).instruction_language ?? null} />
             {/* Credits keep their own red/amber/blue inside the band — this is
                 the one figure that changes what a teacher does next. */}
-            <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : '#fff', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
-              {credits.purchased > 0 || credits.used > 0 ? `${credits.remaining} lesson${credits.remaining === 1 ? '' : 's'} left / ${credits.purchased} bought` : 'No lessons purchased yet'}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+              <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : '#fff', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
+                {credits.purchased > 0 || credits.used > 0 ? `${credits.remaining} lesson${credits.remaining === 1 ? '' : 's'} left / ${credits.purchased} bought` : 'No lessons purchased yet'}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
+              </span>
+              <Link href="/teacher/payments" className="btn btn-ghost btn-sm">Manage payments →</Link>
             </span>
-            <Link href="/teacher/payments" className="btn btn-ghost btn-sm">Manage payments →</Link>
           </>
         }
       />

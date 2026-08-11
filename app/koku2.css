@@ -477,6 +477,9 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-thead h1{font-size:clamp(23px,2.6vw,32px);letter-spacing:-.042em;line-height:1.16;margin:8px 0 8px;font-weight:700}
 .k-thead p{margin:0;color:rgba(255,255,255,.72);font-size:13px;line-height:1.6;max-width:56ch}
 .k-thead-actions{display:flex;gap:9px;flex-wrap:wrap}
+/* Opt-in (PageHeader wideActions): the actions claim a full row of the band,
+   so a child with margin-left:auto can sit against the right edge. */
+.k-thead-actions.wide{flex:1 1 100%;align-items:center}
 
 /* …but on a page whose whole job is the thing underneath it, the header is a
    strip. One line, no description, so the calendar starts above the fold. */

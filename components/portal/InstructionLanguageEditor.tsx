@@ -26,12 +26,18 @@ export default function InstructionLanguageEditor({ studentId, value }: { studen
     router.refresh()
   }
 
+  // Sits inside the dark header band, so everything is styled for white-on-
+  // colour — the app's muted/ghost styles disappear against it.
   if (!editing) {
     return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--muted)' }}>
-        Explained in <strong style={{ color: 'var(--ink)' }}>{value?.trim() || 'English'}</strong>
-        <button className="btn btn-ghost btn-sm" onClick={() => { setDraft(value ?? ''); setEditing(true) }} aria-label="Change explanation language">✎</button>
-      </span>
+      <button
+        onClick={() => { setDraft(value ?? ''); setEditing(true) }}
+        title="The language recaps and tests are explained in — click to change"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'rgba(255,255,255,.72)', background: 'rgba(255,255,255,.13)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 999, padding: '7px 13px', cursor: 'pointer', font: 'inherit', lineHeight: 1 }}
+      >
+        Explained in <strong style={{ color: '#fff', fontWeight: 700 }}>{value?.trim() || 'English'}</strong>
+        <span aria-hidden style={{ opacity: .75 }}>✎</span>
+      </button>
     )
   }
 
@@ -45,11 +51,11 @@ export default function InstructionLanguageEditor({ studentId, value }: { studen
         disabled={busy}
         autoFocus
         onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
-        style={{ border: '1px solid var(--line)', borderRadius: 8, padding: '5px 9px', fontSize: 13, width: 130 }}
+        style={{ border: '1px solid rgba(255,255,255,.35)', borderRadius: 999, padding: '7px 13px', fontSize: 12.5, width: 120, background: '#fff', color: 'var(--ink)', font: 'inherit', lineHeight: 1 }}
       />
-      <button className="btn btn-primary btn-sm" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>
-      <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => setEditing(false)}>Cancel</button>
-      {error && <span style={{ fontSize: 12, color: 'var(--red)' }}>{error}</span>}
+      <button disabled={busy} onClick={save} style={{ border: 'none', borderRadius: 999, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, background: '#fff', color: 'var(--brand)', cursor: 'pointer', font: 'inherit', lineHeight: 1 }}>{busy ? 'Saving…' : 'Save'}</button>
+      <button disabled={busy} onClick={() => setEditing(false)} style={{ border: '1px solid rgba(255,255,255,.3)', borderRadius: 999, padding: '7px 13px', fontSize: 12.5, background: 'transparent', color: 'rgba(255,255,255,.85)', cursor: 'pointer', font: 'inherit', lineHeight: 1 }}>Cancel</button>
+      {error && <span style={{ fontSize: 12, color: '#ffd9d9' }}>{error}</span>}
     </span>
   )
 }

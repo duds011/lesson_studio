@@ -10,6 +10,12 @@ type Props = {
   /** The page's headline numbers, set inside the band instead of under it. */
   figures?: HeaderFigure[]
   actions?: React.ReactNode
+  /**
+   * Give the actions their own full-width row inside the band, so children
+   * can spread left/right with marginLeft:auto. Without it the actions box
+   * shrinks to its content and everything clumps together wherever it wraps.
+   */
+  wideActions?: boolean
   /** Something to sit left of the title — an avatar, usually. */
   lead?: React.ReactNode
 }
@@ -24,7 +30,7 @@ type Props = {
  * their own data. Folding the numbers into the header removes the panel, the
  * sentence and the cards in one go, and the table now starts above the fold.
  */
-export default function PageHeader({ eyebrow, title, meta, figures, actions, lead }: Props) {
+export default function PageHeader({ eyebrow, title, meta, figures, actions, wideActions, lead }: Props) {
   return (
     <header className="k-thead one">
       <div className="k-thead-title">
@@ -47,7 +53,7 @@ export default function PageHeader({ eyebrow, title, meta, figures, actions, lea
         </div>
       )}
 
-      {actions && <div className="k-thead-actions">{actions}</div>}
+      {actions && <div className={`k-thead-actions${wideActions ? ' wide' : ''}`}>{actions}</div>}
     </header>
   )
 }
