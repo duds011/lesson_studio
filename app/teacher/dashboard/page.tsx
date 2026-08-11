@@ -34,8 +34,9 @@ export default async function TeacherDashboard() {
     statsByStudent.set(l.student_id, s)
   }
 
-  const { data: profile } = await supabase.from('profiles').select('currency').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('currency, teaching_language').eq('id', user.id).single()
   const currency = (profile as any)?.currency ?? 'USD'
+  const teachingLanguage = (profile as any)?.teaching_language ?? ''
 
   const creditMap = await getCreditsByStudent(supabase, user.id)
 
@@ -53,7 +54,7 @@ export default async function TeacherDashboard() {
           { label: 'With login', value: rows.filter((r) => r.profile_id).length },
           { label: 'Lessons recorded', value: totalLessons },
         ]}
-        actions={<AddStudentForm currency={currency} />}
+        actions={<AddStudentForm currency={currency} teachingLanguage={teachingLanguage} />}
       />
 
       {lowStudents.length > 0 && (

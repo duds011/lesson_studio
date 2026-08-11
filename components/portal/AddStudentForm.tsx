@@ -12,19 +12,22 @@ function randomPassword() {
   return Math.random().toString(36).slice(-8) + 'A1!'
 }
 
-const emptyForm = () => ({
-  full_name: '', email: '', password: randomPassword(), language: 'Japanese', level: 'Beginner',
+// The language defaults to what THIS teacher teaches, not to Japanese. The
+// hardcoded default is how an English teacher's student ended up marked as
+// learning Japanese and got a JLPT-style recap for an English lesson.
+const emptyForm = (defaultLanguage: string) => ({
+  full_name: '', email: '', password: randomPassword(), language: defaultLanguage || 'English', level: 'Beginner',
   // Optional starting package
   lessons: '', amount: '', method: '',
 })
 
-export default function AddStudentForm({ currency = 'USD' }: { currency?: string }) {
+export default function AddStudentForm({ currency = 'USD', teachingLanguage = '' }: { currency?: string; teachingLanguage?: string }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [created, setCreated] = useState<{ email: string; password: string; note?: string } | null>(null)
-  const [form, setForm] = useState(emptyForm())
+  const [form, setForm] = useState(emptyForm(teachingLanguage))
 
   const set = (k: keyof ReturnType<typeof emptyForm>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -63,7 +66,7 @@ export default function AddStudentForm({ currency = 'USD' }: { currency?: string
 
     setBusy(false)
     setCreated({ email: form.email, password: form.password, note })
-    setForm(emptyForm())
+    setForm(emptyForm(teachingLanguage))
     router.refresh()
   }
 
