@@ -14,7 +14,9 @@ function isRomajiLine(t: string) {
 }
 function isPureJapanese(t: string) {
   if (!hasJapanese(t)) return false
-  return !/[a-zA-Z]/.test(t.replace(/\*[^*]+\*/g, ''))
+  // Strip bold AND italic wrappers — the old \*[^*]+\* mangled "**word**",
+  // leaving stray asterisks that then rendered literally.
+  return !/[a-zA-Z]/.test(t.replace(/\*\*?[^*]+\*\*?/g, ''))
 }
 /** Render **bold** and *italic* (romaji) inline. */
 function inline(text: string): React.ReactNode {
@@ -61,8 +63,12 @@ export function FormattedContent({ content }: { content: any }) {
   for (const line of lines) {
     if (/^[-•→]/.test(line)) { flushExample(); bullets.push(line.replace(/^[-•→]\s*/, '')); continue }
     flushBullets()
-    if (/^\*\*?pattern:?\*?\*?/i.test(line)) { flushExample(); nodes.push(<p key={key++} className="pattern-line">{inline(line)}</p>); continue }
-    if (/^(natural note|teacher note|important word order|important|note|tip):/i.test(line)) { flushExample(); nodes.push(<p key={key++} className="callout">{inline(line)}</p>); continue }
+    // Instruction-language recaps translate the callout keywords (パターン,
+    // ポイント…) and may bold-wrap them, so probe with asterisks stripped and
+    // fall back to "any bold lead-in ending in a colon" for other languages.
+    const probe = line.replace(/\*/g, '').trim()
+    if (/^(pattern|パターン)\s*[:：]/i.test(probe) || /^\*\*[^*]{1,24}[:：]\s*\*\*/.test(line)) { flushExample(); nodes.push(<p key={key++} className="pattern-line">{inline(line)}</p>); continue }
+    if (/^(natural note|teacher note|important word order|important|note|tip|ポイント|注意|ヒント|メモ|自然な英語|自然な表現|大事|大切)\s*[:：]/i.test(probe)) { flushExample(); nodes.push(<p key={key++} className="callout">{inline(line)}</p>); continue }
     if (isPureJapanese(line)) { if (example.length && example[example.length - 1].t === 'en') flushExample(); example.push({ t: 'jp', v: line }); continue }
     if (isRomajiLine(line)) { example.push({ t: 'rom', v: line }); continue }
     if (example.length) { example.push({ t: 'en', v: line }); continue } // translation of current example
