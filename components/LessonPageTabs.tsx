@@ -123,7 +123,7 @@ export default function LessonPageTabs({
           </div>
         )
       case 'sections':
-        if (lessonSections.length === 0 && !r.audio_script) return null
+        if (lessonSections.length === 0) return null
         return (
           <div>
             {lessonSections.map((s, i) => (
@@ -132,16 +132,23 @@ export default function LessonPageTabs({
                 <FormattedContent content={s.content} />
               </div>
             ))}
+          </div>
+        )
+      case 'memo':
+        // The script sits WITH the recorder that reads it — it used to trail
+        // the sections at the very bottom of the tab, a page away.
+        if (!memo && !r.audio_script) return null
+        return (
+          <>
+            {memo}
             {r.audio_script && (
               <div className="lesson-block">
                 <h3>Voice memo script</h3>
                 <p style={{ whiteSpace: 'pre-wrap' }}>{r.audio_script}</p>
               </div>
             )}
-          </div>
+          </>
         )
-      case 'memo':
-        return memo ?? null
       case 'files':
         return files ?? null
       case 'homework':

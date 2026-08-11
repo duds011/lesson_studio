@@ -281,6 +281,14 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
                 A quick spoken note — encouragement, pronunciation, anything text can&rsquo;t carry. It goes out with the recap when you approve.
               </p>
               <TeacherVoiceMemo onHold={(m) => { memoRef.current = m }} />
+              {/* The script the AI drafted for exactly this recording, right
+                  where it is read — it was nowhere on this page before. */}
+              {r.audio_script && (
+                <div style={{ marginTop: 12, borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 6px' }}>Suggested script</p>
+                  <p style={{ whiteSpace: 'pre-wrap', fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>{r.audio_script}</p>
+                </div>
+              )}
             </section>
             <section className="block">
               <h4>📎 Files for {first}</h4>
