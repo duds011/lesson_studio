@@ -115,10 +115,21 @@ const SAMPLE_RECAP = {
   score: 8.3,
   level: 'Confident',
   vocab_level_distribution: { N5: 8, N4: 5, N3: 3 },
-  metrics: { studentWpm: 96, teacherWpm: 118, avgResponseSec: 1.8, grammarPer100: 4.2 },
+  vocab_total_count: 16,
+  grammar_density: 'Medium-High',
+  // Every field the metrics grid shows. The first version carried only four,
+  // so the preview rendered a row of dashes — which read as broken, because in
+  // a preview it is.
+  metrics: {
+    studentWpm: 96, teacherWpm: 118, avgResponseSec: 1.8, grammarPer100: 4.2,
+    longestTurnSec: 26, avgTurnWords: 10, fillerCount: 4, longPauseCount: 2,
+  },
+  // `content`, not `body` — that is the key LessonPageTabs reads. The sample
+  // used `body`, so the preview's Lesson tab showed headings over nothing and
+  // the studio looked broken while the real page was fine.
   sections: [
-    { title: 'What you worked on', body: 'Contrasting two ideas in one sentence, and softening a disagreement.' },
-    { title: 'Main corrections', body: 'けど joins two clauses — it does not start one.' },
+    { title: 'What you worked on', content: 'Contrasting two ideas in one sentence, and softening a disagreement.' },
+    { title: 'Where to focus next', content: 'けど joins two clauses — it does not start one. Practise starting the contrast in the middle.' },
   ],
   corrections: [
     { said: 'I go to go to Vancouver', correction: 'I have to go to Vancouver', categories: ['Verb form'], explanation: 'Replaced the repeated verb with "have to", which states necessity.' },
@@ -138,6 +149,32 @@ const SAMPLE_RECAP = {
   vocabulary: [
     { word: 'けど', reading: 'kedo', definition: 'but, although', jlpt_level: 'N5' },
     { word: '静か', reading: 'shizuka', definition: 'quiet', jlpt_level: 'N5' },
+  ],
+  // One of each exercise type, in the exact shapes LessonExercises renders —
+  // the sample had none, so the studio's Practice tab previewed as empty.
+  exercises: [
+    {
+      type: 'read_aloud', prompt: 'Read these aloud, focusing on けど.',
+      data: {
+        focus: 'Contrasting with けど',
+        sentences: [
+          { jp: '駅は近いけど、静かです。', en: 'The station is close, but it is quiet.' },
+          { jp: '高いけど、おいしいです。', en: 'It is expensive, but delicious.' },
+        ],
+      },
+    },
+    {
+      type: 'speak', prompt: 'Answer out loud.',
+      data: { prompt_jp: '週末は何をしましたか。', prompt_en: 'What did you do at the weekend?', hint: 'Try one sentence with けど.' },
+    },
+    {
+      type: 'multiple_choice', prompt: '',
+      data: { question: 'Which sentence contrasts two ideas?', options: ['駅は近いです。', '近いけど、静かです。', '静かですか。'], answer: 1 },
+    },
+    {
+      type: 'fill_blank', prompt: '',
+      data: { before: '高い', after: '、おいしいです。', en: 'It is expensive, but delicious.', options: ['けど', 'から', 'ので'], answer: 'けど' },
+    },
   ],
 }
 

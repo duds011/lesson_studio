@@ -40,8 +40,8 @@ export default function HowLessonsReachYou({ platformLabel }: { platformLabel: s
 
   return (
     <section className="k-sec" style={{ position: 'relative' }}>
-      <button type="button" className="k-sec-close" onClick={dismiss} aria-label="Hide this explanation">
-        ×
+      <button type="button" className="k-sec-close" onClick={dismiss}>
+        Got it — hide this <span aria-hidden>×</span>
       </button>
 
       <div className="k-sec-head">

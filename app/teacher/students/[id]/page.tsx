@@ -24,9 +24,12 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
 
   if (!student) notFound()
 
-  // The teaching language decides which kind of test the generator offers.
+  // This student's language decides which kind of test the generator offers —
+  // per student, not per teacher, because one teacher can teach two languages.
+  // No 'Japanese' fallback: that default put the hiragana/romaji picker in
+  // front of every teacher whose profile predates the language field.
   const { data: teacherProfile } = await supabase.from('profiles').select('teaching_language').eq('id', user.id).single()
-  const teachingLanguage = (teacherProfile as any)?.teaching_language || 'Japanese'
+  const teachingLanguage = (student as any).language || (teacherProfile as any)?.teaching_language || ''
 
   // Teacher RLS returns all their students' lessons, including drafts.
   const { data: lessons } = await supabase

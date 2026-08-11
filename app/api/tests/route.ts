@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
 
   const [{ data: student }, { data: lesson }, { data: teacherProfile }] = await Promise.all([
-    supabase.from('students').select('id, full_name, teacher_id').eq('id', studentId).single(),
+    supabase.from('students').select('id, full_name, teacher_id, language').eq('id', studentId).single(),
     supabase.from('lessons').select('id, title, lesson_number, student_id, lesson_summaries ( recap_json )').eq('id', lessonId).single(),
     supabase.from('profiles').select('teaching_language').eq('id', user.id).single(),
   ])
@@ -53,8 +53,12 @@ export async function POST(req: NextRequest) {
   if (!recap) return NextResponse.json({ ok: false, error: 'This lesson has no recap to base a test on' }, { status: 400 })
 
   const lessonTitle = lessonDisplayTitle(recap, l.title, l.lesson_number)
-  const language = (teacherProfile as any)?.teaching_language || 'Japanese'
-  const isJapanese = /japanese/i.test(language)
+  // The test is for this student, so their language decides its kind — a
+  // teacher can have students in different languages. Falling back to
+  // 'Japanese' here is what put hiragana options in front of French teachers:
+  // any teacher whose profile predates the language field hit the fallback.
+  const language = (student as any).language || (teacherProfile as any)?.teaching_language || 'English'
+  const isJapanese = /japanese|日本語/i.test(language)
 
   try {
     const testJson = await generateTest({

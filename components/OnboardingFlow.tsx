@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveOnboarding, completeOnboarding } from '@/app/actions/onboarding'
+import { RECORDER_STORE_URL } from '@/lib/recorder'
 import { ACCENT_PRESETS, type Brand } from '@/lib/brand'
 import {
   TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
@@ -347,23 +348,24 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               </p>
 
               <ol className="k-onb-list">
-                <li><strong>Open the install page</strong> and follow the five steps — it takes a minute, once.</li>
+                <li><strong>Add it from the Chrome Web Store</strong> — one click, then pin it to your toolbar.</li>
                 <li><strong>Sign in inside the extension</strong> with this same email and password. There is nothing to copy across.</li>
                 <li><strong>Record a lesson</strong>: pick the student, hit start, hit stop at the end.</li>
               </ol>
 
               <a
-                href="/recorder"
+                href={RECORDER_STORE_URL}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 className="k-onb-cta"
               >
-                Open the install page ↗
+                Add to Chrome — it&rsquo;s free ↗
               </a>
 
               <p className="k-onb-fine">
-                You can do this later — it&rsquo;s at <strong>Settings → Lesson recorder</strong> whenever
-                you&rsquo;re ready.
+                Prefer the full walkthrough (mic permission, what gets recorded)? It&rsquo;s on the{' '}
+                <a href="/recorder" target="_blank" rel="noopener">setup guide</a> — also at{' '}
+                <strong>Settings → Lesson recorder</strong> whenever you&rsquo;re ready.
               </p>
             </>
           )}

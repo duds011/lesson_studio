@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { currentUser } from '@/lib/auth'
+import { RECORDER_STORE_URL } from '@/lib/recorder'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,17 +30,19 @@ export default async function RecorderPage() {
 
       <section className="lesson-block" style={{ marginBottom: 14 }}>
         <h3 style={{ marginTop: 0 }}>1. Install it</h3>
-        <p className="sub" style={{ marginBottom: 12 }}>
-          The extension is in private beta, so it installs from a folder rather than the Chrome
-          Web Store. It takes a minute, once.
+        <p className="sub" style={{ marginBottom: 14 }}>
+          One click from the Chrome Web Store, then pin it to your toolbar so you can reach it
+          mid-lesson.
         </p>
-        <ol style={{ paddingLeft: 18, margin: 0, display: 'grid', gap: 7 }}>
-          <li>Download the recorder folder and unzip it somewhere you won&rsquo;t delete.</li>
-          <li>Open <code>chrome://extensions</code> in Chrome.</li>
-          <li>Turn on <strong>Developer mode</strong>, top right.</li>
-          <li>Click <strong>Load unpacked</strong> and pick the folder.</li>
-          <li>Pin the extension so you can reach it mid-lesson.</li>
-        </ol>
+        <a href={RECORDER_STORE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+          Add to Chrome — it&rsquo;s free ↗
+        </a>
+        <p className="sub" style={{ margin: '14px 0 0', fontSize: 12 }}>
+          <strong>Tested the beta from a folder?</strong> Remove that copy first (
+          <code>chrome://extensions</code> → Remove on the old one). Chrome treats the store
+          version as a different extension, and only one of them can record a tab at a time —
+          keeping both means whichever you click second fails.
+        </p>
       </section>
 
       <section className="lesson-block" style={{ marginBottom: 14 }}>

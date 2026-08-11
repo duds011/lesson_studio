@@ -17,8 +17,10 @@ const SCRIPT_OPTIONS = [
 // the draft review page. Generation takes a while — keep the modal open with
 // a clear progress state. `language` is the teacher's teaching language; the
 // script picker only exists for Japanese.
-export default function GenerateTestButton({ studentId, lessons, language = 'Japanese' }: { studentId: string; lessons: TestLessonOption[]; language?: string }) {
-  const isJapanese = /japanese/i.test(language)
+export default function GenerateTestButton({ studentId, lessons, language = '' }: { studentId: string; lessons: TestLessonOption[]; language?: string }) {
+  // Unknown language means NO script picker — defaulting to Japanese showed
+  // hiragana options to teachers of every other language.
+  const isJapanese = /japanese|日本語/i.test(language)
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [lessonId, setLessonId] = useState(lessons[0]?.id ?? '')
