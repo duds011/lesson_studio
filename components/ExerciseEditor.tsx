@@ -4,10 +4,11 @@
  * Editing the generated exercises during recap review.
  *
  * The generator writes them; the teacher gets the red pen. Every text the
- * student will see is an input here, the right answer is picked rather than
- * typed (a radio can't disagree with the option list), and any exercise can be
- * dropped. There is no "add exercise" — regenerating the recap is how you get
- * new material; this is for fixing it.
+ * student will see is an input here — including the instruction line above
+ * each exercise — the right answer is picked rather than typed (a radio can't
+ * disagree with the option list), and any exercise can be dropped. When the
+ * generated set isn't to taste, the teacher can also write her own from a
+ * blank of any type.
  */
 
 type Exercise = { type: string; prompt: string; data: any }
@@ -19,6 +20,18 @@ const TYPE_LABEL: Record<string, string> = {
   fill_blank: '✏️ Fill in the blank',
 }
 
+// Blank exercises for "+ Add" — same shapes the generator emits, with the
+// prompt prefilled to its usual instruction so only the material is left to write.
+const TEMPLATES: Record<string, Exercise> = {
+  read_aloud: { type: 'read_aloud', prompt: 'Read these sentences aloud', data: { focus: '', sentences: [{ jp: '', en: '' }] } },
+  speak: { type: 'speak', prompt: 'Answer out loud', data: { prompt_jp: '', prompt_en: '', hint: '' } },
+  multiple_choice: { type: 'multiple_choice', prompt: 'Quick check', data: { question: '', options: ['', '', ''], answer: 0 } },
+  fill_blank: { type: 'fill_blank', prompt: 'Fill in the blank', data: { before: '', after: '', options: ['', '', ''], answer: '', en: '' } },
+}
+
+// The update endpoint keeps at most 20; don't let the editor build more.
+const MAX_EXERCISES = 20
+
 const input: React.CSSProperties = {
   border: '1px solid var(--line)', borderRadius: 8, padding: '7px 10px',
   background: '#fff', width: '100%', font: 'inherit', fontSize: 13,
@@ -29,17 +42,15 @@ export default function ExerciseEditor({ exercises, onChange }: {
   exercises: Exercise[]
   onChange: (next: Exercise[]) => void
 }) {
-  if (exercises.length === 0) {
-    return <p className="analytics-note">No exercises were generated for this lesson.</p>
-  }
-
   const patch = (i: number, next: Partial<Exercise>) =>
     onChange(exercises.map((e, j) => (j === i ? { ...e, ...next } : e)))
   const patchData = (i: number, data: any) => patch(i, { data: { ...exercises[i].data, ...data } })
   const remove = (i: number) => onChange(exercises.filter((_, j) => j !== i))
+  const add = (type: string) => onChange([...exercises, structuredClone(TEMPLATES[type])])
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
+      {exercises.length === 0 && <p className="analytics-note">No exercises yet — add your own below.</p>}
       {exercises.map((ex, i) => (
         <div key={i} className="ex-card" style={{ position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -54,6 +65,13 @@ export default function ExerciseEditor({ exercises, onChange }: {
               Remove
             </button>
           </div>
+
+          {/* Speaking exercises show their instruction line to the student;
+              the graded types already edit it as the question. */}
+          {(ex.type === 'read_aloud' || ex.type === 'speak') && (
+            <div style={{ marginBottom: 8 }}><span style={label}>Instruction</span>
+              <input style={input} value={ex.prompt ?? ''} onChange={(e) => patch(i, { prompt: e.target.value })} placeholder="What the student is asked to do" /></div>
+          )}
 
           {ex.type === 'read_aloud' && (
             <div style={{ display: 'grid', gap: 8 }}>
@@ -106,9 +124,18 @@ export default function ExerciseEditor({ exercises, onChange }: {
                   <input style={{ ...input, flex: 1 }} value={o} onChange={(e) => {
                     const options = [...ex.data.options]; options[oi] = e.target.value; patchData(i, { options })
                   }} />
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
+                    const options = ex.data.options.filter((_: string, oj: number) => oj !== oi)
+                    const answer = ex.data?.answer ?? 0
+                    // Deleting the correct option leaves the first as correct.
+                    patchData(i, { options, answer: answer === oi ? 0 : answer > oi ? answer - 1 : answer })
+                  }} aria-label="Remove option">✕</button>
                 </div>
               ))}
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>The radio marks the correct answer.</span>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => patchData(i, { options: [...(ex.data?.options ?? []), ''] })}>+ Option</button>
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>The radio marks the correct answer.</span>
+              </div>
             </div>
           )}
 
@@ -138,13 +165,32 @@ export default function ExerciseEditor({ exercises, onChange }: {
                     // Editing the correct option's text keeps it correct.
                     patchData(i, wasAnswer ? { options, answer: e.target.value } : { options })
                   }} />
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
+                    const options = ex.data.options.filter((_: string, oj: number) => oj !== oi)
+                    // Deleting the correct option leaves no answer picked yet.
+                    patchData(i, { options, answer: (ex.data?.answer ?? '') === o ? '' : ex.data?.answer })
+                  }} aria-label="Remove option">✕</button>
                 </div>
               ))}
-              <span style={{ fontSize: 11, color: 'var(--muted)' }}>The radio marks the word that belongs in the gap.</span>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => patchData(i, { options: [...(ex.data?.options ?? []), ''] })}>+ Option</button>
+                <span style={{ fontSize: 11, color: 'var(--muted)' }}>The radio marks the word that belongs in the gap.</span>
+              </div>
             </div>
           )}
         </div>
       ))}
+
+      {exercises.length < MAX_EXERCISES && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ ...label, marginRight: 4 }}>Add your own</span>
+          {Object.keys(TEMPLATES).map((t) => (
+            <button key={t} type="button" className="btn btn-ghost btn-sm" onClick={() => add(t)}>
+              + {TYPE_LABEL[t]}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

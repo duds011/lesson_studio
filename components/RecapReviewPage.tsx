@@ -311,8 +311,8 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
             <section className="block">
               <h4>Practice exercises</h4>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
-                Auto-generated from this lesson. Fix any wording, move the right answer, or
-                remove an exercise — what survives is exactly what {first} will practice.
+                Auto-generated from this lesson. Fix any wording, move the right answer,
+                remove an exercise, or write your own — this is exactly what {first} will practice.
               </p>
               <ExerciseEditor exercises={exercises} onChange={setExercises} />
             </section>
