@@ -102,6 +102,7 @@ async function RecordingsHome() {
   const recent: RecentLesson[] = (lessons ?? []).map((l: any) => ({
     id: l.id,
     title: l.title,
+    studentId: l.student_id,
     studentName: nameById.get(l.student_id) ?? 'Student',
     lessonNumber: l.lesson_number,
     date: l.lesson_date,

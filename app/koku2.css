@@ -460,6 +460,11 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 /* Teacher student rows. These columns used to be an inline style on the
    element, which no media query could override — hence the class. */
 .student-card.sc-cols{grid-template-columns:minmax(170px,1.3fr) 70px 70px 96px minmax(150px,1fr)}
+/* Cards, not stripes: without a fill the rows show the warm page canvas and
+   merge into one grey slab. White fill + hover ring makes each student a
+   distinct, clickable-looking card. */
+.student-grid>.student-card{background:#fff}
+.student-grid>.student-card:hover{background:#fff;border-color:var(--brand);box-shadow:0 2px 10px rgba(10,97,201,.10)}
 
 /* The student directory is a 5-column table (~736px min) — stack it. */
 @media(max-width:760px){
@@ -587,8 +592,13 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
      shrinks the rail and leaves the content where it was. */
   html[data-nav="collapsed"] .app-sidebar{width:76px}
   html[data-nav="collapsed"] .wrap{margin-left:104px}
-  html[data-nav="collapsed"] .sidebar-top{flex-direction:column;gap:8px;padding:16px 0}
+  /* Collapsed, the mark and the toggle stack — as two same-size filled squares
+     they read as one broken double-logo. Space them out and let the toggle be
+     a quiet icon until hovered, so the mark is clearly the only logo. */
+  html[data-nav="collapsed"] .sidebar-top{flex-direction:column;gap:14px;padding:18px 0 8px}
   html[data-nav="collapsed"] .sidebar-top .logo{flex:0 0 auto}
+  html[data-nav="collapsed"] .nav-toggle{background:transparent;color:#9a9e96;width:32px;height:32px}
+  html[data-nav="collapsed"] .nav-toggle:hover{background:var(--surface-2);color:var(--forest)}
   html[data-nav="collapsed"] .nav-toggle .ui-icon{transform:rotate(180deg)}
   html[data-nav="collapsed"] .logo>span:not(.mark),
   html[data-nav="collapsed"] .nav-section-label,

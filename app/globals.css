@@ -223,6 +223,11 @@ th.is-today .notes-day{color:var(--brand)}
 .pay-cell:hover .notes-plus{opacity:.5}
 .pay-total-col{text-align:center!important;font-weight:800;background:var(--surface)!important;
   border-left:1px solid var(--line)!important;width:92px!important;min-width:92px!important}
+/* Day-view variant: one month's days across, so columns are day-sized and
+   weekends shade like the notes grid. */
+.pay-grid.pay-days th,.pay-grid.pay-days td{width:52px;min-width:52px}
+.pay-grid.pay-days th.is-weekend,.pay-grid.pay-days td.is-weekend{background:#fafbf9}
+.pay-grid.pay-days th.is-now{background:var(--brand-soft)}
 /* corrections — what the student said, and what it should have been */
 .cx-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
 .cx-tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:7px}

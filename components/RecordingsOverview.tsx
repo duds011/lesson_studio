@@ -5,6 +5,7 @@ import HowLessonsReachYou from '@/components/HowLessonsReachYou'
 export type RecentLesson = {
   id: string
   title: string | null
+  studentId: string
   studentName: string
   lessonNumber: number | null
   date: string | null
@@ -79,7 +80,7 @@ export default function RecordingsOverview({
             ) : (
               <div>
                 {recent.map((l) => (
-                  <div key={l.id} className="lesson-card">
+                  <Link key={l.id} href={`/teacher/students/${l.studentId}/lessons/${l.id}`} className="lesson-card">
                     <span className="lc-num">{l.lessonNumber ? `#${l.lessonNumber}` : '—'}</span>
                     <div>
                       <div className="lc-title">{l.title || 'Untitled lesson'}</div>
@@ -88,8 +89,8 @@ export default function RecordingsOverview({
                     <span className={`pill ${l.status === 'published' ? 'green' : 'amber'}`}>
                       {l.status === 'published' ? 'Published' : 'Draft'}
                     </span>
-                    <span />
-                  </div>
+                    <span className="lc-arrow">→</span>
+                  </Link>
                 ))}
               </div>
             )}

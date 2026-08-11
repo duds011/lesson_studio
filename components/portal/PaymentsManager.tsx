@@ -39,12 +39,6 @@ export default function PaymentsManager({
   const totalReceived = payments.filter(p => p.status === 'paid').reduce((s, p) => s + p.amount, 0)
   const totalOutstanding = payments.filter(p => p.status === 'pending').reduce((s, p) => s + p.amount, 0)
   const thisMonth = payments.filter(p => p.status === 'paid' && p.payment_date?.startsWith(monthPrefix)).reduce((s, p) => s + p.amount, 0)
-  const paidByStudent = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const p of payments) if (p.status === 'paid') m.set(p.studentId, (m.get(p.studentId) ?? 0) + p.amount)
-    return m
-  }, [payments])
-
   // 12-month revenue buckets ending this month.
   const buckets = useMemo(() => {
     const now = new Date()
@@ -69,47 +63,61 @@ export default function PaymentsManager({
     (b.payment_date || b.due_date || b.created_at).localeCompare(a.payment_date || a.due_date || a.created_at)).slice(0, 40), [payments])
 
   /**
-   * The last twelve months, oldest first — the columns of the grid.
-   *
-   * Months rather than the notes grid's days: a payment happens once or twice a
-   * month, so a day grid would be an acre of empty cells to find two marks in.
+   * One month at a time, its days across — the exact shape of the notes grid,
+   * with ← → to move between months. The 12-months-at-once table this replaces
+   * showed a year of near-empty columns and no way to see WHEN in a month a
+   * payment landed.
    */
-  const months = useMemo(() => {
-    const now = new Date()
-    const nowKey = todayIso().slice(0, 7)
-    const out: { key: string; label: string; year: string; isNow: boolean }[] = []
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      out.push({
-        key,
-        label: d.toLocaleDateString('en-US', { month: 'short' }),
-        year: String(d.getFullYear()).slice(2),
-        isNow: key === nowKey,
-      })
-    }
-    return out
-  }, [])
+  const now = new Date()
+  const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(now.getMonth()) // 0-based
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const days = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1
+    const dow = new Date(viewYear, viewMonth, day).getDay()
+    const iso = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return { day, iso, weekday: 'SMTWTFS'[dow], weekend: dow === 0 || dow === 6 }
+  })
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const viewPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
+  const today = todayIso()
 
-  /** studentId|YYYY-MM → what was paid and what is still owed that month. */
-  const byCell = useMemo(() => {
-    const m = new Map<string, { paid: number; pending: number }>()
+  function prevMonth() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1) }
+    else setViewMonth(viewMonth - 1)
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1) }
+    else setViewMonth(viewMonth + 1)
+  }
+
+  /** studentId|YYYY-MM-DD → the payments on that day. */
+  const byDay = useMemo(() => {
+    const m = new Map<string, ManagedPayment[]>()
     for (const p of payments) {
-      const when = (p.payment_date || p.due_date || p.created_at).slice(0, 7)
-      const k = `${p.studentId}|${when}`
-      const cur = m.get(k) ?? { paid: 0, pending: 0 }
-      if (p.status === 'paid') cur.paid += p.amount
-      else cur.pending += p.amount
-      m.set(k, cur)
+      const k = `${p.studentId}|${(p.payment_date || p.due_date || p.created_at).slice(0, 10)}`
+      const arr = m.get(k) ?? []
+      arr.push(p)
+      m.set(k, arr)
     }
     return m
   }, [payments])
 
-  function openAdd(preset?: string, month?: string) {
+  /** What each student paid inside the viewed month — the grid's Total column. */
+  const monthPaidByStudent = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const p of payments) {
+      if (p.status !== 'paid') continue
+      if (!(p.payment_date || p.created_at).startsWith(viewPrefix)) continue
+      m.set(p.studentId, (m.get(p.studentId) ?? 0) + p.amount)
+    }
+    return m
+  }, [payments, viewPrefix])
+
+  function openAdd(preset?: string, date?: string) {
     const f = emptyForm()
-    // Clicking a cell means "a payment in that month", so the form opens dated
-    // there — today if it is the current month, otherwise the 1st.
-    if (month) f.payment_date = month === todayIso().slice(0, 7) ? todayIso() : `${month}-01`
+    // Clicking a cell means "a payment on that day", so the form opens dated there.
+    if (date) f.payment_date = date
     setForm(f); setStudentId(preset ?? ''); setEditing(null); setError(''); setMode('add')
   }
   function openEdit(p: ManagedPayment) {
@@ -181,12 +189,20 @@ export default function PaymentsManager({
         </div>
       )}
 
-      {/* Currency and Add payment moved into the header — this is just a label. */}
-      <h2 className="section-heading" style={{ margin: 0 }}>Students</h2>
+      {/* Toolbar: the section label and the month the grid is showing. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
+        <h2 className="section-heading" style={{ margin: 0 }}>Students</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 8 }}>
+          <button onClick={prevMonth} className="btn btn-ghost btn-sm" aria-label="Previous month">←</button>
+          <span style={{ fontWeight: 800, minWidth: 150, textAlign: 'center' }}>{monthLabel}</span>
+          <button onClick={nextMonth} className="btn btn-ghost btn-sm" aria-label="Next month">→</button>
+        </div>
+        <button onClick={() => { setViewYear(now.getFullYear()); setViewMonth(now.getMonth()) }} className="btn btn-ghost btn-sm">Today</button>
+      </div>
 
-      {/* Students down, months across — the same shape as the notes grid, so a
-          teacher reads both the same way. Any cell is a place to add a payment,
-          which is why an empty one still offers a +. */}
+      {/* Students down, the month's days across — the same shape as the notes
+          grid, so a teacher reads both the same way. Any cell is a place to add
+          a payment, which is why an empty one still offers a +. */}
       {sortedStudents.length === 0 ? (
         <div className="empty">
           <strong style={{ color: 'var(--ink)' }}>No students yet</strong>
@@ -195,17 +211,17 @@ export default function PaymentsManager({
         </div>
       ) : (
         <DragScroller className="notes-scroll">
-          <table className="pay-grid">
+          <table className="pay-grid pay-days">
             <thead>
               <tr>
                 <th className="notes-name-col">Student</th>
-                {months.map((m) => (
-                  <th key={m.key} className={m.isNow ? 'is-now' : ''}>
-                    <div className="pay-mon">{m.label}</div>
-                    <div className="pay-yr">’{m.year}</div>
+                {days.map((d) => (
+                  <th key={d.iso} className={`${d.iso === today ? 'is-now' : ''} ${d.weekend ? 'is-weekend' : ''}`}>
+                    <div className="pay-mon">{d.day}</div>
+                    <div className="pay-yr">{d.weekday}</div>
                   </th>
                 ))}
-                <th className="pay-total-col">Total</th>
+                <th className="pay-total-col">{monthLabel.split(' ')[0]}</th>
               </tr>
             </thead>
             <tbody>
@@ -225,24 +241,28 @@ export default function PaymentsManager({
                       </span>
                     </td>
 
-                    {months.map((m) => {
-                      const cell = byCell.get(`${s.id}|${m.key}`)
-                      const has = Boolean(cell && (cell.paid || cell.pending))
+                    {days.map((d) => {
+                      const list = byDay.get(`${s.id}|${d.iso}`) ?? []
+                      const paid = list.filter((p) => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0)
+                      const owed = list.filter((p) => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0)
+                      const has = list.length > 0
                       return (
-                        <td key={m.key} className={m.isNow ? 'is-now' : ''}>
+                        <td key={d.iso} className={`${d.iso === today ? 'is-now' : ''} ${d.weekend && !has ? 'is-weekend' : ''}`}>
                           <button
-                            className={`pay-cell${has ? ' has-pay' : ''}${cell?.pending ? ' is-owed' : ''}`}
-                            onClick={() => openAdd(s.id, m.key)}
+                            className={`pay-cell${has ? ' has-pay' : ''}${owed ? ' is-owed' : ''}`}
+                            // One payment on the day opens it to edit; otherwise
+                            // the cell means "add a payment dated this day".
+                            onClick={() => (list.length === 1 ? openEdit(list[0]) : openAdd(s.id, d.iso))}
                             title={
                               has
-                                ? `${formatMoney(cell!.paid, currency)} paid${cell!.pending ? `, ${formatMoney(cell!.pending, currency)} owed` : ''} — click to add another`
-                                : `Add a payment for ${m.label} ’${m.year}`
+                                ? `${paid > 0 ? `${formatMoney(paid, currency)} paid` : ''}${paid > 0 && owed > 0 ? ', ' : ''}${owed > 0 ? `${formatMoney(owed, currency)} owed` : ''} — click to ${list.length === 1 ? 'edit' : 'add another'}`
+                                : `Add a payment on ${d.iso}`
                             }
                           >
                             {has
                               ? <>
-                                  {cell!.paid > 0 && <b>{formatMoney(cell!.paid, currency)}</b>}
-                                  {cell!.pending > 0 && <i className="pay-owed">{formatMoney(cell!.pending, currency)}</i>}
+                                  {paid > 0 && <b>{formatMoney(paid, currency)}</b>}
+                                  {owed > 0 && <i className="pay-owed">{formatMoney(owed, currency)}</i>}
                                 </>
                               : <span className="notes-plus">+</span>}
                           </button>
@@ -250,7 +270,7 @@ export default function PaymentsManager({
                       )
                     })}
 
-                    <td className="pay-total-col">{formatMoney(paidByStudent.get(s.id) ?? 0, currency)}</td>
+                    <td className="pay-total-col">{formatMoney(monthPaidByStudent.get(s.id) ?? 0, currency)}</td>
                   </tr>
                 )
               })}
