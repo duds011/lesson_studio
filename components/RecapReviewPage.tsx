@@ -111,6 +111,28 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
     window.location.reload() // pull the freshly generated recap
   }
 
+  // Retroactive path for drafts generated before the student's explanation
+  // language was set: one GPT pass rewrites the explanatory prose, keeping the
+  // taught-language material and every measured number. Unsaved edits would be
+  // overwritten by the reload, so they are saved first.
+  async function translate(language?: string) {
+    if (!language && !confirm('Translate the explanations in this recap into the language this student is taught through? Example sentences, quotes and scores stay as they are.')) return
+    setRebuilding(true); setMsg('')
+    await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
+    const res = await fetch('/api/recap/translate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: rec.eventId, language }),
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Translation failed' }))
+    if (res.needLanguage) {
+      setRebuilding(false)
+      const typed = prompt('This student has no explanation language set yet (you can set one on their student page). Translate the explanations into which language?', '')
+      if (typed?.trim()) return translate(typed.trim())
+      return
+    }
+    if (!res.ok) { setRebuilding(false); setMsg(res.error || 'Translation failed'); return }
+    window.location.reload() // pull the translated recap
+  }
+
   async function deleteDraft() {
     if (!confirm(`Delete ${rec.studentName}'s draft recap? This removes it from Recaps to review and cannot be undone.`)) return
     setBusy('delete'); setMsg('')
@@ -140,6 +162,9 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
             <p className="sub">{rec.lessonTitle || 'Lesson'}{rec.lessonDate ? ` · ${fmtDate(rec.lessonDate)}` : ''} — review each tab, then send it to {first}.</p>
           </div>
           <div className="page-actions">
+            <button className="btn btn-ghost btn-sm" disabled={rebuilding} onClick={() => translate()} title="Rewrite the explanations in the student's language — lesson material and scores stay untouched">
+              {rebuilding ? 'Working…' : '🌐 Translate explanations'}
+            </button>
             <button className="btn btn-ghost btn-sm" disabled={rebuilding} onClick={rebuild} title="Regenerate from the recording with the latest AI + metrics">
               {rebuilding ? 'Rebuilding…' : '↻ Rebuild from recording'}
             </button>

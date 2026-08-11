@@ -17,7 +17,7 @@ const SCRIPT_OPTIONS = [
 // the draft review page. Generation takes a while — keep the modal open with
 // a clear progress state. `language` is the teacher's teaching language; the
 // script picker only exists for Japanese.
-export default function GenerateTestButton({ studentId, lessons, language = '' }: { studentId: string; lessons: TestLessonOption[]; language?: string }) {
+export default function GenerateTestButton({ studentId, lessons, language = '', instructionLanguage = '' }: { studentId: string; lessons: TestLessonOption[]; language?: string; instructionLanguage?: string }) {
   // Unknown language means NO script picker — defaulting to Japanese showed
   // hiragana options to teachers of every other language.
   const isJapanese = /japanese|日本語/i.test(language)
@@ -27,6 +27,13 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
   // test's length scales with how many are ticked.
   const [picked, setPicked] = useState<string[]>(lessons[0] ? [lessons[0].id] : [])
   const [script, setScript] = useState<string>('hiragana')
+  // Non-Japanese counterpart of the script picker: which language the
+  // questions and explanations are written in. Only offered when the student
+  // actually has a non-English instruction language set — defaulting to it,
+  // since that is why the teacher set it.
+  const nativeOption = !isJapanese && instructionLanguage.trim() && !/^english$/i.test(instructionLanguage.trim())
+    ? instructionLanguage.trim() : ''
+  const [explainIn, setExplainIn] = useState<string>(nativeOption || 'English')
   const [directions, setDirections] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -41,7 +48,7 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
       const res = await fetch('/api/tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, lessonIds: picked, script, directions: directions.trim() || undefined }),
+        body: JSON.stringify({ studentId, lessonIds: picked, script, explainIn: nativeOption ? explainIn : undefined, directions: directions.trim() || undefined }),
       })
       const json = await res.json()
       if (!json.ok) throw new Error(json.error || 'Generation failed')
@@ -80,6 +87,33 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
                 </label>
               ))}
             </div>
+
+            {nativeOption && (
+              <>
+                <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Explanations in
+                </span>
+                <div className="script-picker" role="radiogroup" aria-label="Explanation language" style={{ marginBottom: 14 }}>
+                  {[
+                    { value: nativeOption, sub: 'Questions & explanations' },
+                    { value: 'English', sub: 'Immersion-style' },
+                  ].map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={explainIn === o.value}
+                      className={`script-opt ${explainIn === o.value ? 'sel' : ''}`}
+                      disabled={busy}
+                      onClick={() => setExplainIn(o.value)}
+                    >
+                      <strong>{o.value}</strong>
+                      <span>{o.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {isJapanese && (
               <>

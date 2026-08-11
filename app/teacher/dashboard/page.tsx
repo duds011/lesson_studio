@@ -34,9 +34,12 @@ export default async function TeacherDashboard() {
     statsByStudent.set(l.student_id, s)
   }
 
-  const { data: profile } = await supabase.from('profiles').select('currency, teaching_language').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('currency, teaching_language, speaking_language').eq('id', user.id).single()
   const currency = (profile as any)?.currency ?? 'USD'
   const teachingLanguage = (profile as any)?.teaching_language ?? ''
+  // Pre-fills the new-student "explain lessons in" field: the language the
+  // teacher said they explain in is usually every student's.
+  const speakingLanguage = (profile as any)?.speaking_language ?? ''
 
   const creditMap = await getCreditsByStudent(supabase, user.id)
 
@@ -54,7 +57,7 @@ export default async function TeacherDashboard() {
           { label: 'With login', value: rows.filter((r) => r.profile_id).length },
           { label: 'Lessons recorded', value: totalLessons },
         ]}
-        actions={<AddStudentForm currency={currency} teachingLanguage={teachingLanguage} />}
+        actions={<AddStudentForm currency={currency} teachingLanguage={teachingLanguage} speakingLanguage={speakingLanguage} />}
       />
 
       {lowStudents.length > 0 && (

@@ -32,6 +32,8 @@ export async function createStudent(formData: {
   password: string
   language: string
   level: string
+  /** Language recaps and tests are EXPLAINED in. Empty means English. */
+  instruction_language?: string
 }): Promise<CreateStudentResult> {
   const auth = await requireTeacher()
   if ('error' in auth) return { success: false, error: auth.error }
@@ -71,6 +73,7 @@ export async function createStudent(formData: {
       email: formData.email,
       language: formData.language,
       level: formData.level,
+      instruction_language: formData.instruction_language?.trim() || null,
     })
     .select('id')
     .single()
@@ -82,6 +85,35 @@ export async function createStudent(formData: {
 
   revalidatePath('/teacher/dashboard')
   return { success: true, studentId: studentRow.id }
+}
+
+/**
+ * Set the language this student's recaps and tests are explained in.
+ * Empty clears it back to English (NULL keeps existing students unchanged).
+ */
+export async function setInstructionLanguage(studentId: string, language: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireTeacher()
+  if ('error' in auth) return { success: false, error: auth.error }
+
+  // Ownership through the teacher's own client, the write through admin —
+  // same split every other mutation in this file uses.
+  const { data: student } = await auth.supabase
+    .from('students')
+    .select('id')
+    .eq('id', studentId)
+    .eq('teacher_id', auth.user.id)
+    .single()
+  if (!student) return { success: false, error: 'Student not found' }
+
+  const value = language.trim().slice(0, 40) || null
+  const { error } = await createAdminClient()
+    .from('students')
+    .update({ instruction_language: value })
+    .eq('id', studentId)
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/teacher/students/${studentId}`)
+  return { success: true }
 }
 
 // Retroactively create a login for a student row that has no auth account yet.

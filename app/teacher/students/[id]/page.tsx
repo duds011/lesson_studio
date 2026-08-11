@@ -7,6 +7,7 @@ import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 import GenerateTestButton from '@/components/portal/GenerateTestButton'
+import InstructionLanguageEditor from '@/components/portal/InstructionLanguageEditor'
 import PageHeader from '@/components/PageHeader'
 
 export const dynamic = 'force-dynamic'
@@ -92,6 +93,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
         ]}
         actions={
           <>
+            <InstructionLanguageEditor studentId={student.id} value={(student as any).instruction_language ?? null} />
             {/* Credits keep their own red/amber/blue inside the band — this is
                 the one figure that changes what a teacher does next. */}
             <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : '#fff', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
@@ -147,7 +149,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, margin: '0 0 11px' }}>
           <h2 className="section-heading" style={{ margin: 0 }}>Practice tests</h2>
-          <GenerateTestButton studentId={student.id} lessons={testableLessons} language={teachingLanguage} />
+          <GenerateTestButton studentId={student.id} lessons={testableLessons} language={teachingLanguage} instructionLanguage={(student as any).instruction_language ?? ''} />
         </div>
         {(tests ?? []).length === 0 ? (
           <div className="empty" style={{ padding: 26 }}>

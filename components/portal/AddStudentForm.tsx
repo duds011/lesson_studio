@@ -15,19 +15,22 @@ function randomPassword() {
 // The language defaults to what THIS teacher teaches, not to Japanese. The
 // hardcoded default is how an English teacher's student ended up marked as
 // learning Japanese and got a JLPT-style recap for an English lesson.
-const emptyForm = (defaultLanguage: string) => ({
+const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
   full_name: '', email: '', password: randomPassword(), language: defaultLanguage || 'English', level: 'Beginner',
+  // What recaps and tests are EXPLAINED in — defaults to the language the
+  // teacher said they explain in, since that is usually every student's.
+  instruction_language: /^english$/i.test(defaultInstruction.trim()) ? '' : defaultInstruction.trim(),
   // Optional starting package
   lessons: '', amount: '', method: '',
 })
 
-export default function AddStudentForm({ currency = 'USD', teachingLanguage = '' }: { currency?: string; teachingLanguage?: string }) {
+export default function AddStudentForm({ currency = 'USD', teachingLanguage = '', speakingLanguage = '' }: { currency?: string; teachingLanguage?: string; speakingLanguage?: string }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [created, setCreated] = useState<{ email: string; password: string; note?: string } | null>(null)
-  const [form, setForm] = useState(emptyForm(teachingLanguage))
+  const [form, setForm] = useState(emptyForm(teachingLanguage, speakingLanguage))
 
   const set = (k: keyof ReturnType<typeof emptyForm>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -40,6 +43,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
     const res = await createStudent({
       full_name: form.full_name, email: form.email, password: form.password,
       language: form.language, level: form.level,
+      instruction_language: form.instruction_language,
     })
     if (!res.success || !res.studentId) {
       setBusy(false)
@@ -66,7 +70,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
 
     setBusy(false)
     setCreated({ email: form.email, password: form.password, note })
-    setForm(emptyForm(teachingLanguage))
+    setForm(emptyForm(teachingLanguage, speakingLanguage))
     router.refresh()
   }
 
@@ -134,6 +138,13 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
               <label>Language</label>
               <input value={form.language} onChange={set('language')} required />
             </div>
+          </div>
+          <div className="field">
+            <label>Explain lessons in <span style={{ fontWeight: 500, color: 'var(--muted)' }}>(optional)</span></label>
+            <input value={form.instruction_language} onChange={set('instruction_language')} placeholder="English" />
+            <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0' }}>
+              Recap explanations, definitions and test questions are written in this language. Leave blank for English.
+            </p>
           </div>
 
           {/* Optional starting package */}

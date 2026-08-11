@@ -402,6 +402,12 @@ export async function generateTest(opts: {
   lessonCount?: number
   /** Free-text steering from the teacher — topics to stress, tone, difficulty. */
   directions?: string | null
+  /**
+   * Language the questions, instructions and explanations are written in.
+   * Empty or English keeps the prompt as-is. Non-Japanese tests only —
+   * Japanese tests vary by script instead.
+   */
+  explanationLanguage?: string | null
 }): Promise<TestJson> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
@@ -437,7 +443,19 @@ export async function generateTest(opts: {
   const lang = (opts.language ?? 'Japanese').trim()
   const isJapanese = /japanese/i.test(lang) || lang === ''
 
-  const content = isJapanese
+  // Like the recap's explanationOverride: one trailing block re-scopes the
+  // prompt's English literals instead of parametrising each. Japanese tests
+  // are excluded — their per-student knob is the script picker.
+  const native = String(opts.explanationLanguage ?? '').trim()
+  const testOverride = !isJapanese && native && !/^(en|eng|english)$/i.test(native)
+    ? `
+
+EXPLANATION LANGUAGE — FINAL OVERRIDE, APPLIES TO EVERY RULE ABOVE:
+This student is taught through ${native}, not English. Everywhere the rules above say English, write natural ${native} instead: "intro", every part's "instructions", every "question" and its options, every "explanation", every "hint", and every translation value — "en", "passage_en" and "prompt_en" now hold the ${native} translation (the KEYS stay exactly as specified).
+Do NOT translate: the ${lang} material being tested (words, sentences, passages, fill_blank "before"/"after"/options/answer), CEFR level labels, part "key" values, and JSON keys — every key stays exactly as specified above.`
+    : ''
+
+  const content = (isJapanese
     ? fillCounts(TEST_PROMPT)
         .replace('{{STUDENT}}', opts.studentName)
         .replace('{{LESSON_TITLE}}', opts.lessonTitle)
@@ -447,7 +465,7 @@ export async function generateTest(opts: {
         .replace(/\{\{LANGUAGE\}\}/g, lang)
         .replace('{{STUDENT}}', opts.studentName)
         .replace('{{LESSON_TITLE}}', opts.lessonTitle)
-        .replace('{{LESSON_CONTENT}}', opts.lessonContent)
+        .replace('{{LESSON_CONTENT}}', opts.lessonContent)) + testOverride
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -584,11 +602,31 @@ Say so plainly. Set score to 0, leave vocabulary, sections, homework, exercises,
 Transcript:
 {{TRANSCRIPT}}`
 
+/**
+ * Wanted when the teacher explains in something other than English — empty
+ * string otherwise, so the base prompts stay byte-identical for everyone else.
+ *
+ * Both recap prompts hardcode English as the language the material is
+ * EXPLAINED in, across dozens of literals (definitions, section prose,
+ * exercise instructions, the "en" translation values). Rather than
+ * parametrising every one, a single trailing override re-scopes them: it sits
+ * directly above the transcript, where it reliably wins over the earlier
+ * literals.
+ */
+function explanationOverride(target: string, native: string): string {
+  if (!native || /^(en|eng|english)$/i.test(native)) return ''
+  return `EXPLANATION LANGUAGE — FINAL OVERRIDE, APPLIES TO EVERY RULE ABOVE:
+This teacher explains lessons in ${native}, not English. Everywhere the rules above say English, write natural ${native} instead: "lesson_title", "recap", "teacher_note", "audio_script", every section's explanatory sentences and the descriptive half of its title, every vocabulary "definition" and "explanation", every correction "explanation" and did_well "note", every homework "description", every exercise "prompt", every multiple_choice "question" and its options, every "hint" and "focus", and every translation value — "en", "prompt_en" and read_aloud "en" values now hold the ${native} translation (the KEYS stay exactly "en"/"prompt_en").
+Do NOT translate: the ${target} lesson material itself (words, phrases, example sentences, verbatim "said" quotes), pronunciation readings, CEFR/JLPT level labels, and JSON keys — every key stays exactly as specified above.`
+}
+
 export async function generateRecap(opts: {
   studentName: string
   transcript: string
   /** Target language. Anything but Japanese uses the CEFR prompt. */
   language?: string
+  /** Language the teacher explains in. Empty or English keeps the prompt as-is. */
+  instructionLanguage?: string | null
 }): Promise<Recap> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
@@ -596,10 +634,14 @@ export async function generateRecap(opts: {
   const lang = (opts.language || '').trim()
   // Absent language keeps the existing behaviour, so the bot path is untouched.
   const isJapanese = !lang || /^(ja|jp|japanese|日本語)$/i.test(lang)
+  const override = explanationOverride(isJapanese ? 'Japanese' : lang, String(opts.instructionLanguage ?? '').trim())
   const content = (isJapanese ? PROMPT : GENERIC_PROMPT.replace(/\{\{LANGUAGE\}\}/g, lang))
     .replace('{{CORRECTIONS_RULES}}', CORRECTIONS_RULES)
     .replace('{{VOCAB_INVENTORY_RULES}}', VOCAB_INVENTORY_RULES)
     .replace('{{STUDENT}}', opts.studentName)
+    // The override goes just above the transcript, not after it — the last
+    // instruction the model reads before the raw material it applies to.
+    .replace('Transcript:', override ? `${override}\n\nTranscript:` : 'Transcript:')
     .replace('{{TRANSCRIPT}}', opts.transcript)
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -620,6 +662,48 @@ export async function generateRecap(opts: {
   recap.corrections = cleanCorrections((recap as any).corrections)
   recap.did_well = cleanStrengths((recap as any).did_well)
   return recap
+}
+
+/**
+ * Re-render an existing recap's explanations into another language.
+ *
+ * For drafts generated before the teacher set an explanation language: one
+ * completion rewrites the explanatory prose in place. Everything measured or
+ * quoted — scores, metrics, vocab counts, verbatim quotes — is copied back
+ * from the original afterwards, so translation cannot drift a number.
+ */
+export async function translateRecap(recap: Recap, opts: { native: string; target?: string | null }): Promise<Recap> {
+  const key = process.env.OPENAI_API_KEY
+  if (!key) throw new Error('Missing OPENAI_API_KEY')
+
+  const target = String(opts.target ?? '').trim() || 'the language being taught'
+  const content = `Below is a language-lesson recap as JSON. The lesson teaches ${target}; the explanations are currently written in the wrong language. Rewrite the JSON so that ALL explanatory prose is natural ${opts.native}: "lesson_title", "recap", "teacher_note", "audio_script", every section's explanatory sentences and the descriptive half of its title, every vocabulary "definition" and "explanation", every correction "explanation" and did_well "note", every homework "description", every exercise "prompt", every multiple_choice "question" and its options, every "hint" and "focus", and every translation value ("en", "prompt_en" — the keys themselves never change).
+
+Do NOT change: the ${target} material itself (words, phrases, example sentences, verbatim "said" quotes), pronunciation readings, level labels, numbers, and the JSON structure — return the COMPLETE JSON with exactly the same keys and array lengths, nothing added or dropped.
+
+${JSON.stringify(recap)}`
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      max_tokens: 32000,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content }],
+    }),
+  })
+  if (!res.ok) throw new Error(`OpenAI failed (${res.status}): ${await res.text()}`)
+  const j = await res.json()
+  const out = pgSafeJson(JSON.parse(j.choices[0].message.content)) as any
+
+  // Nothing the model merely had to copy is trusted to survive the round trip.
+  for (const k of ['score', 'talk_percentage', 'metrics', 'grammar_density', 'confidence_label', 'vocab_total_count', 'vocab_level_distribution', 'vocabulary_all'] as const) {
+    if ((recap as any)[k] !== undefined) out[k] = (recap as any)[k]
+  }
+  out.corrections = cleanCorrections(out.corrections)
+  out.did_well = cleanStrengths(out.did_well)
+  return out as Recap
 }
 
 /**
