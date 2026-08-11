@@ -129,6 +129,12 @@ DO NOT OVER-SPLIT one grammar family: put ALL transitive/intransitive verb pairs
 
 Before writing, mentally list every distinct grammar point with transcript evidence, then output ONE section for EACH. Treat these as separate, mandatory sections whenever their pattern appears in the transcript (they are independent of each other): hearsay (そうだ/みたい/って), potential form (来られる), 〜となると/〜になると, 〜ておく/〜とく, 〜ちゃう/〜ちゃった/〜てしまった, 〜ながら, 〜おかげで/〜せいで, 〜ばよかった, 〜んです, だろう/でしょう, 〜のは, and set phrases (お先に失礼します). If the transcript shows it, it gets its own section — do not drop it to save space.
 
+EQUALLY CRITICAL — CAPTURE WHAT THE LESSON WAS ABOUT, NOT ONLY ITS GRAMMAR. Grammar sections alone are NOT a faithful recap of a conversation lesson. Identify what actually happened, in order:
+- Any material read or worked through together — an article, text, dialogue, or exercise sheet. Say what it was about and pull out its key facts and figures. Reading a text together is one of the most common lesson activities and one of the most commonly, wrongly omitted.
+- Any topics DISCUSSED — opinions, personal experiences, culture comparisons, current events. Name the topic and what the student said about it.
+- Any other activities: listening practice, role-play, pronunciation work, homework review, test preparation.
+These become the FIRST sections of the recap (see SECTION FORMAT). A recap that never mentions the article that was read or the discussion that filled half the lesson is WRONG, even if every grammar point is listed.
+
 Student: {{STUDENT}}
 
 Return this exact structure. Replace ALL bracketed placeholders with calculated values — never copy placeholder text:
@@ -147,7 +153,7 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocabulary_all": [{"word": "[Japanese]", "level": "[N5/N4/N3/N2/N1]"}],
   "homework": [{"description": "[task]"}],
   "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
-  "sections": [{"title": "1. Japanese: English Title", "content": "[see SECTION FORMAT]"}],
+  "sections": [{"title": "[see SECTION FORMAT — content/activity sections FIRST, then grammar]", "content": "[see SECTION FORMAT]"}],
   "corrections": [{"said": "[verbatim student quote]", "correction": "[fixed]", "categories": ["[label]"], "explanation": "[one sentence]"}],
   "did_well": [{"said": "[verbatim student quote]", "note": "[one sentence]"}]
 }
@@ -171,10 +177,13 @@ LESSON TITLE — for the "lesson_title" field:
 A short, clean, student-facing title (3-7 words, English, Title Case) naming what the lesson covered — like a textbook chapter heading. Examples: "Contrasting Ideas & Giving Reasons", "Making Comparisons and Strong Advice", "Greetings and Self Introduction". NO student/teacher names, NO dates, NO lesson numbers, NO quotes.
 
 RECAP FORMAT — for the "recap" field:
-Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name the lesson's main topic and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, romaji blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
+Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name what the lesson actually consisted of — the material read (and its subject), the topics discussed — and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, romaji blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
 
-SECTION FORMAT — one section per DISTINCT grammar point/topic. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
-- Title: "1. Japanese: English" (e.g. "1. いきます: To Go Somewhere")
+SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT sections FIRST:
+(A) CONTENT sections — one per activity or discussion topic (typically 1-4), in lesson order. Title: "Activity: Subject", e.g. "1. Reading: Article About Work Styles" or "2. Discussion: Weekend Plans". Content: 2-4 short sentences saying what the material or discussion was actually ABOUT — including its key facts and figures — and what the student did with it, then any notable expressions it introduced as vocab bullets.
+(B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
+- Title: "3. Japanese: English" (e.g. "3. いきます: To Go Somewhere")
+Formatting for every section:
 - Start with 1-3 short plain English sentences.
 - Vocab bullets: - **hiragana** *romaji* — English meaning
 - Example sentences as 3-line blocks.
@@ -515,6 +524,12 @@ DO NOT OVER-SPLIT one grammar family: put all members of a single family (for ex
 
 Before writing, mentally list every distinct teaching point with transcript evidence, then output ONE section for EACH. If the transcript shows it, it gets its own section — do not drop it to save space.
 
+EQUALLY CRITICAL — CAPTURE WHAT THE LESSON WAS ABOUT, NOT ONLY ITS GRAMMAR. Grammar sections alone are NOT a faithful recap of a conversation lesson. Identify what actually happened, in order:
+- Any material read or worked through together — an article, text, dialogue, or exercise sheet. Say what it was about and pull out its key facts and figures (e.g. "an article about a survey on changing jobs — two thirds of respondents…"). Reading a text together is one of the most common lesson activities and one of the most commonly, wrongly omitted.
+- Any topics DISCUSSED — opinions, personal experiences, culture comparisons, current events. Name the topic and what the student said about it.
+- Any other activities: listening practice, role-play, pronunciation work, homework review, test preparation.
+These become the FIRST sections of the recap (see SECTION FORMAT). A recap that never mentions the article that was read or the discussion that filled half the lesson is WRONG, even if every grammar point is listed.
+
 Student: {{STUDENT}}
 
 Return this exact structure. Replace ALL bracketed placeholders with calculated values — never copy placeholder text:
@@ -533,7 +548,7 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocabulary_all": [{"word": "[{{LANGUAGE}}]", "level": "[A1/A2/B1/B2/C1/C2]"}],
   "homework": [{"description": "[task]"}],
   "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
-  "sections": [{"title": "1. {{LANGUAGE}} phrase: English Title", "content": "[see SECTION FORMAT]"}],
+  "sections": [{"title": "[see SECTION FORMAT — content/activity sections FIRST, then grammar]", "content": "[see SECTION FORMAT]"}],
   "corrections": [{"said": "[verbatim student quote]", "correction": "[fixed]", "categories": ["[label]"], "explanation": "[one sentence]"}],
   "did_well": [{"said": "[verbatim student quote]", "note": "[one sentence]"}]
 }
@@ -557,10 +572,13 @@ LESSON TITLE — for the "lesson_title" field:
 A short, clean, student-facing title (3-7 words, English, Title Case) naming what the lesson covered — like a textbook chapter heading. Examples: "Contrasting Ideas & Giving Reasons", "Making Comparisons and Strong Advice", "Talking About the Past". NO student/teacher names, NO dates, NO lesson numbers, NO quotes.
 
 RECAP FORMAT — for the "recap" field:
-Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name the lesson's main topic and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, pronunciation blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
+Write a SHORT overview only — 2 to 3 sentences, max ~55 words. Name what the lesson actually consisted of — the material read (and its subject), the topics discussed — and what the student practiced, in a warm, plain, student-friendly voice. This is a quick summary shown above the detailed sections, so DO NOT include a title line, example sentences, pronunciation blocks, vocab lists, bullet points, or a "Main takeaway" — all of that lives in the sections and other fields. Just a compact paragraph.
 
-SECTION FORMAT — one section per DISTINCT grammar point/topic. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
-- Title: "1. {{LANGUAGE}} phrase: English" (e.g. "1. il faut que: You Have To")
+SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT sections FIRST:
+(A) CONTENT sections — one per activity or discussion topic (typically 1-4), in lesson order. Title: "Activity: Subject", e.g. "1. Reading: Japan Work Survey" or "2. Discussion: Working Culture and Peer Pressure". Content: 2-4 short sentences saying what the material or discussion was actually ABOUT — including its key facts and figures — and what the student did with it, then any notable expressions it introduced as vocab bullets.
+(B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson.
+- Title: "3. {{LANGUAGE}} phrase: English" (e.g. "3. il faut que: You Have To")
+Formatting for every section:
 - Start with 1-3 short plain English sentences.
 - Vocab bullets: - **word in {{LANGUAGE}}** *pronunciation* — English meaning
 - Example sentences as 3-line blocks.
