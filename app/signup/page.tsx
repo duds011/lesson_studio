@@ -63,7 +63,6 @@ export default function SignupPage() {
 
       <main className="k-auth-main">
         <div className="k-auth-card">
-          <div className="k-auth-mark" aria-hidden style={{ fontSize: 17, fontWeight: 800 }}>KL</div>
           <h1>Create a teacher account</h1>
           <p>Start your Koku Library workspace for students, lesson recaps, bookings, and progress tracking.</p>
 
@@ -73,7 +72,6 @@ export default function SignupPage() {
               <input
                 id="fullName"
                 type="text"
-                placeholder="Noa Tanaka"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
