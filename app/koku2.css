@@ -885,6 +885,17 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-studio-controls .k-field-label{font-size:10.5px;margin:12px 0 7px}
 .k-studio-controls .k-choice{padding:10px 12px;font-size:12px;border-radius:12px}
 .k-studio-controls .k-choices{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:7px}
+/* Accent swatches — the BASE rules, shared by onboarding step 4 and the
+   branding studio. These went missing in a stylesheet rewrite and only the
+   studio's size override survived, so onboarding rendered the buttons with no
+   size at all: a strip of unpickable slivers. */
+.k-swatches{display:flex;flex-wrap:wrap;gap:9px;margin:6px 0 2px}
+.k-swatch{width:34px;height:34px;border-radius:50%;border:2.5px solid transparent;padding:0;
+  cursor:pointer;flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);
+  transition:transform .12s ease,border-color .12s ease}
+.k-swatch:hover{transform:scale(1.12)}
+.k-swatch.sel{border-color:var(--ink,#16211b);transform:scale(1.08)}
+.k-swatch:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .k-studio-controls .k-swatch{width:30px;height:30px;border-radius:10px}
 .k-studio-controls .k-preset-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:7px}
 .k-studio-controls .k-bg-chip{height:34px}
