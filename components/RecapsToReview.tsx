@@ -5,6 +5,16 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DraftRecap } from './RecapReview'
 
+/**
+ * The review queue: recaps built from recordings, waiting for the teacher.
+ *
+ * Styled as a first-class section (k-sec) because it IS the page's main
+ * event — it used to float below the overview grid in leftover classes from
+ * the old design, which read as a broken afterthought, and a draft was
+ * invisible in "Latest lessons" (no lesson row exists until publish) while
+ * appearing only in that orphan. One queue, at the top, in the same clothes
+ * as everything else.
+ */
 export default function RecapsToReview({ drafts }: { drafts: DraftRecap[] }) {
   const router = useRouter()
   const [deleting, setDeleting] = useState('')
@@ -29,29 +39,37 @@ export default function RecapsToReview({ drafts }: { drafts: DraftRecap[] }) {
   }
 
   return (
-    <div className="analytics-card" style={{ padding: 18, display: 'grid', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <p className="analytics-label" style={{ margin: 0 }}>📝 Recaps to review</p>
-        <span className="pill" style={{ background: 'var(--amber-soft)', color: 'var(--amber)' }}>{drafts.length} waiting</span>
+    <section className="k-sec">
+      <div className="k-sec-head">
+        <span className="k-sec-icon" aria-hidden>📝</span>
+        <div>
+          <h3>
+            Recaps to review{' '}
+            <span className="pill" style={{ background: 'var(--amber-soft)', color: 'var(--amber)', verticalAlign: 'middle' }}>
+              {drafts.length} waiting
+            </span>
+          </h3>
+          <p className="desc">Built from your recordings. Nothing reaches a student until you review and send it.</p>
+        </div>
       </div>
-      <div className="directory">
+
+      <div>
         {drafts.map((d) => (
-          <div key={d.eventId} className="student-card" style={{ gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center' }}>
+          <div key={d.eventId} className="lesson-card" style={{ gridTemplateColumns: 'auto 1fr auto', cursor: 'default' }}>
+            <span className="lc-num">{d.lessonNumber ? `#${d.lessonNumber}` : '📝'}</span>
             <div>
-              <span className="sc-name">{d.studentName}</span>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>
-                {d.lessonNumber ? `Lesson ${d.lessonNumber} · ` : ''}{fmtWhen(d.lessonDate || d.createdAt)}
-              </div>
+              <div className="lc-title">{d.studentName}</div>
+              <div className="lc-meta">{d.lessonNumber ? `Lesson ${d.lessonNumber} · ` : ''}{fmtWhen(d.lessonDate || d.createdAt)}</div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button className="btn btn-danger-ghost btn-sm" disabled={deleting === d.eventId} onClick={() => deleteDraft(d)}>
-                {deleting === d.eventId ? 'Deleting...' : 'Delete'}
+                {deleting === d.eventId ? 'Deleting…' : 'Delete'}
               </button>
               <Link className="btn btn-primary btn-sm" href={`/teacher/recap/${encodeURIComponent(d.eventId)}`}>Review &amp; send</Link>
             </div>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   )
 }

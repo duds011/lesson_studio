@@ -18,6 +18,11 @@ type Props = {
   recent: RecentLesson[]
   /** Where they told us they teach — quoted back so the page feels theirs. */
   platformLabel: string
+  /** The review queue, rendered FIRST in the main column — it is the page's
+   *  whole point. It used to float below the grid as a separate afterthought,
+   *  while the drafts it held were invisible in the lessons list (no lesson
+   *  row exists until publish): the same work shown twice, coherent nowhere. */
+  review?: React.ReactNode
 }
 
 const fmtDate = (d: string | null) =>
@@ -30,7 +35,7 @@ const fmtDate = (d: string | null) =>
  * mentions a connection they've already declined.
  */
 export default function RecordingsOverview({
-  studentCount, draftCount, publishedCount, recent, platformLabel,
+  studentCount, draftCount, publishedCount, recent, platformLabel, review,
 }: Props) {
   return (
     <>
@@ -55,19 +60,21 @@ export default function RecordingsOverview({
           {/* Closes, and stays closed — see HowLessonsReachYou. */}
           <HowLessonsReachYou platformLabel={platformLabel} />
 
+          {review}
+
           <section className="k-sec">
             <div className="k-sec-head">
               <span className="k-sec-icon b" aria-hidden>📄</span>
               <div>
-                <h3>Latest lessons</h3>
-                <p className="desc">Everything published or drafted for your students, newest first.</p>
+                <h3>Published lessons</h3>
+                <p className="desc">What your students can already see, newest first. Drafts wait in the review queue above.</p>
               </div>
             </div>
 
             {recent.length === 0 ? (
               <div className="empty">
-                <strong>No lessons yet</strong><br />
-                Record your first lesson and it will appear here as a draft recap.
+                <strong>Nothing published yet</strong><br />
+                Record a lesson, review the recap it becomes, and send it — it lands here.
               </div>
             ) : (
               <div>

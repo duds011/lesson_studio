@@ -1,11 +1,9 @@
 import Link from 'next/link'
-import { getToken, getBots, getRecaps } from '@/lib/store'
+import { getToken, getRecaps } from '@/lib/store'
 import { isConfigured, listUpcomingLessons, listCalendars, type Lesson, type CalendarInfo } from '@/lib/google'
-import { friendlyStatus } from '@/lib/recall'
 import AppNav from '@/components/AppNav'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
-import OverviewSync from '@/components/OverviewSync'
 import CountUp from '@/components/portal/CountUp'
 import RecordingsOverview, { type RecentLesson } from '@/components/RecordingsOverview'
 import type { DraftRecap } from '@/components/RecapReview'
@@ -39,7 +37,7 @@ function ConnectScreen({ configured }: { configured: boolean }) {
         )}
         <ul className="scopes">
           <li><strong>Read your calendar</strong> — find lessons and their meeting links</li>
-          <li><strong>Record lessons</strong> — send the recording assistant to classes you choose</li>
+          <li><strong>Record lessons</strong> — capture classes with the Lesson Studio extension</li>
           <li><strong>Build recaps</strong> — AI lesson summaries for you to review and share</li>
         </ul>
         <a
@@ -122,12 +120,10 @@ async function RecordingsHome() {
           studentCount={(students ?? []).length}
           draftCount={draftRecaps.length}
           publishedCount={Object.values(recapRecs).filter((r: any) => r.status === 'published').length}
-          recent={recent}
+          recent={recent.filter((l) => l.status === 'published')}
           platformLabel={TEACHING_PLATFORM_META[platform].label}
+          review={<RecapsToReview drafts={draftRecaps} />}
         />
-        {draftRecaps.length > 0 && (
-          <div style={{ marginTop: 16 }}><RecapsToReview drafts={draftRecaps} /></div>
-        )}
       </main>
     </>
   )
@@ -163,19 +159,12 @@ export default async function Home() {
   if (!needsReconnect) { try { calendars = await listCalendars() } catch { /* ignore */ } }
   const selectedCalId = token.calendarId || 'primary'
 
-  // Existing bot dispatches + recaps, keyed by calendar event id.
-  const botRecs = await getBots()
+  // Existing recaps, keyed by calendar event id.
   const recapRecs = await getRecaps()
-  const botFor = (eventId: string) => {
-    const rec = botRecs[eventId]
-    if (!rec) return null
-    const f = friendlyStatus(rec.status)
-    return { botId: rec.botId, status: rec.status, label: f.label, state: f.state }
-  }
 
   const initialLessons: CalEvent[] = lessons.map((l) => ({
     id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl,
-    attendees: l.attendees, bot: botFor(l.id), recapStatus: recapRecs[l.id]?.status ?? null,
+    attendees: l.attendees, recapStatus: recapRecs[l.id]?.status ?? null,
   }))
 
   const draftRecaps: DraftRecap[] = await loadDraftRecaps(recapRecs)
@@ -206,8 +195,6 @@ export default async function Home() {
             <Link className="btn btn-ghost" href="/settings">Manage connections</Link>
           </div>
         </header>
-
-        <OverviewSync />
 
         <div className="k-overview">
           {/* Calendar first, at the top, before anything else. */}
