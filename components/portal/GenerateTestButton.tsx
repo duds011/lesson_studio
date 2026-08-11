@@ -27,6 +27,7 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
   // test's length scales with how many are ticked.
   const [picked, setPicked] = useState<string[]>(lessons[0] ? [lessons[0].id] : [])
   const [script, setScript] = useState<string>('hiragana')
+  const [directions, setDirections] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -40,7 +41,7 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
       const res = await fetch('/api/tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, lessonIds: picked, script }),
+        body: JSON.stringify({ studentId, lessonIds: picked, script, directions: directions.trim() || undefined }),
       })
       const json = await res.json()
       if (!json.ok) throw new Error(json.error || 'Generation failed')
@@ -103,6 +104,20 @@ export default function GenerateTestButton({ studentId, lessons, language = '' }
                 </div>
               </>
             )}
+
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }} htmlFor="test-directions">
+              Directions for the AI <span style={{ fontWeight: 500 }}>(optional)</span>
+            </label>
+            <textarea
+              id="test-directions"
+              value={directions}
+              onChange={(e) => setDirections(e.target.value)}
+              disabled={busy}
+              maxLength={600}
+              rows={3}
+              placeholder={'e.g. Focus on けど and the new food vocabulary, keep the reading passages short, make it a little easier than last time.'}
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface)', font: 'inherit', fontSize: 13, resize: 'vertical', marginBottom: 14 }}
+            />
 
             {error && <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 10px' }}>{error}</p>}
 

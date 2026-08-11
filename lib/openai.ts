@@ -312,7 +312,7 @@ REQUIRED LENGTH — this is a full practice exam, not a quiz. It covers {{LESSON
 JAPANESE SCRIPT — the teacher chose how this student reads Japanese. Follow these rules for EVERY piece of Japanese in the test:
 {{SCRIPT_RULES}}
 
-STRICT RULES:
+{{DIRECTIONS}}STRICT RULES:
 - multiple_choice: exactly 4 options, exactly one correct, "answer" is the 0-based index of the correct option. Vary the correct index — do not cluster on 0.
 - Wrong options must be plausible (common learner mistakes), not silly.
 - fill_blank: exactly 3 options; "answer" must match one option character-for-character.
@@ -379,7 +379,7 @@ REQUIRED LENGTH — this is a full practice exam, not a quiz. It covers {{LESSON
 - Part 4 speaking: exactly {{N_SPEAKING}} prompts.
 - Spread coverage across ALL the lessons provided — do not let one lesson dominate.
 
-STRICT RULES:
+{{DIRECTIONS}}STRICT RULES:
 - Questions and instructions are written in English; the tested material is in {{LANGUAGE}}.
 - multiple_choice: exactly 4 options, exactly one correct, "answer" is the 0-based index of the correct option. Vary the correct index — do not cluster on 0.
 - Wrong options must be plausible (common learner mistakes), not silly.
@@ -400,6 +400,8 @@ export async function generateTest(opts: {
   language?: string | null
   /** How many lessons the content spans — the test's length scales with it. */
   lessonCount?: number
+  /** Free-text steering from the teacher — topics to stress, tone, difficulty. */
+  directions?: string | null
 }): Promise<TestJson> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
@@ -411,7 +413,17 @@ export async function generateTest(opts: {
    */
   const n = Math.max(1, Math.min(10, Math.round(opts.lessonCount ?? 1)))
   const scale = (base: number, per: number, cap: number) => String(Math.min(cap, base + per * (n - 1)))
+  // The teacher steers content and tone; the counts and the JSON shape stay
+  // ours, which is why their block sits above the strict rules, not inside.
+  const directions = String(opts.directions ?? '').trim().slice(0, 600)
+  const directionsBlock = directions
+    ? `TEACHER'S DIRECTIONS — follow these when writing the questions (they adjust content and emphasis; they never change the JSON shape or the required counts):
+"${directions}"
+
+`
+    : ''
   const fillCounts = (s: string) => s
+    .replace('{{DIRECTIONS}}', directionsBlock)
     .replace('{{LESSON_COUNT}}', String(n))
     .replace('{{N_VOCAB}}', scale(10, 4, 24))
     .replace('{{N_GRAMMAR_MC}}', scale(10, 4, 22))

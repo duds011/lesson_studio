@@ -31,7 +31,7 @@ function recapToContent(recap: any): string {
 
 // Generate a draft test from a lesson.
 export async function POST(req: NextRequest) {
-  const { studentId, lessonId, lessonIds: rawIds, script: rawScript } = await req.json()
+  const { studentId, lessonId, lessonIds: rawIds, script: rawScript, directions } = await req.json()
   // One test can now span several lessons; the single-lesson field stays
   // accepted so nothing that still sends it breaks.
   const lessonIds: string[] = Array.isArray(rawIds) && rawIds.length
@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
       script,
       language,
       lessonCount: withRecaps.length,
+      directions: typeof directions === 'string' ? directions : null,
     })
     if (!Array.isArray(testJson?.parts) || testJson.parts.length === 0) {
       throw new Error('Model returned no test parts')
