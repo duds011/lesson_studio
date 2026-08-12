@@ -515,6 +515,11 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                   <div className="k-toggles">
                     {ids.map((id) => {
                       const key = LESSON_BLOCK_TOGGLE[id]
+                      // The measured-speaking card opens one level further: a
+                      // switch per tile, so the drawer says what the canvas
+                      // already allows — keep pace, drop hesitations.
+                      const hasOptions = id === 'metrics'
+                      const unfolded = openOptions === id
                       return (
                         <SectionRow
                           key={id}
@@ -522,7 +527,30 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                           hint={LESSON_BLOCK_HINTS[id]}
                           on={Boolean(brand[key])}
                           onToggle={() => { if (!brand[key]) setLessonTab(tab); set(key, !brand[key] as never) }}
-                        />
+                          optionsOpen={hasOptions ? unfolded : undefined}
+                          onOptions={hasOptions ? () => setOpenOptions(unfolded ? null : id) : undefined}
+                        >
+                          {hasOptions && (
+                            <div className="k-toggles">
+                              {RECAP_METRICS.map(({ id: mid, label }) => {
+                                const on = !hiddenMetrics.includes(mid)
+                                return (
+                                  <div className="k-toggle-row" key={mid}>
+                                    <div className="k-hw-title" style={{ fontWeight: 600 }}>{label}</div>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={on}
+                                      aria-label={label}
+                                      className={`k-switch ${on ? 'on' : ''}`}
+                                      onClick={() => { setLessonTab('Progress'); on ? removeMetric(mid) : restoreMetric(mid) }}
+                                    />
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </SectionRow>
                       )
                     })}
                   </div>
