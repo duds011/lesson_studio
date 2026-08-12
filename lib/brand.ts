@@ -127,6 +127,41 @@ export const LESSON_BLOCK_LABELS: Record<LessonBlockId, string> = {
   files: 'Files',
 }
 
+/** What each recap section actually puts in front of the student. */
+export const LESSON_BLOCK_HINTS: Record<LessonBlockId, string> = {
+  memo: 'The spoken note you record for them',
+  balance: 'How much of the hour each of you talked',
+  score: 'The mark you gave the lesson',
+  grammar: 'How dense the grammar was, and how many words came up',
+  metrics: 'Pace, thinking time, hesitations',
+  corrections: 'What they got wrong, put right — and what they nailed',
+  sections: 'Your written notes on the lesson',
+  homework: 'What to go and do before next time',
+  exercises: 'Flashcards and practice questions',
+  vocabWords: 'Every word from this lesson',
+  files: 'Files you share, and audio they send back',
+}
+
+/**
+ * Every recap section a teacher can switch off, and the field that switches it.
+ * A section switched off leaves the page entirely — and a tab with nothing left
+ * on it leaves the tab bar too, so the recap closes up rather than showing an
+ * empty room. See LessonPageTabs.
+ */
+export const LESSON_BLOCK_TOGGLE: Record<LessonBlockId, keyof Brand> = {
+  memo: 'showRecapMemo',
+  balance: 'showRecapBalance',
+  score: 'showRecapScore',
+  grammar: 'showRecapGrammar',
+  metrics: 'showRecapMetrics',
+  corrections: 'showRecapCorrections',
+  sections: 'showRecapNotes',
+  homework: 'showRecapHomework',
+  exercises: 'showRecapExercises',
+  vocabWords: 'showRecapVocab',
+  files: 'showRecapFiles',
+}
+
 /** A recap block belongs to one tab; arranging happens inside that tab. */
 export const LESSON_BLOCK_TAB: Record<LessonBlockId, LessonTab> = {
   // The memo sits with the lesson itself, not the measurements.
@@ -242,6 +277,18 @@ export type Brand = {
   showTests: boolean
   showSpeaking: boolean
   showFiles: boolean
+  /** Recap sections — the same idea, one page down. See LESSON_BLOCK_TOGGLE. */
+  showRecapMemo: boolean
+  showRecapBalance: boolean
+  showRecapScore: boolean
+  showRecapGrammar: boolean
+  showRecapMetrics: boolean
+  showRecapCorrections: boolean
+  showRecapNotes: boolean
+  showRecapHomework: boolean
+  showRecapExercises: boolean
+  showRecapVocab: boolean
+  showRecapFiles: boolean
 }
 
 export const DEFAULT_BRAND: Brand = {
@@ -264,6 +311,17 @@ export const DEFAULT_BRAND: Brand = {
   showTests: true,
   showSpeaking: true,
   showFiles: true,
+  showRecapMemo: true,
+  showRecapBalance: true,
+  showRecapScore: true,
+  showRecapGrammar: true,
+  showRecapMetrics: true,
+  showRecapCorrections: true,
+  showRecapNotes: true,
+  showRecapHomework: true,
+  showRecapExercises: true,
+  showRecapVocab: true,
+  showRecapFiles: true,
 }
 
 /**
@@ -384,6 +442,17 @@ export function resolveBrand(raw: unknown): Brand {
     showTests: bool(b.showTests, DEFAULT_BRAND.showTests),
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
     showFiles: bool(b.showFiles, DEFAULT_BRAND.showFiles),
+    showRecapMemo: bool(b.showRecapMemo, DEFAULT_BRAND.showRecapMemo),
+    showRecapBalance: bool(b.showRecapBalance, DEFAULT_BRAND.showRecapBalance),
+    showRecapScore: bool(b.showRecapScore, DEFAULT_BRAND.showRecapScore),
+    showRecapGrammar: bool(b.showRecapGrammar, DEFAULT_BRAND.showRecapGrammar),
+    showRecapMetrics: bool(b.showRecapMetrics, DEFAULT_BRAND.showRecapMetrics),
+    showRecapCorrections: bool(b.showRecapCorrections, DEFAULT_BRAND.showRecapCorrections),
+    showRecapNotes: bool(b.showRecapNotes, DEFAULT_BRAND.showRecapNotes),
+    showRecapHomework: bool(b.showRecapHomework, DEFAULT_BRAND.showRecapHomework),
+    showRecapExercises: bool(b.showRecapExercises, DEFAULT_BRAND.showRecapExercises),
+    showRecapVocab: bool(b.showRecapVocab, DEFAULT_BRAND.showRecapVocab),
+    showRecapFiles: bool(b.showRecapFiles, DEFAULT_BRAND.showRecapFiles),
   }
 }
 

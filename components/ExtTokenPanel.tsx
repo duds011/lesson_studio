@@ -8,10 +8,9 @@ import { formatDateShort } from '@/lib/portal-utils'
  * The teacher's own recorder token — what the Chrome extension authenticates
  * with, and what tells the server whose lesson a recording is.
  */
-export default function ExtTokenPanel({ token, lastUsedAt, appUrl }: {
+export default function ExtTokenPanel({ token, lastUsedAt }: {
   token: string | null
   lastUsedAt: string | null
-  appUrl: string
 }) {
   const [pending, start] = useTransition()
   const [current, setCurrent] = useState(token)
@@ -41,16 +40,13 @@ export default function ExtTokenPanel({ token, lastUsedAt, appUrl }: {
 
   return (
     <div className="settings-card">
-      <h3>Lesson recorder</h3>
-      <p className="sub" style={{ fontSize: 12, marginBottom: 14 }}>
-        The Chrome extension records your lesson and sends it here as a draft recap.
-        Paste these two values into its Settings once.
+      {/* No heading or URL of its own: the section above already says what this
+          is, and the extension ships pointing at Lesson Studio — a read-only
+          address to copy was one more step for nothing. One value to paste. */}
+      <p className="sub" style={{ fontSize: 12, margin: '0 0 14px' }}>
+        Paste this into the extension&rsquo;s Settings once, and it sends every lesson it records
+        here as a draft recap.
       </p>
-
-      <label className="field" style={{ margin: '0 0 14px' }}>
-        <span>Lesson Studio URL</span>
-        <input readOnly value={appUrl} onFocus={(e) => e.currentTarget.select()} />
-      </label>
 
       <label className="field" style={{ margin: 0 }}>
         <span>Your extension token</span>

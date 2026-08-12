@@ -867,6 +867,27 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-toggle-block.open .k-opt-btn span{display:inline-block;transform:rotate(180deg)}
 .k-toggle-opts{padding:2px 0 12px;display:grid;gap:2px}
 
+/* ── sections editor: one group per student-facing tab ──
+   A switch on its own says nothing about consequence. Grouped under the tab
+   they land on, with a live count beside it, turning the last one off reads as
+   what it is: that tab is gone. */
+.k-sgroup{margin-bottom:10px}
+.k-sgroup:last-child{margin-bottom:0}
+.k-sgroup-head{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  border:0;background:var(--surface-2);border-radius:10px;padding:7px 11px;font:inherit;cursor:pointer;transition:.14s ease}
+.k-sgroup-head span{font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-sgroup-head small{font-size:9.5px;font-weight:800;color:var(--muted);flex:0 0 auto}
+.k-sgroup-head:hover{background:var(--brand-soft)}
+.k-sgroup-head:hover span{color:var(--forest)}
+.k-sgroup-head.sel{background:var(--brand-soft)}
+.k-sgroup-head.sel span,.k-sgroup-head.sel small{color:var(--forest)}
+/* Every section off — the tab itself stops existing, so say so. */
+.k-sgroup-head small.gone{color:var(--red,#b4232a)}
+.k-sgroup .k-toggles{padding:0 2px}
+/* A section switched off stays legible but stops competing for attention. */
+.k-toggle-block.off .k-hw-title,.k-toggle-block.off .k-hw-due{opacity:.5}
+
 /* ── milestone ladder editor ── */
 .k-levels{display:grid;gap:7px}
 .k-level-row{display:grid;grid-template-columns:minmax(0,1fr) 68px auto;gap:6px;align-items:center}
@@ -986,9 +1007,18 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-preset-card strong{display:block;font-size:11px;font-weight:800;letter-spacing:-.01em}
 .k-preset-card small{display:block;font-size:9px;color:var(--muted);line-height:1.35;margin-top:2px}
 
-/* ── recap preview: sections arrange like dashboard blocks ── */
-.k-lpview .k-flow .lesson-block,.k-lpview .k-flow .corrections-card,.k-lpview .k-flow .stat-card{margin-bottom:0;height:100%}
+/* ── recap preview: sections arrange like dashboard blocks ──
+   Direct children only. Descendant-matched, this handed height:100% to every
+   card nested inside a section too, so a tab holding two lesson notes gave the
+   first one the whole row and pushed the second off the bottom. */
+.k-lpview .k-flow>*>.lesson-block,.k-lpview .k-flow>*>.corrections-card,
+.k-lpview .k-flow>*>.stat-card,.k-lpview .k-flow>*>.lesson-stack{margin-bottom:0;height:100%}
 .k-lpview .k-flow{width:100%}
+/* A section that is itself a stack of cards: they share the row, they don't
+   each claim it. Used by the lesson notes, the memo and the file drawer. */
+.lesson-stack{display:grid;gap:12px;align-content:start}
+.lesson-stack>.lesson-block{margin-bottom:0}
+.k-lpview .lesson-stack{gap:10px}
 
 /* ── lesson-recap preview ──
    Real page classes at preview scale, so the accent, corners and background

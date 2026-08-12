@@ -7,7 +7,7 @@ import LessonCorrections from './LessonCorrections'
 import Flashcards from './Flashcards'
 import CountUp from './portal/CountUp'
 import {
-  DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_LAYOUT, LESSON_TABS,
+  DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE, LESSON_LAYOUT, LESSON_TABS,
   type Brand, type LessonBlockId, type LessonTab,
 } from '@/lib/brand'
 
@@ -21,17 +21,32 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 }
 
 export default function LessonPageTabs({
-  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, memo, files,
+  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, memo, files, preview,
+  tab: controlledTab, onTabChange,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
   /** The teacher's voice memo, opening the Progress tab. Omitted = no block. */
   memo?: React.ReactNode
   /** File exchange, filling the Files tab. Omitted = no tab. */
   files?: React.ReactNode
+  /**
+   * Branding-studio canvas. The memo and the file drawer are the two sections
+   * whose contents come from uploads rather than the recap, so a preview has
+   * nothing to pass them — and a teacher deciding whether to keep those
+   * sections has to be able to see them. Under `preview` they stand in for
+   * themselves, in the page's own markup.
+   */
+  preview?: boolean
+  /** Drive the tab from outside — the studio's Sections menu does, so picking a
+   *  group there opens the tab it edits. Left off, the page owns its own. */
+  tab?: LessonTab
+  onTabChange?: (t: LessonTab) => void
 }) {
   const r = lesson.recap
   const m = r.metrics as any
-  const [tab, setTab] = useState<LessonTab>('Progress')
+  const [ownTab, setOwnTab] = useState<LessonTab>('Progress')
+  const tab = controlledTab ?? ownTab
+  const setTab = onTabChange ?? setOwnTab
 
   const studentTalk = typeof r.talk_percentage === 'number' ? r.talk_percentage : 40
   const teacherTalk = 100 - studentTalk
@@ -124,8 +139,12 @@ export default function LessonPageTabs({
         )
       case 'sections':
         if (lessonSections.length === 0) return null
+        // .lesson-stack, not a bare div: the recap preview gives every direct
+        // child of a flow cell the full row height, and an unnamed wrapper
+        // passed that down to each note inside it — the first note grew to fill
+        // the tab and pushed the rest off the bottom.
         return (
-          <div>
+          <div className="lesson-stack">
             {lessonSections.map((s, i) => (
               <div className="lesson-block" key={i}>
                 <h3>{s.title}</h3>
@@ -137,20 +156,45 @@ export default function LessonPageTabs({
       case 'memo':
         // The script sits WITH the recorder that reads it — it used to trail
         // the sections at the very bottom of the tab, a page away.
-        if (!memo && !r.audio_script) return null
+        if (!memo && !r.audio_script && !preview) return null
         return (
-          <>
+          <div className="lesson-stack">
             {memo}
+            {!memo && preview && (
+              <div className="lesson-block">
+                <h3>💬 A message from {teacherFirst}</h3>
+                <p className="analytics-note" style={{ margin: '8px 0 0' }}>
+                  The voice memo you record for this lesson plays here.
+                </p>
+              </div>
+            )}
             {r.audio_script && (
               <div className="lesson-block">
                 <h3>Voice memo script</h3>
                 <p style={{ whiteSpace: 'pre-wrap' }}>{r.audio_script}</p>
               </div>
             )}
-          </>
+          </div>
         )
       case 'files':
-        return files ?? null
+        if (files) return files
+        if (!preview) return null
+        return (
+          <div className="lesson-stack">
+            <div className="lesson-block">
+              <h3 style={{ margin: '0 0 12px' }}>📎 Files from your teacher</h3>
+              <p className="analytics-note" style={{ margin: 0 }}>
+                Presentations and PDFs you attach to this lesson, ready to download.
+              </p>
+            </div>
+            <div className="lesson-block">
+              <h3 style={{ margin: '0 0 12px' }}>🎙️ Practice audio</h3>
+              <p className="analytics-note" style={{ margin: 0 }}>
+                Your student records themselves here, and you listen back.
+              </p>
+            </div>
+          </div>
+        )
       case 'homework':
         return (
           <div className="lesson-block">
@@ -195,6 +239,7 @@ export default function LessonPageTabs({
   // left off the bar entirely: a student whose teacher shared no files should
   // not be offered a Files tab that opens onto an apology.
   const built = LESSON_LAYOUT
+    .filter(({ id }) => brand[LESSON_BLOCK_TOGGLE[id]] !== false)
     .map(({ id, w }) => ({ id, w, tab: LESSON_BLOCK_TAB[id], content: section(id) }))
     .filter((b) => b.content)
 

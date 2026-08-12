@@ -6,9 +6,11 @@ import { saveBrand } from '@/app/actions/onboarding'
 import {
   ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
   DASH_BLOCK_TAB, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
+  LESSON_BLOCK_HINTS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE,
+  LESSON_LAYOUT, LESSON_TABS,
   brandVars, backgroundClass, MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
   type Brand, type BackgroundStyle, type ShapeStyle, type PropStyle,
-  type BlockId, type DashTab, type TextSlot,
+  type BlockId, type DashTab, type TextSlot, type LessonBlockId, type LessonTab,
 } from '@/lib/brand'
 import LessonPageTabs from './LessonPageTabs'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from './portal/DashboardBlocks'
@@ -39,19 +41,38 @@ const PROPS: { value: PropStyle; label: string }[] = [
   { value: 'minimal', label: 'Minimal' }, { value: 'none', label: 'None' },
 ]
 
-/** One row per block: the switch, and whatever that block can be told. */
-const TOGGLES: { id: BlockId; hint: string }[] = [
-  { id: 'stats', hint: 'Lessons, average score, speaking share' },
-  { id: 'lessons', hint: 'The rolling list of their lessons' },
-  { id: 'milestone', hint: 'Progress toward their next level' },
-  { id: 'scores', hint: 'The last few lesson scores' },
-  { id: 'progress', hint: 'Score, talk-time and vocabulary trends' },
-  { id: 'vocabTotals', hint: 'How much vocabulary they have picked up' },
-  { id: 'vocab', hint: 'Every word, and the lesson it came from' },
-  { id: 'tests', hint: 'Tests you publish to them' },
-  { id: 'speaking', hint: 'Pace and thinking time' },
-  { id: 'files', hint: 'Every file you share, in one place' },
-]
+/** What each dashboard block puts in front of the student. */
+const BLOCK_HINTS: Record<BlockId, string> = {
+  stats: 'Lessons, average score, speaking share',
+  lessons: 'The rolling list of their lessons',
+  milestone: 'Progress toward their next level',
+  scores: 'The last few lesson scores',
+  progress: 'Score, talk-time and vocabulary trends',
+  vocabTotals: 'How much vocabulary they have picked up',
+  vocab: 'Every word, and the lesson it came from',
+  tests: 'Tests you publish to them',
+  speaking: 'Pace and thinking time',
+  files: 'Every file you share, in one place',
+}
+
+/**
+ * The two pages a teacher can strip back, each grouped by the tab a section
+ * lands on. Grouping is the whole point: a switch means nothing until you can
+ * see which tab it empties, and a tab with every section off disappears from
+ * the student's page rather than opening onto nothing.
+ *
+ * Both lists are derived from the layouts themselves, so a section added to
+ * either page shows up here without a second edit.
+ */
+const DASH_GROUPS = DASH_TABS.map((tab) => ({
+  tab,
+  ids: DASHBOARD_LAYOUT.map((b) => b.id).filter((id) => DASH_BLOCK_TAB[id] === tab),
+}))
+
+const LESSON_GROUPS = LESSON_TABS.map((tab) => ({
+  tab,
+  ids: LESSON_LAYOUT.map((b) => b.id).filter((id) => LESSON_BLOCK_TAB[id] === tab),
+})).filter((g) => g.ids.length > 0)
 
 /**
  * A believable student, so the preview is the real page with the real
@@ -205,6 +226,41 @@ function Tool({ id, icon, tone = '', title, desc, openId, onOpen, children }: {
 }
 
 /**
+ * One section, one switch. `options` is whatever that section can additionally
+ * be told — a heading to rename, a ladder to edit — folded away until asked for,
+ * so the common case stays a clean list of on/off.
+ */
+function SectionRow({ title, hint, on, onToggle, optionsOpen, onOptions, children }: {
+  title: string; hint: string; on: boolean; onToggle: () => void
+  optionsOpen?: boolean; onOptions?: () => void; children?: React.ReactNode
+}) {
+  return (
+    <div className={`k-toggle-block ${optionsOpen ? 'open' : ''} ${on ? '' : 'off'}`}>
+      <div className="k-toggle-row">
+        <div style={{ minWidth: 0 }}>
+          <div className="k-hw-title">{title}</div>
+          <div className="k-hw-due">{hint}</div>
+        </div>
+        {onOptions && (
+          <button type="button" className="k-opt-btn" aria-expanded={Boolean(optionsOpen)} onClick={onOptions}>
+            Options <span aria-hidden>▾</span>
+          </button>
+        )}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          aria-label={title}
+          className={`k-switch ${on ? 'on' : ''}`}
+          onClick={onToggle}
+        />
+      </div>
+      {optionsOpen && children && <div className="k-toggle-opts">{children}</div>}
+    </div>
+  )
+}
+
+/**
  * The branding studio.
  *
  * It used to be a layout editor: drag blocks around, pull their edges, type
@@ -227,6 +283,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [view, setView] = useState<'dashboard' | 'lesson'>('dashboard')
   const [dashTab, setDashTab] = useState<DashTab>('Overview')
+  const [lessonTab, setLessonTab] = useState<LessonTab>('Progress')
   /** One tool open at a time — the menu is a stack of drawers, not a page. */
   const [tool, setTool] = useState<string | null>('presets')
   /** Which block's options are unfolded under its switch. */
@@ -271,6 +328,13 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
   const reset = () => { setBrand(DEFAULT_BRAND); setSaved(false) }
 
+  /** Switching page can pull the open drawer out from under the menu — Words
+   *  and Background & shape only exist for the dashboard. Land on Sections. */
+  const showView = (v: 'dashboard' | 'lesson') => {
+    setView(v)
+    if (v === 'lesson' && (tool === 'words' || tool === 'texture')) setTool('sections')
+  }
+
   const applyPreset = (id: string) => {
     const p = PRESETS.find((x) => x.id === id)
     if (!p) return
@@ -296,10 +360,19 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       && p.brand.font === brand.font && p.brand.shape === brand.shape && p.brand.background === brand.background,
   )
 
-  /** The blocks this tab shows, exactly as the student's page decides it. */
-  const tabBlocks = DASHBOARD_LAYOUT.filter(
-    ({ id }) => DASH_BLOCK_TAB[id] === dashTab && blockHasContent(id, brand, SAMPLE),
-  )
+  const dashOn = DASHBOARD_LAYOUT.filter(({ id }) => Boolean(brand[BLOCK_TOGGLE[id]])).length
+  const lessonOn = LESSON_LAYOUT.filter(({ id }) => Boolean(brand[LESSON_BLOCK_TOGGLE[id]])).length
+
+  /**
+   * The tabs and blocks this dashboard shows, exactly as the student's page
+   * decides them — including dropping a tab whose sections are all switched
+   * off. The preview used to keep every tab on the bar and put "everything
+   * here is off" behind it, which is not what the student would find.
+   */
+  const placed = DASHBOARD_LAYOUT.filter(({ id }) => blockHasContent(id, brand, SAMPLE))
+  const liveTabs = DASH_TABS.filter((t) => placed.some(({ id }) => DASH_BLOCK_TAB[id] === t))
+  const activeDash = liveTabs.includes(dashTab) ? dashTab : liveTabs[0]
+  const tabBlocks = placed.filter(({ id }) => DASH_BLOCK_TAB[id] === activeDash)
 
   return (
     <div className="k-studio">
@@ -369,6 +442,11 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
         </Tool>
 
+        {/* Both of these edit the dashboard and nothing else — the portal name
+            and greeting live on it, and the texture is the page behind it. On
+            the recap they were controls with nothing to change, so they are
+            offered with the page they belong to. */}
+        {view === 'dashboard' && (
         <Tool id="words" icon="✍️" tone="y" title="Words" desc="The portal name, the greeting, and what each section and tab is called." openId={tool} onOpen={setTool}>
           <label className="k-field">
             <span>Portal name</span>
@@ -403,7 +481,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             </label>
           ))}
         </Tool>
+        )}
 
+        {view === 'dashboard' && (
         <Tool id="texture" icon="🖼️" tone="b" title="Background &amp; shape" desc="The texture behind the portal and how round everything is." openId={tool} onOpen={setTool}>
           <span className="k-field-label" style={{ marginTop: 0 }}>Background</span>
           <div className="k-preset-grid">
@@ -435,94 +515,134 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
             ))}
           </div>
         </Tool>
+        )}
 
-        <Tool id="sections" icon="🧩" tone="p" title="Sections" desc="Switch off anything that doesn't fit how you teach — it leaves the preview and the student's page together." openId={tool} onOpen={setTool}>
-          <div className="k-toggles">
-            {TOGGLES.map((t) => {
-              const key = BLOCK_TOGGLE[t.id]
-              const on = Boolean(brand[key])
-              const slots = BLOCK_TEXT_SLOTS[t.id] ?? []
-              const hasOptions = slots.length > 0 || t.id === 'milestone'
-              const unfolded = openOptions === t.id
+        <Tool id="sections" icon="🧩" tone="p" title="Sections" desc="Switch off anything that doesn't fit how you teach. Empty a tab and the tab goes too." openId={tool} onOpen={setTool}>
+          {/* The two pages are edited separately, and picking one drives the
+              preview: you are always looking at the page you are stripping. */}
+          <div className="k-seg" style={{ margin: '0 0 12px' }}>
+            <button className={view === 'dashboard' ? 'on' : ''} onClick={() => showView('dashboard')}>Dashboard</button>
+            <button className={view === 'lesson' ? 'on' : ''} onClick={() => showView('lesson')}>Lesson recap</button>
+          </div>
+
+          <p className="desc" style={{ margin: '0 0 10px' }}>
+            {view === 'dashboard'
+              ? `${dashOn} of ${DASHBOARD_LAYOUT.length} sections on. Grouped by the tab they appear on.`
+              : `${lessonOn} of ${LESSON_LAYOUT.length} sections on. Grouped by the tab they appear on.`}
+          </p>
+
+          {view === 'dashboard' ? (
+            DASH_GROUPS.map(({ tab, ids }) => {
+              const live = ids.filter((id) => Boolean(brand[BLOCK_TOGGLE[id]]))
               return (
-                <div className={`k-toggle-block ${unfolded ? 'open' : ''}`} key={t.id}>
-                  <div className="k-toggle-row">
-                    <div>
-                      <div className="k-hw-title">{BLOCK_LABELS[t.id]}</div>
-                      <div className="k-hw-due">{t.hint}</div>
-                    </div>
-                    {hasOptions && (
-                      <button type="button" className="k-opt-btn" aria-expanded={unfolded} onClick={() => setOpenOptions(unfolded ? null : t.id)}>
-                        Options <span aria-hidden>▾</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={on}
-                      aria-label={BLOCK_LABELS[t.id]}
-                      className={`k-switch ${on ? 'on' : ''}`}
-                      onClick={() => set(key, !on as never)}
-                    />
-                  </div>
+                <div className="k-sgroup" key={tab}>
+                  <button type="button" className={`k-sgroup-head ${activeDash === tab ? 'sel' : ''}`} onClick={() => setDashTab(tab)}>
+                    <span>{L[`tab${tab}` as TextSlot]}</span>
+                    <small className={live.length === 0 ? 'gone' : ''}>{live.length === 0 ? 'Tab hidden' : `${live.length}/${ids.length}`}</small>
+                  </button>
+                  <div className="k-toggles">
+                    {ids.map((id) => {
+                      const key = BLOCK_TOGGLE[id]
+                      const slots = BLOCK_TEXT_SLOTS[id] ?? []
+                      const hasOptions = slots.length > 0 || id === 'milestone'
+                      const unfolded = openOptions === id
+                      return (
+                        <SectionRow
+                          key={id}
+                          title={BLOCK_LABELS[id]}
+                          hint={BLOCK_HINTS[id]}
+                          on={Boolean(brand[key])}
+                          /* Switching a section ON opens its tab, so you see what
+                             you just added. Switching one off leaves you where
+                             you are — jumping to a tab that may have just
+                             stopped existing only disorients. */
+                          onToggle={() => { if (!brand[key]) setDashTab(tab); set(key, !brand[key] as never) }}
+                          optionsOpen={hasOptions ? unfolded : undefined}
+                          onOptions={hasOptions ? () => setOpenOptions(unfolded ? null : id) : undefined}
+                        >
+                          {slots.map((slot) => (
+                            <label className="k-field" key={slot}>
+                              <span>{TEXT_SLOTS[slot]}</span>
+                              <input
+                                value={L[slot]}
+                                onChange={(e) => set('labels', { ...L, [slot]: e.target.value.slice(0, 40) })}
+                                onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, [slot]: TEXT_SLOTS[slot] }) }}
+                                placeholder={TEXT_SLOTS[slot]}
+                              />
+                            </label>
+                          ))}
 
-                  {hasOptions && unfolded && (
-                    <div className="k-toggle-opts">
-                      {slots.map((slot) => (
-                        <label className="k-field" key={slot}>
-                          <span>{TEXT_SLOTS[slot]}</span>
-                          <input
-                            value={L[slot]}
-                            onChange={(e) => set('labels', { ...L, [slot]: e.target.value.slice(0, 40) })}
-                            onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, [slot]: TEXT_SLOTS[slot] }) }}
-                            placeholder={TEXT_SLOTS[slot]}
-                          />
-                        </label>
-                      ))}
-
-                      {t.id === 'milestone' && (
-                        <>
-                          <span className="k-field-label">Levels</span>
-                          <p className="desc" style={{ marginBottom: 8 }}>What each level is called and how many lessons it takes. The bar fills as they get there.</p>
-                          <div className="k-levels">
-                            {brand.levels.map((lvl, i) => (
-                              <div className="k-level-row" key={i}>
-                                <input
-                                  value={lvl.name}
-                                  onChange={(e) => patchLevel(i, { name: e.target.value.slice(0, 24) })}
-                                  placeholder="Level name"
-                                  aria-label={`Level ${i + 1} name`}
-                                />
-                                <input
-                                  type="number"
-                                  min={1}
-                                  max={MAX_LEVEL_LESSONS}
-                                  value={lvl.lessons}
-                                  onChange={(e) => patchLevel(i, { lessons: Number(e.target.value) })}
-                                  onBlur={settleLevels}
-                                  aria-label={`Lessons to reach ${lvl.name || `level ${i + 1}`}`}
-                                />
-                                <button
-                                  type="button"
-                                  className="btn btn-danger-ghost btn-sm"
-                                  onClick={() => removeLevel(i)}
-                                  disabled={brand.levels.length <= 1}
-                                  aria-label={`Remove ${lvl.name || `level ${i + 1}`}`}
-                                >✕</button>
+                          {id === 'milestone' && (
+                            <>
+                              <span className="k-field-label">Levels</span>
+                              <p className="desc" style={{ marginBottom: 8 }}>What each level is called and how many lessons it takes. The bar fills as they get there.</p>
+                              <div className="k-levels">
+                                {brand.levels.map((lvl, i) => (
+                                  <div className="k-level-row" key={i}>
+                                    <input
+                                      value={lvl.name}
+                                      onChange={(e) => patchLevel(i, { name: e.target.value.slice(0, 24) })}
+                                      placeholder="Level name"
+                                      aria-label={`Level ${i + 1} name`}
+                                    />
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={MAX_LEVEL_LESSONS}
+                                      value={lvl.lessons}
+                                      onChange={(e) => patchLevel(i, { lessons: Number(e.target.value) })}
+                                      onBlur={settleLevels}
+                                      aria-label={`Lessons to reach ${lvl.name || `level ${i + 1}`}`}
+                                    />
+                                    <button
+                                      type="button"
+                                      className="btn btn-danger-ghost btn-sm"
+                                      onClick={() => removeLevel(i)}
+                                      disabled={brand.levels.length <= 1}
+                                      aria-label={`Remove ${lvl.name || `level ${i + 1}`}`}
+                                    >✕</button>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
-                          <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 9 }} onClick={addLevel} disabled={brand.levels.length >= MAX_LEVELS}>
-                            + Add level
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
+                              <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 9 }} onClick={addLevel} disabled={brand.levels.length >= MAX_LEVELS}>
+                                + Add level
+                              </button>
+                            </>
+                          )}
+                        </SectionRow>
+                      )
+                    })}
+                  </div>
                 </div>
               )
-            })}
-          </div>
+            })
+          ) : (
+            LESSON_GROUPS.map(({ tab, ids }) => {
+              const live = ids.filter((id) => Boolean(brand[LESSON_BLOCK_TOGGLE[id]]))
+              return (
+                <div className="k-sgroup" key={tab}>
+                  <button type="button" className={`k-sgroup-head ${lessonTab === tab ? 'sel' : ''}`} onClick={() => setLessonTab(tab)}>
+                    <span>{tab}</span>
+                    <small className={live.length === 0 ? 'gone' : ''}>{live.length === 0 ? 'Tab hidden' : `${live.length}/${ids.length}`}</small>
+                  </button>
+                  <div className="k-toggles">
+                    {ids.map((id) => {
+                      const key = LESSON_BLOCK_TOGGLE[id]
+                      return (
+                        <SectionRow
+                          key={id}
+                          title={LESSON_BLOCK_LABELS[id]}
+                          hint={LESSON_BLOCK_HINTS[id]}
+                          on={Boolean(brand[key])}
+                          onToggle={() => { if (!brand[key]) setLessonTab(tab); set(key, !brand[key] as never) }}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })
+          )}
         </Tool>
 
         {error && <p className="k-error">{error}</p>}
@@ -544,8 +664,8 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </span>
           <div className="k-preview-switches">
             <div className="k-seg" style={{ margin: 0, width: 210 }}>
-              <button className={view === 'dashboard' ? 'on' : ''} onClick={() => setView('dashboard')}>Dashboard</button>
-              <button className={view === 'lesson' ? 'on' : ''} onClick={() => setView('lesson')}>Lesson recap</button>
+              <button className={view === 'dashboard' ? 'on' : ''} onClick={() => showView('dashboard')}>Dashboard</button>
+              <button className={view === 'lesson' ? 'on' : ''} onClick={() => showView('lesson')}>Lesson recap</button>
             </div>
             <div className="k-seg" style={{ margin: 0, width: 168 }}>
               <button className={device === 'desktop' ? 'on' : ''} onClick={() => setDevice('desktop')}>Desktop</button>
@@ -575,31 +695,56 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                   </div>
                 </div>
 
-                <div className="k-dtabs">
-                  {DASH_TABS.map((t) => (
-                    <button key={t} type="button" className={dashTab === t ? 'on' : ''} onClick={() => setDashTab(t)}>
-                      {L[`tab${t}` as 'tabOverview' | 'tabLessons' | 'tabProgress' | 'tabFiles' | 'tabTests']}
-                    </button>
-                  ))}
-                </div>
+                {liveTabs.length > 0 && (
+                  <div className="k-dtabs">
+                    {liveTabs.map((t) => (
+                      <button key={t} type="button" className={activeDash === t ? 'on' : ''} onClick={() => setDashTab(t)}>
+                        {L[`tab${t}` as 'tabOverview' | 'tabLessons' | 'tabProgress' | 'tabFiles' | 'tabTests']}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-                <div className={`k-flow ${device === 'mobile' ? 'narrow' : ''}`} key={`${dashTab}-${device}`}>
+                <div className={`k-flow ${device === 'mobile' ? 'narrow' : ''}`} key={`${activeDash}-${device}`}>
                   {tabBlocks.map(({ id, w }) => (
                     <div key={id} style={{ ['--w' as any]: w }}>
                       <DashboardBlock id={id} brand={brand} data={SAMPLE} preview />
                     </div>
                   ))}
-                  {tabBlocks.length === 0 && <div className="k-flow-empty">Every section on this tab is switched off</div>}
+                  {tabBlocks.length === 0 && <div className="k-flow-empty">Every section is switched off — your students would see an empty dashboard</div>}
                 </div>
               </>
             ) : (
               <div className="k-lpview">
                 <span className="k-back">← Dashboard</span>
+
+                {/* The recap's own header, same markup as the student's page —
+                    without it the preview opened straight onto a tab bar, which
+                    is not what a recap looks like, and the page decoration had
+                    nowhere to show. */}
+                <header className="k-phead">
+                  <div>
+                    <div className="k-phead-eyebrow">Lesson 12 · Recap</div>
+                    <h1>Contrasting ideas with けど</h1>
+                    <div className="k-pmeta"><span>2 Aug</span></div>
+                  </div>
+                  <div className="k-pscore">
+                    <div><b>8.3</b><small>OUT OF 10</small></div>
+                  </div>
+                  <div className="k-hero-art" style={{ right: 150, opacity: .4 }} aria-hidden>
+                    <span className="k-orb" style={{ width: 70, height: 70, right: 0, top: 10 }} />
+                    <span className="k-tube" style={{ width: 56, height: 56, right: 60, top: 74, transform: 'rotate(40deg)' }} />
+                  </div>
+                </header>
+
                 <LessonPageTabs
                   lesson={{ id: 'preview', lessonNumber: 12, date: '2 Aug', title: 'Contrasting ideas with けど', recap: SAMPLE_RECAP }}
                   studentFirst="Derek"
                   teacherFirst={teacherName || 'Your teacher'}
                   brand={brand}
+                  preview
+                  tab={lessonTab}
+                  onTabChange={setLessonTab}
                 />
               </div>
             )}

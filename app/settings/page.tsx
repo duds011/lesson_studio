@@ -78,7 +78,6 @@ export default async function SettingsPage() {
               <ExtTokenPanel
                 token={(extToken as any)?.token ?? null}
                 lastUsedAt={(extToken as any)?.last_used_at ?? null}
-                appUrl="https://koku-library.app"
               />
               <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <ReplayTourButton />
@@ -177,11 +176,18 @@ export default async function SettingsPage() {
                     <span>Google Meet<small>Created on your calendar</small></span>
                   </button>
                 </form>
+                {/* Offerable only to a teacher who already has Zoom connected —
+                    the connector is coming soon, and a platform you cannot
+                    connect is a booking that silently makes no room. */}
                 <form action="/api/settings" method="post">
                   <input type="hidden" name="platform" value="zoom" />
-                  <button type="submit" className={`k-choice ${settings.platform === 'zoom' ? 'sel' : ''}`}>
+                  <button
+                    type="submit"
+                    className={`k-choice ${settings.platform === 'zoom' ? 'sel' : ''}`}
+                    disabled={!zoom.connected && settings.platform !== 'zoom'}
+                  >
                     <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>Zoom<small>Requires a connected Zoom account</small></span>
+                    <span>Zoom<small>{zoom.connected ? 'Created on your Zoom account' : 'Coming soon'}</small></span>
                   </button>
                 </form>
                 <form action="/api/settings" method="post">

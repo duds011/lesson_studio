@@ -66,22 +66,22 @@ export default function ConnectorsGallery({ google, zoom, stripe }: ConnectorSta
         </div>
       </div>
 
-      {/* Zoom */}
-      <div className="connector-card">
+      {/* Zoom — coming soon. A teacher who already connected keeps their
+          account and can still disconnect it; nobody new is offered the flow
+          until the Zoom app is through review. */}
+      <div className="connector-card" style={zoom.connected ? undefined : { opacity: 0.72 }}>
         <div className="connector-logo"><ZoomLogo /></div>
         <div className="connector-name">Zoom</div>
         <div className="connector-desc">Creates a unique Zoom room for each booked lesson automatically.</div>
         <div className="connector-foot">
-          {!zoom.configured ? (
-            <span className="pill amber" style={{ alignSelf: 'flex-start' }}><span className="dot" />Not set up</span>
-          ) : !zoom.connected ? (
-            <a className="btn btn-primary btn-sm" href="/api/zoom/auth">Connect</a>
-          ) : (
+          {zoom.connected ? (
             <>
               <ConnectedPill label="Connected" />
               {zoom.email && <div className="connector-sub">{zoom.email}</div>}
               <form action="/api/zoom/disconnect" method="post"><button className="btn btn-ghost btn-sm" type="submit">Disconnect</button></form>
             </>
+          ) : (
+            <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--brand-soft)', color: 'var(--brand)' }}>Coming soon</span>
           )}
         </div>
       </div>
