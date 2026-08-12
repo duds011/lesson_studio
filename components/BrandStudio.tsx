@@ -7,9 +7,10 @@ import {
   DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
   DASH_BLOCK_TAB, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
   LESSON_BLOCK_HINTS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE,
-  LESSON_LAYOUT, LESSON_TABS,
+  LESSON_LAYOUT, LESSON_LOCKED, LESSON_TABS, RECAP_METRICS,
   brandVars, backgroundClass, MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
   type Brand, type BlockId, type DashTab, type TextSlot, type LessonBlockId, type LessonTab,
+  type RecapMetricId,
 } from '@/lib/brand'
 import LessonPageTabs from './LessonPageTabs'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from './portal/DashboardBlocks'
@@ -50,10 +51,14 @@ const DASH_GROUPS = DASH_TABS.map((tab) => ({
   ids: DASHBOARD_LAYOUT.map((b) => b.id).filter((id) => DASH_BLOCK_TAB[id] === tab),
 }))
 
+/** Only the removable recap sections appear in the drawer — a locked section
+ *  with a switch that cannot move would just be a question. */
 const LESSON_GROUPS = LESSON_TABS.map((tab) => ({
   tab,
-  ids: LESSON_LAYOUT.map((b) => b.id).filter((id) => LESSON_BLOCK_TAB[id] === tab),
+  ids: LESSON_LAYOUT.map((b) => b.id).filter((id) => LESSON_BLOCK_TAB[id] === tab && !LESSON_LOCKED.has(id)),
 })).filter((g) => g.ids.length > 0)
+
+const LESSON_REMOVABLE = LESSON_LAYOUT.filter(({ id }) => !LESSON_LOCKED.has(id))
 
 /**
  * A believable student, so the preview is the real page with the real
@@ -344,15 +349,18 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   )
 
   const dashOn = DASHBOARD_LAYOUT.filter(({ id }) => Boolean(brand[BLOCK_TOGGLE[id]])).length
-  const lessonOn = LESSON_LAYOUT.filter(({ id }) => Boolean(brand[LESSON_BLOCK_TOGGLE[id]])).length
+  const lessonOn = LESSON_REMOVABLE.filter(({ id }) => Boolean(brand[LESSON_BLOCK_TOGGLE[id]])).length
 
   /** What has been ✕'d off the page being previewed — the tray offers it back. */
   const hiddenDash = DASHBOARD_LAYOUT.filter(({ id }) => !brand[BLOCK_TOGGLE[id]])
-  const hiddenLesson = LESSON_LAYOUT.filter(({ id }) => !brand[LESSON_BLOCK_TOGGLE[id]])
+  const hiddenLesson = LESSON_REMOVABLE.filter(({ id }) => !brand[LESSON_BLOCK_TOGGLE[id]])
+  const hiddenMetrics = brand.hiddenMetrics ?? []
 
   /** Bring a section back, and land the preview on the tab it returns to. */
   const restoreDash = (id: BlockId) => { set(BLOCK_TOGGLE[id], true as never); setDashTab(DASH_BLOCK_TAB[id]) }
   const restoreLesson = (id: LessonBlockId) => { set(LESSON_BLOCK_TOGGLE[id], true as never); setLessonTab(LESSON_BLOCK_TAB[id]) }
+  const removeMetric = (id: RecapMetricId) => set('hiddenMetrics', [...hiddenMetrics, id])
+  const restoreMetric = (id: RecapMetricId) => { set('hiddenMetrics', hiddenMetrics.filter((x) => x !== id)); setLessonTab('Progress') }
 
   /**
    * The tabs and blocks this dashboard shows, exactly as the student's page
@@ -407,7 +415,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           <p className="desc" style={{ margin: '0 0 10px' }}>
             {view === 'dashboard'
               ? `${dashOn} of ${DASHBOARD_LAYOUT.length} sections on. Grouped by the tab they appear on.`
-              : `${lessonOn} of ${LESSON_LAYOUT.length} sections on. Grouped by the tab they appear on.`}
+              : `${lessonOn} of ${LESSON_REMOVABLE.length} measurement sections on. The lesson itself — notes, memo, practice, vocabulary, files — always shows.`}
           </p>
 
           {view === 'dashboard' ? (
@@ -556,16 +564,25 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         {/* Everything ✕'d off the page being previewed, one chip each. It sits
             over the canvas rather than in a menu because it answers the same
             gesture that hid it: what left the page comes back from the page. */}
-        {(view === 'dashboard' ? hiddenDash : hiddenLesson).length > 0 && (
+        {(view === 'dashboard' ? hiddenDash.length : hiddenLesson.length + hiddenMetrics.length) > 0 && (
           <div className="k-zap-tray">
             <span>Hidden:</span>
             {view === 'dashboard'
               ? hiddenDash.map(({ id }) => (
                 <button key={id} type="button" onClick={() => restoreDash(id)}>+ {BLOCK_LABELS[id]}</button>
               ))
-              : hiddenLesson.map(({ id }) => (
-                <button key={id} type="button" onClick={() => restoreLesson(id)}>+ {LESSON_BLOCK_LABELS[id]}</button>
-              ))}
+              : (
+                <>
+                  {hiddenLesson.map(({ id }) => (
+                    <button key={id} type="button" onClick={() => restoreLesson(id)}>+ {LESSON_BLOCK_LABELS[id]}</button>
+                  ))}
+                  {hiddenMetrics.map((id) => (
+                    <button key={id} type="button" onClick={() => restoreMetric(id)}>
+                      + {RECAP_METRICS.find((mDef) => mDef.id === id)?.label ?? id}
+                    </button>
+                  ))}
+                </>
+              )}
           </div>
         )}
 
@@ -649,6 +666,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                   tab={lessonTab}
                   onTabChange={setLessonTab}
                   onRemoveSection={(id) => set(LESSON_BLOCK_TOGGLE[id], false as never)}
+                  onRemoveMetric={removeMetric}
                 />
               </div>
             )}

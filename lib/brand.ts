@@ -162,6 +162,35 @@ export const LESSON_BLOCK_TOGGLE: Record<LessonBlockId, keyof Brand> = {
   files: 'showRecapFiles',
 }
 
+/**
+ * Recap sections a teacher cannot switch off.
+ *
+ * The notes, the homework, the exercises, the words and the files ARE the
+ * recap — a recap without them is a scoreboard, and a student paying for
+ * lessons should never open one. What is optional is the measurement around
+ * them. The memo is here too because it already governs itself: record
+ * nothing and the student sees nothing, so a switch for it would only say
+ * what the content already says.
+ */
+export const LESSON_LOCKED: ReadonlySet<LessonBlockId> = new Set<LessonBlockId>([
+  'memo', 'sections', 'homework', 'exercises', 'vocabWords', 'files',
+])
+
+/**
+ * The tiles of "Your speaking, measured", individually removable — a teacher
+ * who likes the pace number but not the hesitation count keeps one and drops
+ * the other, rather than all or none.
+ */
+export const RECAP_METRICS = [
+  { id: 'wpm', label: 'Words / min' },
+  { id: 'think', label: 'Thinking time' },
+  { id: 'longest', label: 'Longest answer' },
+  { id: 'turn', label: 'Words / answer' },
+  { id: 'fillers', label: 'Hesitation words' },
+  { id: 'pauses', label: 'Long pauses' },
+] as const
+export type RecapMetricId = (typeof RECAP_METRICS)[number]['id']
+
 /** A recap block belongs to one tab; arranging happens inside that tab. */
 export const LESSON_BLOCK_TAB: Record<LessonBlockId, LessonTab> = {
   // The memo sits with the lesson itself, not the measurements.
@@ -277,7 +306,11 @@ export type Brand = {
   showTests: boolean
   showSpeaking: boolean
   showFiles: boolean
-  /** Recap sections — the same idea, one page down. See LESSON_BLOCK_TOGGLE. */
+  /** Speaking-measured tiles the teacher has taken off the recap. */
+  hiddenMetrics: RecapMetricId[]
+  /** Recap sections — the same idea, one page down. See LESSON_BLOCK_TOGGLE.
+   *  The ones in LESSON_LOCKED are forced true by resolveBrand and kept only
+   *  so a stored brand from before the lock still round-trips. */
   showRecapMemo: boolean
   showRecapBalance: boolean
   showRecapScore: boolean
@@ -311,6 +344,7 @@ export const DEFAULT_BRAND: Brand = {
   showTests: true,
   showSpeaking: true,
   showFiles: true,
+  hiddenMetrics: [],
   showRecapMemo: true,
   showRecapBalance: true,
   showRecapScore: true,
@@ -442,17 +476,23 @@ export function resolveBrand(raw: unknown): Brand {
     showTests: bool(b.showTests, DEFAULT_BRAND.showTests),
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
     showFiles: bool(b.showFiles, DEFAULT_BRAND.showFiles),
-    showRecapMemo: bool(b.showRecapMemo, DEFAULT_BRAND.showRecapMemo),
+    hiddenMetrics: Array.isArray(b.hiddenMetrics)
+      ? (b.hiddenMetrics as unknown[]).filter((x): x is RecapMetricId => RECAP_METRICS.some((mm) => mm.id === x))
+      : [],
+    // Locked sections come back true no matter what was stored — a brand saved
+    // before the lock may carry a false, and it must not strip a student's
+    // recap of its notes or homework.
+    showRecapMemo: true,
     showRecapBalance: bool(b.showRecapBalance, DEFAULT_BRAND.showRecapBalance),
     showRecapScore: bool(b.showRecapScore, DEFAULT_BRAND.showRecapScore),
     showRecapGrammar: bool(b.showRecapGrammar, DEFAULT_BRAND.showRecapGrammar),
     showRecapMetrics: bool(b.showRecapMetrics, DEFAULT_BRAND.showRecapMetrics),
     showRecapCorrections: bool(b.showRecapCorrections, DEFAULT_BRAND.showRecapCorrections),
-    showRecapNotes: bool(b.showRecapNotes, DEFAULT_BRAND.showRecapNotes),
-    showRecapHomework: bool(b.showRecapHomework, DEFAULT_BRAND.showRecapHomework),
-    showRecapExercises: bool(b.showRecapExercises, DEFAULT_BRAND.showRecapExercises),
-    showRecapVocab: bool(b.showRecapVocab, DEFAULT_BRAND.showRecapVocab),
-    showRecapFiles: bool(b.showRecapFiles, DEFAULT_BRAND.showRecapFiles),
+    showRecapNotes: true,
+    showRecapHomework: true,
+    showRecapExercises: true,
+    showRecapVocab: true,
+    showRecapFiles: true,
   }
 }
 

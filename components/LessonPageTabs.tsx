@@ -7,8 +7,9 @@ import LessonCorrections from './LessonCorrections'
 import Flashcards from './Flashcards'
 import CountUp from './portal/CountUp'
 import {
-  DEFAULT_BRAND, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE, LESSON_LAYOUT, LESSON_TABS,
-  type Brand, type LessonBlockId, type LessonTab,
+  DEFAULT_BRAND, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE, LESSON_LAYOUT, LESSON_LOCKED,
+  LESSON_TABS, RECAP_METRICS,
+  type Brand, type LessonBlockId, type LessonTab, type RecapMetricId,
 } from '@/lib/brand'
 
 type Recap = any
@@ -22,7 +23,7 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, memo, files, preview,
-  tab: controlledTab, onTabChange, onRemoveSection,
+  tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
   /** The teacher's voice memo, opening the Progress tab. Omitted = no block. */
@@ -47,6 +48,8 @@ export default function LessonPageTabs({
    * student's page never passes this, so students never see the buttons.
    */
   onRemoveSection?: (id: LessonBlockId) => void
+  /** Studio only, one level finer: takes a single measured-speaking tile off. */
+  onRemoveMetric?: (id: RecapMetricId) => void
 }) {
   const r = lesson.recap
   const m = r.metrics as any
@@ -112,21 +115,50 @@ export default function LessonPageTabs({
             <p className="stat-card-note" style={{ marginTop: 'auto' }}>{r.vocab_total_count ? `${r.vocab_total_count} vocabulary items practiced` : ''}</p>
           </div>
         )
-      case 'metrics':
+      case 'metrics': {
         if (!m) return null
+        // One entry per tile, keyed like RECAP_METRICS, so a teacher removes
+        // the tiles they don't teach by rather than the whole card at once.
+        const TILE: Record<RecapMetricId, { v: unknown; decimals?: number; suffix?: string; mk: string; mn: string }> = {
+          wpm: { v: m.studentWpm, mk: 'words / min', mn: 'speaking pace' },
+          think: { v: m.avgResponseSec, decimals: 1, suffix: 's', mk: 'thinking time', mn: 'before you reply' },
+          longest: { v: m.longestTurnSec, suffix: 's', mk: 'longest answer', mn: 'best stretch' },
+          turn: { v: m.avgTurnWords, mk: 'words / answer', mn: 'avg turn length' },
+          fillers: { v: m.fillerCount, mk: 'hesitation words', mn: 'えーと, あの…' },
+          pauses: { v: m.longPauseCount, mk: 'long pauses', mn: 'silences ≥ 1.5s' },
+        }
+        const hidden = brand.hiddenMetrics ?? []
+        const tiles = RECAP_METRICS.filter(({ id }) => !hidden.includes(id))
+        // Every tile removed removes the card — an empty measurement panel
+        // would only ask the student what used to be there.
+        if (tiles.length === 0) return null
         return (
           <div className="corrections-card">
             <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
             <div className="metric-grid">
-              <div className="metric"><div className="mv"><Metric v={m.studentWpm} /></div><div className="mk">words / min</div><div className="mn">speaking pace</div></div>
-              <div className="metric"><div className="mv"><Metric v={m.avgResponseSec} decimals={1} suffix="s" /></div><div className="mk">thinking time</div><div className="mn">before you reply</div></div>
-              <div className="metric"><div className="mv"><Metric v={m.longestTurnSec} suffix="s" /></div><div className="mk">longest answer</div><div className="mn">best stretch</div></div>
-              <div className="metric"><div className="mv"><Metric v={m.avgTurnWords} /></div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
-              <div className="metric"><div className="mv"><Metric v={m.fillerCount} /></div><div className="mk">hesitation words</div><div className="mn">えーと, あの…</div></div>
-              <div className="metric"><div className="mv"><Metric v={m.longPauseCount} /></div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
+              {tiles.map(({ id, label }) => {
+                const t = TILE[id]
+                return (
+                  <div className={`metric ${onRemoveMetric ? 'k-zap' : ''}`} key={id}>
+                    {onRemoveMetric && (
+                      <button
+                        type="button"
+                        className="k-zap-x k-zap-x-sm"
+                        aria-label={`Remove ${label}`}
+                        title={`Remove ${label}`}
+                        onClick={() => onRemoveMetric(id)}
+                      >✕</button>
+                    )}
+                    <div className="mv"><Metric v={t.v} decimals={t.decimals} suffix={t.suffix} /></div>
+                    <div className="mk">{t.mk}</div>
+                    <div className="mn">{t.mn}</div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )
+      }
       case 'corrections':
         if (corrections.length > 0 || didWell.length > 0) {
           return (
@@ -244,8 +276,10 @@ export default function LessonPageTabs({
   // Rendered up front rather than per tab so a tab with nothing in it can be
   // left off the bar entirely: a student whose teacher shared no files should
   // not be offered a Files tab that opens onto an apology.
+  // Locked sections ignore their stored toggle: they are the recap, and a
+  // brand saved before the lock existed may still carry a false for them.
   const built = LESSON_LAYOUT
-    .filter(({ id }) => brand[LESSON_BLOCK_TOGGLE[id]] !== false)
+    .filter(({ id }) => LESSON_LOCKED.has(id) || brand[LESSON_BLOCK_TOGGLE[id]] !== false)
     .map(({ id, w }) => ({ id, w, tab: LESSON_BLOCK_TAB[id], content: section(id) }))
     .filter((b) => b.content)
 
@@ -265,23 +299,28 @@ export default function LessonPageTabs({
       {/* Keyed on the tab so switching remounts the panel and its cards run
           their entrance again — the page answers the click. */}
       <div className="k-flow" role="tabpanel" key={active}>
-        {built.filter((b) => b.tab === active).map(({ id, w, content }) => (
-          <div key={id} style={{ ['--w' as any]: w }} className={onRemoveSection ? 'k-zap' : undefined}>
-            {onRemoveSection && (
-              <>
-                <span className="k-zap-tag" aria-hidden>{LESSON_BLOCK_LABELS[id]}</span>
-                <button
-                  type="button"
-                  className="k-zap-x"
-                  aria-label={`Remove ${LESSON_BLOCK_LABELS[id]}`}
-                  title={`Remove ${LESSON_BLOCK_LABELS[id]}`}
-                  onClick={() => onRemoveSection(id)}
-                >✕</button>
-              </>
-            )}
-            {content}
-          </div>
-        ))}
+        {built.filter((b) => b.tab === active).map(({ id, w, content }) => {
+          // Locked sections get no ✕ even in the studio — the notes, the
+          // practice and the files are the recap, not options on it.
+          const removable = Boolean(onRemoveSection) && !LESSON_LOCKED.has(id)
+          return (
+            <div key={id} style={{ ['--w' as any]: w }} className={removable ? 'k-zap' : undefined}>
+              {removable && (
+                <>
+                  <span className="k-zap-tag" aria-hidden>{LESSON_BLOCK_LABELS[id]}</span>
+                  <button
+                    type="button"
+                    className="k-zap-x"
+                    aria-label={`Remove ${LESSON_BLOCK_LABELS[id]}`}
+                    title={`Remove ${LESSON_BLOCK_LABELS[id]}`}
+                    onClick={() => onRemoveSection!(id)}
+                  >✕</button>
+                </>
+              )}
+              {content}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -990,20 +990,25 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
    A switch on its own says nothing about consequence. Grouped under the tab
    they land on, with a live count beside it, turning the last one off reads as
    what it is: that tab is gone. */
-.k-sgroup{margin-bottom:10px}
+/* Each student-facing tab is its own boxed card, so the boundary between one
+   tab's sections and the next is a drawn edge rather than an inferred one —
+   the flat list read as one undifferentiated run of switches. */
+.k-sgroup{margin-bottom:11px;border:1.5px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .k-sgroup:last-child{margin-bottom:0}
 .k-sgroup-head{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
-  border:0;background:var(--surface-2);border-radius:10px;padding:7px 11px;font:inherit;cursor:pointer;transition:.14s ease}
-.k-sgroup-head span{font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--ink);
+  border:0;border-bottom:1px solid var(--line);background:var(--surface-2);padding:9px 13px;font:inherit;cursor:pointer;transition:.14s ease}
+.k-sgroup-head span{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.k-sgroup-head small{font-size:9.5px;font-weight:800;color:var(--muted);flex:0 0 auto}
+.k-sgroup-head small{font-size:9.5px;font-weight:800;color:var(--muted);flex:0 0 auto;
+  background:var(--surface);border-radius:999px;padding:3px 8px}
 .k-sgroup-head:hover{background:var(--brand-soft)}
 .k-sgroup-head:hover span{color:var(--forest)}
-.k-sgroup-head.sel{background:var(--brand-soft)}
-.k-sgroup-head.sel span,.k-sgroup-head.sel small{color:var(--forest)}
+.k-sgroup-head.sel{background:var(--brand-soft);border-bottom-color:transparent}
+.k-sgroup-head.sel span{color:var(--forest)}
+.k-sgroup-head.sel small{color:var(--forest)}
 /* Every section off — the tab itself stops existing, so say so. */
-.k-sgroup-head small.gone{color:var(--red,#b4232a)}
-.k-sgroup .k-toggles{padding:0 2px}
+.k-sgroup-head small.gone{color:#fff;background:var(--red,#b4232a)}
+.k-sgroup .k-toggles{padding:0 12px}
 /* A section switched off stays legible but stops competing for attention. */
 .k-toggle-block.off .k-hw-title,.k-toggle-block.off .k-hw-due{opacity:.5}
 
@@ -1111,14 +1116,18 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
    flow layout closes the gap on its own — three tiles become two that share
    the row, a full-width band just leaves. The student's page never renders
    these wrappers. */
+/* No outline on hover — a dashed box over the whole section read as a broken
+   grey rectangle, not an affordance. The named tag and the ✕ are enough. */
 .k-zap{position:relative}
-.k-zap:hover{outline:2px dashed rgba(10,97,201,.45);outline-offset:5px;border-radius:10px}
 .k-zap-x{position:absolute;top:-9px;right:-9px;z-index:7;width:30px;height:30px;border-radius:50%;border:0;
   background:#fff;color:var(--red);font:inherit;font-size:13px;font-weight:800;line-height:1;cursor:pointer;
   display:grid;place-items:center;box-shadow:0 3px 10px rgba(0,0,0,.22);
   opacity:0;transform:scale(.75);transition:.15s ease}
 .k-zap:hover .k-zap-x{opacity:1;transform:none}
 .k-zap-x:hover{background:var(--red);color:#fff}
+/* The per-tile ✕ inside "Your speaking, measured" — smaller, and tucked into
+   the tile's own corner so six of them don't crowd the card. */
+.k-zap-x-sm{width:22px;height:22px;font-size:10px;top:4px;right:4px;box-shadow:0 2px 6px rgba(0,0,0,.18)}
 .k-zap-tag{position:absolute;top:-9px;right:28px;z-index:7;background:var(--ink);color:#fff;border-radius:999px;
   padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;
   opacity:0;transition:.15s ease;pointer-events:none}
