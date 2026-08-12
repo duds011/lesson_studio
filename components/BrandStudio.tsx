@@ -346,6 +346,14 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
   const dashOn = DASHBOARD_LAYOUT.filter(({ id }) => Boolean(brand[BLOCK_TOGGLE[id]])).length
   const lessonOn = LESSON_LAYOUT.filter(({ id }) => Boolean(brand[LESSON_BLOCK_TOGGLE[id]])).length
 
+  /** What has been ✕'d off the page being previewed — the tray offers it back. */
+  const hiddenDash = DASHBOARD_LAYOUT.filter(({ id }) => !brand[BLOCK_TOGGLE[id]])
+  const hiddenLesson = LESSON_LAYOUT.filter(({ id }) => !brand[LESSON_BLOCK_TOGGLE[id]])
+
+  /** Bring a section back, and land the preview on the tab it returns to. */
+  const restoreDash = (id: BlockId) => { set(BLOCK_TOGGLE[id], true as never); setDashTab(DASH_BLOCK_TAB[id]) }
+  const restoreLesson = (id: LessonBlockId) => { set(LESSON_BLOCK_TOGGLE[id], true as never); setLessonTab(LESSON_BLOCK_TAB[id]) }
+
   /**
    * The tabs and blocks this dashboard shows, exactly as the student's page
    * decides them — including dropping a tab whose sections are all switched
@@ -545,6 +553,22 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </div>
         </div>
 
+        {/* Everything ✕'d off the page being previewed, one chip each. It sits
+            over the canvas rather than in a menu because it answers the same
+            gesture that hid it: what left the page comes back from the page. */}
+        {(view === 'dashboard' ? hiddenDash : hiddenLesson).length > 0 && (
+          <div className="k-zap-tray">
+            <span>Hidden:</span>
+            {view === 'dashboard'
+              ? hiddenDash.map(({ id }) => (
+                <button key={id} type="button" onClick={() => restoreDash(id)}>+ {BLOCK_LABELS[id]}</button>
+              ))
+              : hiddenLesson.map(({ id }) => (
+                <button key={id} type="button" onClick={() => restoreLesson(id)}>+ {LESSON_BLOCK_LABELS[id]}</button>
+              ))}
+          </div>
+        )}
+
         <div className="k-canvas" ref={canvasEl}>
           <div
             ref={frameEl}
@@ -578,7 +602,15 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
                 <div className={`k-flow ${device === 'mobile' ? 'narrow' : ''}`} key={`${activeDash}-${device}`}>
                   {tabBlocks.map(({ id, w }) => (
-                    <div key={id} style={{ ['--w' as any]: w }}>
+                    <div key={id} style={{ ['--w' as any]: w }} className="k-zap">
+                      <span className="k-zap-tag" aria-hidden>{BLOCK_LABELS[id]}</span>
+                      <button
+                        type="button"
+                        className="k-zap-x"
+                        aria-label={`Remove ${BLOCK_LABELS[id]}`}
+                        title={`Remove ${BLOCK_LABELS[id]}`}
+                        onClick={() => set(BLOCK_TOGGLE[id], false as never)}
+                      >✕</button>
                       <DashboardBlock id={id} brand={brand} data={SAMPLE} preview />
                     </div>
                   ))}
@@ -616,6 +648,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                   preview
                   tab={lessonTab}
                   onTabChange={setLessonTab}
+                  onRemoveSection={(id) => set(LESSON_BLOCK_TOGGLE[id], false as never)}
                 />
               </div>
             )}
@@ -623,9 +656,9 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         </div>
 
         <p className="k-fine" style={{ textAlign: 'left' }}>
-          This is the student portal itself, rendered with your styling — not a mock-up of it. Choose a colour, a
-          typeface, a texture and what each section is called; switch off anything you don&rsquo;t teach with. The
-          arrangement is fixed so it stays readable on a phone.
+          This is the student portal itself, rendered with your styling — not a mock-up of it.
+          {' '}<strong>Hover any section and press ✕ to take it off the page</strong> — the rest closes up around it,
+          and a chip above the page brings it back. The arrangement is fixed so it stays readable on a phone.
           {' '}Save to publish it to {teacherName ? `${teacherName}'s` : 'your'} students.
         </p>
       </div>

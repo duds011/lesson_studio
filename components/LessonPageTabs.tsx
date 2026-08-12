@@ -7,7 +7,7 @@ import LessonCorrections from './LessonCorrections'
 import Flashcards from './Flashcards'
 import CountUp from './portal/CountUp'
 import {
-  DEFAULT_BRAND, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE, LESSON_LAYOUT, LESSON_TABS,
+  DEFAULT_BRAND, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE, LESSON_LAYOUT, LESSON_TABS,
   type Brand, type LessonBlockId, type LessonTab,
 } from '@/lib/brand'
 
@@ -22,7 +22,7 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, memo, files, preview,
-  tab: controlledTab, onTabChange,
+  tab: controlledTab, onTabChange, onRemoveSection,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
   /** The teacher's voice memo, opening the Progress tab. Omitted = no block. */
@@ -41,6 +41,12 @@ export default function LessonPageTabs({
    *  group there opens the tab it edits. Left off, the page owns its own. */
   tab?: LessonTab
   onTabChange?: (t: LessonTab) => void
+  /**
+   * Studio only: lets the teacher remove a section from the page itself.
+   * When set, hovering any section shows its name and a ✕ — see .k-zap. The
+   * student's page never passes this, so students never see the buttons.
+   */
+  onRemoveSection?: (id: LessonBlockId) => void
 }) {
   const r = lesson.recap
   const m = r.metrics as any
@@ -260,7 +266,21 @@ export default function LessonPageTabs({
           their entrance again — the page answers the click. */}
       <div className="k-flow" role="tabpanel" key={active}>
         {built.filter((b) => b.tab === active).map(({ id, w, content }) => (
-          <div key={id} style={{ ['--w' as any]: w }}>{content}</div>
+          <div key={id} style={{ ['--w' as any]: w }} className={onRemoveSection ? 'k-zap' : undefined}>
+            {onRemoveSection && (
+              <>
+                <span className="k-zap-tag" aria-hidden>{LESSON_BLOCK_LABELS[id]}</span>
+                <button
+                  type="button"
+                  className="k-zap-x"
+                  aria-label={`Remove ${LESSON_BLOCK_LABELS[id]}`}
+                  title={`Remove ${LESSON_BLOCK_LABELS[id]}`}
+                  onClick={() => onRemoveSection(id)}
+                >✕</button>
+              </>
+            )}
+            {content}
+          </div>
         ))}
       </div>
     </div>
