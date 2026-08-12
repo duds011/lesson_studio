@@ -288,25 +288,120 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 
 /* — split auth screen — */
 .k-auth{min-height:100vh;background:var(--bg);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.k-auth-side{position:relative;background:var(--forest);border-radius:var(--r-xl);overflow:hidden;padding:46px;display:flex;flex-direction:column;justify-content:flex-end;color:#fff}
+/* Centred, not bottom-aligned: the panel carries a carousel now, and pinning
+   that to the floor left a third of the block as empty blue above it. */
+.k-auth-side{position:relative;background:var(--forest);border-radius:var(--r-xl);overflow:hidden;padding:46px;display:flex;flex-direction:column;justify-content:center;color:#fff}
 .k-auth-side h2{font-size:clamp(24px,2.6vw,33px);line-height:1.14;letter-spacing:-.04em;margin:0 0 12px;max-width:16ch;font-weight:700}
 .k-auth-side p{margin:0;color:rgba(255,255,255,.68);font-size:13.5px;line-height:1.6;max-width:40ch}
-/* The art sits behind the copy rather than above it — the panel now carries a
-   feature list, and the two were fighting for the same vertical space. */
-.k-auth-art{position:absolute;top:4%;left:0;right:0;height:40%;pointer-events:none;opacity:.85}
+/* Corner accents behind the copy. They used to own the top half of the panel;
+   the carousel is the picture now, and two props competing with it read as
+   clutter. */
+.k-auth-art{position:absolute;inset:0;pointer-events:none;opacity:.5}
 .k-auth-copy{position:relative;z-index:1}
 
-/* What this actually does for a teacher. The only page they can reach without
-   an account, so it is the only place left to say it. */
-.k-auth-feats{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:15px;max-width:44ch}
-.k-auth-feats li{display:flex;align-items:flex-start;gap:12px}
-.k-auth-feat-ic{flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
-  font-size:16px;background:rgba(255,255,255,.14);backdrop-filter:blur(2px)}
-.k-auth-feats b{display:block;font-size:13.5px;font-weight:700;letter-spacing:-.01em;color:#fff;margin-bottom:2px}
-.k-auth-feats small{display:block;font-size:12px;line-height:1.55;color:rgba(255,255,255,.66)}
-/* Only on a genuinely short window — a 768-tall laptop should still get the
-   sentence that explains each claim, not four bare headings. */
-@media(max-height:700px){.k-auth-feats{gap:11px;margin-top:18px}.k-auth-feats small{display:none}}
+/* ── feature carousel ──
+   Pictures of the product, not claims about it. Every slide is markup drawn
+   with the same shapes the real pages use, so nothing here can go stale in the
+   way a screenshot does. See components/AuthAside. */
+.k-ac{margin-top:22px;max-width:520px}
+.k-ac-stage{position:relative;height:264px}
+.k-ac-slide{position:absolute;inset:0;opacity:0;transform:translateY(9px) scale(.985);
+  transition:opacity .55s ease,transform .55s ease;pointer-events:none}
+.k-ac-slide.on{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.k-ac-slide{transition:none}}
+
+/* The white "screen" every slide draws inside. */
+.k-ac-screen{height:100%;background:#fff;border-radius:15px;padding:13px 14px;color:var(--ink);
+  box-shadow:0 16px 40px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:9px;overflow:hidden}
+/* The panel paints every <p> inside it white for its own copy, and that reached
+   into the mock — a correction rendered white on white, so the slide showed an
+   underline with nothing above it. Inheriting the screen's ink is not enough
+   here; it has to be said at the same weight. */
+.k-ac-screen p{margin:0;color:var(--ink)}
+
+.k-ac-tabs{display:flex;gap:3px;background:#f4f4ef;border-radius:999px;padding:3px;flex:0 0 auto}
+.k-ac-tabs span{padding:5px 10px;border-radius:999px;font-size:9.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+.k-ac-tabs span.on{background:var(--brand);color:#fff}
+
+.k-ac-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.k-ac-tile{border:1px solid var(--line);border-left:3px solid var(--t);border-radius:9px;padding:8px 9px;min-width:0}
+.k-ac-tile small{display:block;font-size:6.5px;font-weight:800;letter-spacing:.08em;color:var(--muted)}
+.k-ac-tile strong{display:block;font-size:17px;font-weight:800;letter-spacing:-.035em;margin-top:3px}
+.k-ac-tile strong.sm{font-size:11.5px;letter-spacing:-.02em;margin-top:5px}
+.k-ac-tile strong i{font-size:9px;font-style:normal;color:var(--muted);font-weight:700}
+.k-ac-tile em{display:block;font-style:normal;font-size:7px;color:var(--muted);margin-top:4px}
+.k-ac-bal{height:3px;border-radius:999px;background:#ececeb;margin-top:5px}
+.k-ac-bal u{display:block;height:100%;border-radius:999px;background:#be123c}
+.k-ac-bal.alt u{background:#f0b429}
+.k-ac-chip{display:inline-block;margin-top:5px;padding:2px 6px;border-radius:999px;background:#e7f5ec;color:#1c6b40;font-size:7px;font-weight:800}
+
+.k-ac-note{border:1px solid var(--line);border-radius:9px;padding:9px 10px;flex:1;min-height:0}
+.k-ac-note small{display:block;font-size:6.5px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+.k-ac-note p{margin:0 0 3px;font-size:10px;line-height:1.5}
+.k-ac-note s{color:var(--muted)}
+.k-ac-note p.ok b{border-bottom:2px solid var(--brand)}
+.k-ac-note p.why{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-size:8.5px;color:var(--muted)}
+.k-ac-note p.why b{color:var(--ink)}
+
+.k-ac-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.k-ac-head b{font-size:11px;font-weight:800;letter-spacing:-.02em}
+.k-ac-head span{font-size:8px;font-weight:700;color:var(--muted)}
+
+/* Grows into whatever the screen has left, so a slide with less to say does
+   not end in a band of empty white. */
+.k-ac-bars{display:flex;align-items:flex-end;gap:9px;flex:1;min-height:80px;padding:14px 4px 0}
+.k-ac-bars span{position:relative;flex:1;border-radius:5px 5px 2px 2px;background:#bcd6f2;min-width:0}
+.k-ac-bars span.now{background:var(--brand)}
+.k-ac-bars b{position:absolute;top:-13px;left:0;right:0;text-align:center;font-size:8px;font-weight:800;color:var(--muted)}
+
+.k-ac-track{display:flex;gap:4px}
+.k-ac-track span{flex:1;min-width:0;text-align:center}
+.k-ac-track u{display:block;height:3px;border-radius:999px;background:#ececeb;text-decoration:none}
+.k-ac-track i{display:block;height:100%;border-radius:999px;background:var(--brand)}
+.k-ac-track b{display:block;font-size:8.5px;font-weight:800;color:var(--brand);margin-top:4px}
+.k-ac-track em{display:block;font-style:normal;font-size:7px;color:var(--muted)}
+
+.k-ac-practice{display:grid;grid-template-columns:38% minmax(0,1fr);gap:9px;flex:1;min-height:0}
+.k-ac-card{border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center;background:#fafaf7;
+  display:flex;flex-direction:column;justify-content:center;min-width:0}
+.k-ac-lvl{align-self:center;padding:2px 7px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-size:7px;font-weight:800}
+.k-ac-card b.jp{display:block;font-size:23px;font-weight:700;letter-spacing:-.02em;margin-top:7px}
+.k-ac-card em{display:block;font-style:normal;font-size:9px;color:var(--muted);margin-top:2px}
+.k-ac-card p{margin:7px 0 0;font-size:10.5px;font-weight:600}
+
+.k-ac-q{border:1px solid var(--line);border-radius:11px;padding:10px 11px;display:grid;gap:5px;min-width:0;align-content:center}
+.k-ac-q small{font-size:6.5px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
+.k-ac-q>span{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:10px}
+.k-ac-q>span.right{border-color:#8fd0aa;background:#e7f5ec;color:#1c6b40;font-weight:700;display:flex;justify-content:space-between}
+.k-ac-q i{font-style:normal}
+
+.k-ac-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.k-ac-top small{display:block;font-size:8px;color:var(--muted);font-weight:700}
+.k-ac-top b{display:block;font-size:17px;font-weight:800;letter-spacing:-.035em}
+.k-ac-mark{padding:5px 10px;border-radius:999px;background:#f4f4ef;font-size:9px;font-weight:700;white-space:nowrap}
+.k-ac-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;flex:1;min-height:0}
+.k-ac-stats div{background:var(--s);border-radius:10px;padding:9px 10px;color:#fff;display:flex;flex-direction:column;justify-content:center}
+.k-ac-stats small{font-size:8px;font-weight:800;opacity:.85}
+.k-ac-stats b{font-size:21px;font-weight:800;letter-spacing:-.04em;margin-top:2px}
+
+/* The claim under the picture. Re-keyed per slide so it fades in with it. */
+/* No fill-mode: `both` holds the caption at opacity 0 until the animation
+   actually runs, and a caption that depends on an animation having fired to be
+   readable is one dropped frame away from being invisible. */
+.k-ac-cap{margin-top:14px;min-height:52px;animation:k-ac-in .5s ease}
+.k-ac-cap b{display:block;font-size:14px;font-weight:700;letter-spacing:-.02em;color:#fff}
+.k-ac-cap small{display:block;font-size:12px;line-height:1.55;color:rgba(255,255,255,.68);margin-top:3px;max-width:46ch}
+@keyframes k-ac-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.k-ac-cap{animation:none}}
+
+.k-ac-dots{display:flex;gap:6px;margin-top:12px}
+.k-ac-dots button{width:22px;height:4px;border:0;border-radius:999px;background:rgba(255,255,255,.28);padding:0;cursor:pointer;transition:.2s ease}
+.k-ac-dots button:hover{background:rgba(255,255,255,.5)}
+.k-ac-dots button.on{background:#fff;width:32px}
+
+/* A short window loses the picture before it loses the words. */
+@media(max-height:780px){.k-ac-stage{height:216px}.k-ac{margin-top:16px}}
+@media(max-height:660px){.k-ac-stage{height:170px}.k-ac-cap small{display:none}.k-ac-cap{min-height:0}}
 
 /* Signing up is the other half of this page, not a footnote to it. */
 .k-auth-alt{display:flex;align-items:center;gap:12px;margin:24px 0 14px;

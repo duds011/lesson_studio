@@ -4,18 +4,15 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
-  ACCENT_PRESETS, DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
+  DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
   DASH_BLOCK_TAB, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
   LESSON_BLOCK_HINTS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE,
   LESSON_LAYOUT, LESSON_TABS,
   brandVars, backgroundClass, MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
-  type Brand, type BackgroundStyle, type ShapeStyle, type PropStyle,
-  type BlockId, type DashTab, type TextSlot, type LessonBlockId, type LessonTab,
+  type Brand, type BlockId, type DashTab, type TextSlot, type LessonBlockId, type LessonTab,
 } from '@/lib/brand'
 import LessonPageTabs from './LessonPageTabs'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from './portal/DashboardBlocks'
-
-const HEX = /^#[0-9a-fA-F]{6}$/
 
 /**
  * The canvas is a fixed page, not a fluid one: what a teacher sees has to be
@@ -24,22 +21,6 @@ const HEX = /^#[0-9a-fA-F]{6}$/
  * page down rather than reflowing it.
  */
 const CANVAS_WIDTH = { desktop: 1180, mobile: 390 } as const
-
-const BACKGROUNDS: { value: BackgroundStyle; label: string }[] = [
-  { value: 'plain', label: 'Plain' }, { value: 'dots', label: 'Dots' }, { value: 'grid', label: 'Grid' },
-  { value: 'blobs', label: 'Blobs' }, { value: 'rings', label: 'Rings' }, { value: 'waves', label: 'Waves' },
-  { value: 'wash', label: 'Wash' },
-]
-
-const SHAPES: { value: ShapeStyle; label: string; radius: number }[] = [
-  { value: 'rounded', label: 'Rounded', radius: 16 }, { value: 'soft', label: 'Soft', radius: 10 },
-  { value: 'sharp', label: 'Sharp', radius: 3 }, { value: 'pill', label: 'Pill', radius: 23 },
-]
-
-const PROPS: { value: PropStyle; label: string }[] = [
-  { value: 'orbs', label: 'Orbs' }, { value: 'geometric', label: 'Geometric' },
-  { value: 'minimal', label: 'Minimal' }, { value: 'none', label: 'None' },
-]
 
 /** What each dashboard block puts in front of the student. */
 const BLOCK_HINTS: Record<BlockId, string> = {
@@ -273,6 +254,13 @@ function SectionRow({ title, hint, on, onToggle, optionsOpen, onOptions, childre
  * the real components (DashboardBlocks, LessonPageTabs) from the real brand.
  * If a block changes, the preview changes with it; there is nothing left to
  * keep in step by hand.
+ *
+ * Two tools, and they answer the only two questions a teacher has here:
+ * Presets is what it looks like, Sections is what is on it. The pickers that
+ * used to sit between them — an accent swatch, a font pairing, seven page
+ * textures, four corner radii — were a teacher assembling a look one dropdown
+ * at a time to arrive somewhere a preset already goes. A preset is that whole
+ * decision, made once.
  */
 export default function BrandStudio({ initial, teacherName }: { initial: Brand; teacherName: string }) {
   const router = useRouter()
@@ -328,12 +316,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
   const reset = () => { setBrand(DEFAULT_BRAND); setSaved(false) }
 
-  /** Switching page can pull the open drawer out from under the menu — Words
-   *  and Background & shape only exist for the dashboard. Land on Sections. */
-  const showView = (v: 'dashboard' | 'lesson') => {
-    setView(v)
-    if (v === 'lesson' && (tool === 'words' || tool === 'texture')) setTool('sections')
-  }
+  const showView = (v: 'dashboard' | 'lesson') => setView(v)
 
   const applyPreset = (id: string) => {
     const p = PRESETS.find((x) => x.id === id)
@@ -404,118 +387,6 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
           </div>
         </Tool>
 
-        <Tool id="colour" icon="🎨" tone="" title="Colour &amp; type" desc="Used for buttons, active states and headings." openId={tool} onOpen={setTool}>
-          <div className="k-swatches">
-            {ACCENT_PRESETS.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                title={p.name}
-                aria-label={p.name}
-                className={`k-swatch ${brand.accent.toLowerCase() === p.value.toLowerCase() ? 'sel' : ''}`}
-                style={{ background: p.value }}
-                onClick={() => set('accent', p.value)}
-              />
-            ))}
-          </div>
-
-          <label className="k-field" style={{ marginTop: 14 }}>
-            <span>Custom hex</span>
-            <input
-              value={brand.accent}
-              onChange={(e) => { const v = e.target.value; setSaved(false); setBrand((b) => ({ ...b, accent: HEX.test(v) ? v : v.slice(0, 7) })) }}
-              placeholder="#0a61c9"
-              maxLength={7}
-              spellCheck={false}
-            />
-          </label>
-
-          <span className="k-field-label">Font pairing</span>
-          <div className="k-choices">
-            {FONTS.map((f) => (
-              <button key={f.value} type="button" className={`k-choice ${brand.font === f.value ? 'sel' : ''}`} onClick={() => set('font', f.value)}>
-                <span className="k-choice-tick" aria-hidden>✓</span>
-                <span style={{ fontFamily: `${f.head}, system-ui, sans-serif` }}>{f.label}<small style={{ fontFamily: 'inherit' }}>{f.hint}</small></span>
-              </button>
-            ))}
-          </div>
-
-        </Tool>
-
-        {/* Both of these edit the dashboard and nothing else — the portal name
-            and greeting live on it, and the texture is the page behind it. On
-            the recap they were controls with nothing to change, so they are
-            offered with the page they belong to. */}
-        {view === 'dashboard' && (
-        <Tool id="words" icon="✍️" tone="y" title="Words" desc="The portal name, the greeting, and what each section and tab is called." openId={tool} onOpen={setTool}>
-          <label className="k-field">
-            <span>Portal name</span>
-            <input value={brand.portalName} onChange={(e) => set('portalName', e.target.value)} maxLength={40} placeholder="Lesson Studio" />
-          </label>
-
-          <label className="k-field">
-            <span>Mark <small style={{ fontWeight: 500 }}>(emoji or initials)</small></span>
-            <input value={brand.logoText} onChange={(e) => set('logoText', e.target.value)} maxLength={4} placeholder="📚" />
-          </label>
-
-          <label className="k-field">
-            <span>Greeting</span>
-            <input
-              value={L.greeting}
-              onChange={(e) => set('labels', { ...L, greeting: e.target.value.slice(0, 40) })}
-              onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, greeting: TEXT_SLOTS.greeting }) }}
-              placeholder={TEXT_SLOTS.greeting}
-            />
-          </label>
-
-          <span className="k-field-label">Tab names</span>
-          {(['tabOverview', 'tabLessons', 'tabProgress', 'tabFiles', 'tabTests'] as TextSlot[]).map((slot) => (
-            <label className="k-field" key={slot}>
-              <span>{TEXT_SLOTS[slot]}</span>
-              <input
-                value={L[slot]}
-                onChange={(e) => set('labels', { ...L, [slot]: e.target.value.slice(0, 40) })}
-                onBlur={(e) => { if (!e.target.value.trim()) set('labels', { ...L, [slot]: TEXT_SLOTS[slot] }) }}
-                placeholder={TEXT_SLOTS[slot]}
-              />
-            </label>
-          ))}
-        </Tool>
-        )}
-
-        {view === 'dashboard' && (
-        <Tool id="texture" icon="🖼️" tone="b" title="Background &amp; shape" desc="The texture behind the portal and how round everything is." openId={tool} onOpen={setTool}>
-          <span className="k-field-label" style={{ marginTop: 0 }}>Background</span>
-          <div className="k-preset-grid">
-            {BACKGROUNDS.map((b) => (
-              <button key={b.value} type="button" className={`k-preset ${brand.background === b.value ? 'sel' : ''}`} onClick={() => set('background', b.value)}>
-                <span className={`k-bg-chip k-bg-${b.value}`} style={{ display: 'block' }} aria-hidden />
-                <span>{b.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <span className="k-field-label">Corners</span>
-          <div className="k-preset-grid">
-            {SHAPES.map((sh) => (
-              <button key={sh.value} type="button" className={`k-preset ${brand.shape === sh.value ? 'sel' : ''}`} onClick={() => set('shape', sh.value)}>
-                <span className="k-bg-chip k-shape-chip" style={{ borderRadius: sh.radius }} aria-hidden />
-                <span>{sh.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <span className="k-field-label">Page decoration <small style={{ fontWeight: 500 }}>(lesson and test headers)</small></span>
-          <div className="k-choices">
-            {PROPS.map((pr) => (
-              <button key={pr.value} type="button" className={`k-choice ${brand.props === pr.value ? 'sel' : ''}`} onClick={() => set('props', pr.value)}>
-                <span className="k-choice-tick" aria-hidden>✓</span>
-                <span>{pr.label}</span>
-              </button>
-            ))}
-          </div>
-        </Tool>
-        )}
 
         <Tool id="sections" icon="🧩" tone="p" title="Sections" desc="Switch off anything that doesn't fit how you teach. Empty a tab and the tab goes too." openId={tool} onOpen={setTool}>
           {/* The two pages are edited separately, and picking one drives the
