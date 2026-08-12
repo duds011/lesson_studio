@@ -289,9 +289,29 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 /* — split auth screen — */
 .k-auth{min-height:100vh;background:var(--bg);padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .k-auth-side{position:relative;background:var(--forest);border-radius:var(--r-xl);overflow:hidden;padding:46px;display:flex;flex-direction:column;justify-content:flex-end;color:#fff}
-.k-auth-side h2{font-size:clamp(26px,3vw,38px);line-height:1.14;letter-spacing:-.04em;margin:0 0 12px;max-width:15ch;font-weight:700}
-.k-auth-side p{margin:0;color:rgba(255,255,255,.68);font-size:13.5px;line-height:1.6;max-width:38ch}
-.k-auth-art{position:absolute;top:8%;left:0;right:0;height:52%;pointer-events:none}
+.k-auth-side h2{font-size:clamp(24px,2.6vw,33px);line-height:1.14;letter-spacing:-.04em;margin:0 0 12px;max-width:16ch;font-weight:700}
+.k-auth-side p{margin:0;color:rgba(255,255,255,.68);font-size:13.5px;line-height:1.6;max-width:40ch}
+/* The art sits behind the copy rather than above it — the panel now carries a
+   feature list, and the two were fighting for the same vertical space. */
+.k-auth-art{position:absolute;top:4%;left:0;right:0;height:40%;pointer-events:none;opacity:.85}
+.k-auth-copy{position:relative;z-index:1}
+
+/* What this actually does for a teacher. The only page they can reach without
+   an account, so it is the only place left to say it. */
+.k-auth-feats{list-style:none;margin:26px 0 0;padding:0;display:grid;gap:15px;max-width:44ch}
+.k-auth-feats li{display:flex;align-items:flex-start;gap:12px}
+.k-auth-feat-ic{flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  font-size:16px;background:rgba(255,255,255,.14);backdrop-filter:blur(2px)}
+.k-auth-feats b{display:block;font-size:13.5px;font-weight:700;letter-spacing:-.01em;color:#fff;margin-bottom:2px}
+.k-auth-feats small{display:block;font-size:12px;line-height:1.55;color:rgba(255,255,255,.66)}
+/* Only on a genuinely short window — a 768-tall laptop should still get the
+   sentence that explains each claim, not four bare headings. */
+@media(max-height:700px){.k-auth-feats{gap:11px;margin-top:18px}.k-auth-feats small{display:none}}
+
+/* Signing up is the other half of this page, not a footnote to it. */
+.k-auth-alt{display:flex;align-items:center;gap:12px;margin:24px 0 14px;
+  font-size:11.5px;font-weight:700;color:var(--muted)}
+.k-auth-alt::before,.k-auth-alt::after{content:"";flex:1;height:1px;background:var(--line)}
 .k-auth-main{display:grid;place-items:center;padding:20px}
 .k-auth-card{width:min(410px,100%)}
 /* Must come AFTER .k-auth-side, or the base display:flex wins the tie. */
@@ -306,6 +326,10 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-btn-block{width:100%;justify-content:center;background:var(--forest);color:#fff;border:0;border-radius:14px;padding:14px;font-weight:700;font-size:14px;cursor:pointer;transition:.16s ease;display:inline-flex;align-items:center;gap:8px}
 .k-btn-block:hover:not(:disabled){background:var(--forest-deep);transform:translateY(-1px)}
 .k-btn-block:disabled{opacity:.55;cursor:not-allowed;transform:none}
+/* The secondary of the pair. Must follow .k-btn-block — same specificity, and
+   the one that loses the tie is the one that gets ignored. */
+.k-btn-outline{background:transparent;color:var(--forest);border:1.5px solid var(--line-strong)}
+.k-btn-outline:hover:not(:disabled){background:var(--brand-soft);border-color:var(--forest);color:var(--forest)}
 .k-error{background:var(--red-soft);border:1px solid #f0cece;color:var(--red);border-radius:13px;padding:11px 14px;font-size:12.5px;font-weight:600;margin:14px 0 0}
 .k-fine{text-align:center;color:var(--muted);font-size:11.5px;margin:20px 0 0;line-height:1.6}
 .k-fine a{font-weight:800;color:var(--forest)}

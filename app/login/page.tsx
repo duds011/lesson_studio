@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import AuthAside from '@/components/AuthAside'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -41,17 +42,10 @@ export default function LoginPage() {
 
   return (
     <div className="k-auth">
-      {/* Decorative panel — hidden under 900px */}
-      <aside className="k-auth-side">
-        <div className="k-auth-art" aria-hidden>
-          <span className="k-orb" style={{ width: 150, height: 150, left: '18%', top: '12%' }} />
-          <span className="k-tube" style={{ width: 128, height: 128, right: '16%', top: '40%', transform: 'rotate(-24deg)' }} />
-          <span className="k-crystal" style={{ width: 74, height: 86, left: '52%', top: '4%' }} />
-          <span className="k-ring" style={{ width: 62, height: 62, left: '10%', top: '62%' }} />
-        </div>
-        <h2>Learn today, succeed tomorrow.</h2>
-        <p>Every lesson recorded, recapped, and turned into practice you can actually review.</p>
-      </aside>
+      <AuthAside
+        headline="Teach the lesson. We’ll write it up."
+        sub="Lesson Studio turns each hour you teach into a recap, a progress chart and a set of practice your student can use."
+      />
 
       <main className="k-auth-main">
         <div className="k-auth-card">
@@ -92,10 +86,16 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="k-fine">
-            Teachers can <Link href="/signup">create an account</Link>.
-            <br />
-            Students should ask their teacher for login details.
+          {/* A teacher arriving for the first time was offered a sentence in
+              grey 12px under the fold of the form. Signing up is the other half
+              of what this page is for, so it gets a button and a rule of its
+              own — and the student note stops sharing a line with it. */}
+          <div className="k-auth-alt">
+            <span>New here?</span>
+          </div>
+          <Link href="/signup" className="k-btn-block k-btn-outline">Create a teacher account</Link>
+          <p className="k-fine" style={{ marginTop: 12 }}>
+            Free to set up. Students don&rsquo;t sign up — ask your teacher for login details.
           </p>
         </div>
       </main>

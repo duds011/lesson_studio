@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { signUpTeacher } from '@/app/actions/signup'
+import AuthAside from '@/components/AuthAside'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -50,16 +51,10 @@ export default function SignupPage() {
 
   return (
     <div className="k-auth">
-      <aside className="k-auth-side">
-        <div className="k-auth-art" aria-hidden>
-          <span className="k-orb" style={{ width: 150, height: 150, left: '18%', top: '12%' }} />
-          <span className="k-tube" style={{ width: 128, height: 128, right: '16%', top: '40%', transform: 'rotate(-24deg)' }} />
-          <span className="k-crystal" style={{ width: 74, height: 86, left: '52%', top: '4%' }} />
-          <span className="k-ring" style={{ width: 62, height: 62, left: '10%', top: '62%' }} />
-        </div>
-        <h2>Your whole teaching practice, in one place.</h2>
-        <p>Recordings, AI recaps, bookings and student progress — set up in a couple of minutes.</p>
-      </aside>
+      <AuthAside
+        headline="Your whole teaching practice, in one place."
+        sub="Set up in a couple of minutes. Add a student, record your next lesson, and the rest of this builds itself."
+      />
 
       <main className="k-auth-main">
         <div className="k-auth-card">
