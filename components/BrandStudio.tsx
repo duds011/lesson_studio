@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
   DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
-  DASH_BLOCK_TAB, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
+  DASH_BLOCK_TAB, DASH_LOCKED, DASH_SPEAK_TILES, DASH_STAT_TILES, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
   LESSON_BLOCK_HINTS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE,
   LESSON_LAYOUT, LESSON_LOCKED, LESSON_TABS, RECAP_METRICS,
   brandVars, backgroundClass, MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
   type Brand, type BlockId, type DashTab, type TextSlot, type LessonBlockId, type LessonTab,
-  type RecapMetricId,
+  type RecapMetricId, type DashStatId, type DashSpeakId,
 } from '@/lib/brand'
 import LessonPageTabs from './LessonPageTabs'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from './portal/DashboardBlocks'
@@ -48,8 +48,10 @@ const BLOCK_HINTS: Record<BlockId, string> = {
  */
 const DASH_GROUPS = DASH_TABS.map((tab) => ({
   tab,
-  ids: DASHBOARD_LAYOUT.map((b) => b.id).filter((id) => DASH_BLOCK_TAB[id] === tab),
-}))
+  ids: DASHBOARD_LAYOUT.map((b) => b.id).filter((id) => DASH_BLOCK_TAB[id] === tab && !DASH_LOCKED.has(id)),
+})).filter((g) => g.ids.length > 0)
+
+const DASH_REMOVABLE = DASHBOARD_LAYOUT.filter(({ id }) => !DASH_LOCKED.has(id))
 
 /** Only the removable recap sections appear in the drawer — a locked section
  *  with a switch that cannot move would just be a question. */
@@ -348,19 +350,25 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
       && p.brand.font === brand.font && p.brand.shape === brand.shape && p.brand.background === brand.background,
   )
 
-  const dashOn = DASHBOARD_LAYOUT.filter(({ id }) => Boolean(brand[BLOCK_TOGGLE[id]])).length
+  const dashOn = DASH_REMOVABLE.filter(({ id }) => Boolean(brand[BLOCK_TOGGLE[id]])).length
   const lessonOn = LESSON_REMOVABLE.filter(({ id }) => Boolean(brand[LESSON_BLOCK_TOGGLE[id]])).length
 
   /** What has been ✕'d off the page being previewed — the tray offers it back. */
-  const hiddenDash = DASHBOARD_LAYOUT.filter(({ id }) => !brand[BLOCK_TOGGLE[id]])
+  const hiddenDash = DASH_REMOVABLE.filter(({ id }) => !brand[BLOCK_TOGGLE[id]])
   const hiddenLesson = LESSON_REMOVABLE.filter(({ id }) => !brand[LESSON_BLOCK_TOGGLE[id]])
   const hiddenMetrics = brand.hiddenMetrics ?? []
+  const hiddenStats = brand.hiddenStats ?? []
+  const hiddenSpeaking = brand.hiddenSpeaking ?? []
 
   /** Bring a section back, and land the preview on the tab it returns to. */
   const restoreDash = (id: BlockId) => { set(BLOCK_TOGGLE[id], true as never); setDashTab(DASH_BLOCK_TAB[id]) }
   const restoreLesson = (id: LessonBlockId) => { set(LESSON_BLOCK_TOGGLE[id], true as never); setLessonTab(LESSON_BLOCK_TAB[id]) }
   const removeMetric = (id: RecapMetricId) => set('hiddenMetrics', [...hiddenMetrics, id])
   const restoreMetric = (id: RecapMetricId) => { set('hiddenMetrics', hiddenMetrics.filter((x) => x !== id)); setLessonTab('Progress') }
+  const removeStat = (id: DashStatId) => set('hiddenStats', [...hiddenStats, id])
+  const restoreStat = (id: DashStatId) => { set('hiddenStats', hiddenStats.filter((x) => x !== id)); setDashTab('Overview') }
+  const removeSpeak = (id: DashSpeakId) => set('hiddenSpeaking', [...hiddenSpeaking, id])
+  const restoreSpeak = (id: DashSpeakId) => { set('hiddenSpeaking', hiddenSpeaking.filter((x) => x !== id)); setDashTab('Progress') }
 
   /**
    * The tabs and blocks this dashboard shows, exactly as the student's page
@@ -414,7 +422,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
 
           <p className="desc" style={{ margin: '0 0 10px' }}>
             {view === 'dashboard'
-              ? `${dashOn} of ${DASHBOARD_LAYOUT.length} sections on. Grouped by the tab they appear on.`
+              ? `${dashOn} of ${DASH_REMOVABLE.length} sections on. Lessons, files and tests always show.`
               : `${lessonOn} of ${LESSON_REMOVABLE.length} measurement sections on. The lesson itself — notes, memo, practice, vocabulary, files — always shows.`}
           </p>
 
@@ -458,6 +466,49 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                               />
                             </label>
                           ))}
+
+                          {/* Per-card switches, same as the recap's measured
+                              tiles — keep the average, drop the talk share. */}
+                          {id === 'stats' && (
+                            <div className="k-toggles">
+                              {DASH_STAT_TILES.map(({ id: sid, label }) => {
+                                const on = !hiddenStats.includes(sid)
+                                return (
+                                  <div className="k-toggle-row" key={sid}>
+                                    <div className="k-hw-title" style={{ fontWeight: 600 }}>{label}</div>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={on}
+                                      aria-label={label}
+                                      className={`k-switch ${on ? 'on' : ''}`}
+                                      onClick={() => { setDashTab('Overview'); on ? removeStat(sid) : restoreStat(sid) }}
+                                    />
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                          {id === 'speaking' && (
+                            <div className="k-toggles">
+                              {DASH_SPEAK_TILES.map(({ id: sid, label }) => {
+                                const on = !hiddenSpeaking.includes(sid)
+                                return (
+                                  <div className="k-toggle-row" key={sid}>
+                                    <div className="k-hw-title" style={{ fontWeight: 600 }}>{label}</div>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={on}
+                                      aria-label={label}
+                                      className={`k-switch ${on ? 'on' : ''}`}
+                                      onClick={() => { setDashTab('Progress'); on ? removeSpeak(sid) : restoreSpeak(sid) }}
+                                    />
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
 
                           {id === 'milestone' && (
                             <>
@@ -592,13 +643,29 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
         {/* Everything ✕'d off the page being previewed, one chip each. It sits
             over the canvas rather than in a menu because it answers the same
             gesture that hid it: what left the page comes back from the page. */}
-        {(view === 'dashboard' ? hiddenDash.length : hiddenLesson.length + hiddenMetrics.length) > 0 && (
+        {(view === 'dashboard'
+          ? hiddenDash.length + hiddenStats.length + hiddenSpeaking.length
+          : hiddenLesson.length + hiddenMetrics.length) > 0 && (
           <div className="k-zap-tray">
             <span>Hidden:</span>
             {view === 'dashboard'
-              ? hiddenDash.map(({ id }) => (
-                <button key={id} type="button" onClick={() => restoreDash(id)}>+ {BLOCK_LABELS[id]}</button>
-              ))
+              ? (
+                <>
+                  {hiddenDash.map(({ id }) => (
+                    <button key={id} type="button" onClick={() => restoreDash(id)}>+ {BLOCK_LABELS[id]}</button>
+                  ))}
+                  {hiddenStats.map((id) => (
+                    <button key={id} type="button" onClick={() => restoreStat(id)}>
+                      + {DASH_STAT_TILES.find((t) => t.id === id)?.label ?? id}
+                    </button>
+                  ))}
+                  {hiddenSpeaking.map((id) => (
+                    <button key={id} type="button" onClick={() => restoreSpeak(id)}>
+                      + {DASH_SPEAK_TILES.find((t) => t.id === id)?.label ?? id}
+                    </button>
+                  ))}
+                </>
+              )
               : (
                 <>
                   {hiddenLesson.map(({ id }) => (
@@ -646,19 +713,28 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                 )}
 
                 <div className={`k-flow ${device === 'mobile' ? 'narrow' : ''}`} key={`${activeDash}-${device}`}>
-                  {tabBlocks.map(({ id, w }) => (
-                    <div key={id} style={{ ['--w' as any]: w }} className="k-zap">
-                      <span className="k-zap-tag" aria-hidden>{BLOCK_LABELS[id]}</span>
-                      <button
-                        type="button"
-                        className="k-zap-x"
-                        aria-label={`Remove ${BLOCK_LABELS[id]}`}
-                        title={`Remove ${BLOCK_LABELS[id]}`}
-                        onClick={() => set(BLOCK_TOGGLE[id], false as never)}
-                      >✕</button>
-                      <DashboardBlock id={id} brand={brand} data={SAMPLE} preview />
-                    </div>
-                  ))}
+                  {tabBlocks.map(({ id, w }) => {
+                    // Locked blocks carry no ✕: the lesson list, the files and
+                    // the tests are the dashboard, not options on it.
+                    const removable = !DASH_LOCKED.has(id)
+                    return (
+                      <div key={id} style={{ ['--w' as any]: w }} className={removable ? 'k-zap' : undefined}>
+                        {removable && (
+                          <>
+                            <span className="k-zap-tag" aria-hidden>{BLOCK_LABELS[id]}</span>
+                            <button
+                              type="button"
+                              className="k-zap-x"
+                              aria-label={`Remove ${BLOCK_LABELS[id]}`}
+                              title={`Remove ${BLOCK_LABELS[id]}`}
+                              onClick={() => set(BLOCK_TOGGLE[id], false as never)}
+                            >✕</button>
+                          </>
+                        )}
+                        <DashboardBlock id={id} brand={brand} data={SAMPLE} preview onRemoveStat={removeStat} onRemoveSpeak={removeSpeak} />
+                      </div>
+                    )
+                  })}
                   {tabBlocks.length === 0 && <div className="k-flow-empty">Every section is switched off — your students would see an empty dashboard</div>}
                 </div>
               </>

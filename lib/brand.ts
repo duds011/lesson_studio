@@ -46,6 +46,30 @@ export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
   tests: 'Tests',
 }
 
+/**
+ * Dashboard blocks a teacher cannot switch off — the same boundary the recap
+ * draws. The lesson list is the dashboard; the files and tests tabs are where
+ * shared files and published tests live, and a hidden tab does not unpublish
+ * them, it strands them.
+ */
+export const DASH_LOCKED: ReadonlySet<BlockId> = new Set<BlockId>(['lessons', 'files', 'tests'])
+
+/** The three stat cards, individually removable — see RECAP_METRICS. */
+export const DASH_STAT_TILES = [
+  { id: 'lessons', label: 'Lessons' },
+  { id: 'score', label: 'Avg score' },
+  { id: 'speaking', label: 'Speaking share' },
+] as const
+export type DashStatId = (typeof DASH_STAT_TILES)[number]['id']
+
+/** The speaking-habits tiles, same idea. */
+export const DASH_SPEAK_TILES = [
+  { id: 'pace', label: 'Pace' },
+  { id: 'think', label: 'Thinking time' },
+  { id: 'share', label: 'Your share' },
+] as const
+export type DashSpeakId = (typeof DASH_SPEAK_TILES)[number]['id']
+
 /** Every block a teacher can switch off, and the field that switches it. */
 export const BLOCK_TOGGLE: Record<BlockId, keyof Brand> = {
   stats: 'showStats',
@@ -213,9 +237,9 @@ export type Placement<T extends string = BlockId> = { id: T; w: number }
 /** The recap page's fixed arrangement. The dashboard's is DASHBOARD_LAYOUT,
  *  next to the components it places. */
 export const LESSON_LAYOUT: Placement<LessonBlockId>[] = [
-  // The voice memo leads its tab: it is the teacher speaking to this student
-  // about this lesson, and it should come before the write-up of it.
-  { id: 'memo', w: 12 },
+  // No 'memo' entry: the voice memo lives in the page header now, next to the
+  // date — it is the teacher speaking, not a section of the write-up. The id
+  // survives in LessonBlockId so stored brands still round-trip.
   { id: 'balance', w: 4 }, { id: 'score', w: 4 }, { id: 'grammar', w: 4 },
   { id: 'metrics', w: 12 }, { id: 'corrections', w: 12 },
   { id: 'sections', w: 12 },
@@ -308,6 +332,10 @@ export type Brand = {
   showFiles: boolean
   /** Speaking-measured tiles the teacher has taken off the recap. */
   hiddenMetrics: RecapMetricId[]
+  /** Stat cards taken off the dashboard's Overview. */
+  hiddenStats: DashStatId[]
+  /** Speaking-habits tiles taken off the dashboard's Progress tab. */
+  hiddenSpeaking: DashSpeakId[]
   /** Recap sections — the same idea, one page down. See LESSON_BLOCK_TOGGLE.
    *  The ones in LESSON_LOCKED are forced true by resolveBrand and kept only
    *  so a stored brand from before the lock still round-trips. */
@@ -345,6 +373,8 @@ export const DEFAULT_BRAND: Brand = {
   showSpeaking: true,
   showFiles: true,
   hiddenMetrics: [],
+  hiddenStats: [],
+  hiddenSpeaking: [],
   showRecapMemo: true,
   showRecapBalance: true,
   showRecapScore: true,
@@ -467,17 +497,26 @@ export function resolveBrand(raw: unknown): Brand {
     levels: resolveLevels(b.levels),
     labels: resolveLabels(b.labels),
     showStats: bool(b.showStats, DEFAULT_BRAND.showStats),
-    showLessons: bool(b.showLessons, DEFAULT_BRAND.showLessons),
+    // Locked dashboard blocks, same treatment as the recap's: forced true so a
+    // brand stored before the lock cannot strand published tests or shared
+    // files behind a hidden tab.
+    showLessons: true,
     showScores: bool(b.showScores, DEFAULT_BRAND.showScores),
     showMilestone: bool(b.showMilestone, DEFAULT_BRAND.showMilestone),
     showProgress: bool(b.showProgress, DEFAULT_BRAND.showProgress),
     showVocab: bool(b.showVocab, DEFAULT_BRAND.showVocab),
     showVocabTotals: bool(b.showVocabTotals, DEFAULT_BRAND.showVocabTotals),
-    showTests: bool(b.showTests, DEFAULT_BRAND.showTests),
+    showTests: true,
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
-    showFiles: bool(b.showFiles, DEFAULT_BRAND.showFiles),
+    showFiles: true,
     hiddenMetrics: Array.isArray(b.hiddenMetrics)
       ? (b.hiddenMetrics as unknown[]).filter((x): x is RecapMetricId => RECAP_METRICS.some((mm) => mm.id === x))
+      : [],
+    hiddenStats: Array.isArray(b.hiddenStats)
+      ? (b.hiddenStats as unknown[]).filter((x): x is DashStatId => DASH_STAT_TILES.some((t) => t.id === x))
+      : [],
+    hiddenSpeaking: Array.isArray(b.hiddenSpeaking)
+      ? (b.hiddenSpeaking as unknown[]).filter((x): x is DashSpeakId => DASH_SPEAK_TILES.some((t) => t.id === x))
       : [],
     // Locked sections come back true no matter what was stored — a brand saved
     // before the lock may carry a false, and it must not strip a student's

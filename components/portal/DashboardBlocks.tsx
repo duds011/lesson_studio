@@ -5,7 +5,7 @@ import VocabByLevel from './VocabByLevel'
 import { MilestoneTrack, ScoreTrendChart } from './BrandCharts'
 import CountUp from './CountUp'
 import LessonPillar, { PillarLesson } from './LessonPillar'
-import { levelProgress, type Brand, type BlockId } from '@/lib/brand'
+import { DASH_SPEAK_TILES, DASH_STAT_TILES, levelProgress, type Brand, type BlockId, type DashSpeakId, type DashStatId } from '@/lib/brand'
 
 /**
  * Every block on the student dashboard, in one place.
@@ -63,8 +63,21 @@ export type DashboardData = {
 }
 
 /** The studio's canvas is a picture of a page, not the page — nothing in it
- *  should navigate, and its charts should not animate on every re-render. */
-type Mode = { preview?: boolean }
+ *  should navigate, and its charts should not animate on every re-render. The
+ *  onRemove* callbacks are studio-only too: per-tile ✕s for the stat cards and
+ *  the speaking tiles, never rendered on a student's page. */
+type Mode = {
+  preview?: boolean
+  onRemoveStat?: (id: DashStatId) => void
+  onRemoveSpeak?: (id: DashSpeakId) => void
+}
+
+/** The studio's small per-tile remove button — see .k-zap in koku2.css. */
+function TileX({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className="k-zap-x k-zap-x-sm" aria-label={`Remove ${label}`} title={`Remove ${label}`} onClick={onClick}>✕</button>
+  )
+}
 
 const Icon = ({ d }: { d: string }) => (
   <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -105,7 +118,7 @@ export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
 /** Whether a block has anything to say for this student. */
 export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): boolean {
   switch (id) {
-    case 'stats': return brand.showStats
+    case 'stats': return brand.showStats && (brand.hiddenStats?.length ?? 0) < DASH_STAT_TILES.length
     case 'lessons': return brand.showLessons && d.pillarLessons.length > 0
     case 'progress': return brand.showProgress && d.progressLessons.length >= 2
     case 'vocab': return brand.showVocab && d.vocabWords.length > 0
@@ -113,30 +126,43 @@ export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): bo
     case 'milestone': return brand.showMilestone
     case 'scores': return brand.showScores && d.scoreTrend.length > 0
     case 'tests': return brand.showTests && d.tests.length > 0
-    case 'speaking': return brand.showSpeaking && (d.avgWpm != null || d.avgThinkSec != null)
+    case 'speaking': {
+      // A tile needs both its data and its switch — the block stays only while
+      // at least one tile has both.
+      const hid = brand.hiddenSpeaking ?? []
+      return brand.showSpeaking && (
+        (d.avgWpm != null && !hid.includes('pace'))
+        || (d.avgThinkSec != null && !hid.includes('think'))
+        || (d.latestTalk != null && !hid.includes('share'))
+      )
+    }
     case 'files': return brand.showFiles && d.files.length > 0
     default: return false
   }
 }
 
-export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; brand: Brand; data: DashboardData } & Mode) {
+export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRemoveSpeak }: { id: BlockId; brand: Brand; data: DashboardData } & Mode) {
   const L = brand.labels
   const milestone = levelProgress(brand.levels, d.lessonCount)
 
   switch (id) {
-    case 'stats':
-      return (
-        <div className="k-stats">
-          <div className="k-stat yellow">
+    case 'stats': {
+      const hid = brand.hiddenStats ?? []
+      // One entry per card, so the teacher keeps the average and drops the
+      // talk-share (or any mix) instead of all three or none.
+      const CARD: Record<DashStatId, React.ReactNode> = {
+        lessons: (
+          <>
             <div className="k-stat-head"><Icon d="M4 5h16v14H4zM4 9h16M9 9v10" /><span>{L.statLessons}</span></div>
             <div className="k-stat-val">
               <b><CountUp value={d.lessonCount} /></b>
               {d.recentCount > 0 && <span className="k-chip">+{d.recentCount}</span>}
             </div>
             <p className="k-stat-sub">{d.recentCount > 0 ? `${d.recentCount} in the last 30 days` : 'Total lessons completed'}</p>
-          </div>
-
-          <div className="k-stat blue">
+          </>
+        ),
+        score: (
+          <>
             <div className="k-stat-head"><Icon d="M12 3v18M5 10l7-7 7 7" /><span>{L.statScore}</span></div>
             <div className="k-stat-val">
               <b>{d.avgScore != null ? <CountUp value={d.avgScore} decimals={1} /> : '—'}</b>
@@ -145,9 +171,10 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
               )}
             </div>
             <p className="k-stat-sub">out of 10 across {d.scoredCount} scored lesson{d.scoredCount === 1 ? '' : 's'}</p>
-          </div>
-
-          <div className="k-stat purple">
+          </>
+        ),
+        speaking: (
+          <>
             <div className="k-stat-head"><Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" /><span>{L.statSpeaking}</span></div>
             <div className="k-stat-val">
               <b>{d.latestTalk != null ? <CountUp value={d.latestTalk} /> : '—'}<span style={{ fontSize: 19 }}>%</span></b>
@@ -156,9 +183,23 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
               )}
             </div>
             <p className="k-stat-sub">of the last lesson was you talking</p>
-          </div>
+          </>
+        ),
+      }
+      const TONE: Record<DashStatId, string> = { lessons: 'yellow', score: 'blue', speaking: 'purple' }
+      const cards = DASH_STAT_TILES.filter(({ id: sid }) => !hid.includes(sid))
+      if (cards.length === 0) return null
+      return (
+        <div className="k-stats">
+          {cards.map(({ id: sid, label }) => (
+            <div className={`k-stat ${TONE[sid]} ${onRemoveStat ? 'k-zap' : ''}`} key={sid}>
+              {onRemoveStat && <TileX label={label} onClick={() => onRemoveStat(sid)} />}
+              {CARD[sid]}
+            </div>
+          ))}
         </div>
       )
+    }
 
     case 'lessons':
       return (
@@ -260,43 +301,64 @@ export function DashboardBlock({ id, brand, data: d, preview }: { id: BlockId; b
         </div>
       )
 
-    case 'speaking':
+    case 'speaking': {
       // Same colourful rectangles as the overview stats, so the page reads as
-      // one system rather than a card of small print at the bottom.
+      // one system rather than a card of small print at the bottom. Tiles show
+      // when they have data AND the teacher keeps them — any mix stands.
+      const hid = brand.hiddenSpeaking ?? []
+      const tiles: { id: DashSpeakId; label: string; node: React.ReactNode }[] = []
+      if (d.avgWpm != null && !hid.includes('pace')) tiles.push({
+        id: 'pace', label: 'Pace',
+        node: (
+          <>
+            <div className="k-stat-head"><Icon d="M13 3 4 14h6l-1 7 9-11h-6z" /><span>Pace</span></div>
+            <div className="k-stat-val">
+              <b><CountUp value={Math.round(d.avgWpm)} /><span style={{ fontSize: 17 }}> wpm</span></b>
+            </div>
+            <p className="k-stat-sub">words per minute when you speak</p>
+          </>
+        ),
+      })
+      if (d.avgThinkSec != null && !hid.includes('think')) tiles.push({
+        id: 'think', label: 'Thinking time',
+        node: (
+          <>
+            <div className="k-stat-head"><Icon d="M12 8v4l3 3M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /><span>Thinking time</span></div>
+            <div className="k-stat-val">
+              <b><CountUp value={d.avgThinkSec} decimals={1} /><span style={{ fontSize: 17 }}> s</span></b>
+            </div>
+            <p className="k-stat-sub">average pause before you answer</p>
+          </>
+        ),
+      })
+      if (d.latestTalk != null && !hid.includes('share')) tiles.push({
+        id: 'share', label: 'Your share',
+        node: (
+          <>
+            <div className="k-stat-head"><Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" /><span>Your share</span></div>
+            <div className="k-stat-val">
+              <b><CountUp value={d.latestTalk} /><span style={{ fontSize: 17 }}>%</span></b>
+            </div>
+            <p className="k-stat-sub">of the last lesson was you talking</p>
+          </>
+        ),
+      })
+      if (tiles.length === 0) return null
+      const SPEAK_TONE: Record<DashSpeakId, string> = { pace: 'blue', think: 'purple', share: 'yellow' }
       return (
         <>
           <div className="k-sec-head"><h2>{L.speakingTitle}</h2></div>
           <div className="k-speak-grid">
-            {d.avgWpm != null && (
-              <div className="k-stat blue">
-                <div className="k-stat-head"><Icon d="M13 3 4 14h6l-1 7 9-11h-6z" /><span>Pace</span></div>
-                <div className="k-stat-val">
-                  <b><CountUp value={Math.round(d.avgWpm)} /><span style={{ fontSize: 17 }}> wpm</span></b>
-                </div>
-                <p className="k-stat-sub">words per minute when you speak</p>
+            {tiles.map(({ id: sid, label, node }) => (
+              <div className={`k-stat ${SPEAK_TONE[sid]} ${onRemoveSpeak ? 'k-zap' : ''}`} key={sid}>
+                {onRemoveSpeak && <TileX label={label} onClick={() => onRemoveSpeak(sid)} />}
+                {node}
               </div>
-            )}
-            {d.avgThinkSec != null && (
-              <div className="k-stat purple">
-                <div className="k-stat-head"><Icon d="M12 8v4l3 3M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /><span>Thinking time</span></div>
-                <div className="k-stat-val">
-                  <b><CountUp value={d.avgThinkSec} decimals={1} /><span style={{ fontSize: 17 }}> s</span></b>
-                </div>
-                <p className="k-stat-sub">average pause before you answer</p>
-              </div>
-            )}
-            {d.latestTalk != null && (
-              <div className="k-stat yellow">
-                <div className="k-stat-head"><Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" /><span>Your share</span></div>
-                <div className="k-stat-val">
-                  <b><CountUp value={d.latestTalk} /><span style={{ fontSize: 17 }}>%</span></b>
-                </div>
-                <p className="k-stat-sub">of the last lesson was you talking</p>
-              </div>
-            )}
+            ))}
           </div>
         </>
       )
+    }
 
     case 'files':
       // Everything the teacher has shared, newest first. Each file also lives

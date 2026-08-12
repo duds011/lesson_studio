@@ -429,6 +429,17 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-fine{text-align:center;color:var(--muted);font-size:11.5px;margin:20px 0 0;line-height:1.6}
 .k-fine a{font-weight:800;color:var(--forest)}
 
+/* ── voice memo in the recap hero ──
+   The teacher speaking to this student opens the page, under the date — not a
+   section buried in a tab. The player keeps its own light card so the controls
+   read against the brand colour behind them. */
+.k-phead-memo{margin-top:14px;display:grid;gap:8px;max-width:430px;position:relative;z-index:1}
+.k-phead-memo .k-audio{background:rgba(255,255,255,.94);border-color:transparent;padding:10px 12px}
+.k-phead-memo .k-audio-play{width:36px;height:36px}
+.k-phead-memo .k-audio-title{font-size:12px}
+/* The teacher's record button, restyled for the band it now sits on. */
+.k-phead-memo .btn{align-self:start}
+
 /* — detail page header — */
 .k-back{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border-radius:999px;padding:9px 16px;font-size:12px;font-weight:700;color:var(--muted);box-shadow:var(--shadow-soft);margin-bottom:14px;transition:.16s ease}
 .k-back:hover{color:var(--ink);transform:translateX(-2px)}
@@ -1130,7 +1141,9 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
    as soon as the card is hovered, not one at a time under the cursor: the
    per-tile control has to be seen to be believed in. */
 .k-zap-x-sm{width:22px;height:22px;font-size:10px;top:4px;right:4px;box-shadow:0 2px 6px rgba(0,0,0,.18)}
-.corrections-card:hover .k-zap-x-sm{opacity:1;transform:none}
+.corrections-card:hover .k-zap-x-sm,
+.k-stats:hover .k-zap-x-sm,
+.k-speak-grid:hover .k-zap-x-sm{opacity:1;transform:none}
 .k-zap-tag{position:absolute;top:-9px;right:28px;z-index:7;background:var(--ink);color:#fff;border-radius:999px;
   padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;
   opacity:0;transition:.15s ease;pointer-events:none}

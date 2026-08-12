@@ -22,12 +22,10 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 }
 
 export default function LessonPageTabs({
-  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, memo, files, preview,
+  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, files, preview,
   tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
-  /** The teacher's voice memo, opening the Progress tab. Omitted = no block. */
-  memo?: React.ReactNode
   /** File exchange, filling the Files tab. Omitted = no tab. */
   files?: React.ReactNode
   /**
@@ -192,28 +190,10 @@ export default function LessonPageTabs({
           </div>
         )
       case 'memo':
-        // The script sits WITH the recorder that reads it — it used to trail
-        // the sections at the very bottom of the tab, a page away.
-        if (!memo && !r.audio_script && !preview) return null
-        return (
-          <div className="lesson-stack">
-            {memo}
-            {!memo && preview && (
-              <div className="lesson-block">
-                <h3>💬 A message from {teacherFirst}</h3>
-                <p className="analytics-note" style={{ margin: '8px 0 0' }}>
-                  The voice memo you record for this lesson plays here.
-                </p>
-              </div>
-            )}
-            {r.audio_script && (
-              <div className="lesson-block">
-                <h3>Voice memo script</h3>
-                <p style={{ whiteSpace: 'pre-wrap' }}>{r.audio_script}</p>
-              </div>
-            )}
-          </div>
-        )
+        // The memo lives in the page header now, beside the date — and the
+        // script it was read from is a recording aid, not recap content. It
+        // leaked to students here once; nothing on this page renders it again.
+        return null
       case 'files':
         if (files) return files
         if (!preview) return null

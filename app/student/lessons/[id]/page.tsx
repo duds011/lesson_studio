@@ -8,7 +8,8 @@ import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
-import LessonMemo, { isMemo } from '@/components/portal/LessonMemo'
+import AudioPlayer from '@/components/portal/AudioPlayer'
+import { isMemo } from '@/components/portal/LessonMemo'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +60,21 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
           <div className="k-pmeta">
             <span>{formatDateShort(l.lesson_date)}</span>
           </div>
+
+          {/* The teacher's voice memo — the one part of the recap spoken to
+              this student personally, so it opens the page rather than hiding
+              a tab deep. No memo recorded, nothing shown. */}
+          {(files || []).filter(isMemo).length > 0 && (
+            <div className="k-phead-memo">
+              {(files || []).filter(isMemo).map((f: any) => (
+                <AudioPlayer
+                  key={f.id}
+                  src={`/api/portal/download?kind=file&id=${f.id}`}
+                  title={`A message from ${teacherFirst}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
         {recap.score != null && (
           <div className="k-pscore">
@@ -82,7 +98,6 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         studentFirst={studentName.split(' ')[0] || 'You'}
         teacherFirst={teacherFirst}
         brand={brand}
-        memo={<LessonMemo memos={(files || []).filter(isMemo)} lessonId={l.id} role="student" teacherFirst={teacherFirst} />}
         files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={audios || []} />}
       />
     </div>
