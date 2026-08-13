@@ -8,7 +8,7 @@ import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
-import AudioPlayer from '@/components/portal/AudioPlayer'
+import MemoPlayer from '@/components/portal/MemoPlayer'
 import { isMemo } from '@/components/portal/LessonMemo'
 
 export const dynamic = 'force-dynamic'
@@ -63,14 +63,16 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
 
           {/* The teacher's voice memo — the one part of the recap spoken to
               this student personally, so it opens the page rather than hiding
-              a tab deep. No memo recorded, nothing shown. */}
+              a tab deep. No memo recorded, nothing shown: this is the final
+              product, and it never mentions what wasn't made for it. */}
           {(files || []).filter(isMemo).length > 0 && (
             <div className="k-phead-memo">
               {(files || []).filter(isMemo).map((f: any) => (
-                <AudioPlayer
+                <MemoPlayer
                   key={f.id}
                   src={`/api/portal/download?kind=file&id=${f.id}`}
                   title={`A message from ${teacherFirst}`}
+                  meta={formatDateShort(f.created_at)}
                 />
               ))}
             </div>

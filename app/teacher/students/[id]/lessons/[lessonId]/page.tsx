@@ -6,8 +6,7 @@ import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
-import AudioPlayer from '@/components/portal/AudioPlayer'
-import TeacherVoiceMemo from '@/components/portal/TeacherVoiceMemo'
+import MemoPlayer from '@/components/portal/MemoPlayer'
 import { isMemo } from '@/components/portal/LessonMemo'
 import LessonAdminActions from '@/components/portal/LessonAdminActions'
 
@@ -64,19 +63,21 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
             <span className={`status-pill ${l.status === 'published' ? 'published' : 'draft'}`}>{l.status}</span>
           </div>
 
-          {/* The memo lives up here on the student's page too — record it and
-              play it back where they will meet it, not in a tab. */}
-          <div className="k-phead-memo">
-            {(files || []).filter(isMemo).map((f: any) => (
-              <AudioPlayer
-                key={f.id}
-                src={`/api/portal/download?kind=file&id=${f.id}`}
-                title="Voice memo"
-                meta={formatDateShort(f.created_at)}
-              />
-            ))}
-            <TeacherVoiceMemo lessonId={l.id} />
-          </div>
+          {/* Exactly what the student sees: the memo if one was recorded,
+              nothing if not. This page is the final product — recording (with
+              its reference script) lives in review/edit, not here. */}
+          {(files || []).filter(isMemo).length > 0 && (
+            <div className="k-phead-memo">
+              {(files || []).filter(isMemo).map((f: any) => (
+                <MemoPlayer
+                  key={f.id}
+                  src={`/api/portal/download?kind=file&id=${f.id}`}
+                  title="Voice memo"
+                  meta={formatDateShort(f.created_at)}
+                />
+              ))}
+            </div>
+          )}
         </div>
         {recap.score != null && (
           <div className="k-pscore">

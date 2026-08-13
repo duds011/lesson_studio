@@ -11,8 +11,8 @@ type Row = { id: string; file_name: string | null; created_at: string; content_t
  *  - Teacher shares files (presentations, PDFs) → student downloads
  *  - Student submits audio recordings → teacher listens
  *
- * Teacher voice memos are attachments too, but they belong at the top of the
- * recap rather than in a file drawer — see LessonMemo, which owns them.
+ * Teacher voice memos are attachments too, but they belong in the recap's page
+ * header rather than a file drawer — see MemoPlayer. isMemo keeps them out.
  */
 export default function LessonExchange({
   lessonId,
