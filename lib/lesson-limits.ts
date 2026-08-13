@@ -41,8 +41,19 @@ export function overLessonLimit(seconds: unknown): boolean {
   return Number.isFinite(n) && n > MAX_LESSON_SECONDS + 60
 }
 
+/**
+ * Where the recorder stops itself — deliberately below the ceiling above.
+ *
+ * The extension caps at 52 (MAX_RECORDING_MS in offscreen.js) and this file
+ * refuses at 55, so the two are not the same line. The recorder's is the one
+ * teachers actually meet; this one only ever catches a version that has not
+ * updated. Three minutes between them means a rounding difference cannot cost
+ * someone a lesson the recorder itself considered finished and fine.
+ */
+export const RECORDER_STOPS_AT_MINUTES = 52
+
 /** One wording, so the teacher reads the same sentence wherever it is refused. */
 export const TOO_LONG_MESSAGE =
   `Lessons are limited to ${MAX_LESSON_MINUTES} minutes. This recording is longer, ` +
   `so it was not processed. Update the Koku Recorder extension — the current version ` +
-  `stops recording at ${MAX_LESSON_MINUTES} minutes on its own.`
+  `stops recording at ${RECORDER_STOPS_AT_MINUTES} minutes on its own and sends it for you.`
