@@ -1,10 +1,22 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import './koku2.css'
 
 export const metadata: Metadata = {
   title: 'Lesson Studio',
   description: 'Bookings, recorded lessons, and AI recaps for language teachers.',
+}
+
+/**
+ * Stated rather than inherited from the framework default, because the obvious
+ * "fix" for iOS focus-zoom is to add maximumScale:1 here — and that takes
+ * pinch-zoom away from every student who needs it, on every page, to solve a
+ * problem that belongs to one CSS rule. The real cure is a 16px form control;
+ * see the pointer:coarse block in koku2.css. Leave this alone.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

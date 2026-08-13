@@ -1456,3 +1456,35 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-onb-cta{display:inline-flex;align-items:center;justify-content:center;margin-top:20px;padding:12px 20px;border-radius:999px;background:var(--forest);color:#fff;font-weight:750;font-size:13px}
 .k-onb-cta:hover{background:var(--forest-deep)}
 .k-onb-fine{margin:14px 0 0;font-size:11.5px;color:var(--muted)}
+
+/* ═══════════════════════════════════════════════════════════════════
+   iOS focus-zoom
+   ═══════════════════════════════════════════════════════════════════
+   Safari on iOS magnifies the whole page whenever a focused control's text
+   measures under 16px — and it never zooms back out. One tap on the sign-in
+   field (14px) left the student magnified through login and into their
+   portal, with no way back but a manual pinch.
+
+   16px on touch devices is the whole cure. It has to be !important because
+   the rules it corrects are more specific than any bare element selector
+   (.k-studio-controls .k-field input, .wrap .field input, and eight more) —
+   raising each of them separately would leave the next new field to fall into
+   the same trap.
+
+   The other way to stop the zoom is maximum-scale in the viewport meta, which
+   works by forbidding zoom entirely, for everyone, everywhere. Not that.
+
+   Keyed on pointer:coarse rather than a width, because this is a property of
+   touch input, not of a small screen: an iPad in landscape is 1024px wide and
+   zooms exactly the same way. */
+@media (pointer: coarse) {
+  input, select, textarea,
+  .k-field input, .k-input, .review-input,
+  .k-shell .field input, .k-scope .field input,
+  .wrap .field input, .wrap .field select, .wrap .field textarea,
+  .k-modal-card .field input, .k-modal-card .field select,
+  .k-studio-controls .k-field input, .k-studio-controls .k-input,
+  .k-level-row input, .k-time-chip input {
+    font-size: 16px !important;
+  }
+}
