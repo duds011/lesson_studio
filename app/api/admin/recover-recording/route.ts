@@ -12,20 +12,18 @@ import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } fr
 
 export const dynamic = 'force-dynamic'
 /**
- * 300 is not a choice — it is the Hobby plan's hard ceiling, and asking for
- * more fails the build rather than being clamped. It is also the cause of the
- * failure this route exists to undo: transcribing Kazuyuki's tab track alone
- * returned 504 at 301 seconds. One track of a 47-minute lesson can exceed five
- * minutes on whisper-1 with word timestamps, and those are not optional — the
- * talk-time split and every speaking metric are computed from them.
+ * Above the 300s the rest of the pipeline uses, because 300s is exactly what
+ * broke the lesson this route exists to undo: transcribing Kazuyuki's tab
+ * track alone returned 504 at 301 seconds, twice. One track of a 47-minute
+ * lesson can exceed five minutes on whisper-1 with word timestamps, and those
+ * are not optional — the talk-time split and every speaking metric are
+ * computed from them.
  *
- * So a long lesson cannot be transcribed here at all, on this plan. What this
- * route can always finish is the second half: given a cached transcript it
- * only assembles, writes the recap and saves the draft. See scripts/
- * transcribe-recording.mjs, which does the slow half off-platform and leaves
- * the words in the cache for a final call to pick up.
+ * 800 requires a paid plan; on Hobby this is not clamped, it fails the build.
+ * Combined with one-track-per-call below, a lesson would have to be extremely
+ * long for any single request to run out of time.
  */
-export const maxDuration = 300
+export const maxDuration = 800
 
 /**
  * Rebuild a recap from a recording whose original send died.
