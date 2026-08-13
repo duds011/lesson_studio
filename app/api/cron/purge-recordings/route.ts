@@ -21,8 +21,12 @@ const PAGE = 1000
  * lists as folders and the timestamps live one level down — hence the two-level
  * walk rather than a single flat listing.
  *
- * Only the audio goes. The recap, the talk-time figures and the lesson row are
- * the teacher's record of the lesson and are untouched.
+ * Everything in the folder goes, which now includes `transcript.json` — the
+ * saved words a rebuild reuses instead of paying to hear the lesson again. That
+ * file lives inside the recording's own folder precisely so it expires with the
+ * audio, and this sweep needs no knowledge of it. The recap, the talk-time
+ * figures and the lesson row are the teacher's record of the lesson and are
+ * untouched.
  */
 export async function GET(req: NextRequest) {
   const secret = clean(process.env.CRON_SECRET)

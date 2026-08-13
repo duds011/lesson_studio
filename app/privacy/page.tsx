@@ -101,8 +101,11 @@ export default function PrivacyPage() {
           </li>
           <li>
             The transcript is sent to <strong>OpenAI</strong> once more to write the draft
-            recap. The verbatim transcript is <strong>not stored</strong>. What is kept is the
-            recap itself, your talk-time totals in seconds, and the numeric fluency metrics.
+            recap. The transcript is kept beside the audio and{' '}
+            <strong>deleted on the same 30-day schedule</strong>, so a recap can be rebuilt
+            under an improved prompt without transcribing the lesson a second time. It is never
+            shown to the student. What is kept for good is the recap itself, your talk-time
+            totals in seconds, and the numeric fluency metrics.
           </li>
           <li>
             The draft waits in <em>Recaps to review</em> until you approve it. Nothing reaches a

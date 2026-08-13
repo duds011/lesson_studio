@@ -2,15 +2,17 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { currentUser } from '@/lib/auth'
-import { transcribeTracks, toWhisperLanguage } from '@/lib/whisper'
+import { transcribeTracks, assembleTracks, toWhisperLanguage, type TrackWords } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/transcript'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
 import { runAsTeacher } from '@/lib/teacher-scope'
-import { RECORDING_BUCKET, trackPath } from '@/lib/ext-storage'
+import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } from '@/lib/ext-storage'
 
 export const dynamic = 'force-dynamic'
-// Two Whisper round trips plus a long completion — the default 60s is not close.
+// Usually just one completion now, but a recording made before transcripts were
+// cached still has to be heard again, and that is two round trips plus the
+// completion — the default 60s is not close.
 export const maxDuration = 300
 
 /**
@@ -64,20 +66,52 @@ export async function POST(req: Request) {
       { track: 'tab', speaker: micIsTeacher ? student.full_name : 'Teacher', isHost: !micIsTeacher },
     ]
 
-    const tracks = []
-    for (const w of wanted) {
-      const { data, error } = await admin.storage.from(RECORDING_BUCKET).download(trackPath(recordingId, w.track))
-      if (error || !data) {
-        return NextResponse.json({ ok: false, error: `The ${w.track} recording is no longer in storage.` }, { status: 404 })
-      }
-      if (data.size > 0) tracks.push({ blob: data, speaker: w.speaker, isHost: w.isHost })
-    }
-    if (!tracks.length) return NextResponse.json({ ok: false, error: 'Both tracks were empty.' }, { status: 422 })
-
     // The student's own language, not the teacher's: it is the field that says
     // what THIS student is being taught, and it picks the prompt.
     const language = student.language || undefined
-    const segments = await transcribeTracks(tracks, toWhisperLanguage(language))
+
+    /**
+     * The words first, the audio only if we have to.
+     *
+     * A rebuild exists to run an old lesson through a better prompt — the
+     * transcription cannot improve, and it is ~85% of the cost. So the saved
+     * words are used when they exist, and hearing the lesson again is the
+     * fallback for recordings made before they were kept.
+     */
+    let segments: any[] | null = null
+    let source: 'cache' | 'audio' = 'cache'
+
+    const cached = await admin.storage.from(RECORDING_BUCKET).download(transcriptPath(recordingId))
+    if (cached.data) {
+      try {
+        const parsed = JSON.parse(await cached.data.text()) as CachedTranscript
+        if (parsed?.v === 1 && parsed.tracks) {
+          // Speakers are reattached here, not read from the cache, so a rebuild
+          // that corrects who was holding the mic still takes effect.
+          const fromCache: TrackWords[] = wanted
+            .filter((w) => Array.isArray(parsed.tracks[w.track]) && parsed.tracks[w.track].length)
+            .map((w) => ({ speaker: w.speaker, isHost: w.isHost, words: parsed.tracks[w.track] }))
+          if (fromCache.length) segments = assembleTracks(fromCache).filtered
+        }
+      } catch (e: any) {
+        console.warn(`[recap/build] cached transcript unusable, re-transcribing: ${e?.message || e}`)
+      }
+    }
+
+    if (!segments) {
+      source = 'audio'
+      const tracks = []
+      for (const w of wanted) {
+        const { data, error } = await admin.storage.from(RECORDING_BUCKET).download(trackPath(recordingId, w.track))
+        if (error || !data) {
+          return NextResponse.json({ ok: false, error: `The ${w.track} recording is no longer in storage.` }, { status: 404 })
+        }
+        if (data.size > 0) tracks.push({ blob: data, speaker: w.speaker, isHost: w.isHost })
+      }
+      if (!tracks.length) return NextResponse.json({ ok: false, error: 'Both tracks were empty.' }, { status: 422 })
+      segments = await transcribeTracks(tracks, toWhisperLanguage(language))
+    }
+
     const t = normalizeSegments(segments)
     if (!t.plain.trim()) return NextResponse.json({ ok: false, error: 'Nothing was said on either track.' }, { status: 422 })
 
@@ -113,6 +147,8 @@ export async function POST(req: Request) {
       eventId,
       corrections: Array.isArray(recap.corrections) ? recap.corrections.length : 0,
       studentTalkPct: t.studentTalkPct,
+      // Whether this rebuild paid to hear the lesson again, or reused the words.
+      source,
     })
   } catch (e: any) {
     console.error('recap rebuild failed', e?.message || e)

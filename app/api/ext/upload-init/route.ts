@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authenticateExtension } from '@/lib/ext-auth'
 import { RECORDING_BUCKET, trackPath } from '@/lib/ext-storage'
+import { overLessonLimit, TOO_LONG_MESSAGE } from '@/lib/lesson-limits'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,9 +15,16 @@ export async function POST(req: Request) {
   const caller = await authenticateExtension(req)
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { studentId, tracks } = await req.json().catch(() => ({}))
+  const { studentId, tracks, seconds } = await req.json().catch(() => ({}))
   if (!studentId || !Array.isArray(tracks) || !tracks.length) {
     return NextResponse.json({ error: 'Missing studentId or tracks' }, { status: 400 })
+  }
+
+  // Refuse an over-long lesson before it is uploaded at all. Stopping it here
+  // costs the teacher a failed send; letting it through costs two tracks of
+  // storage and then two tracks of per-minute transcription.
+  if (overLessonLimit(seconds)) {
+    return NextResponse.json({ error: TOO_LONG_MESSAGE }, { status: 413 })
   }
 
   const admin = createAdminClient()

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authenticateExtension } from '@/lib/ext-auth'
-import { transcribeTracks, toWhisperLanguage } from '@/lib/whisper'
+import { transcribeTracksDetailed, toWhisperLanguage } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/transcript'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
 import { runAsTeacher } from '@/lib/teacher-scope'
-import { RECORDING_BUCKET, trackPath } from '@/lib/ext-storage'
+import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } from '@/lib/ext-storage'
+import { overLessonLimit, TOO_LONG_MESSAGE } from '@/lib/lesson-limits'
 
 export const dynamic = 'force-dynamic'
 // Two Whisper round trips on a full lesson comfortably exceeds the default 60s.
@@ -27,6 +28,13 @@ export async function POST(req: Request) {
     await req.json().catch(() => ({}))
   if (!recordingId || !studentId) return NextResponse.json({ error: 'Missing recordingId or studentId' }, { status: 400 })
 
+  // The upload-init check already turned this away once, but that one guards
+  // storage and this one guards the invoice: everything expensive happens
+  // below, and nothing stops a caller from skipping straight to here.
+  if (overLessonLimit(seconds)) {
+    return NextResponse.json({ error: TOO_LONG_MESSAGE }, { status: 413 })
+  }
+
   const admin = createAdminClient()
   const { data: student } = await admin
     .from('students').select('id, full_name, language, instruction_language').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
@@ -45,14 +53,15 @@ export async function POST(req: Request) {
     // essentially nothing is skipped: transcribing silence does not yield an
     // empty result, it yields invented speech.
     const MIN_HEARD_SEC = 1.5
-    const tracks = []
+    // `track` rides along so the transcript cache can be keyed by it.
+    const tracks: { blob: Blob; speaker: string; isHost: boolean; track: string }[] = []
     for (const w of wanted) {
       const loud = heard && typeof heard[w.track] === 'number' ? heard[w.track] : null
       if (loud !== null && loud < MIN_HEARD_SEC) continue
 
       const { data, error } = await admin.storage.from(RECORDING_BUCKET).download(trackPath(recordingId, w.track))
       if (error || !data) return NextResponse.json({ error: `Missing ${w.track} track: ${error?.message ?? 'not found'}` }, { status: 404 })
-      if (data.size > 0) tracks.push({ blob: data, speaker: w.speaker, isHost: w.isHost })
+      if (data.size > 0) tracks.push({ blob: data, speaker: w.speaker, isHost: w.isHost, track: w.track })
     }
     if (!tracks.length) return NextResponse.json({ error: 'Both tracks were empty.' }, { status: 422 })
 
@@ -73,9 +82,34 @@ export async function POST(req: Request) {
     const code = toWhisperLanguage(spokenLanguage ?? language)
     const targetLanguage = student.language ?? language ?? null
 
-    const segments = await transcribeTracks(tracks, code)
-    const t = normalizeSegments(segments)
+    const det = await transcribeTracksDetailed(tracks, code)
+    const t = normalizeSegments(det.filtered)
     if (!t.plain.trim()) return NextResponse.json({ error: 'Nothing was said on either track.' }, { status: 422 })
+
+    /**
+     * Save the words next to the audio they came from.
+     *
+     * Transcription is the expensive half of a recap, and rebuilding one under
+     * a better prompt does not need to hear the lesson again. Stored per TRACK
+     * rather than per speaker, so a rebuild that corrects who held the mic can
+     * still reassign them.
+     *
+     * Best-effort on purpose: the recap in hand is worth more than the cache,
+     * so a storage failure here is logged and swallowed rather than thrown.
+     */
+    const cache: CachedTranscript = {
+      v: 1,
+      language: code ?? null,
+      createdAt: new Date().toISOString(),
+      tracks: Object.fromEntries(det.words.map((w, i) => [tracks[i].track, w.words])),
+    }
+    const { error: cacheError } = await admin.storage
+      .from(RECORDING_BUCKET)
+      .upload(transcriptPath(recordingId), JSON.stringify(cache), {
+        contentType: 'application/json',
+        upsert: true,
+      })
+    if (cacheError) console.warn(`[ext/complete] could not cache transcript: ${cacheError.message}`)
 
     const recap: any = await generateRecap({
       studentName: student.full_name,
