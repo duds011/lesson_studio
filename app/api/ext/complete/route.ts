@@ -83,9 +83,31 @@ export async function POST(req: Request) {
    * log rather than in the teacher's hand, which is why the link row above
    * matters: it is what makes a failure recoverable instead of invisible.
    */
+  // A placeholder in the review queue from the moment it is claimed, so a
+  // lesson that is still transcribing looks different from one never sent.
+  const placeholder = {
+    eventId,
+    studentName: student.full_name,
+    recap: null,
+    talk: [],
+    studentTalkPct: null,
+    createdAt: Date.now(),
+    lessonDate: lessonDate || new Date().toISOString().slice(0, 10),
+    lessonTitle: 'Building the recap…',
+  }
+  await runAsTeacher(caller.teacherId, () => saveRecap({ ...placeholder, status: 'processing' }))
+
   waitUntil(
     buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage })
-      .catch((e) => console.error(`[ext/complete] recap build failed for ${eventId}: ${e?.message ?? e}`)),
+      .catch(async (e) => {
+        const error = String(e?.message ?? e)
+        console.error(`[ext/complete] recap build failed for ${eventId}: ${error}`)
+        // Say so where the teacher will look. The audio is still in storage and
+        // the link row exists, so this row's Retry can rebuild it.
+        await runAsTeacher(caller.teacherId, () =>
+          saveRecap({ ...placeholder, status: 'failed', error, lessonTitle: 'Recap failed' }),
+        ).catch(() => { /* nothing left to do but the log above */ })
+      }),
   )
 
   return NextResponse.json({ ok: true, queued: true, eventId, student: student.full_name }, { status: 202 })

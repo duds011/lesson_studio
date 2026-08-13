@@ -6,8 +6,9 @@ import { asHomework } from '@/lib/portal-utils'
 export type DraftRecap = {
   eventId: string
   studentName: string
-  status: 'draft' | 'published'
+  status: 'processing' | 'failed' | 'draft' | 'published'
   recap: any
+  error?: string
   lessonDate?: string
   lessonTitle?: string
   lessonNumber?: number | null

@@ -59,10 +59,21 @@ function ConnectScreen({ configured }: { configured: boolean }) {
  * to the lesson number it will get. Recordings are how lessons arrive whether
  * or not there is a calendar, so both overviews below are built on this.
  */
+/**
+ * The calendar dot answers one question: does this event have a recap yet?
+ * 'processing' does not yet and 'failed' does not at all, so both read as none
+ * here. They are surfaced properly in the review queue, which is where a
+ * teacher can actually act on them.
+ */
+const calendarRecapStatus = (s?: string | null): 'draft' | 'published' | null =>
+  s === 'draft' || s === 'published' ? s : null
+
 async function loadDraftRecaps(recapRecs: Record<string, any>): Promise<DraftRecap[]> {
   const admin = createAdminClient()
+  // Everything not yet published belongs in the queue: a recap still building
+  // and one that failed are both lessons the teacher is owed an answer about.
   const draftList = Object.values(recapRecs)
-    .filter((r: any) => r.status === 'draft')
+    .filter((r: any) => r.status === 'draft' || r.status === 'processing' || r.status === 'failed')
     .sort((a: any, b: any) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
 
   return Promise.all(draftList.map(async (r: any) => {
@@ -79,7 +90,7 @@ async function loadDraftRecaps(recapRecs: Record<string, any>): Promise<DraftRec
         }
       }
     } catch { /* leave null */ }
-    return { eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle, createdAt: r.createdAt, lessonNumber }
+    return { eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, error: r.error, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle, createdAt: r.createdAt, lessonNumber }
   }))
 }
 
@@ -165,7 +176,7 @@ export default async function Home() {
 
   const initialLessons: CalEvent[] = lessons.map((l) => ({
     id: l.id, title: l.title, start: l.start, end: l.end, tz: l.tz, platform: l.platform, meetingUrl: l.meetingUrl,
-    attendees: l.attendees, recapStatus: recapRecs[l.id]?.status ?? null,
+    attendees: l.attendees, recapStatus: calendarRecapStatus(recapRecs[l.id]?.status),
   }))
 
   const draftRecaps: DraftRecap[] = await loadDraftRecaps(recapRecs)
