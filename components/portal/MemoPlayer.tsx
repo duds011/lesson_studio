@@ -9,7 +9,7 @@ const mmss = (s: number) => {
 }
 
 const RATES = [1, 1.25, 1.5, 2]
-const BAR_COUNT = 40
+const BAR_COUNT = 64
 
 /**
  * Deterministic pseudo-amplitudes. The waveform is a scrubber wearing the
@@ -39,6 +39,11 @@ function makeBars(seed: string): number[] {
  * The voice-memo player for the recap hero: waveform scrubber, ±15s, playback
  * speed. It is the memo's whole interface on a published lesson — if there is
  * no memo, nothing renders this, and nothing else about memos appears.
+ *
+ * It draws no card of its own. A white panel sitting on the hero's brand
+ * colour read as something pasted onto the header rather than part of it, so
+ * the whole thing is painted in white-on-brand and spans the band's full
+ * width, under a hairline rule. See .k-phead-memo.
  *
  * Carries AudioPlayer's duration fix: MediaRecorder writes webm without a
  * duration header, so `audio.duration` is Infinity until the browser is forced
@@ -144,25 +149,12 @@ export default function MemoPlayer({ src, title, meta }: { src: string; title: s
         </button>
       </div>
 
-      <div
-        className="k-memo-wave"
-        onClick={seek}
-        role="slider"
-        aria-label="Seek"
-        aria-valuemin={0}
-        aria-valuemax={Math.round(total)}
-        aria-valuenow={Math.round(now)}
-        tabIndex={0}
-      >
-        {bars.map((b, i) => (
-          <i key={i} style={{ height: `${Math.round(b * 100)}%` }} className={(i + 0.5) / BAR_COUNT <= pct ? 'on' : ''} />
-        ))}
-      </div>
-
-      <div className="k-memo-foot">
+      {/* One row, so the wave takes every pixel the header has left over —
+          transport on the left, elapsed on the right, nothing boxed. */}
+      <div className="k-memo-row">
         <button type="button" className="k-memo-skip" onClick={() => skip(-15)} aria-label="Back 15 seconds">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M11.5 6.5 6 12l5.5 5.5v-3.9c3 0 5.3 1 6.9 3-0.6-4.4-3.3-6.9-6.9-7.1z" /></svg>
-          <em>15s</em>
+          <em>15</em>
         </button>
         <button type="button" className="k-memo-play" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>
           {playing ? (
@@ -173,8 +165,24 @@ export default function MemoPlayer({ src, title, meta }: { src: string; title: s
         </button>
         <button type="button" className="k-memo-skip" onClick={() => skip(15)} aria-label="Forward 15 seconds">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12.5 6.5 18 12l-5.5 5.5v-3.9c-3 0-5.3 1-6.9 3 .6-4.4 3.3-6.9 6.9-7.1z" /></svg>
-          <em>15s</em>
+          <em>15</em>
         </button>
+
+        <div
+          className="k-memo-wave"
+          onClick={seek}
+          role="slider"
+          aria-label="Seek"
+          aria-valuemin={0}
+          aria-valuemax={Math.round(total)}
+          aria-valuenow={Math.round(now)}
+          tabIndex={0}
+        >
+          {bars.map((b, i) => (
+            <i key={i} style={{ height: `${Math.round(b * 100)}%` }} className={(i + 0.5) / BAR_COUNT <= pct ? 'on' : ''} />
+          ))}
+        </div>
+
         <span className="k-memo-time"><b>{mmss(now)}</b> / {ready ? mmss(total) : '—:—'}</span>
       </div>
     </div>

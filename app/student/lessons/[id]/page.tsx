@@ -46,44 +46,48 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   ])
   const brand = resolveBrand((teacherProfile as any)?.brand)
   const teacherFirst = ((teacherProfile as any)?.full_name ?? '').split(' ')[0] || 'Your teacher'
+  const memos = (files || []).filter(isMemo)
 
   return (
     <div style={{ maxWidth: 900 }}>
       <Link href="/student/dashboard" className="k-back">← Dashboard</Link>
 
-      <header className="k-phead">
-        <div>
-          <div className="k-phead-eyebrow">Lesson {l.lesson_number} · Recap</div>
-          <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
-          {/* Date only — "1st lesson" repeated the eyebrow and the confidence
-              label crowded the band (same trim as the teacher's copy). */}
-          <div className="k-pmeta">
-            <span>{formatDateShort(l.lesson_date)}</span>
+      <header className={`k-phead${memos.length > 0 ? ' has-memo' : ''}`}>
+        <div className="k-phead-top">
+          <div>
+            <div className="k-phead-eyebrow">Lesson {l.lesson_number} · Recap</div>
+            <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
+            {/* Date only — "1st lesson" repeated the eyebrow and the confidence
+                label crowded the band (same trim as the teacher's copy). */}
+            <div className="k-pmeta">
+              <span>{formatDateShort(l.lesson_date)}</span>
+            </div>
           </div>
-
-          {/* The teacher's voice memo — the one part of the recap spoken to
-              this student personally, so it opens the page rather than hiding
-              a tab deep. No memo recorded, nothing shown: this is the final
-              product, and it never mentions what wasn't made for it. */}
-          {(files || []).filter(isMemo).length > 0 && (
-            <div className="k-phead-memo">
-              {(files || []).filter(isMemo).map((f: any) => (
-                <MemoPlayer
-                  key={f.id}
-                  src={`/api/portal/download?kind=file&id=${f.id}`}
-                  title={`A message from ${teacherFirst}`}
-                  meta={formatDateShort(f.created_at)}
-                />
-              ))}
+          {recap.score != null && (
+            <div className="k-pscore">
+              <div>
+                <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
+                <small>OUT OF 10</small>
+              </div>
             </div>
           )}
         </div>
-        {recap.score != null && (
-          <div className="k-pscore">
-            <div>
-              <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
-              <small>OUT OF 10</small>
-            </div>
+
+        {/* The teacher's voice memo — the one part of the recap spoken to this
+            student personally, so it opens the page rather than hiding a tab
+            deep, across the full width of the band. No memo recorded, nothing
+            shown: this is the final product, and it never mentions what wasn't
+            made for it. */}
+        {memos.length > 0 && (
+          <div className="k-phead-memo">
+            {memos.map((f: any) => (
+              <MemoPlayer
+                key={f.id}
+                src={`/api/portal/download?kind=file&id=${f.id}`}
+                title={`A message from ${teacherFirst}`}
+                meta={formatDateShort(f.created_at)}
+              />
+            ))}
           </div>
         )}
 

@@ -43,6 +43,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
   ])
   const brand = resolveBrand((profile as any)?.brand)
   const teacherFirst = ((profile as any)?.full_name ?? '').split(' ')[0] || 'You'
+  const memos = (files || []).filter(isMemo)
 
   return (
     <div className="k-scope page-fade" style={{ maxWidth: 900, ...brandVars(brand) }}>
@@ -51,40 +52,42 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
         <LessonAdminActions lessonId={l.id} studentId={params.id} sourceEventId={l.source_event_id} />
       </div>
 
-      <header className="k-phead">
-        <div>
-          <div className="k-phead-eyebrow">Lesson {l.lesson_number} · Recap</div>
-          <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
-          {/* Just the date and the status: the student's name is the back link,
-              and "1st lesson"/confidence repeated what the eyebrow and score
-              already say — the pills were crowding the band. */}
-          <div className="k-pmeta">
-            <span>{formatDateShort(l.lesson_date)}</span>
-            <span className={`status-pill ${l.status === 'published' ? 'published' : 'draft'}`}>{l.status}</span>
+      <header className={`k-phead${memos.length > 0 ? ' has-memo' : ''}`}>
+        <div className="k-phead-top">
+          <div>
+            <div className="k-phead-eyebrow">Lesson {l.lesson_number} · Recap</div>
+            <h1>{lessonDisplayTitle(recap, l.title, l.lesson_number)}</h1>
+            {/* Just the date and the status: the student's name is the back link,
+                and "1st lesson"/confidence repeated what the eyebrow and score
+                already say — the pills were crowding the band. */}
+            <div className="k-pmeta">
+              <span>{formatDateShort(l.lesson_date)}</span>
+              <span className={`status-pill ${l.status === 'published' ? 'published' : 'draft'}`}>{l.status}</span>
+            </div>
           </div>
-
-          {/* Exactly what the student sees: the memo if one was recorded,
-              nothing if not. This page is the final product — recording (with
-              its reference script) lives in review/edit, not here. */}
-          {(files || []).filter(isMemo).length > 0 && (
-            <div className="k-phead-memo">
-              {(files || []).filter(isMemo).map((f: any) => (
-                <MemoPlayer
-                  key={f.id}
-                  src={`/api/portal/download?kind=file&id=${f.id}`}
-                  title="Voice memo"
-                  meta={formatDateShort(f.created_at)}
-                />
-              ))}
+          {recap.score != null && (
+            <div className="k-pscore">
+              <div>
+                <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
+                <small>OUT OF 10</small>
+              </div>
             </div>
           )}
         </div>
-        {recap.score != null && (
-          <div className="k-pscore">
-            <div>
-              <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
-              <small>OUT OF 10</small>
-            </div>
+
+        {/* Exactly what the student sees: the memo if one was recorded, nothing
+            if not. This page is the final product — recording (with its
+            reference script) lives in review/edit, not here. */}
+        {memos.length > 0 && (
+          <div className="k-phead-memo">
+            {memos.map((f: any) => (
+              <MemoPlayer
+                key={f.id}
+                src={`/api/portal/download?kind=file&id=${f.id}`}
+                title="Voice memo"
+                meta={formatDateShort(f.created_at)}
+              />
+            ))}
           </div>
         )}
 
