@@ -12,15 +12,20 @@ import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } fr
 
 export const dynamic = 'force-dynamic'
 /**
- * Above the 300s the rest of the pipeline uses, because 300s is what broke the
- * lesson this exists to recover: transcribing Kazuyuki's tab track alone hit
- * the ceiling and returned 504 at 301 seconds. One track of a 47-minute lesson
- * can take longer than five minutes on whisper-1 with word timestamps, and
- * word timestamps are not optional — the talk-time split and every speaking
- * metric are computed from them. Vercel clamps this to whatever the plan
- * allows, so asking for more than is available costs nothing.
+ * 300 is not a choice — it is the Hobby plan's hard ceiling, and asking for
+ * more fails the build rather than being clamped. It is also the cause of the
+ * failure this route exists to undo: transcribing Kazuyuki's tab track alone
+ * returned 504 at 301 seconds. One track of a 47-minute lesson can exceed five
+ * minutes on whisper-1 with word timestamps, and those are not optional — the
+ * talk-time split and every speaking metric are computed from them.
+ *
+ * So a long lesson cannot be transcribed here at all, on this plan. What this
+ * route can always finish is the second half: given a cached transcript it
+ * only assembles, writes the recap and saves the draft. See scripts/
+ * transcribe-recording.mjs, which does the slow half off-platform and leaves
+ * the words in the cache for a final call to pick up.
  */
-export const maxDuration = 800
+export const maxDuration = 300
 
 /**
  * Rebuild a recap from a recording whose original send died.
