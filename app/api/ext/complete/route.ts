@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authenticateExtension } from '@/lib/ext-auth'
 import { transcribeTracksDetailed, toWhisperLanguage } from '@/lib/whisper'
@@ -49,7 +50,52 @@ export async function POST(req: Request) {
     .from('students').select('id, full_name, language, instruction_language').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
   if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
 
-  try {
+  const eventId = `ext:${recordingId}`
+
+  /**
+   * Claim the recording before answering.
+   *
+   * This row is what ties the audio to a student. Written here rather than
+   * after the recap, because when it was written after, a failed build left
+   * audio in storage that nothing could identify — no queue entry, no student,
+   * and "Rebuild from recording" resolves the student through this exact row,
+   * so the one case it could not help with was the one that needed it. With
+   * the row up front, a build that dies leaves a lesson the studio can rebuild.
+   */
+  const { error: linkError } = await admin.from('lesson_event_links').upsert(
+    { event_id: eventId, student_id: student.id, teacher_id: caller.teacherId },
+    { onConflict: 'event_id' },
+  )
+  if (linkError) {
+    return NextResponse.json({ error: `Could not link the recording to the student: ${linkError.message}` }, { status: 500 })
+  }
+
+  /**
+   * Answer now; transcribe after.
+   *
+   * Transcription and the recap take minutes, and the extension used to hold
+   * the connection open for all of it — which meant the teacher could not
+   * start her next lesson until a recap she was not waiting for had finished
+   * building. The upload is the extension's job and it is done; the rest is
+   * the studio's, and the draft appears when it appears.
+   *
+   * waitUntil keeps the function alive past the response. Failures land in the
+   * log rather than in the teacher's hand, which is why the link row above
+   * matters: it is what makes a failure recoverable instead of invisible.
+   */
+  waitUntil(
+    buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage })
+      .catch((e) => console.error(`[ext/complete] recap build failed for ${eventId}: ${e?.message ?? e}`)),
+  )
+
+  return NextResponse.json({ ok: true, queued: true, eventId, student: student.full_name }, { status: 202 })
+}
+
+/** Everything the extension no longer waits for. */
+async function buildRecap({
+  admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage,
+}: any) {
+  {
     // Whoever holds the mic decides which track is the host. Recording your own
     // lesson as the learner is the same flow with the roles swapped.
     const micIsTeacher = micIs !== 'student'
@@ -69,10 +115,10 @@ export async function POST(req: Request) {
       if (loud !== null && loud < MIN_HEARD_SEC) continue
 
       const { data, error } = await admin.storage.from(RECORDING_BUCKET).download(trackPath(recordingId, w.track))
-      if (error || !data) return NextResponse.json({ error: `Missing ${w.track} track: ${error?.message ?? 'not found'}` }, { status: 404 })
+      if (error || !data) throw new Error(`Missing ${w.track} track: ${error?.message ?? 'not found'}`)
       if (data.size > 0) tracks.push({ blob: data, speaker: w.speaker, isHost: w.isHost, track: w.track })
     }
-    if (!tracks.length) return NextResponse.json({ error: 'Both tracks were empty.' }, { status: 422 })
+    if (!tracks.length) throw new Error('Both tracks were empty.')
 
     /**
      * Two different questions, which used to share one answer.
@@ -93,7 +139,7 @@ export async function POST(req: Request) {
 
     const det = await transcribeTracksDetailed(tracks, code)
     const t = normalizeSegments(det.filtered)
-    if (!t.plain.trim()) return NextResponse.json({ error: 'Nothing was said on either track.' }, { status: 422 })
+    if (!t.plain.trim()) throw new Error('Nothing was said on either track.')
 
     /**
      * Save the words next to the audio they came from.
@@ -130,17 +176,6 @@ export async function POST(req: Request) {
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics
 
-    const eventId = `ext:${recordingId}`
-    // Link first, so publishing resolves the student without a calendar event.
-    // Without this row the publish bridge cannot find the student, silently
-    // delivers nothing, and still reports success — so a failure here has to
-    // be loud rather than swallowed.
-    const { error: linkError } = await admin.from('lesson_event_links').upsert(
-      { event_id: eventId, student_id: student.id, teacher_id: caller.teacherId },
-      { onConflict: 'event_id' },
-    )
-    if (linkError) throw new Error(`Could not link the recording to the student: ${linkError.message}`)
-
     // Recaps are runtime docs namespaced per teacher, and a bearer-token
     // request carries no session for the store to resolve one from — so say
     // explicitly whose data this is.
@@ -158,19 +193,6 @@ export async function POST(req: Request) {
       })
     })
 
-    return NextResponse.json({
-      ok: true,
-      eventId,
-      // What Whisper was told. Null means the name did not resolve and it
-      // auto-detected — the recap is still built, but that is the reason to
-      // distrust it. `target` is what the recap was graded against.
-      language: code ?? null,
-      target: targetLanguage,
-      seconds: seconds ?? null,
-      studentTalkPct: t.studentTalkPct,
-      speakers: t.talk.map((s) => s.name),
-    })
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? 'Failed to build the recap.' }, { status: 500 })
+    console.log(`[ext/complete] built ${eventId} for ${student.full_name} — ${t.talk.map((s: any) => s.name).join(' + ')}`)
   }
 }
