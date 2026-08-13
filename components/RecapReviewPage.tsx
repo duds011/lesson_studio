@@ -262,19 +262,14 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
           </div>
         )}
 
-        {/* ── LESSON: editable sections + the voice memo ── */}
+        {/* ── LESSON: the voice memo, then the editable sections ── */}
         {tab === 'Lesson' && (
           <div role="tabpanel" style={{ display: 'grid', gap: 16, paddingTop: 4 }}>
-            {sections.map((s, i) => (
-              <section className="block" key={i}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-                  <input value={s.title} onChange={(e) => setSection(i, { title: e.target.value })} className="review-input" style={{ fontWeight: 700 }} placeholder="Section title" />
-                  <button className="btn btn-danger-ghost btn-sm" onClick={() => setSections(sections.filter((_, j) => j !== i))} aria-label="Remove section">Remove</button>
-                </div>
-                <AutoTextarea value={s.content} onChange={(v) => setSection(i, { content: v })} placeholder="Section content…" minRows={4} />
-              </section>
-            ))}
-            <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => setSections([...sections, { title: '', content: '' }])}>+ Add section</button>
+            {/* First on the tab, not after the sections and the Add button.
+                A memo is the one part of a recap that only exists if the
+                teacher decides to make it, and it was sitting below a variable
+                number of section editors — far enough down that the decision
+                was never really put to them. It leads now. */}
             <section className="block">
               <h4>🎙️ Voice memo for {first}</h4>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
@@ -290,6 +285,17 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
                 </div>
               )}
             </section>
+
+            {sections.map((s, i) => (
+              <section className="block" key={i}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                  <input value={s.title} onChange={(e) => setSection(i, { title: e.target.value })} className="review-input" style={{ fontWeight: 700 }} placeholder="Section title" />
+                  <button className="btn btn-danger-ghost btn-sm" onClick={() => setSections(sections.filter((_, j) => j !== i))} aria-label="Remove section">Remove</button>
+                </div>
+                <AutoTextarea value={s.content} onChange={(v) => setSection(i, { content: v })} placeholder="Section content…" minRows={4} />
+              </section>
+            ))}
+            <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => setSections([...sections, { title: '', content: '' }])}>+ Add section</button>
             <section className="block">
               <h4>📎 Files for {first}</h4>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
