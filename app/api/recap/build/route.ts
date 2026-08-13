@@ -12,8 +12,11 @@ import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } fr
 export const dynamic = 'force-dynamic'
 // Usually just one completion now, but a recording made before transcripts were
 // cached still has to be heard again, and that is two round trips plus the
-// completion — the default 60s is not close.
-export const maxDuration = 300
+// completion — the default 60s is not close, and neither was 300s on a
+// 52-minute lesson. Note "before transcripts were cached" covers every
+// recording made until today: the cache write was rejected by the bucket's
+// MIME allow-list and the error swallowed, so no rebuild has ever hit it.
+export const maxDuration = 800
 
 /**
  * Rebuild a recap from the recording it was originally made from.

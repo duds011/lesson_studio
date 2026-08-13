@@ -10,8 +10,17 @@ import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } fr
 import { overLessonLimit, TOO_LONG_MESSAGE } from '@/lib/lesson-limits'
 
 export const dynamic = 'force-dynamic'
-// Two Whisper round trips on a full lesson comfortably exceeds the default 60s.
-export const maxDuration = 300
+/**
+ * Two Whisper round trips on a full lesson comfortably exceeds the default 60s
+ * — and, as a 52-minute lesson proved, 300s as well. The product accepts
+ * lessons up to MAX_LESSON_SECONDS (55 minutes), so this has to be able to
+ * finish one: at 300 it accepted recordings it could not process, and the
+ * teacher lost the lesson with no error to show for it.
+ *
+ * Raising this alone does nothing — the fetch inside used to abort at 300s
+ * whatever this said. Both had to move together; see lib/long-post.
+ */
+export const maxDuration = 800
 
 /**
  * Turns an uploaded extension recording into a draft recap.
