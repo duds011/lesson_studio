@@ -11,7 +11,16 @@ import { runAsTeacher } from '@/lib/teacher-scope'
 import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } from '@/lib/ext-storage'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+/**
+ * Above the 300s the rest of the pipeline uses, because 300s is what broke the
+ * lesson this exists to recover: transcribing Kazuyuki's tab track alone hit
+ * the ceiling and returned 504 at 301 seconds. One track of a 47-minute lesson
+ * can take longer than five minutes on whisper-1 with word timestamps, and
+ * word timestamps are not optional — the talk-time split and every speaking
+ * metric are computed from them. Vercel clamps this to whatever the plan
+ * allows, so asking for more than is available costs nothing.
+ */
+export const maxDuration = 800
 
 /**
  * Rebuild a recap from a recording whose original send died.
