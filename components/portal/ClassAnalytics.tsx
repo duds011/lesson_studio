@@ -25,6 +25,10 @@ export type StudentAnalytics = {
   lastScore: number | null
   avgTalk: number | null
   vocab: number
+  avgWpm: number | null
+  avgThink: number | null
+  avgFillers: number | null
+  avgTurnWords: number | null
   daysSinceLast: number | null
 }
 
@@ -88,6 +92,51 @@ function Progression({ rows }: { rows: StudentAnalytics[] }) {
   )
 }
 
+/**
+ * One measure, every student, ranked.
+ *
+ * `lowerIsBetter` only flips the sort — the bar is not recoloured for it,
+ * because "good" depends on the student. A long pause before answering is
+ * where a beginner lives, not a fault.
+ */
+function Compare({
+  rows, pick, title, sub, unit, colour, domain, decimals = 0, lowerIsBetter = false, marker,
+}: {
+  rows: StudentAnalytics[]
+  pick: (r: StudentAnalytics) => number | null
+  title: string
+  sub: string
+  unit: string
+  colour: string
+  domain?: [number, number]
+  decimals?: number
+  lowerIsBetter?: boolean
+  marker?: number
+}) {
+  const data = rows
+    .filter((r) => pick(r) != null)
+    .sort((a, b) => (lowerIsBetter ? (pick(a) as number) - (pick(b) as number) : (pick(b) as number) - (pick(a) as number)))
+    .map((r) => ({ name: r.name, value: Number((pick(r) as number).toFixed(decimals)) }))
+
+  return (
+    <Card title={title} sub={sub}>
+      {data.length ? (
+        <ResponsiveContainer width="100%" height={Math.max(150, data.length * 38)}>
+          <BarChart data={data} layout="vertical" margin={{ left: 4, right: 24, top: 4, bottom: 4 }}>
+            <XAxis type="number" domain={domain ?? [0, 'auto']} tick={AXIS} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="name" width={92} tick={AXIS} axisLine={false} tickLine={false} />
+            <Tooltip content={<Tip suffix={unit} />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
+            {marker != null && <ReferenceLine x={marker} stroke="var(--muted)" strokeDasharray="3 3" />}
+            <Bar dataKey="value" isAnimationActive={false} radius={[0, 6, 6, 0]} fill={colour} />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>Not measured yet — this fills in as lessons are recorded.</p>
+      )}
+    </Card>
+  )
+}
+
 export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
   const scored = rows.filter((r) => r.avgScore != null)
   const talking = rows.filter((r) => r.avgTalk != null)
@@ -144,7 +193,7 @@ export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gap: 16 }}>
         <Card title="Average score by student" sub="Out of 10, across every scored lesson.">
           {scoreData.length ? (
             <ResponsiveContainer width="100%" height={Math.max(140, scoreData.length * 34)}>
@@ -162,52 +211,65 @@ export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
         <Card title="Score progression" sub="First scored lesson to the most recent one.">
           <Progression rows={rows} />
         </Card>
-
-        <Card
-          title="Average talk share"
+        <Compare
+          rows={rows}
+          pick={(r) => r.avgTalk}
+          title="Talk share"
           sub="How much of the lesson was the student speaking. The dashed line is 50% — under it, you are doing more of the talking."
-        >
-          {talkData.length ? (
-            <ResponsiveContainer width="100%" height={Math.max(140, talkData.length * 34)}>
-              <BarChart data={talkData} layout="vertical" margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
-                <XAxis type="number" domain={[0, 100]} tick={AXIS} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" width={78} tick={AXIS} axisLine={false} tickLine={false} />
-                <Tooltip content={<Tip suffix="% of the lesson" />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
-                <ReferenceLine x={50} stroke="var(--muted)" strokeDasharray="3 3" />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]} isAnimationActive={false}>
-                  {talkData.map((d) => (
-                    // Below half, the teacher is the one filling the hour.
-                    <Cell key={d.name} fill={d.value < 50 ? '#e0a63b' : BRAND} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>No talk-time measured yet.</p>}
-        </Card>
+          unit="% of the lesson"
+          colour="#e0a63b"
+          domain={[0, 100]}
+          marker={50}
+        />
 
-        <Card title="Lessons recorded" sub="How many recaps each student has.">
-          <ResponsiveContainer width="100%" height={Math.max(140, lessonData.length * 34)}>
-            <BarChart data={lessonData} layout="vertical" margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
-              <XAxis type="number" allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" width={78} tick={AXIS} axisLine={false} tickLine={false} />
-              <Tooltip content={<Tip suffix=" lessons" />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
-              <Bar dataKey="value" isAnimationActive={false} radius={[0, 6, 6, 0]} fill="#7c5cd6" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        <Compare
+          rows={rows}
+          pick={(r) => r.avgWpm}
+          title="Speaking pace"
+          sub="Words a minute while the student was the one talking. Rising over time is fluency; the number itself says more about the language than the learner."
+          unit=" words / min"
+          colour={BRAND}
+        />
 
-        {vocabData.length > 0 && (
-          <Card title="Vocabulary met" sub="Distinct words counted across each student's lessons.">
-            <ResponsiveContainer width="100%" height={Math.max(140, vocabData.length * 34)}>
-              <BarChart data={vocabData} layout="vertical" margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
-                <XAxis type="number" allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" width={78} tick={AXIS} axisLine={false} tickLine={false} />
-                <Tooltip content={<Tip suffix=" words" />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
-                <Bar dataKey="value" isAnimationActive={false} radius={[0, 6, 6, 0]} fill="#2f8f5b" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        )}
+        <Compare
+          rows={rows}
+          pick={(r) => r.avgThink}
+          title="Thinking time"
+          sub="Seconds between you finishing and the student starting. Shortest first — a long pause is where the work is happening, not a fault."
+          unit="s before replying"
+          colour="#7c5cd6"
+          decimals={1}
+          lowerIsBetter
+        />
+
+        <Compare
+          rows={rows}
+          pick={(r) => r.avgTurnWords}
+          title="Words per turn"
+          sub="How much they say each time they speak. Short turns with a quick pace usually means answering, not conversing."
+          unit=" words a turn"
+          colour="#2f8f5b"
+        />
+
+        <Compare
+          rows={rows}
+          pick={(r) => r.avgFillers}
+          title="Filler words"
+          sub="Ums and ahs per lesson, fewest first. Worth reading next to pace: fast and full of fillers is a different problem from slow and clean."
+          unit=" per lesson"
+          colour="#c98a8a"
+          lowerIsBetter
+        />
+
+        <Compare
+          rows={rows}
+          pick={(r) => (r.vocab > 0 ? r.vocab : null)}
+          title="Vocabulary met"
+          sub="Distinct words counted across every lesson."
+          unit=" words"
+          colour="#3f8fa8"
+        />
+
       </div>
     </div>
   )

@@ -132,7 +132,17 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
             const dist = s?.vocab_level_distribution
             const distSum = dist && typeof dist === 'object' ? Object.values(dist).reduce((a: number, b: any) => a + Number(b), 0) : 0
             const vocabCount = s?.vocab_total_count ?? (distSum > 0 ? distSum : (l.vocabulary_items?.length ?? 0))
-            return { lessonNumber: l.lesson_number, score: s?.score ?? null, talkPct: s?.talk_percentage ?? null, vocabCount }
+            // Pace and Thinking were drawing empty: the charts accept them,
+            // the recap stores them, and this mapper simply never passed them.
+            const m = s?.recap_json?.metrics ?? {}
+            return {
+              lessonNumber: l.lesson_number,
+              score: s?.score ?? null,
+              talkPct: s?.talk_percentage ?? null,
+              vocabCount,
+              wpm: m.studentWpm ?? null,
+              responseSec: m.avgResponseSec ?? null,
+            }
           })}
         />
       )}

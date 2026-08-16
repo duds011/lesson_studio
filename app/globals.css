@@ -336,9 +336,11 @@ th.is-today .notes-day{color:var(--brand)}
 /* ── Segmented tabs (Students / Analytics) ───────────────────────────────────
    A control, not navigation: both panels are already on the page and one is
    hidden, so this reads as a switch rather than a set of links. */
-.k-tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
-.k-tab{border:0;border-radius:999px;padding:8px 18px;font:inherit;font-size:12.5px;font-weight:700;
-  color:var(--muted);background:transparent;cursor:pointer;transition:background .15s ease,color .15s ease}
-.k-tab:hover:not(:disabled):not(.sel){color:var(--ink)}
-.k-tab.sel{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.10)}
+.k-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;padding:6px;width:100%;
+  border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.k-tab{border:0;border-radius:10px;padding:13px 18px;font:inherit;font-size:14px;font-weight:700;
+  letter-spacing:-.01em;color:var(--muted);background:transparent;cursor:pointer;
+  transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.k-tab:hover:not(:disabled):not(.sel){color:var(--ink);background:rgba(255,255,255,.55)}
+.k-tab.sel{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(10,97,201,.24)}
 .k-tab:disabled{opacity:.45;cursor:not-allowed}

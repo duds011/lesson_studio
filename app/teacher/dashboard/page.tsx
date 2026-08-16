@@ -23,22 +23,29 @@ export default async function TeacherDashboard() {
 
   const { data: lessons } = await supabase
     .from('lessons')
-    .select('id, student_id, lesson_number, lesson_date, lesson_summaries ( score, talk_percentage, vocab_total_count )')
+    .select('id, student_id, lesson_number, lesson_date, lesson_summaries ( score, talk_percentage, vocab_total_count, recap_json )')
     .eq('teacher_id', user.id)
     // Oldest first, so "first score" and "last score" mean what they say.
     .order('lesson_number', { ascending: true })
 
   const statsByStudent = new Map<string, {
     count: number; scores: number[]; talks: number[]; vocab: number; lastDate: string | null
+    // The measured ones — pace, hesitation, how much they say per turn.
+    wpm: number[]; think: number[]; fillers: number[]; turnWords: number[]
   }>()
   for (const l of (lessons || []) as any[]) {
     const s = statsByStudent.get(l.student_id)
-      ?? { count: 0, scores: [], talks: [], vocab: 0, lastDate: null }
+      ?? { count: 0, scores: [], talks: [], vocab: 0, lastDate: null, wpm: [], think: [], fillers: [], turnWords: [] }
     s.count += 1
     const sum = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
     if (sum?.score != null) s.scores.push(Number(sum.score))
     if (sum?.talk_percentage != null) s.talks.push(Number(sum.talk_percentage))
     s.vocab += sum?.vocab_total_count ?? 0
+    const m = sum?.recap_json?.metrics ?? {}
+    if (m.studentWpm != null) s.wpm.push(Number(m.studentWpm))
+    if (m.avgResponseSec != null) s.think.push(Number(m.avgResponseSec))
+    if (m.fillerCount != null) s.fillers.push(Number(m.fillerCount))
+    if (m.avgTurnWords != null) s.turnWords.push(Number(m.avgTurnWords))
     if (l.lesson_date && (!s.lastDate || l.lesson_date > s.lastDate)) s.lastDate = l.lesson_date
     statsByStudent.set(l.student_id, s)
   }
@@ -73,6 +80,10 @@ export default async function TeacherDashboard() {
       lastScore: st?.scores.length ? st.scores[st.scores.length - 1] : null,
       avgTalk: mean(st?.talks ?? []),
       vocab: st?.vocab ?? 0,
+      avgWpm: mean(st?.wpm ?? []),
+      avgThink: mean(st?.think ?? []),
+      avgFillers: mean(st?.fillers ?? []),
+      avgTurnWords: mean(st?.turnWords ?? []),
       daysSinceLast: daysSince(st?.lastDate ?? null),
     }
   })
@@ -117,7 +128,7 @@ export default async function TeacherDashboard() {
           list={
         <div className="student-grid">
           {rows.map((s) => {
-            const st = statsByStudent.get(s.id) ?? { count: 0, scores: [] as number[], talks: [] as number[], vocab: 0, lastDate: null }
+            const st = statsByStudent.get(s.id) ?? { count: 0, scores: [] as number[], vocab: 0 }
             const avg = st.scores.length ? (st.scores.reduce((a, b) => a + b, 0) / st.scores.length).toFixed(1) : '—'
             const c = creditMap.get(s.id) ?? { purchased: 0, used: 0, remaining: 0, low: false }
             return (
