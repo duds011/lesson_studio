@@ -109,11 +109,23 @@ async function loadDraftRecaps(recapRecs: Record<string, any>): Promise<DraftRec
  * it showed 6. The row is what the student sees, so the row is the truth.
  */
 async function hasRecorder(teacherId: string): Promise<boolean> {
-  // Written the first time the extension signs in, so its presence means
-  // installed AND connected to this account — which is the part that matters.
-  const { data } = await createAdminClient()
+  const admin = createAdminClient()
+
+  // Written the first time the extension signs in with THIS account.
+  const { data: token } = await admin
     .from('teacher_ext_tokens').select('teacher_id').eq('teacher_id', teacherId).maybeSingle()
-  return Boolean(data)
+  if (token) return true
+
+  /**
+   * Or: anything ever arrived. A teacher with lessons on the board plainly has
+   * a working recorder, whatever the token table says — they may have signed
+   * the extension in under another of their accounts, or predate the token
+   * entirely. Telling someone with six published recaps that nothing can reach
+   * this page is both wrong and impossible to dismiss.
+   */
+  const { count } = await admin
+    .from('lessons').select('id', { count: 'exact', head: true }).eq('teacher_id', teacherId)
+  return (count ?? 0) > 0
 }
 
 async function publishedLessonCount(supabase: any, teacherId: string): Promise<number> {
