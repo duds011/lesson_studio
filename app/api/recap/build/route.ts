@@ -7,6 +7,7 @@ import { normalizeSegments } from '@/lib/transcript'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
 import { runAsTeacher } from '@/lib/teacher-scope'
+import { checkRecapQuota, recordRecapRun } from '@/lib/recap-quota'
 import { RECORDING_BUCKET, trackPath, transcriptPath, type CachedTranscript } from '@/lib/ext-storage'
 
 export const dynamic = 'force-dynamic'
@@ -55,6 +56,10 @@ export async function POST(req: Request) {
     .maybeSingle()
   if (!link) return NextResponse.json({ ok: false, error: 'No student is linked to this recording.' }, { status: 404 })
   if (link.teacher_id !== user.id) return NextResponse.json({ ok: false, error: 'Not your recording.' }, { status: 403 })
+
+  // Before any paid work — transcription and the completion are both billed.
+  const quota = await checkRecapQuota(link.teacher_id)
+  if (!quota.ok) return NextResponse.json({ ok: false, error: quota.message }, { status: 429 })
 
   const { data: student } = await admin
     .from('students').select('id, full_name, language, instruction_language, jp_script').eq('id', link.student_id).single()
@@ -125,6 +130,7 @@ export async function POST(req: Request) {
       instructionLanguage: (student as any).instruction_language,
       script: (student as any).jp_script,
     })
+    await recordRecapRun(link.teacher_id, 'rebuild')
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics
 

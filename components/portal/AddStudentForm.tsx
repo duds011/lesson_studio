@@ -75,6 +75,15 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
     setBusy(false)
     setCreated({ name: form.full_name, note, inviteCode: res.inviteCode })
     setForm(emptyForm(teachingLanguage, speakingLanguage))
+    // No router.refresh() here. Refreshing re-renders the tree this modal is
+    // mounted in, which threw away `created` and closed the link window before
+    // the teacher could read it. The new student appears when they dismiss it.
+  }
+
+  /** Close the link window, and only now pull the new student into the list. */
+  function finish() {
+    setCreated(null)
+    setOpen(false)
     router.refresh()
   }
 
@@ -97,7 +106,8 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
       role="dialog"
       aria-modal="true"
       aria-label="New student"
-      onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
+      // Clicking the backdrop must not silently discard an unread invite link.
+      onClick={(e) => { if (e.target === e.currentTarget && !created) setOpen(false) }}
     >
       {/* Two windows, never both: the form, then the link. Once the student
           exists there is nothing left to fill in, and leaving the fields on
@@ -114,8 +124,8 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
           {created.inviteCode && <InviteLink code={created.inviteCode} />}
           {created.note && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{created.note}</p>}
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-            <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => { setCreated(null); setOpen(false) }}>Done</button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 18, alignItems: 'stretch' }}>
+            <button className="k-modal-cta" style={{ flex: 1, marginTop: 0 }} onClick={finish}>Done</button>
             <button className="btn btn-ghost" onClick={() => setCreated(null)}>Add another</button>
           </div>
           <p style={{ fontSize: 11, color: 'var(--muted)', margin: '12px 0 0' }}>
@@ -179,7 +189,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
 
           {/* Says what actually happens next, because what happens next is the
               teacher copying a link — not a saved record they never see. */}
-          <button type="submit" className="btn btn-primary" disabled={busy} style={{ marginTop: 14, width: '100%' }}>
+          <button type="submit" className="k-modal-cta" disabled={busy}>
             {busy ? 'Generating…' : 'Generate link'}
           </button>
         </form>

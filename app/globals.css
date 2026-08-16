@@ -322,3 +322,13 @@ th.is-today .notes-day{color:var(--brand)}
   .k-join-in,.k-join-step,.k-join-glow,.k-join-error{animation:none}
   .k-join-btn{transition:none}
 }
+
+/* The modal's main action. AddStudentForm lives inside the page header, so
+   `.k-thead .btn-primary` (white on the dark band) was winning and painting a
+   white button onto a white card — the teacher saw floating blue text. Higher
+   specificity than that rule, and independent of wherever a modal is mounted. */
+.k-modal .k-modal-card .k-modal-cta{width:100%;margin-top:14px;padding:13px 18px;border:0;border-radius:12px;
+  background:var(--brand);color:#fff;font-weight:700;font-size:14px;cursor:pointer;
+  box-shadow:0 6px 18px rgba(10,97,201,.18);transition:background .15s ease,transform .15s ease}
+.k-modal .k-modal-card .k-modal-cta:hover:not(:disabled){background:#084a9b;transform:translateY(-1px)}
+.k-modal .k-modal-card .k-modal-cta:disabled{opacity:.6;cursor:default;transform:none}

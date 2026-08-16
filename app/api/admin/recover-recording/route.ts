@@ -5,6 +5,7 @@ import { currentUser } from '@/lib/auth'
 import { isAdminEmail } from '@/lib/admin'
 import { transcribeTracksDetailed, assembleTracks, toWhisperLanguage, type TrackWords } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/transcript'
+import { recordRecapRun } from '@/lib/recap-quota'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
 import { runAsTeacher } from '@/lib/teacher-scope'
@@ -163,6 +164,7 @@ export async function POST(req: Request) {
       instructionLanguage: (student as any).instruction_language,
       script: (student as any).jp_script,
     })
+    await recordRecapRun(student.teacher_id, 'recover')
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics
 

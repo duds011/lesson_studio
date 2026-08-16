@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createAuthForExistingStudent, resetStudentPassword, deleteStudent, studentInviteCode } from '@/app/actions/portal-students'
+import { resetStudentPassword, deleteStudent, studentInviteCode } from '@/app/actions/portal-students'
 import InviteLink from '@/components/portal/InviteLink'
 
 export default function StudentAdminActions({ studentId, hasLogin }: { studentId: string; hasLogin: boolean }) {
@@ -18,16 +18,6 @@ export default function StudentAdminActions({ studentId, hasLogin }: { studentId
     setBusy(false)
     if (res.code) setInvite(res.code)
     else setNotice(res.error || 'Failed')
-  }
-
-  async function setupLogin() {
-    setBusy(true)
-    const res = await createAuthForExistingStudent(studentId)
-    setBusy(false)
-    if (res.success) {
-      setNotice(`Login created · temp password: ${res.tempPassword}`)
-      router.refresh()
-    } else setNotice(res.error || 'Failed')
   }
 
   async function resetPw() {
@@ -53,10 +43,10 @@ export default function StudentAdminActions({ studentId, hasLogin }: { studentId
         {hasLogin ? (
           <button className="btn btn-ghost btn-sm" onClick={resetPw} disabled={busy}>Reset password</button>
         ) : (
-          <>
-            <button className="btn btn-ghost btn-sm" onClick={showInvite} disabled={busy}>Invite link</button>
-            <button className="btn btn-ghost btn-sm" onClick={setupLogin} disabled={busy}>Set up login</button>
-          </>
+          // One way in for a student who has not joined: their own link. The
+          // "Set up login" button needed an email the teacher usually does not
+          // have, and made them read a password out loud when they did.
+          <button className="btn btn-ghost btn-sm" onClick={showInvite} disabled={busy}>Invite link</button>
         )}
         <button className="btn btn-danger-ghost btn-sm" onClick={remove} disabled={busy}>Delete</button>
       </div>

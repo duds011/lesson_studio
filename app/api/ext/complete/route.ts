@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { authenticateExtension } from '@/lib/ext-auth'
 import { transcribeTracksDetailed, toWhisperLanguage } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/transcript'
+import { checkRecapQuota, recordRecapRun } from '@/lib/recap-quota'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
 import { runAsTeacher } from '@/lib/teacher-scope'
@@ -49,6 +50,11 @@ export async function POST(req: Request) {
   const { data: student } = await admin
     .from('students').select('id, full_name, language, instruction_language, jp_script').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
   if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
+
+  // Checked before the upload is claimed, so a teacher over the ceiling is
+  // told plainly instead of having the recording silently swallowed.
+  const quota = await checkRecapQuota(caller.teacherId)
+  if (!quota.ok) return NextResponse.json({ error: quota.message }, { status: 429 })
 
   const eventId = `ext:${recordingId}`
 
@@ -196,6 +202,7 @@ async function buildRecap({
       instructionLanguage: (student as any).instruction_language,
       script: (student as any).jp_script,
     })
+    await recordRecapRun(caller.teacherId, 'extension')
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics
 
