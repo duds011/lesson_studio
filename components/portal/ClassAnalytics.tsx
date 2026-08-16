@@ -1,195 +1,174 @@
 'use client'
 
 /**
- * The whole roster in one picture.
+ * The whole roster, one measure at a time.
  *
- * Every number here already exists on a student's own page; what it cannot
- * show is rank and spread — who is pulling away, who has gone quiet, who has
- * not been seen in a month. That question is only answerable side by side,
- * which is what this is for.
+ * Six charts stacked down a page is six things to scroll past to compare two.
+ * So there is one chart, and you page through the measures — which also lets
+ * the panel below answer the second question every ranking provokes: fine,
+ * but is that student going up or down? The bars say where everyone stands
+ * today; the cards under them say how each of them got there.
  *
- * Anything a student has not produced yet is drawn as absent rather than as
- * zero. A student with no scored lesson has not scored nought.
+ * Both halves read the same selected measure, so the page never shows a
+ * ranking of one thing above a history of another.
  */
 
-import {
-  Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts'
+import { useState } from 'react'
+import { Bar, BarChart, Cell, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+
+/** One lesson, every measure taken from it. */
+export type LessonPoint = {
+  n: number
+  score: number | null
+  talk: number | null
+  wpm: number | null
+  think: number | null
+  turnWords: number | null
+  fillers: number | null
+}
 
 export type StudentAnalytics = {
   id: string
   name: string
-  lessons: number
-  avgScore: number | null
-  firstScore: number | null
-  lastScore: number | null
-  avgTalk: number | null
+  points: LessonPoint[]
   vocab: number
-  avgWpm: number | null
-  avgThink: number | null
-  avgFillers: number | null
-  avgTurnWords: number | null
   daysSinceLast: number | null
 }
 
-const AXIS = { fontSize: 10, fill: 'var(--muted)', fontWeight: 700 }
-const BRAND = '#0a61c9'
+type MetricKey = keyof Omit<LessonPoint, 'n'>
 
-/** The portal's card look, not Recharts' default box. */
-function Tip({ active, payload, label, suffix = '' }: any) {
+const METRICS: {
+  key: MetricKey
+  label: string
+  sub: string
+  unit: string
+  domain?: [number, number]
+  decimals?: number
+  lowerIsBetter?: boolean
+}[] = [
+  { key: 'score', label: 'Average score', sub: 'Out of 10, across every scored lesson.', unit: ' / 10', domain: [0, 10], decimals: 1 },
+  { key: 'talk', label: 'Talk share', sub: 'How much of the lesson the student was the one speaking.', unit: '% of the lesson', domain: [0, 100] },
+  { key: 'wpm', label: 'Speaking pace', sub: 'Words a minute while they were talking. Rising over time is fluency.', unit: ' words / min' },
+  { key: 'think', label: 'Thinking time', sub: 'Seconds between you finishing and them starting. A long pause is where the work happens, not a fault.', unit: 's before replying', decimals: 1, lowerIsBetter: true },
+  { key: 'turnWords', label: 'Words per turn', sub: 'How much they say each time they speak. Short turns at a quick pace is answering, not conversing.', unit: ' words a turn' },
+  { key: 'fillers', label: 'Filler words', sub: 'Ums and ahs per lesson. Worth reading beside pace — fast and full of fillers is a different problem from slow and clean.', unit: ' per lesson', lowerIsBetter: true },
+]
+
+/**
+ * A colour each, held across both halves of the panel.
+ *
+ * Keyed on position in the roster rather than on the chart's sort order, so a
+ * student keeps their colour when the ranking reshuffles between measures —
+ * that is what makes them followable from the bars down to their own card.
+ */
+const PALETTE = [
+  '#f2453d', '#1f7ae0', '#12b39b', '#c83fd6', '#f2a20c',
+  '#7c5cd6', '#e8447f', '#2fa855', '#f26d21', '#3fb6e8',
+  '#9c6ade', '#d94a8c', '#27a3a3', '#e05252', '#5b8def',
+]
+const colourOf = (i: number) => PALETTE[i % PALETTE.length]
+
+const AXIS = { fontSize: 10, fill: 'var(--muted)', fontWeight: 700 }
+
+const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
+const valuesOf = (s: StudentAnalytics, k: MetricKey) =>
+  s.points.map((p) => p[k]).filter((v): v is number => v != null)
+
+function Tip({ active, payload, label, unit }: any) {
   if (!active || !payload?.length) return null
   return (
     <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: 9, boxShadow: 'var(--shadow)', padding: '6px 10px', fontSize: 11, lineHeight: 1.45 }}>
       <div style={{ color: 'var(--muted)', fontWeight: 700 }}>{label}</div>
-      <div style={{ color: 'var(--ink)', fontWeight: 800 }}>{payload[0].value}{suffix}</div>
+      <div style={{ color: 'var(--ink)', fontWeight: 800 }}>{payload[0].value}{unit}</div>
     </div>
   )
 }
 
-function Card({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
-  return (
-    <section className="analytics-card">
-      <h3 style={{ margin: 0, fontSize: 14, letterSpacing: '-.01em' }}>{title}</h3>
-      {sub && <p style={{ margin: '3px 0 12px', fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.5 }}>{sub}</p>}
-      {children}
-    </section>
-  )
-}
-
-/** First lesson to last, per student — the only chart here about direction. */
-function Progression({ rows }: { rows: StudentAnalytics[] }) {
-  const moved = rows.filter((r) => r.firstScore != null && r.lastScore != null && r.lessons > 1)
-  if (moved.length === 0) {
-    return (
-      <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
-        Nobody has a second scored lesson yet — this fills in as they build a history.
-      </p>
-    )
-  }
-  return (
-    <div style={{ display: 'grid', gap: 8 }}>
-      {moved.map((r) => {
-        const delta = (r.lastScore as number) - (r.firstScore as number)
-        // A tenth of a point is noise, not progress.
-        const up = delta > 0.2
-        const down = delta < -0.2
-        const colour = up ? 'var(--green)' : down ? 'var(--red)' : 'var(--muted)'
-        return (
-          <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
-            <span style={{ flex: '1 1 90px', fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {r.name}
-            </span>
-            <span style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
-              {r.firstScore?.toFixed(1)} → <b style={{ color: 'var(--ink)' }}>{r.lastScore?.toFixed(1)}</b>
-            </span>
-            <span style={{ color: colour, fontWeight: 800, fontVariantNumeric: 'tabular-nums', minWidth: 52, textAlign: 'right' }}>
-              {up ? '▲' : down ? '▼' : '▬'} {Math.abs(delta).toFixed(1)}
-            </span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-/**
- * One measure, every student, ranked, with the class average across it.
- *
- * Vertical bars: names sit under their own column and the eye reads the
- * skyline in one pass, which is the whole point of putting a roster on one
- * chart. The average line is what turns a ranking into a judgement — third
- * of five means nothing until you can see whether third is above or below
- * the middle of your own class.
- *
- * `lowerIsBetter` only flips the sort. The bar is not recoloured for it,
- * because "good" depends on the student: a long pause before answering is
- * where a beginner lives, not a fault.
- */
-function Compare({
-  rows, pick, title, sub, unit, colour, domain, decimals = 0, lowerIsBetter = false, marker,
+/** One student's own history of the selected measure. */
+function TrendCard({
+  student, colour, metric,
 }: {
-  rows: StudentAnalytics[]
-  pick: (r: StudentAnalytics) => number | null
-  title: string
-  sub: string
-  unit: string
+  student: StudentAnalytics
   colour: string
-  domain?: [number, number]
-  decimals?: number
-  lowerIsBetter?: boolean
-  marker?: number
+  metric: (typeof METRICS)[number]
 }) {
-  const data = rows
-    .filter((r) => pick(r) != null)
-    .sort((a, b) => (lowerIsBetter ? (pick(a) as number) - (pick(b) as number) : (pick(b) as number) - (pick(a) as number)))
-    .map((r) => ({ name: r.name, value: Number((pick(r) as number).toFixed(decimals)) }))
+  const pts = student.points
+    .map((p) => ({ n: p.n, v: p[metric.key] }))
+    .filter((p): p is { n: number; v: number } => p.v != null)
 
-  // The average of the students who have this measure, not of the roster —
-  // nobody is dragged down by a student who has not been recorded yet.
-  const avg = data.length
-    ? Number((data.reduce((n, d) => n + d.value, 0) / data.length).toFixed(decimals))
-    : null
+  const avg = mean(pts.map((p) => p.v))
+  const delta = pts.length > 1 ? pts[pts.length - 1].v - pts[0].v : null
+  const dp = metric.decimals ?? 0
+  // Down is not automatically bad: for thinking time and fillers, less is more.
+  const good = delta == null ? null : metric.lowerIsBetter ? delta < 0 : delta > 0
+  const flat = delta != null && Math.abs(delta) < (metric.decimals ? 0.15 : 1)
 
   return (
-    <Card title={title} sub={sub}>
-      {data.length ? (
-        <>
-          <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={data} margin={{ left: 0, right: 8, top: 18, bottom: 4 }}>
-              <XAxis dataKey="name" tick={AXIS} axisLine={false} tickLine={false} interval={0} />
-              <YAxis domain={domain ?? [0, 'auto']} width={38} tick={AXIS} axisLine={false} tickLine={false} />
-              <Tooltip content={<Tip suffix={unit} />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
-              {marker != null && <ReferenceLine y={marker} stroke="var(--muted)" strokeDasharray="2 4" />}
-              {avg != null && (
-                <ReferenceLine
-                  y={avg}
-                  stroke="var(--ink)"
-                  strokeDasharray="4 4"
-                  strokeOpacity={0.55}
-                  label={{ value: `class avg ${avg}`, position: 'insideTopRight', fontSize: 10, fontWeight: 700, fill: 'var(--muted)' }}
-                />
-              )}
-              <Bar dataKey="value" isAnimationActive={false} radius={[6, 6, 0, 0]} maxBarSize={64}>
-                {data.map((d) => (
-                  // Above or below the line, at a glance, without a legend.
-                  <Cell key={d.name} fill={colour} fillOpacity={avg != null && d.value < avg ? 0.45 : 1} />
-                ))}
-              </Bar>
-            </BarChart>
+    <div className="analytics-card" style={{ padding: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 999, background: colour, flex: '0 0 auto' }} aria-hidden />
+        <strong style={{ fontSize: 12.5, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {student.name}
+        </strong>
+        {delta != null && (
+          <span
+            style={{
+              marginLeft: 'auto', fontSize: 11.5, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+              color: flat ? 'var(--muted)' : good ? 'var(--green)' : 'var(--red)',
+            }}
+          >
+            {flat ? '▬' : good ? '▲' : '▼'} {Math.abs(delta).toFixed(dp)}
+          </span>
+        )}
+      </div>
+
+      <div style={{ height: 46 }}>
+        {pts.length > 1 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={pts} margin={{ top: 6, right: 4, bottom: 2, left: 4 }}>
+              <Tooltip content={<Tip unit={metric.unit} />} />
+              <Line type="monotone" dataKey="v" stroke={colour} strokeWidth={2.5} dot={false} isAnimationActive={false} />
+            </LineChart>
           </ResponsiveContainer>
-        </>
-      ) : (
-        <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>Not measured yet — this fills in as lessons are recorded.</p>
-      )}
-    </Card>
+        ) : (
+          <p style={{ fontSize: 11, color: 'var(--muted)', margin: '14px 0 0', fontStyle: 'italic' }}>
+            {pts.length === 1 ? 'one lesson so far' : 'not measured yet'}
+          </p>
+        )}
+      </div>
+
+      <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>
+        {student.points.length} lesson{student.points.length === 1 ? '' : 's'}
+        {avg != null && <> · avg <b style={{ color: 'var(--ink)' }}>{avg.toFixed(dp)}</b></>}
+      </div>
+    </div>
   )
 }
 
 export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
-  const scored = rows.filter((r) => r.avgScore != null)
-  const talking = rows.filter((r) => r.avgTalk != null)
+  const [i, setI] = useState(0)
+  const metric = METRICS[i]
+  const dp = metric.decimals ?? 0
 
-  const totalLessons = rows.reduce((n, r) => n + r.lessons, 0)
-  const classAvg = scored.length
-    ? scored.reduce((n, r) => n + (r.avgScore as number), 0) / scored.length
-    : null
-  const classTalk = talking.length
-    ? talking.reduce((n, r) => n + (r.avgTalk as number), 0) / talking.length
-    : null
+  const colours = new Map(rows.map((r, idx) => [r.id, colourOf(idx)]))
+
+  // Ranked for the bars, but a student with nothing measured is left out
+  // rather than plotted at zero — they have not scored nought, they have not
+  // been recorded.
+  const bars = rows
+    .map((r) => ({ id: r.id, name: r.name, value: mean(valuesOf(r, metric.key)) }))
+    .filter((d): d is { id: string; name: string; value: number } => d.value != null)
+    .sort((a, b) => (metric.lowerIsBetter ? a.value - b.value : b.value - a.value))
+    .map((d) => ({ ...d, value: Number(d.value.toFixed(dp)) }))
+
+  const classAvg = bars.length ? Number((bars.reduce((n, d) => n + d.value, 0) / bars.length).toFixed(dp)) : null
+
+  const totalLessons = rows.reduce((n, r) => n + r.points.length, 0)
   const totalVocab = rows.reduce((n, r) => n + r.vocab, 0)
-
-  // Three weeks without a lesson is the point at which a teacher would want to
-  // be told, rather than notice for themselves at the end of a term.
+  const busiest = [...rows].sort((a, b) => b.points.length - a.points.length)[0]
   const quiet = rows.filter((r) => r.daysSinceLast != null && (r.daysSinceLast as number) >= 21)
 
-  const scoreData = [...scored].sort((a, b) => (b.avgScore as number) - (a.avgScore as number))
-    .map((r) => ({ name: r.name, value: Number((r.avgScore as number).toFixed(1)) }))
-  const talkData = [...talking].sort((a, b) => (b.avgTalk as number) - (a.avgTalk as number))
-    .map((r) => ({ name: r.name, value: Math.round(r.avgTalk as number) }))
-  const vocabData = [...rows].filter((r) => r.vocab > 0).sort((a, b) => b.vocab - a.vocab)
-    .map((r) => ({ name: r.name, value: r.vocab }))
-  const lessonData = [...rows].sort((a, b) => b.lessons - a.lessons)
-    .map((r) => ({ name: r.name, value: r.lessons }))
+  const step = (by: number) => setI((n) => (n + by + METRICS.length) % METRICS.length)
 
   const stat = (label: string, value: string, sub: string) => (
     <div>
@@ -203,99 +182,81 @@ export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
     <div style={{ display: 'grid', gap: 16 }}>
       <section className="analytics-card">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 16 }}>
-          {stat('Lessons taught', String(totalLessons), `across ${rows.length} students`)}
-          {stat('Class average', classAvg != null ? classAvg.toFixed(1) : '—', scored.length ? `from ${scored.length} scored students` : 'no scored lessons yet')}
-          {stat('Average talk share', classTalk != null ? `${Math.round(classTalk)}%` : '—', 'of lesson time is the student')}
+          {stat('Total lessons', String(totalLessons), `across ${rows.length} students`)}
+          {stat('Most active', busiest?.points.length ? busiest.name : '—', busiest?.points.length ? `${busiest.points.length} lessons` : 'nothing recorded yet')}
           {stat('Vocabulary met', String(totalVocab), 'words across all lessons')}
+          {stat('Not seen lately', String(quiet.length), quiet.length ? quiet.map((q) => q.name).join(', ') : 'everyone is current')}
         </div>
       </section>
 
-      {quiet.length > 0 && (
-        <div className="warn-box" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <strong>Not seen in a while:</strong>
-          {quiet.map((r) => (
-            <span key={r.id} className="pill" style={{ background: '#fff', border: '1px solid #ead7a5', color: 'var(--amber)' }}>
-              {r.name} · {r.daysSinceLast}d
+      <section className="analytics-card">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h3 style={{ margin: 0, fontSize: 15, letterSpacing: '-.01em' }}>{metric.label}</h3>
+            <p style={{ margin: '3px 0 0', fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.5 }}>{metric.sub}</p>
+          </div>
+          {/* Paging beats scrolling: the comparison stays in the same place on
+              the page, so only the measure changes under your eye. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <button className="k-metric-nav" onClick={() => step(-1)} aria-label="Previous measure">‹</button>
+            <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+              {i + 1}/{METRICS.length}
             </span>
+            <button className="k-metric-nav" onClick={() => step(1)} aria-label="Next measure">›</button>
+          </div>
+        </div>
+
+        {bars.length ? (
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={bars} margin={{ left: 0, right: 8, top: 18, bottom: 4 }}>
+              <XAxis dataKey="name" tick={AXIS} axisLine={false} tickLine={false} interval={0} />
+              <YAxis domain={metric.domain ?? [0, 'auto']} width={38} tick={AXIS} axisLine={false} tickLine={false} />
+              <Tooltip content={<Tip unit={metric.unit} />} cursor={{ fill: 'rgba(10,97,201,.05)' }} />
+              {classAvg != null && (
+                <ReferenceLine
+                  y={classAvg}
+                  stroke="var(--ink)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.5}
+                  label={{ value: `class avg ${classAvg}`, position: 'insideTopRight', fontSize: 10, fontWeight: 700, fill: 'var(--muted)' }}
+                />
+              )}
+              <Bar dataKey="value" isAnimationActive={false} radius={[7, 7, 0, 0]} maxBarSize={54}>
+                {bars.map((d) => <Cell key={d.id} fill={colours.get(d.id)} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
+            Nothing measured for this yet — it fills in as lessons are recorded.
+          </p>
+        )}
+
+        <div className="k-metric-dots" role="tablist" aria-label="Measure">
+          {METRICS.map((m, n) => (
+            <button
+              key={m.key}
+              role="tab"
+              aria-selected={n === i}
+              aria-label={m.label}
+              className={`k-metric-dot ${n === i ? 'sel' : ''}`}
+              onClick={() => setI(n)}
+            />
           ))}
         </div>
-      )}
+      </section>
 
-      <div style={{ display: 'grid', gap: 16 }}>
-        <Compare
-          rows={rows}
-          pick={(r) => r.avgScore}
-          title="Average score"
-          sub="Out of 10, across every scored lesson."
-          unit=" / 10"
-          colour={BRAND}
-          domain={[0, 10]}
-          decimals={1}
-        />
-
-        <Card title="Score progression" sub="First scored lesson to the most recent one.">
-          <Progression rows={rows} />
-        </Card>
-        <Compare
-          rows={rows}
-          pick={(r) => r.avgTalk}
-          title="Talk share"
-          sub="How much of the lesson was the student speaking. The dashed line is 50% — under it, you are doing more of the talking."
-          unit="% of the lesson"
-          colour="#e0a63b"
-          domain={[0, 100]}
-          marker={50}
-        />
-
-        <Compare
-          rows={rows}
-          pick={(r) => r.avgWpm}
-          title="Speaking pace"
-          sub="Words a minute while the student was the one talking. Rising over time is fluency; the number itself says more about the language than the learner."
-          unit=" words / min"
-          colour={BRAND}
-        />
-
-        <Compare
-          rows={rows}
-          pick={(r) => r.avgThink}
-          title="Thinking time"
-          sub="Seconds between you finishing and the student starting. Shortest first — a long pause is where the work is happening, not a fault."
-          unit="s before replying"
-          colour="#7c5cd6"
-          decimals={1}
-          lowerIsBetter
-        />
-
-        <Compare
-          rows={rows}
-          pick={(r) => r.avgTurnWords}
-          title="Words per turn"
-          sub="How much they say each time they speak. Short turns with a quick pace usually means answering, not conversing."
-          unit=" words a turn"
-          colour="#2f8f5b"
-        />
-
-        <Compare
-          rows={rows}
-          pick={(r) => r.avgFillers}
-          title="Filler words"
-          sub="Ums and ahs per lesson, fewest first. Worth reading next to pace: fast and full of fillers is a different problem from slow and clean."
-          unit=" per lesson"
-          colour="#c98a8a"
-          lowerIsBetter
-        />
-
-        <Compare
-          rows={rows}
-          pick={(r) => (r.vocab > 0 ? r.vocab : null)}
-          title="Vocabulary met"
-          sub="Distinct words counted across every lesson."
-          unit=" words"
-          colour="#3f8fa8"
-        />
-
-      </div>
+      <section className="analytics-card">
+        <h3 style={{ margin: 0, fontSize: 15, letterSpacing: '-.01em' }}>{metric.label} — each student</h3>
+        <p style={{ margin: '3px 0 14px', fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.5 }}>
+          Their own lessons in order. The arrow is first lesson to last.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 12 }}>
+          {rows.map((r) => (
+            <TrendCard key={r.id} student={r} colour={colours.get(r.id) as string} metric={metric} />
+          ))}
+        </div>
+      </section>
     </div>
   )
 }

@@ -344,3 +344,14 @@ th.is-today .notes-day{color:var(--brand)}
 .k-tab:hover:not(:disabled):not(.sel){color:var(--ink);background:rgba(255,255,255,.55)}
 .k-tab.sel{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(10,97,201,.24)}
 .k-tab:disabled{opacity:.45;cursor:not-allowed}
+
+/* Metric pager on the analytics tab. */
+.k-metric-nav{width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:#fff;
+  font-size:17px;line-height:1;color:var(--ink);cursor:pointer;font-weight:700;
+  display:grid;place-items:center;transition:background .15s ease,border-color .15s ease}
+.k-metric-nav:hover{background:var(--surface-2);border-color:var(--brand);color:var(--brand)}
+.k-metric-dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.k-metric-dot{width:7px;height:7px;padding:0;border:0;border-radius:999px;background:var(--line);cursor:pointer;
+  transition:background .15s ease,width .15s ease}
+.k-metric-dot:hover{background:var(--muted)}
+.k-metric-dot.sel{width:20px;background:var(--brand)}

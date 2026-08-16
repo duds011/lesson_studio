@@ -6,7 +6,7 @@ import AddStudentForm from '@/components/portal/AddStudentForm'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 import PageHeader from '@/components/PageHeader'
 import StudentsTabs from '@/components/portal/StudentsTabs'
-import ClassAnalytics, { type StudentAnalytics } from '@/components/portal/ClassAnalytics'
+import ClassAnalytics, { type StudentAnalytics, type LessonPoint } from '@/components/portal/ClassAnalytics'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,28 +29,33 @@ export default async function TeacherDashboard() {
     .order('lesson_number', { ascending: true })
 
   const statsByStudent = new Map<string, {
-    count: number; scores: number[]; talks: number[]; vocab: number; lastDate: string | null
-    // The measured ones — pace, hesitation, how much they say per turn.
-    wpm: number[]; think: number[]; fillers: number[]; turnWords: number[]
+    count: number; scores: number[]; vocab: number; lastDate: string | null
+    // Kept per lesson, not just averaged: the analytics panel draws each
+    // student's own line as well as where they stand against everyone.
+    points: LessonPoint[]
   }>()
   for (const l of (lessons || []) as any[]) {
-    const s = statsByStudent.get(l.student_id)
-      ?? { count: 0, scores: [], talks: [], vocab: 0, lastDate: null, wpm: [], think: [], fillers: [], turnWords: [] }
+    const s = statsByStudent.get(l.student_id) ?? { count: 0, scores: [], vocab: 0, lastDate: null, points: [] }
     s.count += 1
     const sum = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
     if (sum?.score != null) s.scores.push(Number(sum.score))
-    if (sum?.talk_percentage != null) s.talks.push(Number(sum.talk_percentage))
     s.vocab += sum?.vocab_total_count ?? 0
-    const m = sum?.recap_json?.metrics ?? {}
-    if (m.studentWpm != null) s.wpm.push(Number(m.studentWpm))
-    if (m.avgResponseSec != null) s.think.push(Number(m.avgResponseSec))
-    if (m.fillerCount != null) s.fillers.push(Number(m.fillerCount))
-    if (m.avgTurnWords != null) s.turnWords.push(Number(m.avgTurnWords))
     if (l.lesson_date && (!s.lastDate || l.lesson_date > s.lastDate)) s.lastDate = l.lesson_date
+
+    const m = sum?.recap_json?.metrics ?? {}
+    const num = (v: any) => (v == null ? null : Number(v))
+    s.points.push({
+      n: l.lesson_number ?? s.points.length + 1,
+      score: num(sum?.score),
+      talk: num(sum?.talk_percentage),
+      wpm: num(m.studentWpm),
+      think: num(m.avgResponseSec),
+      turnWords: num(m.avgTurnWords),
+      fillers: num(m.fillerCount),
+    })
     statsByStudent.set(l.student_id, s)
   }
 
-  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
   const daysSince = (d: string | null) =>
     d ? Math.floor((Date.now() - new Date(`${d}T12:00:00`).getTime()) / 86_400_000) : null
 
@@ -74,16 +79,8 @@ export default async function TeacherDashboard() {
       // First name only: full names do not fit a chart axis, and a teacher
       // knows their own students by them.
       name: String(s.full_name).split(' ')[0],
-      lessons: st?.count ?? 0,
-      avgScore: mean(st?.scores ?? []),
-      firstScore: st?.scores[0] ?? null,
-      lastScore: st?.scores.length ? st.scores[st.scores.length - 1] : null,
-      avgTalk: mean(st?.talks ?? []),
+      points: st?.points ?? [],
       vocab: st?.vocab ?? 0,
-      avgWpm: mean(st?.wpm ?? []),
-      avgThink: mean(st?.think ?? []),
-      avgFillers: mean(st?.fillers ?? []),
-      avgTurnWords: mean(st?.turnWords ?? []),
       daysSinceLast: daysSince(st?.lastDate ?? null),
     }
   })
