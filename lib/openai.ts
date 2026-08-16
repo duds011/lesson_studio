@@ -122,6 +122,7 @@ const RECAP_SCRIPT_RULES: Record<TestScript, string> = {
 - Vocab bullets: - **かな** *romaji* — English meaning
 - Example sentences: each on its own line as かなのぶん *romaji* — English
 - Pattern lines: spell the structure in kana and put its romaji right after, e.g. **Pattern:** [verb plain]まえに *mae ni* [action]します
+- EXERCISES TOO, and this is the one that gets forgotten: every multiple_choice option, every fill_blank option, the fill_blank "answer", and the "before"/"after" text are each written as かな (romaji) — e.g. "いきます (ikimasu)". A bare word in a dropdown is exactly as unreadable as a bare sentence. The "answer" must match its option character for character, romaji included.
 - A line of Japanese with no romaji beside it is useless to this student. There must not be a single one.`,
   hiragana: `JAPANESE SCRIPT — this student reads kana fluently but not kanji.
 - Write ALL Japanese in hiragana/katakana ONLY — NEVER kanji, everywhere in the output.
