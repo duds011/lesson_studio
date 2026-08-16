@@ -26,20 +26,34 @@ export default function InviteLink({ code, compact = false }: { code: string; co
     }
   }
 
+  // One row: the link fills what is left, the button keeps its full label. The
+  // input never shrinks the button away, and its own colours are explicit —
+  // this renders inside headers and modals that repaint inherited text white.
   return (
-    <div style={{ display: 'flex', gap: 8, marginTop: compact ? 8 : 12, alignItems: 'center' }}>
+    <div style={{ display: 'flex', gap: 8, marginTop: compact ? 8 : 14, alignItems: 'stretch' }}>
       <input
         readOnly
         value={url}
         onFocus={(e) => e.currentTarget.select()}
+        onClick={(e) => e.currentTarget.select()}
         aria-label="Invite link"
         style={{
-          flex: 1, minWidth: 0, border: '1px solid var(--line)', borderRadius: 9,
-          padding: '10px 12px', background: 'var(--surface-2)', fontSize: 12, color: 'var(--muted)',
+          flex: '1 1 auto', minWidth: 0, border: '1px solid var(--line)', borderRadius: 10,
+          padding: '11px 12px', background: 'var(--surface-2)', fontSize: 12.5, color: 'var(--ink)',
+          font: 'inherit', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+          textOverflow: 'ellipsis',
         }}
       />
-      <button type="button" className="btn btn-ghost btn-sm" onClick={copy} style={{ flexShrink: 0 }}>
-        {copied ? 'Copied' : 'Copy'}
+      <button
+        type="button"
+        onClick={copy}
+        style={{
+          flex: '0 0 auto', border: '1px solid var(--line)', borderRadius: 10, padding: '0 16px',
+          background: copied ? 'var(--green-soft)' : '#fff', color: copied ? 'var(--green)' : 'var(--ink)',
+          font: 'inherit', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+        }}
+      >
+        {copied ? '✓ Copied' : 'Copy'}
       </button>
     </div>
   )

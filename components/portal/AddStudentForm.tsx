@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createStudent } from '@/app/actions/portal-students'
 import { addPayment } from '@/app/actions/payments'
@@ -32,6 +33,9 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
   // window — the teacher's next job is to send the link, not to fill anything.
   const [created, setCreated] = useState<{ name: string; note?: string; inviteCode?: string } | null>(null)
   const [form, setForm] = useState(emptyForm(teachingLanguage, speakingLanguage))
+  // document.body does not exist during the server render.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const set = (k: keyof ReturnType<typeof emptyForm>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -87,20 +91,25 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
     router.refresh()
   }
 
-  if (!open) {
-    return (
-      <button className="btn btn-primary" onClick={() => { setOpen(true); setCreated(null) }}>
-        + Add student
-      </button>
-    )
-  }
-
   const inputStyle: React.CSSProperties = { border: '1px solid var(--line)', borderRadius: 9, padding: '11px 12px', background: '#fff' }
 
-  // Rendered as a centred dialog, not inline. `.page-head` is a flex row on
-  // desktop, so an inline card here became a tall right-hand item and dragged
-  // the page title down to align with its bottom edge.
-  return (
+  const trigger = (
+    <button className="btn btn-primary" onClick={() => { setOpen(true); setCreated(null) }}>
+      + Add student
+    </button>
+  )
+  if (!open) return trigger
+
+  /**
+   * The dialog is portalled to <body>, not left where this component sits.
+   *
+   * This button lives in the page header, and `.k-thead` paints everything
+   * inside it white for the dark band. Rendered in place, the modal inherited
+   * that: a white heading and white ghost buttons on a white card, all
+   * invisible. Moving it out of the header is the fix for every one of those
+   * at once, instead of overriding colours one element at a time.
+   */
+  const dialog = (
     <div
       className="k-modal"
       role="dialog"
@@ -113,9 +122,11 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
           exists there is nothing left to fill in, and leaving the fields on
           screen behind a success banner buried the one thing that matters. */}
       {created ? (
-        <div className="k-modal-card" style={{ maxWidth: 460, textAlign: 'center' }}>
+        <div className="k-modal-card" style={{ maxWidth: 460, textAlign: 'center', color: 'var(--ink)' }}>
           <div className="k-join-mark" style={{ margin: '0 auto 16px' }} aria-hidden>🔗</div>
-          <h3 style={{ margin: 0, fontSize: 21 }}>Invite link for {created.name}</h3>
+          <h3 style={{ margin: 0, fontSize: 20, color: 'var(--ink)', letterSpacing: '-.02em' }}>
+            Invite link for {created.name}
+          </h3>
           <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '10px 0 0', lineHeight: 1.6 }}>
             Send this to them however you normally talk. They open it, pick their own email and password, and land
             in your workspace ready to go.
@@ -124,11 +135,14 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
           {created.inviteCode && <InviteLink code={created.inviteCode} />}
           {created.note && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{created.note}</p>}
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 18, alignItems: 'stretch' }}>
-            <button className="k-modal-cta" style={{ flex: 1, marginTop: 0 }} onClick={finish}>Done</button>
-            <button className="btn btn-ghost" onClick={() => setCreated(null)}>Add another</button>
-          </div>
-          <p style={{ fontSize: 11, color: 'var(--muted)', margin: '12px 0 0' }}>
+          <button className="k-modal-cta" onClick={finish}>Done</button>
+          <button
+            onClick={() => setCreated(null)}
+            style={{ marginTop: 12, background: 'none', border: 0, font: 'inherit', fontSize: 12.5, color: 'var(--muted)', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            Add another student
+          </button>
+          <p style={{ fontSize: 11, color: 'var(--muted)', margin: '10px 0 0' }}>
             You can copy this again any time from {created.name}&rsquo;s row.
           </p>
         </div>
@@ -196,5 +210,12 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
         </div>
       )}
     </div>
+  )
+
+  return (
+    <>
+      {trigger}
+      {mounted && createPortal(dialog, document.body)}
+    </>
   )
 }
