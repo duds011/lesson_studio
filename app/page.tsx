@@ -97,6 +97,25 @@ async function loadDraftRecaps(recapRecs: Record<string, any>): Promise<DraftRec
   }))
 }
 
+/**
+ * How many recaps this teacher has actually sent.
+ *
+ * Counted from the lessons table, not from the recap docs in the key-value
+ * store. Those two had drifted: a draft lives in KV and only becomes a lesson
+ * row on publish, but a lesson row outlives its KV doc — deleting a reviewed
+ * draft, or any lesson published before that store existed, leaves a lesson a
+ * student can read and no doc to count. The tile said 3 while the list under
+ * it showed 6. The row is what the student sees, so the row is the truth.
+ */
+async function publishedLessonCount(supabase: any, teacherId: string): Promise<number> {
+  const { count } = await supabase
+    .from('lessons')
+    .select('id', { count: 'exact', head: true })
+    .eq('teacher_id', teacherId)
+    .eq('status', 'published')
+  return count ?? 0
+}
+
 /** The overview for a teacher who told onboarding they keep no calendar. */
 async function RecordingsHome() {
   const supabase = await createClient()
@@ -128,6 +147,7 @@ async function RecordingsHome() {
   const platform = resolveTeachingPlatform((profile as any)?.teaching_platform ?? (profile as any)?.meeting_platform)
   const pending = await listPendingRecordings()
   const studentOptions = (students ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
+  const publishedCount = await publishedLessonCount(supabase, user?.id ?? '')
 
   return (
     <>
@@ -137,7 +157,7 @@ async function RecordingsHome() {
         <RecordingsOverview
           studentCount={(students ?? []).length}
           draftCount={draftRecaps.length}
-          publishedCount={Object.values(recapRecs).filter((r: any) => r.status === 'published').length}
+          publishedCount={publishedCount}
           recent={recent.filter((l) => l.status === 'published')}
           platformLabel={TEACHING_PLATFORM_META[platform].label}
           review={<RecapsToReview drafts={draftRecaps} students={studentOptions} />}
@@ -193,6 +213,7 @@ export default async function Home() {
   const { data: myStudents } = await supabaseForStudents
     .from('students').select('id, full_name').eq('teacher_id', me?.id ?? '')
   const studentOptions = (myStudents ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
+  const publishedCount = await publishedLessonCount(supabaseForStudents, me?.id ?? '')
 
   return (
     <>
@@ -254,7 +275,7 @@ export default async function Home() {
               </div>
               <div className="k-stat purple">
                 <div className="k-stat-head"><span>Published recaps</span></div>
-                <div className="k-stat-val"><b><CountUp value={Object.values(recapRecs).filter((r) => r.status === 'published').length} /></b></div>
+                <div className="k-stat-val"><b><CountUp value={publishedCount} /></b></div>
                 <p className="k-stat-sub">sent to students</p>
               </div>
             </div>
