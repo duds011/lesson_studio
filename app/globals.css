@@ -293,7 +293,7 @@ th.is-today .notes-day{color:var(--brand)}
 .k-join-mark{width:62px;height:62px;margin:0 auto 20px;display:grid;place-items:center;font-size:28px;
   border-radius:18px;background:var(--join-glow,rgba(10,97,201,.13));border:1px solid var(--line)}
 .k-join-eyebrow{margin:0;font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
-.k-join-title{margin:8px 0 0;font-size:32px;line-height:1.15;letter-spacing:-.02em;color:var(--ink)}
+.k-join-title{margin:6px 0 0;font-size:clamp(34px,7vw,44px);line-height:1.08;letter-spacing:-.035em;color:var(--ink);font-weight:700}
 .k-join-title.sm{font-size:24px}
 .k-join-sub{margin:14px 0 0;font-size:14px;line-height:1.6;color:var(--muted)}
 

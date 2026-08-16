@@ -88,16 +88,19 @@ export default function JoinCard({
             <div className="k-join-mark k-join-step" style={{ animationDelay: '60ms' }} aria-hidden>
               {invite.logoText}
             </div>
+            {/* Their name is the biggest thing on the page. An invitation that
+                opens with the product's name reads like a notice; one that
+                opens with yours reads like it was meant for you. */}
             <p className="k-join-eyebrow k-join-step" style={{ animationDelay: '140ms' }}>
-              You’ve been invited to
+              Welcome
             </p>
             <h1 className="k-join-title k-join-step" style={{ animationDelay: '200ms' }}>
-              {invite.portalName}
+              {invite.studentName}
             </h1>
             <p className="k-join-sub k-join-step" style={{ animationDelay: '270ms' }}>
-              {invite.teacherName} set up a space for your
-              {invite.language ? ` ${invite.language}` : ''} lessons, {invite.studentName} — your recaps, vocabulary
-              and practice, all in one place.
+              {invite.teacherName} has invited you to <strong style={{ color: 'var(--ink)', fontWeight: 700 }}>{invite.portalName}</strong>
+              {invite.language ? `, for your ${invite.language} lessons` : ''} — your recaps, vocabulary and practice,
+              all in one place.
             </p>
 
             {signedInAs ? (
