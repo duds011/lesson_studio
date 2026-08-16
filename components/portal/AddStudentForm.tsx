@@ -10,15 +10,11 @@ import InviteLink from '@/components/portal/InviteLink'
 
 const LEVELS = ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'Upper-Intermediate', 'Advanced']
 
-function randomPassword() {
-  return Math.random().toString(36).slice(-8) + 'A1!'
-}
-
 // The language defaults to what THIS teacher teaches, not to Japanese. The
 // hardcoded default is how an English teacher's student ended up marked as
 // learning Japanese and got a JLPT-style recap for an English lesson.
 const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
-  full_name: '', email: '', password: randomPassword(), language: defaultLanguage || 'English', level: 'Beginner',
+  full_name: '', language: defaultLanguage || 'English', level: 'Beginner',
   // What recaps and tests are EXPLAINED in — defaults to the language the
   // teacher said they explain in, since that is usually every student's.
   instruction_language: /^english$/i.test(defaultInstruction.trim()) ? '' : defaultInstruction.trim(),
@@ -32,7 +28,9 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [created, setCreated] = useState<{ email: string; password: string; note?: string; inviteCode?: string } | null>(null)
+  // Set once the student exists. Its presence swaps the form out for the link
+  // window — the teacher's next job is to send the link, not to fill anything.
+  const [created, setCreated] = useState<{ name: string; note?: string; inviteCode?: string } | null>(null)
   const [form, setForm] = useState(emptyForm(teachingLanguage, speakingLanguage))
 
   const set = (k: keyof ReturnType<typeof emptyForm>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -43,8 +41,11 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
     setBusy(true)
     setError('')
 
+    // No email is passed at all: this form always creates an invited student.
+    // A teacher who already has the address can still set a login afterwards
+    // from the student's row.
     const res = await createStudent({
-      full_name: form.full_name, email: form.email, password: form.password,
+      full_name: form.full_name,
       language: form.language, level: form.level,
       instruction_language: form.instruction_language,
     })
@@ -72,7 +73,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
     }
 
     setBusy(false)
-    setCreated({ email: form.email, password: form.password, note, inviteCode: res.inviteCode })
+    setCreated({ name: form.full_name, note, inviteCode: res.inviteCode })
     setForm(emptyForm(teachingLanguage, speakingLanguage))
     router.refresh()
   }
@@ -98,56 +99,41 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
       aria-label="New student"
       onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
     >
-      <div className="k-modal-card">
-      <div className="settings-row" style={{ marginBottom: 14 }}>
-        <h3 style={{ margin: 0 }}>New student</h3>
-        <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Close</button>
-      </div>
-
+      {/* Two windows, never both: the form, then the link. Once the student
+          exists there is nothing left to fill in, and leaving the fields on
+          screen behind a success banner buried the one thing that matters. */}
       {created ? (
-        <div>
-          {created.inviteCode ? (
-            <>
-              <div className="warn-box" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)', color: 'var(--green)' }}>
-                <strong>Student added.</strong> Send them this link — they choose their own email and password.
-              </div>
-              <InviteLink code={created.inviteCode} />
-            </>
-          ) : (
-            <>
-              <div className="warn-box" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)', color: 'var(--green)' }}>
-                <strong>Account created.</strong> Share these login details with the student:
-              </div>
-              <div className="lesson-block" style={{ marginTop: 12, padding: 16 }}>
-                <div className="talk-row"><span>Email</span><strong>{created.email}</strong></div>
-                <div className="talk-row" style={{ borderBottom: 0 }}><span>Password</span><strong>{created.password}</strong></div>
-              </div>
-            </>
-          )}
+        <div className="k-modal-card" style={{ maxWidth: 460, textAlign: 'center' }}>
+          <div className="k-join-mark" style={{ margin: '0 auto 16px' }} aria-hidden>🔗</div>
+          <h3 style={{ margin: 0, fontSize: 21 }}>Invite link for {created.name}</h3>
+          <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '10px 0 0', lineHeight: 1.6 }}>
+            Send this to them however you normally talk. They open it, pick their own email and password, and land
+            in your workspace ready to go.
+          </p>
+
+          {created.inviteCode && <InviteLink code={created.inviteCode} />}
           {created.note && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{created.note}</p>}
-          <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => setCreated(null)}>Add another</button>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => { setCreated(null); setOpen(false) }}>Done</button>
+            <button className="btn btn-ghost" onClick={() => setCreated(null)}>Add another</button>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--muted)', margin: '12px 0 0' }}>
+            You can copy this again any time from {created.name}&rsquo;s row.
+          </p>
         </div>
       ) : (
+        <div className="k-modal-card">
+        <div className="settings-row" style={{ marginBottom: 14 }}>
+          <h3 style={{ margin: 0 }}>New student</h3>
+          <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Close</button>
+        </div>
+
         <form onSubmit={submit}>
           <div className="field">
             <label>Full name</label>
             <input value={form.full_name} onChange={set('full_name')} required placeholder="Jane Doe" />
           </div>
-          <div className="field">
-            <label>Email <span style={{ fontWeight: 500, color: 'var(--muted)' }}>(optional)</span></label>
-            <input type="email" value={form.email} onChange={set('email')} placeholder="jane@example.com" autoComplete="off" />
-            <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0' }}>
-              Leave blank and you&rsquo;ll get an invite link to send them instead — they pick their own email and password.
-            </p>
-          </div>
-          {/* Only meaningful when the teacher is making the account herself.
-              With no email there is nothing to attach a password to. */}
-          {form.email.trim() && (
-            <div className="field">
-              <label>Temporary password</label>
-              <input value={form.password} onChange={set('password')} required />
-            </div>
-          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
               <label>Level</label>
@@ -191,12 +177,14 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
 
           {error && <div className="warn-box" style={{ marginTop: 8, borderColor: '#f0cece', background: 'var(--red-soft)', color: 'var(--red)' }}>{error}</div>}
 
-          <button type="submit" className="btn btn-primary" disabled={busy} style={{ marginTop: 14 }}>
-            {busy ? 'Creating…' : 'Create student'}
+          {/* Says what actually happens next, because what happens next is the
+              teacher copying a link — not a saved record they never see. */}
+          <button type="submit" className="btn btn-primary" disabled={busy} style={{ marginTop: 14, width: '100%' }}>
+            {busy ? 'Generating…' : 'Generate link'}
           </button>
         </form>
+        </div>
       )}
-      </div>
     </div>
   )
 }
