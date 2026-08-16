@@ -96,7 +96,22 @@ export default function RecapsToReview({
     router.refresh()
   }
 
-  const fmtWhen = (d?: string | number) => d ? new Date(d).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
+  /**
+   * A lesson DATE is a date. It has no clock in it.
+   *
+   * "2026-08-16" parses as midnight UTC, and printing that with a time turned
+   * every lesson into "16/08, 02:00" — a teacher reading their own morning
+   * back as two in the morning. Only a real timestamp gets a time.
+   */
+  const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+  const fmtWhen = (d?: string | number) => {
+    if (!d) return ''
+    if (typeof d === 'string' && DATE_ONLY.test(d)) {
+      // Noon, so the day cannot slip either side of the date line.
+      return new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+    }
+    return new Date(d).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
   async function deleteDraft(d: DraftRecap) {
     if (!confirm(`Delete ${d.studentName}'s draft recap? This removes it from Recaps to review and cannot be undone.`)) return
     setDeleting(d.eventId)
