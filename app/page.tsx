@@ -14,6 +14,7 @@ import { mapEventToStudent } from '@/lib/lesson-link'
 import { currentCalendarMode } from '@/lib/calendar-mode.server'
 import { listPendingRecordings } from '@/app/actions/recordings'
 import PendingRecordings from '@/components/portal/PendingRecordings'
+import RecorderMissing from '@/components/portal/RecorderMissing'
 import { resolveTeachingPlatform, TEACHING_PLATFORM_META } from '@/lib/teaching-platform'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
@@ -107,6 +108,14 @@ async function loadDraftRecaps(recapRecs: Record<string, any>): Promise<DraftRec
  * student can read and no doc to count. The tile said 3 while the list under
  * it showed 6. The row is what the student sees, so the row is the truth.
  */
+async function hasRecorder(teacherId: string): Promise<boolean> {
+  // Written the first time the extension signs in, so its presence means
+  // installed AND connected to this account — which is the part that matters.
+  const { data } = await createAdminClient()
+    .from('teacher_ext_tokens').select('teacher_id').eq('teacher_id', teacherId).maybeSingle()
+  return Boolean(data)
+}
+
 async function publishedLessonCount(supabase: any, teacherId: string): Promise<number> {
   const { count } = await supabase
     .from('lessons')
@@ -148,11 +157,13 @@ async function RecordingsHome() {
   const pending = await listPendingRecordings()
   const studentOptions = (students ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
   const publishedCount = await publishedLessonCount(supabase, user?.id ?? '')
+  const recorderReady = await hasRecorder(user?.id ?? '')
 
   return (
     <>
       <AppNav email={user?.email} connected={false} calendar={false} />
       <main className="wrap page-fade">
+        {!recorderReady && <RecorderMissing />}
         <PendingRecordings recordings={pending} students={studentOptions} />
         <RecordingsOverview
           studentCount={(students ?? []).length}
@@ -214,6 +225,7 @@ export default async function Home() {
     .from('students').select('id, full_name').eq('teacher_id', me?.id ?? '')
   const studentOptions = (myStudents ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
   const publishedCount = await publishedLessonCount(supabaseForStudents, me?.id ?? '')
+  const recorderReady = await hasRecorder(me?.id ?? '')
 
   return (
     <>
@@ -242,6 +254,7 @@ export default async function Home() {
           </div>
         </header>
 
+        {!recorderReady && <RecorderMissing />}
         <PendingRecordings recordings={pending} students={studentOptions} />
 
         <div className="k-overview">

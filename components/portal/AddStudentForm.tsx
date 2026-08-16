@@ -16,9 +16,10 @@ const LEVELS = ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'U
 // learning Japanese and got a JLPT-style recap for an English lesson.
 const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
   full_name: '', language: defaultLanguage || 'English', level: 'Beginner',
-  // What recaps and tests are EXPLAINED in — defaults to the language the
-  // teacher said they explain in, since that is usually every student's.
-  instruction_language: /^english$/i.test(defaultInstruction.trim()) ? '' : defaultInstruction.trim(),
+  // What recaps and tests are WRITTEN in. Required, and pre-filled with the
+  // teacher's own answer — it was optional-and-blank before, which read as
+  // "leave it" and quietly meant English for students who could not read it.
+  instruction_language: defaultInstruction.trim() || 'English',
   // Optional starting package. No payment method: it was one more box between
   // the teacher and a saved student, and Payments is where that belongs.
   lessons: '', amount: '',
@@ -173,13 +174,13 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
             </div>
           </div>
           <div className="field">
-            <label>Explain lessons in <span style={{ fontWeight: 500, color: 'var(--muted)' }}>(optional)</span></label>
-            <select value={form.instruction_language} onChange={set('instruction_language')} style={inputStyle}>
-              <option value="">English</option>
-              {SPOKEN_LANGUAGES.filter((l) => !/^english$/i.test(l)).map((l) => <option key={l}>{l}</option>)}
+            <label>Recap language</label>
+            <select value={form.instruction_language} onChange={set('instruction_language')} required style={inputStyle}>
+              {SPOKEN_LANGUAGES.map((l) => <option key={l}>{l}</option>)}
             </select>
             <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0' }}>
-              Recap explanations, definitions and test questions are written in this language.
+              The language this student reads. Their recaps, word meanings and test questions are written in it —
+              not the language they are learning.
             </p>
           </div>
 

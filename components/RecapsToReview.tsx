@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DraftRecap } from './RecapReview'
 import { reassignRecapStudent } from '@/app/actions/recordings'
@@ -28,6 +28,23 @@ export default function RecapsToReview({
   const [deleting, setDeleting] = useState('')
   const [retrying, setRetrying] = useState('')
   const [moving, setMoving] = useState('')
+
+  const building = drafts.filter((d) => d.status === 'processing').length
+
+  /**
+   * A recap that is still building has no way to announce itself.
+   *
+   * It is written by a background job on the server, so this page has no idea
+   * when it lands — "Transcribing and writing the recap" sat there until the
+   * teacher happened to reload, which meant sitting and waiting for something
+   * that had often finished minutes ago. While anything is building, ask the
+   * server again every few seconds; the moment none are, stop asking.
+   */
+  useEffect(() => {
+    if (building === 0) return
+    const id = setInterval(() => router.refresh(), 6000)
+    return () => clearInterval(id)
+  }, [building, router])
 
   /**
    * Put this recap on a different student and build it again.
@@ -61,7 +78,6 @@ export default function RecapsToReview({
   if (drafts.length === 0) return null
 
   const waiting = drafts.filter((d) => d.status === 'draft').length
-  const building = drafts.filter((d) => d.status === 'processing').length
   const broken = drafts.filter((d) => d.status === 'failed').length
 
   /** Rebuild from the audio, which is kept for 30 days. */
