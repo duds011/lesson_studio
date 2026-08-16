@@ -93,10 +93,16 @@ function Progression({ rows }: { rows: StudentAnalytics[] }) {
 }
 
 /**
- * One measure, every student, ranked.
+ * One measure, every student, ranked, with the class average across it.
  *
- * `lowerIsBetter` only flips the sort — the bar is not recoloured for it,
- * because "good" depends on the student. A long pause before answering is
+ * Vertical bars: names sit under their own column and the eye reads the
+ * skyline in one pass, which is the whole point of putting a roster on one
+ * chart. The average line is what turns a ranking into a judgement — third
+ * of five means nothing until you can see whether third is above or below
+ * the middle of your own class.
+ *
+ * `lowerIsBetter` only flips the sort. The bar is not recoloured for it,
+ * because "good" depends on the student: a long pause before answering is
  * where a beginner lives, not a fault.
  */
 function Compare({
@@ -118,18 +124,40 @@ function Compare({
     .sort((a, b) => (lowerIsBetter ? (pick(a) as number) - (pick(b) as number) : (pick(b) as number) - (pick(a) as number)))
     .map((r) => ({ name: r.name, value: Number((pick(r) as number).toFixed(decimals)) }))
 
+  // The average of the students who have this measure, not of the roster —
+  // nobody is dragged down by a student who has not been recorded yet.
+  const avg = data.length
+    ? Number((data.reduce((n, d) => n + d.value, 0) / data.length).toFixed(decimals))
+    : null
+
   return (
     <Card title={title} sub={sub}>
       {data.length ? (
-        <ResponsiveContainer width="100%" height={Math.max(150, data.length * 38)}>
-          <BarChart data={data} layout="vertical" margin={{ left: 4, right: 24, top: 4, bottom: 4 }}>
-            <XAxis type="number" domain={domain ?? [0, 'auto']} tick={AXIS} axisLine={false} tickLine={false} />
-            <YAxis type="category" dataKey="name" width={92} tick={AXIS} axisLine={false} tickLine={false} />
-            <Tooltip content={<Tip suffix={unit} />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
-            {marker != null && <ReferenceLine x={marker} stroke="var(--muted)" strokeDasharray="3 3" />}
-            <Bar dataKey="value" isAnimationActive={false} radius={[0, 6, 6, 0]} fill={colour} />
-          </BarChart>
-        </ResponsiveContainer>
+        <>
+          <ResponsiveContainer width="100%" height={230}>
+            <BarChart data={data} margin={{ left: 0, right: 8, top: 18, bottom: 4 }}>
+              <XAxis dataKey="name" tick={AXIS} axisLine={false} tickLine={false} interval={0} />
+              <YAxis domain={domain ?? [0, 'auto']} width={38} tick={AXIS} axisLine={false} tickLine={false} />
+              <Tooltip content={<Tip suffix={unit} />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
+              {marker != null && <ReferenceLine y={marker} stroke="var(--muted)" strokeDasharray="2 4" />}
+              {avg != null && (
+                <ReferenceLine
+                  y={avg}
+                  stroke="var(--ink)"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.55}
+                  label={{ value: `class avg ${avg}`, position: 'insideTopRight', fontSize: 10, fontWeight: 700, fill: 'var(--muted)' }}
+                />
+              )}
+              <Bar dataKey="value" isAnimationActive={false} radius={[6, 6, 0, 0]} maxBarSize={64}>
+                {data.map((d) => (
+                  // Above or below the line, at a glance, without a legend.
+                  <Cell key={d.name} fill={colour} fillOpacity={avg != null && d.value < avg ? 0.45 : 1} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </>
       ) : (
         <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>Not measured yet — this fills in as lessons are recorded.</p>
       )}
@@ -194,19 +222,16 @@ export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
       )}
 
       <div style={{ display: 'grid', gap: 16 }}>
-        <Card title="Average score by student" sub="Out of 10, across every scored lesson.">
-          {scoreData.length ? (
-            <ResponsiveContainer width="100%" height={Math.max(140, scoreData.length * 34)}>
-              <BarChart data={scoreData} layout="vertical" margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
-                <XAxis type="number" domain={[0, 10]} tick={AXIS} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" width={78} tick={AXIS} axisLine={false} tickLine={false} />
-                <Tooltip content={<Tip suffix=" / 10" />} cursor={{ fill: 'rgba(10,97,201,.06)' }} />
-                {classAvg != null && <ReferenceLine x={Number(classAvg.toFixed(1))} stroke="var(--muted)" strokeDasharray="3 3" />}
-                <Bar dataKey="value" isAnimationActive={false} radius={[0, 6, 6, 0]} fill={BRAND} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>No scored lessons yet.</p>}
-        </Card>
+        <Compare
+          rows={rows}
+          pick={(r) => r.avgScore}
+          title="Average score"
+          sub="Out of 10, across every scored lesson."
+          unit=" / 10"
+          colour={BRAND}
+          domain={[0, 10]}
+          decimals={1}
+        />
 
         <Card title="Score progression" sub="First scored lesson to the most recent one.">
           <Progression rows={rows} />

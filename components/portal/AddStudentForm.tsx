@@ -11,11 +11,12 @@ import InviteLink from '@/components/portal/InviteLink'
 
 const LEVELS = ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'Upper-Intermediate', 'Advanced']
 
-// The language defaults to what THIS teacher teaches, not to Japanese. The
-// hardcoded default is how an English teacher's student ended up marked as
-// learning Japanese and got a JLPT-style recap for an English lesson.
+// Learning starts empty and has to be chosen. It used to inherit a
+// teacher-level answer given once during onboarding, which made a per-account
+// fact out of something that differs per student — one teacher can teach two
+// languages, and the wrong value here picks the wrong recap prompt entirely.
 const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
-  full_name: '', language: defaultLanguage || 'English', level: 'Beginner',
+  full_name: '', language: defaultLanguage || '', level: 'Beginner',
   // What recaps and tests are WRITTEN in. Required, and pre-filled with the
   // teacher's own answer — it was optional-and-blank before, which read as
   // "leave it" and quietly meant English for students who could not read it.
@@ -169,6 +170,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
             <div className="field">
               <label>Learning</label>
               <select value={form.language} onChange={set('language')} required style={inputStyle}>
+                <option value="" disabled>Choose…</option>
                 {languageOptions(teachingLanguage).map((l) => <option key={l}>{l}</option>)}
               </select>
             </div>

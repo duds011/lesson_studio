@@ -9,7 +9,7 @@ import {
   TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
 } from '@/lib/teaching-platform'
 import { CALENDAR_MODE_META, type CalendarMode } from '@/lib/calendar-mode'
-import { TEACHING_LANGUAGES as LANGUAGES, SPOKEN_LANGUAGES } from '@/lib/languages'
+import { SPOKEN_LANGUAGES } from '@/lib/languages'
 
 type Props = {
   initial: {
@@ -35,7 +35,7 @@ const ZONES = [
   'Australia/Sydney',
 ]
 
-const STEPS = ['What you teach', 'Where you meet', 'Your calendar', 'Your student view', 'Your recorder'] as const
+const STEPS = ['Your lessons', 'Where you meet', 'Your calendar', 'Your student view', 'Your recorder'] as const
 
 export default function OnboardingFlow({ initial, googleConnected, zoomConnected }: Props) {
   const router = useRouter()
@@ -44,10 +44,6 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
   // Resume where they left off, but never past the last step.
   const [step, setStep] = useState(Math.min(initial.step, STEPS.length - 1))
-  // A language saved before the list narrowed to three gets re-picked here.
-  const [language, setLanguage] = useState(
-    initial.teachingLanguage && LANGUAGES.includes(initial.teachingLanguage) ? initial.teachingLanguage : ''
-  )
   const [spokenLanguage, setSpokenLanguage] = useState(initial.speakingLanguage ?? '')
   const [timezone, setTimezone] = useState(initial.timezone)
   const [platform, setPlatform] = useState<TeachingPlatform>(initial.teachingPlatform)
@@ -58,7 +54,6 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
   const [accent, setAccent] = useState(initial.brand.accent)
   const [portalName, setPortalName] = useState(initial.brand.portalName)
 
-  const effectiveLanguage = language
   /** A marketplace teacher has no link for us to make and may have no calendar. */
   const external = isExternalPlatform(platform)
 
@@ -72,14 +67,8 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
   const next = () => {
     if (step === 0) {
-      if (!effectiveLanguage) { setError('Pick the language you teach.'); return }
-      // Blank means "same as what I teach", which is stored as the teaching
-      // language rather than as null — a value the recorder can use directly
-      // beats one every reader has to know how to resolve.
-      persist(
-        { teachingLanguage: effectiveLanguage, speakingLanguage: spokenLanguage || effectiveLanguage, timezone, step: 1 },
-        () => setStep(1),
-      )
+      if (!spokenLanguage) { setError('Pick the language your lessons are spoken in.'); return }
+      persist({ speakingLanguage: spokenLanguage, timezone, step: 1 }, () => setStep(1))
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
@@ -138,18 +127,13 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {/* ── 1. Language ── */}
           {step === 0 && (
             <>
-              <h1>What do you teach?</h1>
-              <p className="k-onb-lead">This shapes the recaps, vocabulary and practice we generate for your students.</p>
-
-              <label className="k-field">
-                <span>Language</span>
-                <select className="k-input" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                  <option value="" disabled>Choose a language…</option>
-                  {LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
-                </select>
-              </label>
-              <p className="k-onb-lead" style={{ fontSize: 12, marginTop: -4 }}>
-                More languages are coming — these three are the ones our recaps and tests are tuned for today.
+              <h1>What language do your lessons sound like?</h1>
+              {/* What each student is LEARNING is asked when that student is
+                  added, where it belongs: one teacher can teach two languages,
+                  and answering once here made that a per-account fact. This
+                  step keeps only the question that really is per teacher. */}
+              <p className="k-onb-lead">
+                Not what you teach — what is actually spoken in the room. It is what the transcriber listens for.
               </p>
 
               <label className="k-field">
@@ -159,14 +143,13 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   value={spokenLanguage}
                   onChange={(e) => setSpokenLanguage(e.target.value)}
                 >
-                  <option value="">Same as what I teach</option>
+                  <option value="" disabled>Choose a language…</option>
                   {SPOKEN_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </label>
               <p className="k-onb-lead" style={{ fontSize: 12, marginTop: -4 }}>
-                With beginners most of a lesson is the language you share, not the one being
-                learned. Telling us which it is keeps the transcript honest — and it is what the
-                recorder offers first for a new student.
+                With beginners most of an hour is the language you share, not the one being learned. Telling us which
+                it is keeps the transcript honest, and it is what the recorder offers first.
               </p>
 
               <label className="k-field">
