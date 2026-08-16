@@ -140,7 +140,7 @@ async function RecordingsHome() {
           publishedCount={Object.values(recapRecs).filter((r: any) => r.status === 'published').length}
           recent={recent.filter((l) => l.status === 'published')}
           platformLabel={TEACHING_PLATFORM_META[platform].label}
-          review={<RecapsToReview drafts={draftRecaps} />}
+          review={<RecapsToReview drafts={draftRecaps} students={studentOptions} />}
         />
       </main>
     </>
@@ -237,7 +237,7 @@ export default async function Home() {
               <TeacherCalendar initialLessons={initialLessons} />
             )}
 
-            {draftRecaps.length > 0 && <RecapsToReview drafts={draftRecaps} />}
+            {draftRecaps.length > 0 && <RecapsToReview drafts={draftRecaps} students={studentOptions} />}
           </div>
 
           <aside className="k-overview-rail" aria-label="Lesson summary">

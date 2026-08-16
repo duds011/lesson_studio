@@ -118,3 +118,50 @@ export async function discardRecording(recordingId: string): Promise<{ success: 
   revalidatePath('/')
   return { success: true }
 }
+
+/**
+ * Move a built recap to a different student.
+ *
+ * The reason a wrong student used to be worth avoiding at all costs: there was
+ * no way back from one. Now it is an edit. The link moves, any lesson row moves
+ * with it, and the caller rebuilds — from the cached transcript, so it costs a
+ * completion rather than another pass over the audio.
+ *
+ * The rebuild is not optional. A recap names the student throughout and is
+ * graded against the language on their record, so a re-linked recap that was
+ * not rebuilt is still the old student's recap wearing a new name.
+ */
+export async function reassignRecapStudent(
+  eventId: string,
+  studentId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireTeacher()
+  if ('error' in auth) return { success: false, error: auth.error }
+
+  const admin = createAdminClient()
+
+  const { data: link } = await admin
+    .from('lesson_event_links')
+    .select('event_id, teacher_id')
+    .eq('event_id', eventId)
+    .maybeSingle()
+  if (!link) return { success: false, error: 'That recording is not linked to anything.' }
+  if (link.teacher_id !== auth.user.id) return { success: false, error: 'Not your recording.' }
+
+  const { data: student } = await auth.supabase
+    .from('students').select('id').eq('id', studentId).eq('teacher_id', auth.user.id).maybeSingle()
+  if (!student) return { success: false, error: 'Student not found.' }
+
+  const { error } = await admin
+    .from('lesson_event_links')
+    .update({ student_id: studentId })
+    .eq('event_id', eventId)
+  if (error) return { success: false, error: error.message }
+
+  // A published lesson already has a row of its own; move it too, so the recap
+  // does not stay on the old student's record after the rebuild.
+  await admin.from('lessons').update({ student_id: studentId }).eq('source_event_id', eventId)
+
+  revalidatePath('/')
+  return { success: true }
+}
