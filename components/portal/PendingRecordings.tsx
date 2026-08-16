@@ -26,6 +26,21 @@ export default function PendingRecordings({
 
   if (recordings.length === 0) return null
 
+  /**
+   * When it was recorded, to the minute.
+   *
+   * Two lessons on the same afternoon are otherwise identical rows, and the
+   * teacher has to guess which is which. The clock comes from the upload's own
+   * timestamp and is rendered in the browser, so it reads in the teacher's
+   * time zone rather than the server's.
+   */
+  function when(r: PendingRecording): string {
+    const at = new Date(r.createdAt)
+    const time = at.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    const day = r.lessonDate ? new Date(`${r.lessonDate}T12:00:00`) : at
+    return `${day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · ${time}`
+  }
+
   async function file(recordingId: string) {
     const studentId = picked[recordingId]
     if (!studentId) { setError('Choose who the lesson was with first.'); return }
@@ -70,7 +85,7 @@ export default function PendingRecordings({
         Tell us who each one was with and the recap starts building.
       </p>
 
-      {recordings.map((r) => (
+      {recordings.map((r, i) => (
         <div
           key={r.recordingId}
           style={{
@@ -78,12 +93,22 @@ export default function PendingRecordings({
             padding: '12px 0', borderTop: '1px solid var(--line)',
           }}
         >
-          <div style={{ flex: '1 1 190px', minWidth: 0 }}>
+          <span
+            aria-hidden
+            style={{
+              flex: '0 0 auto', width: 26, height: 26, borderRadius: 999, display: 'grid',
+              placeItems: 'center', background: 'var(--surface-2)', color: 'var(--muted)',
+              fontSize: 11.5, fontWeight: 700,
+            }}
+          >
+            {i + 1}
+          </span>
+          <div style={{ flex: '1 1 170px', minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 13.5 }}>
               {r.minutes != null ? `${r.minutes} minute lesson` : 'Lesson'}
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>
-              {r.lessonDate ? new Date(`${r.lessonDate}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) : 'Recorded'}
+              {when(r)}
               {r.quiet && <span style={{ color: 'var(--amber)' }}> · {r.quiet} was silent</span>}
             </div>
           </div>
@@ -98,7 +123,7 @@ export default function PendingRecordings({
               padding: '10px 11px', font: 'inherit', fontSize: 13, background: '#fff',
             }}
           >
-            <option value="">Who was this with?</option>
+            <option value="">Choose a student</option>
             {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
 

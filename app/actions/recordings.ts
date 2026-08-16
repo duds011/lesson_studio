@@ -40,7 +40,7 @@ export async function listPendingRecordings(): Promise<PendingRecording[]> {
     .from('pending_recordings')
     .select('recording_id, seconds, lesson_date, created_at, heard')
     .eq('teacher_id', auth.user.id)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
 
   return ((data ?? []) as any[]).map((r) => {
     const heard = r.heard || {}
