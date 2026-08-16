@@ -45,6 +45,13 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
     .order('lesson_number', { ascending: false })
 
   const rows = (lessons || []) as any[]
+  /**
+   * The list reads like a course: lesson 1 at the top, the newest at the
+   * bottom, matching the student's own portal. `rows` stays newest-first
+   * because the figures above it — latest talk share, most recent score —
+   * are defined as "the last one" and read position 0.
+   */
+  const lessonsInOrder = rows.slice().reverse()
   const summaryOf = (l: any) => (Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries)
 
   const lessonCount = rows.length
@@ -136,7 +143,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
           <div className="empty"><strong style={{ color: 'var(--ink)' }}>No lessons yet</strong><br />Recorded lessons for this student will appear here.</div>
         ) : (
           <div>
-            {rows.map((lesson) => {
+            {lessonsInOrder.map((lesson) => {
               const s = summaryOf(lesson)
               return (
                 <Link key={lesson.id} href={`/teacher/students/${student.id}/lessons/${lesson.id}`} className="lesson-card">

@@ -16,8 +16,8 @@ export async function POST(req: Request) {
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { studentId, tracks, seconds } = await req.json().catch(() => ({}))
-  if (!studentId || !Array.isArray(tracks) || !tracks.length) {
-    return NextResponse.json({ error: 'Missing studentId or tracks' }, { status: 400 })
+  if (!Array.isArray(tracks) || !tracks.length) {
+    return NextResponse.json({ error: 'Missing tracks' }, { status: 400 })
   }
 
   // Refuse an over-long lesson before it is uploaded at all. Stopping it here
@@ -28,9 +28,14 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
-  const { data: student } = await admin
-    .from('students').select('id').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
-  if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
+  // A student is optional now — the recorder no longer asks, and the recording
+  // is filed in the studio afterwards. When one IS named it still has to be
+  // this teacher's, so an old build cannot upload into someone else's account.
+  if (studentId) {
+    const { data: student } = await admin
+      .from('students').select('id').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
+    if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
+  }
 
   const recordingId = crypto.randomUUID()
   const base = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/$/, '')

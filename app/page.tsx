@@ -12,6 +12,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { mapEventToStudent } from '@/lib/lesson-link'
 import { currentCalendarMode } from '@/lib/calendar-mode.server'
+import { listPendingRecordings } from '@/app/actions/recordings'
+import PendingRecordings from '@/components/portal/PendingRecordings'
 import { resolveTeachingPlatform, TEACHING_PLATFORM_META } from '@/lib/teaching-platform'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
@@ -124,11 +126,14 @@ async function RecordingsHome() {
   const recapRecs = await getRecaps()
   const draftRecaps = await loadDraftRecaps(recapRecs)
   const platform = resolveTeachingPlatform((profile as any)?.teaching_platform ?? (profile as any)?.meeting_platform)
+  const pending = await listPendingRecordings()
+  const studentOptions = (students ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
 
   return (
     <>
       <AppNav email={user?.email} connected={false} calendar={false} />
       <main className="wrap page-fade">
+        <PendingRecordings recordings={pending} students={studentOptions} />
         <RecordingsOverview
           studentCount={(students ?? []).length}
           draftCount={draftRecaps.length}
@@ -180,6 +185,15 @@ export default async function Home() {
 
   const draftRecaps: DraftRecap[] = await loadDraftRecaps(recapRecs)
 
+  // Waiting recordings outrank the calendar: the lesson already happened, and
+  // nothing else on this page is blocked on the teacher the way this is.
+  const pending = await listPendingRecordings()
+  const supabaseForStudents = await createClient()
+  const { data: { user: me } } = await supabaseForStudents.auth.getUser()
+  const { data: myStudents } = await supabaseForStudents
+    .from('students').select('id, full_name').eq('teacher_id', me?.id ?? '')
+  const studentOptions = (myStudents ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
+
   return (
     <>
       <AppNav email={token.email} connected />
@@ -206,6 +220,8 @@ export default async function Home() {
             <Link className="btn btn-ghost" href="/settings">Manage connections</Link>
           </div>
         </header>
+
+        <PendingRecordings recordings={pending} students={studentOptions} />
 
         <div className="k-overview">
           {/* Calendar first, at the top, before anything else. */}

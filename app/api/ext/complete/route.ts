@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
   const { recordingId, studentId, micIs, seconds, lessonDate, heard, language, spokenLanguage } =
     await req.json().catch(() => ({}))
-  if (!recordingId || !studentId) return NextResponse.json({ error: 'Missing recordingId or studentId' }, { status: 400 })
+  if (!recordingId) return NextResponse.json({ error: 'Missing recordingId' }, { status: 400 })
 
   // The upload-init check already turned this away once, but that one guards
   // storage and this one guards the invoice: everything expensive happens
@@ -47,6 +47,32 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
+
+  /**
+   * No student means the recorder did not ask — which is now the normal case.
+   *
+   * The audio is already in storage; it waits in the queue until the teacher
+   * files it in the studio, and filing is what starts the build. Nothing
+   * expensive runs here, so a recording of the wrong thing costs nothing but
+   * a click to delete.
+   */
+  if (!studentId) {
+    const { error } = await admin.from('pending_recordings').upsert(
+      {
+        recording_id: recordingId,
+        teacher_id: caller.teacherId,
+        seconds: typeof seconds === 'number' ? Math.round(seconds) : null,
+        lesson_date: lessonDate || new Date().toISOString().slice(0, 10),
+        mic_is: micIs ?? null,
+        spoken_language: spokenLanguage || language || null,
+        heard: heard ?? null,
+      },
+      { onConflict: 'recording_id' },
+    )
+    if (error) return NextResponse.json({ error: `Could not save the recording: ${error.message}` }, { status: 500 })
+    return NextResponse.json({ ok: true, pending: true, recordingId }, { status: 202 })
+  }
+
   const { data: student } = await admin
     .from('students').select('id, full_name, language, instruction_language, jp_script').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
   if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
