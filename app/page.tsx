@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getToken, getRecaps } from '@/lib/store'
 import { isConfigured, listUpcomingLessons, listCalendars, type Lesson, type CalendarInfo } from '@/lib/google'
+import { calendarFailure, CALENDAR_FAILURE_TEXT, isFixable, type CalendarFailure } from '@/lib/calendar-error'
 import AppNav from '@/components/AppNav'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
@@ -157,18 +158,16 @@ export default async function Home() {
   }
 
   let lessons: Lesson[] = []
-  let fetchError = ''
-  let needsReconnect = false
+  let failure: CalendarFailure | null = null
   try {
     lessons = await listUpcomingLessons()
-  } catch (e: any) {
-    if (e?.message === 'SCOPE') needsReconnect = true
-    else fetchError = e?.message ?? 'Could not load calendar'
+  } catch (e) {
+    failure = calendarFailure(e)
   }
 
   // Calendars the teacher can pick which one holds their lessons.
   let calendars: CalendarInfo[] = []
-  if (!needsReconnect) { try { calendars = await listCalendars() } catch { /* ignore */ } }
+  if (!failure) { try { calendars = await listCalendars() } catch { /* ignore */ } }
   const selectedCalId = token.calendarId || 'primary'
 
   // Existing recaps, keyed by calendar event id.
@@ -211,13 +210,13 @@ export default async function Home() {
         <div className="k-overview">
           {/* Calendar first, at the top, before anything else. */}
           <div className="k-overview-main">
-            {needsReconnect ? (
+            {failure ? (
               <div className="empty">
-                Your Google connection needs updated permissions.{' '}
-                <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>
+                {CALENDAR_FAILURE_TEXT[failure]}{' '}
+                {isFixable(failure) && (
+                  <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>
+                )}
               </div>
-            ) : fetchError ? (
-              <div className="empty">{fetchError}</div>
             ) : (
               <TeacherCalendar initialLessons={initialLessons} />
             )}

@@ -9,6 +9,7 @@ import {
   TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
 } from '@/lib/teaching-platform'
 import { CALENDAR_MODE_META, type CalendarMode } from '@/lib/calendar-mode'
+import { TEACHING_LANGUAGES as LANGUAGES, SPOKEN_LANGUAGES } from '@/lib/languages'
 
 type Props = {
   initial: {
@@ -26,25 +27,6 @@ type Props = {
   googleConnected: boolean
   zoomConnected: boolean
 }
-
-// The three languages the recap/test generation is tuned for. Everything else
-// is off the menu until the prompts are built and tested for it.
-const LANGUAGES = ['English', 'French', 'Japanese']
-
-/**
- * What the teacher can pick as the language they explain in.
- *
- * Deliberately much wider than LANGUAGES: that list is narrow because recaps
- * and tests have to be *generated* in those languages. This one is only ever
- * read — it says what the room sounds like — so the only requirement is that
- * lib/whisper can turn it into an ISO code.
- */
-const SPOKEN_LANGUAGES = [
-  'English', 'French', 'Japanese', 'Spanish', 'German', 'Italian', 'Portuguese',
-  'Chinese', 'Korean', 'Russian', 'Arabic', 'Dutch', 'Polish', 'Turkish',
-  'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Greek', 'Hebrew', 'Hindi',
-  'Indonesian', 'Thai', 'Vietnamese', 'Ukrainian', 'Czech', 'Romanian', 'Hungarian',
-]
 
 const ZONES = [
   'Asia/Tokyo', 'Asia/Seoul', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Dubai',

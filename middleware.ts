@@ -78,7 +78,6 @@ export async function middleware(request: NextRequest) {
   // Teacher-only API routes that previously relied only on the login wall.
   // Guarded here so they stay locked once production is public.
   const isProtectedApi =
-    path.startsWith('/api/recall') ||
     path.startsWith('/api/recap') ||
     path === '/api/settings' ||
     path === '/api/google/disconnect' ||
@@ -148,11 +147,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // NB: public /api routes (/api/book, Google/Zoom OAuth callbacks, /api/stripe,
-  // /api/portal, /api/cron) are deliberately NOT matched. Only the teacher-only
+  // /api/portal) are deliberately NOT matched. Only the teacher-only
   // API routes below are gated (they had no auth of their own).
   matcher: [
     '/', '/login', '/onboarding', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*',
-    '/api/recall/:path*', '/api/recap', '/api/recap/:path*',
+    '/api/recap', '/api/recap/:path*',
     '/api/settings', '/api/google/disconnect', '/api/google/select-calendar',
     '/api/zoom/disconnect', '/api/zoom/status',
   ],

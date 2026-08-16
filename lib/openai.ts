@@ -105,7 +105,46 @@ DID WELL — for the "did_well" array:
 - "said": verbatim quote of the student doing it.
 - "note": ONE sentence, max 25 words, naming what was good about it.`
 
+/**
+ * How Japanese is written in the RECAP — the same three modes as the test,
+ * because it is the same student reading both.
+ *
+ * The recap used to hardcode "kana, never kanji" in three separate places and
+ * ask for romaji on vocab bullets only, which is why a beginner's example
+ * sentences and Pattern lines came out as bare kanji they could not read. The
+ * rule now lives in one block, is stated for every field, and follows what the
+ * teacher recorded about this particular student.
+ */
+const RECAP_SCRIPT_RULES: Record<TestScript, string> = {
+  beginner: `JAPANESE SCRIPT — OVERRIDES EVERY EXAMPLE BELOW. This student CANNOT read kana confidently.
+- Write ALL Japanese in hiragana/katakana ONLY — NEVER kanji. This covers section bodies, example sentences, **Pattern:** lines, corrections, homework, exercises and the audio script.
+- IMMEDIATELY after EVERY piece of Japanese, add its romaji. No exceptions anywhere in the output.
+- Vocab bullets: - **かな** *romaji* — English meaning
+- Example sentences: each on its own line as かなのぶん *romaji* — English
+- Pattern lines: spell the structure in kana and put its romaji right after, e.g. **Pattern:** [verb plain]まえに *mae ni* [action]します
+- A line of Japanese with no romaji beside it is useless to this student. There must not be a single one.`,
+  hiragana: `JAPANESE SCRIPT — this student reads kana fluently but not kanji.
+- Write ALL Japanese in hiragana/katakana ONLY — NEVER kanji, everywhere in the output.
+- Romaji only on vocab bullets (- **かな** *romaji* — English meaning). Example sentences and Pattern lines carry no romaji.`,
+  kanji: `JAPANESE SCRIPT — this student reads kanji.
+- Write Japanese naturally WITH kanji throughout.
+- The FIRST time a kanji word appears in a section, put its kana reading in parentheses right after it, e.g. 準備（じゅんび）.
+- Romaji only on vocab bullets; nowhere else.`,
+}
+
+/**
+ * The one thing no script rule may touch.
+ *
+ * A correction's "said" is a verbatim transcript quote, and the transcript is
+ * whatever Whisper wrote — usually kanji. Rewriting it to satisfy a script
+ * rule would make it no longer the student's own words, which is the entire
+ * value of quoting it. Only the fix is rewritten.
+ */
+const VERBATIM_EXEMPTION = `SCRIPT EXEMPTION: a correction's "said" and a did_well "said" are VERBATIM transcript quotes — copy them exactly as the transcript has them, kanji included, whatever the script rules say. The "correction" text DOES follow the script rules.`
+
 const PROMPT = `Analyze this Japanese lesson transcript and return ONLY valid JSON.
+
+{{RECAP_SCRIPT_RULES}}
 
 The transcript is auto-generated and diarized (lines look like "Speaker Name: text"). It is NOISY: parts are garbled phonetic gibberish (e.g. "キャンキャンナーグラム", "エペネンフォーエグザン") — IGNORE the gibberish and work from the clean, legible Japanese, which is reliable. The meeting host is the teacher; other speakers are the student.
 
@@ -183,9 +222,9 @@ SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT section
 
 MANDATORY LAYOUT for the "content" string of EVERY section, both kinds. Each element goes on its OWN line — put real newlines inside the JSON string; NEVER run bullets, examples, or callouts together into one paragraph:
 - Start with 1-3 short plain English sentences.
-- Vocab bullets, ONE PER LINE: - **hiragana** *romaji* — English meaning
-- Example sentences as a block, one sentence per line.
-- Grammar callouts on their own line: **Pattern:** structure
+- Vocab bullets, ONE PER LINE, in the shape the SCRIPT rules give.
+- Example sentences as a block, one sentence per line, each written exactly as the SCRIPT rules require — a beginner's example without romaji beside it is a failure.
+- Grammar callouts on their own line: **Pattern:** structure, also following the SCRIPT rules
 - Tips on their own line: Natural note: text OR Important: text
 - NO sub-headers. SHORT sentences only.
 A section whose bullets and Pattern line are glued into one paragraph is WRONG — the app renders each line separately and the formatting is lost.
@@ -194,20 +233,20 @@ A section whose bullets and Pattern line are glued into one paragraph is WRONG �
 (B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson. Title: "3. Japanese: English" (e.g. "3. いきます: To Go Somewhere"). Body: explanation sentences, vocab bullets, an example block, and a **Pattern:** line, per the layout above.
 
 {{CORRECTIONS_RULES}}
-All Japanese in the corrections must be in hiragana/katakana only — NEVER kanji — so it matches the rest of the recap.
+{{VERBATIM_EXEMPTION}}
 
 AUDIO SCRIPT — for the "audio_script" field:
 Write based on the recap. One paragraph per topic, no transitions between paragraphs.
-Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic (hiragana [romaji] — meaning — short example). Homework sentence. Personal closing line.
+Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic (Japanese word — meaning — short example, written per the SCRIPT rules). Homework sentence. Personal closing line.
 Total: 45-75 seconds when read aloud.
 
 EXERCISES — generate exactly 10 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud (with 4 sentences), 2 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
-All Japanese in hiragana/katakana only — NEVER kanji. Keep everything at this student's level.
+Every Japanese string below follows the SCRIPT rules. Keep everything at this student's level.
 The "data" object depends on "type":
-- read_aloud → prompt: "Read these sentences aloud". data: {"focus": "[grammar focus]", "sentences": [{"jp": "[hiragana sentence]", "en": "[English]"}, {"jp":"...","en":"..."}, {"jp":"...","en":"..."}]}
-- speak → prompt: "Answer out loud". data: {"prompt_jp": "[a question in hiragana]", "prompt_en": "[English]", "hint": "[which grammar/words to use]"}
+- read_aloud → prompt: "Read these sentences aloud". data: {"focus": "[grammar focus]", "sentences": [{"jp": "[Japanese sentence, per SCRIPT rules]", "en": "[English]"}, {"jp":"...","en":"..."}, {"jp":"...","en":"..."}]}
+- speak → prompt: "Answer out loud". data: {"prompt_jp": "[a question, per SCRIPT rules]", "prompt_en": "[English]", "hint": "[which grammar/words to use]"}
 - multiple_choice → prompt: "Quick check". data: {"question": "[question in English about this lesson]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": [integer index 0-2 of the correct option]}
-- fill_blank → prompt: "Fill in the blank". data: {"before": "[hiragana text before the gap]", "after": "[hiragana text after the gap]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": "[the correct option, must exactly match one option]", "en": "[English translation]"}
+- fill_blank → prompt: "Fill in the blank". data: {"before": "[text before the gap, per SCRIPT rules]", "after": "[text after the gap, per SCRIPT rules]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": "[the correct option, must exactly match one option]", "en": "[English translation]"}
 
 VOCABULARY RULES:
 - Include exactly 10 vocabulary words.
@@ -649,6 +688,11 @@ export async function generateRecap(opts: {
   language?: string
   /** Language the teacher explains in. Empty or English keeps the prompt as-is. */
   instructionLanguage?: string | null
+  /**
+   * How this student reads Japanese. Ignored for every other language, and
+   * absent means 'hiragana' — the behaviour every existing recap already had.
+   */
+  script?: TestScript | null
 }): Promise<Recap> {
   const key = process.env.OPENAI_API_KEY
   if (!key) throw new Error('Missing OPENAI_API_KEY')
@@ -658,6 +702,8 @@ export async function generateRecap(opts: {
   const isJapanese = !lang || /^(ja|jp|japanese|日本語)$/i.test(lang)
   const override = explanationOverride(isJapanese ? 'Japanese' : lang, String(opts.instructionLanguage ?? '').trim())
   const content = (isJapanese ? PROMPT : GENERIC_PROMPT.replace(/\{\{LANGUAGE\}\}/g, lang))
+    .replace('{{RECAP_SCRIPT_RULES}}', RECAP_SCRIPT_RULES[opts.script ?? 'hiragana'])
+    .replace('{{VERBATIM_EXEMPTION}}', VERBATIM_EXEMPTION)
     .replace('{{CORRECTIONS_RULES}}', CORRECTIONS_RULES)
     .replace('{{VOCAB_INVENTORY_RULES}}', VOCAB_INVENTORY_RULES)
     .replace('{{STUDENT}}', opts.studentName)

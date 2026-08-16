@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { listLessonsInRange } from '@/lib/google'
 import { getRecaps } from '@/lib/store'
+import { calendarFailure } from '@/lib/calendar-error'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +30,10 @@ export async function GET(req: Request) {
     const items = lessons.map((l) => ({ ...l, recapStatus: st(recapRecs[l.id]?.status) }))
     return NextResponse.json({ ok: true, lessons: items })
   } catch (e: any) {
-    if (e?.message === 'SCOPE') return NextResponse.json({ ok: false, error: 'SCOPE' }, { status: 200 })
-    return NextResponse.json({ ok: false, error: e?.message ?? 'Failed to load calendar' }, { status: 500 })
+    // Only ever a code goes over the wire. Google's own wording stays in the
+    // log, where it is useful, rather than being handed to the grid to print.
+    console.error('calendar events failed', e?.message || e)
+    const failure = calendarFailure(e)
+    return NextResponse.json({ ok: false, error: failure }, { status: failure === 'RETRY' ? 500 : 200 })
   }
 }

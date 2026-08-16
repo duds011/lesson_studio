@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import LessonRow, { type LessonView } from '@/components/LessonRow'
 import LessonTools from '@/components/portal/LessonTools'
+import { asCalendarFailure, CALENDAR_FAILURE_TEXT, isFixable, type CalendarFailure } from '@/lib/calendar-error'
 
 export type CalEvent = LessonView & { attendees?: string[]; recapStatus: 'draft' | 'published' | null }
 type View = 'day' | 'week' | 'month' | 'list'
@@ -36,7 +37,7 @@ export default function TeacherCalendar({ initialLessons }: { initialLessons: Ca
   const [anchor, setAnchor] = useState<Date>(startOfDay(new Date()))
   const [events, setEvents] = useState<CalEvent[]>(initialLessons)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [failure, setFailure] = useState<CalendarFailure | null>(null)
   const [selected, setSelected] = useState<CalEvent | null>(null)
 
   const range = useMemo(() => {
@@ -47,13 +48,13 @@ export default function TeacherCalendar({ initialLessons }: { initialLessons: Ca
   }, [view, anchor])
 
   const load = useCallback(async () => {
-    setLoading(true); setError('')
+    setLoading(true); setFailure(null)
     try {
       const qs = new URLSearchParams({ from: range.from.toISOString(), to: range.to.toISOString() })
       const j = await (await fetch(`/api/calendar/events?${qs}`, { cache: 'no-store' })).json()
-      if (!j.ok) { setError(j.error === 'SCOPE' ? 'SCOPE' : (j.error || 'Could not load calendar')); setEvents([]); return }
+      if (!j.ok) { setFailure(asCalendarFailure(j.error)); setEvents([]); return }
       setEvents(j.lessons)
-    } catch { setError('Could not load calendar') } finally { setLoading(false) }
+    } catch { setFailure('RETRY') } finally { setLoading(false) }
   }, [range.from, range.to])
 
   useEffect(() => { load() }, [load])
@@ -101,10 +102,11 @@ export default function TeacherCalendar({ initialLessons }: { initialLessons: Ca
         </div>
       </div>
 
-      {error === 'SCOPE' ? (
-        <div className="empty">Your Google connection needs updated permissions. <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link></div>
-      ) : error ? (
-        <div className="empty">{error}</div>
+      {failure ? (
+        <div className="empty">
+          {CALENDAR_FAILURE_TEXT[failure]}{' '}
+          {isFixable(failure) && <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>}
+        </div>
       ) : view === 'month' ? (
         <MonthView grid={monthGrid(anchor)} anchor={anchor} today={today} byDay={byDay} onPick={setSelected} onDay={(d) => { setAnchor(d); setView('day') }} />
       ) : view === 'week' ? (

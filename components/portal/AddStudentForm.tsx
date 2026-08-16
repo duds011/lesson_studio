@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createStudent } from '@/app/actions/portal-students'
 import { addPayment } from '@/app/actions/payments'
 import { currencySymbol } from '@/lib/currency'
+import { languageOptions, SPOKEN_LANGUAGES } from '@/lib/languages'
+import InviteLink from '@/components/portal/InviteLink'
 
 const LEVELS = ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'Upper-Intermediate', 'Advanced']
 
@@ -20,8 +22,9 @@ const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
   // What recaps and tests are EXPLAINED in — defaults to the language the
   // teacher said they explain in, since that is usually every student's.
   instruction_language: /^english$/i.test(defaultInstruction.trim()) ? '' : defaultInstruction.trim(),
-  // Optional starting package
-  lessons: '', amount: '', method: '',
+  // Optional starting package. No payment method: it was one more box between
+  // the teacher and a saved student, and Payments is where that belongs.
+  lessons: '', amount: '',
 })
 
 export default function AddStudentForm({ currency = 'USD', teachingLanguage = '', speakingLanguage = '' }: { currency?: string; teachingLanguage?: string; speakingLanguage?: string }) {
@@ -29,7 +32,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [created, setCreated] = useState<{ email: string; password: string; note?: string } | null>(null)
+  const [created, setCreated] = useState<{ email: string; password: string; note?: string; inviteCode?: string } | null>(null)
   const [form, setForm] = useState(emptyForm(teachingLanguage, speakingLanguage))
 
   const set = (k: keyof ReturnType<typeof emptyForm>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -61,7 +64,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
         description: lessons > 0 ? `${lessons}-lesson starting package` : 'Starting payment',
         lessons_covered: lessons > 0 ? lessons : null,
         payment_date: new Date().toISOString().slice(0, 10),
-        method: form.method,
+        method: '',
       })
       note = pay.success
         ? (lessons > 0 ? `${lessons} lessons added to their balance.` : 'Payment recorded.')
@@ -69,7 +72,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
     }
 
     setBusy(false)
-    setCreated({ email: form.email, password: form.password, note })
+    setCreated({ email: form.email, password: form.password, note, inviteCode: res.inviteCode })
     setForm(emptyForm(teachingLanguage, speakingLanguage))
     router.refresh()
   }
@@ -103,13 +106,24 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
 
       {created ? (
         <div>
-          <div className="warn-box" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)', color: 'var(--green)' }}>
-            <strong>Account created.</strong> Share these login details with the student:
-          </div>
-          <div className="lesson-block" style={{ marginTop: 12, padding: 16 }}>
-            <div className="talk-row"><span>Email</span><strong>{created.email}</strong></div>
-            <div className="talk-row" style={{ borderBottom: 0 }}><span>Password</span><strong>{created.password}</strong></div>
-          </div>
+          {created.inviteCode ? (
+            <>
+              <div className="warn-box" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)', color: 'var(--green)' }}>
+                <strong>Student added.</strong> Send them this link — they choose their own email and password.
+              </div>
+              <InviteLink code={created.inviteCode} />
+            </>
+          ) : (
+            <>
+              <div className="warn-box" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)', color: 'var(--green)' }}>
+                <strong>Account created.</strong> Share these login details with the student:
+              </div>
+              <div className="lesson-block" style={{ marginTop: 12, padding: 16 }}>
+                <div className="talk-row"><span>Email</span><strong>{created.email}</strong></div>
+                <div className="talk-row" style={{ borderBottom: 0 }}><span>Password</span><strong>{created.password}</strong></div>
+              </div>
+            </>
+          )}
           {created.note && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{created.note}</p>}
           <button className="btn btn-primary" style={{ marginTop: 14 }} onClick={() => setCreated(null)}>Add another</button>
         </div>
@@ -120,13 +134,20 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
             <input value={form.full_name} onChange={set('full_name')} required placeholder="Jane Doe" />
           </div>
           <div className="field">
-            <label>Email</label>
-            <input type="email" value={form.email} onChange={set('email')} required placeholder="jane@example.com" autoComplete="off" />
+            <label>Email <span style={{ fontWeight: 500, color: 'var(--muted)' }}>(optional)</span></label>
+            <input type="email" value={form.email} onChange={set('email')} placeholder="jane@example.com" autoComplete="off" />
+            <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0' }}>
+              Leave blank and you&rsquo;ll get an invite link to send them instead — they pick their own email and password.
+            </p>
           </div>
-          <div className="field">
-            <label>Temporary password</label>
-            <input value={form.password} onChange={set('password')} required />
-          </div>
+          {/* Only meaningful when the teacher is making the account herself.
+              With no email there is nothing to attach a password to. */}
+          {form.email.trim() && (
+            <div className="field">
+              <label>Temporary password</label>
+              <input value={form.password} onChange={set('password')} required />
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
               <label>Level</label>
@@ -135,15 +156,20 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
               </select>
             </div>
             <div className="field">
-              <label>Language</label>
-              <input value={form.language} onChange={set('language')} required />
+              <label>Learning</label>
+              <select value={form.language} onChange={set('language')} required style={inputStyle}>
+                {languageOptions(teachingLanguage).map((l) => <option key={l}>{l}</option>)}
+              </select>
             </div>
           </div>
           <div className="field">
             <label>Explain lessons in <span style={{ fontWeight: 500, color: 'var(--muted)' }}>(optional)</span></label>
-            <input value={form.instruction_language} onChange={set('instruction_language')} placeholder="English" />
+            <select value={form.instruction_language} onChange={set('instruction_language')} style={inputStyle}>
+              <option value="">English</option>
+              {SPOKEN_LANGUAGES.filter((l) => !/^english$/i.test(l)).map((l) => <option key={l}>{l}</option>)}
+            </select>
             <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0' }}>
-              Recap explanations, definitions and test questions are written in this language. Leave blank for English.
+              Recap explanations, definitions and test questions are written in this language.
             </p>
           </div>
 
@@ -159,10 +185,6 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
                 <label>Amount paid ({currencySymbol(currency)})</label>
                 <input type="number" min="0" step="0.01" value={form.amount} onChange={set('amount')} placeholder="0.00" style={inputStyle} />
               </div>
-            </div>
-            <div className="field">
-              <label>Payment method</label>
-              <input value={form.method} onChange={set('method')} placeholder="Bank transfer, Cash, PayPal…" style={inputStyle} />
             </div>
             <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0 }}>Leave blank if they haven&rsquo;t paid yet — you can record it later in Payments.</p>
           </div>

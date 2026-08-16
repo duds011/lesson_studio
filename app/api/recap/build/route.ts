@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   if (link.teacher_id !== user.id) return NextResponse.json({ ok: false, error: 'Not your recording.' }, { status: 403 })
 
   const { data: student } = await admin
-    .from('students').select('id, full_name, language, instruction_language').eq('id', link.student_id).single()
+    .from('students').select('id, full_name, language, instruction_language, jp_script').eq('id', link.student_id).single()
   if (!student) return NextResponse.json({ ok: false, error: 'Student not found.' }, { status: 404 })
 
   try {
@@ -123,6 +123,7 @@ export async function POST(req: Request) {
       transcript: t.plain,
       language,
       instructionLanguage: (student as any).instruction_language,
+      script: (student as any).jp_script,
     })
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics

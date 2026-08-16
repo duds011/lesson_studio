@@ -2,12 +2,23 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createAuthForExistingStudent, resetStudentPassword, deleteStudent } from '@/app/actions/portal-students'
+import { createAuthForExistingStudent, resetStudentPassword, deleteStudent, studentInviteCode } from '@/app/actions/portal-students'
+import InviteLink from '@/components/portal/InviteLink'
 
 export default function StudentAdminActions({ studentId, hasLogin }: { studentId: string; hasLogin: boolean }) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [invite, setInvite] = useState('')
+
+  async function showInvite() {
+    setBusy(true)
+    setNotice('')
+    const res = await studentInviteCode(studentId)
+    setBusy(false)
+    if (res.code) setInvite(res.code)
+    else setNotice(res.error || 'Failed')
+  }
 
   async function setupLogin() {
     setBusy(true)
@@ -42,10 +53,14 @@ export default function StudentAdminActions({ studentId, hasLogin }: { studentId
         {hasLogin ? (
           <button className="btn btn-ghost btn-sm" onClick={resetPw} disabled={busy}>Reset password</button>
         ) : (
-          <button className="btn btn-ghost btn-sm" onClick={setupLogin} disabled={busy}>Set up login</button>
+          <>
+            <button className="btn btn-ghost btn-sm" onClick={showInvite} disabled={busy}>Invite link</button>
+            <button className="btn btn-ghost btn-sm" onClick={setupLogin} disabled={busy}>Set up login</button>
+          </>
         )}
         <button className="btn btn-danger-ghost btn-sm" onClick={remove} disabled={busy}>Delete</button>
       </div>
+      {invite && <div style={{ width: 320, maxWidth: '100%' }}><InviteLink code={invite} compact /></div>}
       {notice && <span style={{ fontSize: 10, color: 'var(--muted)' }}>{notice}</span>}
     </div>
   )

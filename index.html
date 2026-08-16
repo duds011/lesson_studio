@@ -237,7 +237,7 @@ let lessons = [
     plat:'zoom', status:'published', auto:true, recapId:'R_JAMES' },
 ];
 
-/* ---------- recap content (sample, built from a real Recall transcript) ---------- */
+/* ---------- recap content (sample, built from a real lesson transcript) ---------- */
 const RECAP = {
   title:'Te-form, Permission, Prohibition & ～から',
   student:'James Coker', date:'Lesson 4 · recorded yesterday',
@@ -366,7 +366,7 @@ function openRecap(id){
     ${r.sections.map(s=>`<div class="block"><h4>${s.h}</h4>
        <div class="ex"><span class="jp">${s.ex[0]}</span><br><span class="romaji">${s.ex[1]}</span><br>${s.ex[2]}</div></div>`).join('')}
     <div class="block"><h4>Teacher’s note</h4><p>${r.note}</p></div>
-    <div style="font-size:.78rem;color:var(--muted);text-align:center;padding:.5rem">Source: Recall.ai recording → OpenAI recap engine</div>
+    <div style="font-size:.78rem;color:var(--muted);text-align:center;padding:.5rem">Source: extension recording → Whisper transcript → OpenAI recap engine</div>
   `;
 
   document.getElementById('drawerFoot').innerHTML = isReview

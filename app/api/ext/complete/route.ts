@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient()
   const { data: student } = await admin
-    .from('students').select('id, full_name, language, instruction_language').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
+    .from('students').select('id, full_name, language, instruction_language, jp_script').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
   if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
 
   const eventId = `ext:${recordingId}`
@@ -194,6 +194,7 @@ async function buildRecap({
       language: targetLanguage ?? undefined,
       // The language THIS student is explained in — English when unset.
       instructionLanguage: (student as any).instruction_language,
+      script: (student as any).jp_script,
     })
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics

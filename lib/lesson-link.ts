@@ -1,6 +1,6 @@
 /**
- * Links a Google calendar event (the teacher-tool world: Recall bots, recaps in
- * KV, keyed by eventId) to a Supabase student — so recording a lesson can open
+ * Links a Google calendar event (the teacher-tool world: recaps in KV, keyed
+ * by eventId) to a Supabase student — so recording a lesson can open
  * that student's live doc, and a published recap lands on their record.
  *
  * Match order: the portal booking for the event, then attendee email.

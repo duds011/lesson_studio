@@ -69,7 +69,7 @@ export async function POST(req: Request) {
   const admin = createAdminClient()
   const { data: student } = await admin
     .from('students')
-    .select('id, full_name, language, instruction_language, teacher_id')
+    .select('id, full_name, language, instruction_language, jp_script, teacher_id')
     .eq('id', studentId)
     .maybeSingle()
   if (!student) return NextResponse.json({ ok: false, error: 'Student not found.' }, { status: 404 })
@@ -161,6 +161,7 @@ export async function POST(req: Request) {
       transcript: t.plain,
       language,
       instructionLanguage: (student as any).instruction_language,
+      script: (student as any).jp_script,
     })
     if (t.studentTalkPct != null) recap.talk_percentage = t.studentTalkPct
     recap.metrics = t.metrics

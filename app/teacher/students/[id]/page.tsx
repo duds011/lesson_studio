@@ -8,6 +8,7 @@ import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 import GenerateTestButton from '@/components/portal/GenerateTestButton'
 import InstructionLanguageEditor from '@/components/portal/InstructionLanguageEditor'
+import JpScriptEditor from '@/components/portal/JpScriptEditor'
 import PageHeader from '@/components/PageHeader'
 
 export const dynamic = 'force-dynamic'
@@ -81,10 +82,12 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
         <StudentAdminActions studentId={student.id} hasLogin={!!student.profile_id} />
       </div>
 
+      {/* An invited student has no email yet — the meta line says so rather
+          than printing "null" where the address goes. */}
       <PageHeader
         lead={<div className="avatar lg">{student.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>}
         title={student.full_name}
-        meta={`${student.email} · ${student.level} · ${student.language}`}
+        meta={`${student.profile_id ? (student.email || '—') : 'Invited — not joined yet'} · ${student.level} · ${student.language}`}
         figures={[
           { label: 'Lessons', value: lessonCount },
           { label: 'Avg score', value: <>{avgScore != null ? avgScore.toFixed(1) : '—'}<i>/10</i></> },
@@ -95,6 +98,11 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
         actions={
           <>
             <InstructionLanguageEditor studentId={student.id} value={(student as any).instruction_language ?? null} />
+            {/* Only Japanese has a script to choose — the same gate the test
+                generator uses, and for the same reason. */}
+            {/japanese|日本語/i.test(teachingLanguage) && (
+              <JpScriptEditor studentId={student.id} value={(student as any).jp_script ?? null} />
+            )}
             {/* Credits keep their own red/amber/blue inside the band — this is
                 the one figure that changes what a teacher does next. */}
             <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>

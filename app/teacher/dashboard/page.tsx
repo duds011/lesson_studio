@@ -92,7 +92,10 @@ export default async function TeacherDashboard() {
                   <div className="avatar">{s.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>
                   <div>
                     <div className="sc-name">{s.full_name}</div>
-                    <div className="sc-email">{s.email}</div>
+                    {/* Keyed on the login, not the address: a student who
+                        joined always has one, whether or not the email made it
+                        back onto this row. */}
+                    <div className="sc-email">{s.profile_id ? (s.email || '—') : 'Invited — not joined yet'}</div>
                   </div>
                 </Link>
                 <div>
