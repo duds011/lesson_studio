@@ -332,3 +332,13 @@ th.is-today .notes-day{color:var(--brand)}
   box-shadow:0 6px 18px rgba(10,97,201,.18);transition:background .15s ease,transform .15s ease}
 .k-modal .k-modal-card .k-modal-cta:hover:not(:disabled){background:#084a9b;transform:translateY(-1px)}
 .k-modal .k-modal-card .k-modal-cta:disabled{opacity:.6;cursor:default;transform:none}
+
+/* ── Segmented tabs (Students / Analytics) ───────────────────────────────────
+   A control, not navigation: both panels are already on the page and one is
+   hidden, so this reads as a switch rather than a set of links. */
+.k-tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+.k-tab{border:0;border-radius:999px;padding:8px 18px;font:inherit;font-size:12.5px;font-weight:700;
+  color:var(--muted);background:transparent;cursor:pointer;transition:background .15s ease,color .15s ease}
+.k-tab:hover:not(:disabled):not(.sel){color:var(--ink)}
+.k-tab.sel{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.10)}
+.k-tab:disabled{opacity:.45;cursor:not-allowed}

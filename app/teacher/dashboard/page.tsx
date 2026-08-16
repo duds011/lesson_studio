@@ -5,6 +5,8 @@ import { getCreditsByStudent } from '@/lib/credits'
 import AddStudentForm from '@/components/portal/AddStudentForm'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 import PageHeader from '@/components/PageHeader'
+import StudentsTabs from '@/components/portal/StudentsTabs'
+import ClassAnalytics, { type StudentAnalytics } from '@/components/portal/ClassAnalytics'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,18 +23,29 @@ export default async function TeacherDashboard() {
 
   const { data: lessons } = await supabase
     .from('lessons')
-    .select('id, student_id, lesson_summaries ( score, vocab_total_count )')
+    .select('id, student_id, lesson_number, lesson_date, lesson_summaries ( score, talk_percentage, vocab_total_count )')
     .eq('teacher_id', user.id)
+    // Oldest first, so "first score" and "last score" mean what they say.
+    .order('lesson_number', { ascending: true })
 
-  const statsByStudent = new Map<string, { count: number; scores: number[]; vocab: number }>()
+  const statsByStudent = new Map<string, {
+    count: number; scores: number[]; talks: number[]; vocab: number; lastDate: string | null
+  }>()
   for (const l of (lessons || []) as any[]) {
-    const s = statsByStudent.get(l.student_id) ?? { count: 0, scores: [], vocab: 0 }
+    const s = statsByStudent.get(l.student_id)
+      ?? { count: 0, scores: [], talks: [], vocab: 0, lastDate: null }
     s.count += 1
     const sum = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
-    if (sum?.score != null) s.scores.push(sum.score)
+    if (sum?.score != null) s.scores.push(Number(sum.score))
+    if (sum?.talk_percentage != null) s.talks.push(Number(sum.talk_percentage))
     s.vocab += sum?.vocab_total_count ?? 0
+    if (l.lesson_date && (!s.lastDate || l.lesson_date > s.lastDate)) s.lastDate = l.lesson_date
     statsByStudent.set(l.student_id, s)
   }
+
+  const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
+  const daysSince = (d: string | null) =>
+    d ? Math.floor((Date.now() - new Date(`${d}T12:00:00`).getTime()) / 86_400_000) : null
 
   const { data: profile } = await supabase.from('profiles').select('currency, teaching_language, speaking_language').eq('id', user.id).single()
   const currency = (profile as any)?.currency ?? 'USD'
@@ -46,6 +59,23 @@ export default async function TeacherDashboard() {
   const rows = (students || []) as any[]
   const totalLessons = (lessons || []).length
   const lowStudents = rows.filter((r) => (creditMap.get(r.id) ?? { low: false }).low)
+
+  const analyticsRows: StudentAnalytics[] = rows.map((s) => {
+    const st = statsByStudent.get(s.id)
+    return {
+      id: s.id,
+      // First name only: full names do not fit a chart axis, and a teacher
+      // knows their own students by them.
+      name: String(s.full_name).split(' ')[0],
+      lessons: st?.count ?? 0,
+      avgScore: mean(st?.scores ?? []),
+      firstScore: st?.scores[0] ?? null,
+      lastScore: st?.scores.length ? st.scores[st.scores.length - 1] : null,
+      avgTalk: mean(st?.talks ?? []),
+      vocab: st?.vocab ?? 0,
+      daysSinceLast: daysSince(st?.lastDate ?? null),
+    }
+  })
 
   return (
     <div style={{ display: 'grid', gap: 22 }}>
@@ -81,9 +111,13 @@ export default async function TeacherDashboard() {
           Use “Add student” to create the first account.
         </div>
       ) : (
+        <StudentsTabs
+          studentCount={rows.length}
+          analytics={<ClassAnalytics rows={analyticsRows} />}
+          list={
         <div className="student-grid">
           {rows.map((s) => {
-            const st = statsByStudent.get(s.id) ?? { count: 0, scores: [], vocab: 0 }
+            const st = statsByStudent.get(s.id) ?? { count: 0, scores: [] as number[], talks: [] as number[], vocab: 0, lastDate: null }
             const avg = st.scores.length ? (st.scores.reduce((a, b) => a + b, 0) / st.scores.length).toFixed(1) : '—'
             const c = creditMap.get(s.id) ?? { purchased: 0, used: 0, remaining: 0, low: false }
             return (
@@ -117,6 +151,8 @@ export default async function TeacherDashboard() {
             )
           })}
         </div>
+          }
+        />
       )}
 
       <p style={{ fontSize: 11, color: 'var(--muted)' }}>
