@@ -195,7 +195,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
                   <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">avg gap before {first} replies</div></div>
                   <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best unbroken stretch</div></div>
                   <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
-                  <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">えーと, あの, um…</div></div>
+                  <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">um, euh, えーと…</div></div>
                   <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
                 </div>
               </section>

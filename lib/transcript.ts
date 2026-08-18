@@ -36,7 +36,31 @@ export type TranscriptResult = {
   metrics: LessonMetrics
 }
 
-const FILLERS = ['えーと', 'えー', 'ええと', 'えっと', 'あのー', 'あの', 'そのー', 'んー', 'まあ', 'なんか', 'um', 'uh', 'erm', 'like']
+/**
+ * Hesitation words, across the languages this app teaches in.
+ *
+ * This list was Japanese plus four English words, so a French lesson counted
+ * almost nothing and reported a confident zero — the most flattering possible
+ * number, and the least true. A student saying "euh" every other sentence was
+ * shown as having no hesitation at all.
+ *
+ * One list rather than one per language: a beginner's hour runs in two
+ * languages at once, and their hesitations come in both.
+ */
+const FILLERS = [
+  // Japanese
+  'えーと', 'えー', 'ええと', 'えっと',
+  'あのー', 'あの', 'そのー', 'んー',
+  'まあ', 'なんか',
+  // English
+  'um', 'uh', 'erm', 'hmm', 'like',
+  // French
+  'euh', 'ben', 'bah', 'bof', 'enfin', 'genre',
+  // Spanish / Portuguese
+  'este', 'pues', 'bueno', 'eh', 'entonces', 'tipo',
+  // Italian / German
+  'allora', 'ähm', 'also',
+]
 function countFillers(text: string): number {
   const lower = text.toLowerCase()
   let n = 0

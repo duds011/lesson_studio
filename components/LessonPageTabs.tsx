@@ -122,7 +122,7 @@ export default function LessonPageTabs({
           think: { v: m.avgResponseSec, decimals: 1, suffix: 's', mk: 'thinking time', mn: 'before you reply' },
           longest: { v: m.longestTurnSec, suffix: 's', mk: 'longest answer', mn: 'best stretch' },
           turn: { v: m.avgTurnWords, mk: 'words / answer', mn: 'avg turn length' },
-          fillers: { v: m.fillerCount, mk: 'hesitation words', mn: 'えーと, あの…' },
+          fillers: { v: m.fillerCount, mk: 'hesitation words', mn: 'um, euh, えーと…' },
           pauses: { v: m.longPauseCount, mk: 'long pauses', mn: 'silences ≥ 1.5s' },
         }
         const hidden = brand.hiddenMetrics ?? []
