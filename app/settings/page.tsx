@@ -12,6 +12,8 @@ import ConnectorsGallery from '@/components/ConnectorsGallery'
 import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
 import ExtTokenPanel from '@/components/ExtTokenPanel'
 import ReplayTourButton from '@/components/ReplayTourButton'
+import SubscriptionPanel from '@/components/SubscriptionPanel'
+import { getRecapUsage } from '@/lib/recap-quota'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +50,7 @@ export default async function SettingsPage() {
     connected: Boolean((profile as any)?.stripe_account_id),
     chargesEnabled: Boolean((profile as any)?.stripe_charges_enabled),
   }
+  const usage = user ? await getRecapUsage(user.id) : { used: 0, limit: 0, left: 0 }
 
   return (
     <>
@@ -155,6 +158,11 @@ export default async function SettingsPage() {
                 </div>
               </section>
             )}
+          </SettingsPanel>
+
+          {/* ── Subscription: plan, monthly usage, and the other plan ── */}
+          <SettingsPanel id="subscription">
+            <SubscriptionPanel usage={usage} />
           </SettingsPanel>
 
           {/* ── Booking preference: meeting platform + lesson defaults ── */}

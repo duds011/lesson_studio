@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const ALL_TABS = [
   { id: 'connections', label: 'Connections', calendarOnly: false },
+  { id: 'subscription', label: 'Subscription', calendarOnly: false },
   { id: 'booking', label: 'Booking preference', calendarOnly: true },
   { id: 'availability', label: 'Availability', calendarOnly: true },
 ]

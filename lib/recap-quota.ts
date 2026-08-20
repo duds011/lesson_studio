@@ -53,7 +53,7 @@ export async function checkRecapQuota(teacherId: string): Promise<QuotaCheck> {
 
   return {
     ok: false,
-    message: `You have built ${used} recaps this month, which is the limit on this account. It resets at the start of next month — get in touch if you need it raised.`,
+    message: `You have built ${used} recaps this month, which is your plan's limit. It resets at the start of next month — see Settings → Subscription to move to a bigger plan.`,
   }
 }
 
