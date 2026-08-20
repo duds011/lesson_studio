@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-const DONE_KEY = 'ls.tour.done'
+/**
+ * Scoped per account, not per browser. The old browser-wide key meant that
+ * finishing the tour on one account silenced it for every account ever
+ * created in that browser — a brand-new teacher saw nothing.
+ */
+export const tourDoneKey = (email?: string | null) => `ls.tour.done:${email || 'anon'}`
 /** Fired by the Settings replay button; the tour listens app-wide. */
 export const TOUR_EVENT = 'ls:tour'
 
@@ -52,7 +57,7 @@ const STEPS: Step[] = [
 
 const PAD = 8 // breathing room around the spotlit element
 
-export default function GuidedTour() {
+export default function GuidedTour({ email }: { email?: string | null }) {
   const [step, setStep] = useState(-1) // -1 = closed
   const [rect, setRect] = useState<DOMRect | null>(null)
 
@@ -83,11 +88,15 @@ export default function GuidedTour() {
       if (first !== -1) setStep(first)
     }
     let seen = false
-    try { seen = localStorage.getItem(DONE_KEY) === '1' } catch { seen = true }
-    if (!seen) start()
+    try { seen = localStorage.getItem(tourDoneKey(email)) === '1' } catch { seen = true }
+    // Deferred one tick so TrialWelcome (mounted later in the tree) gets to
+    // raise its flag first — a new account meets the welcome, THEN the tour.
+    const t = setTimeout(() => {
+      if (!seen && document.documentElement.dataset.welcome !== 'open') start()
+    }, 400)
     window.addEventListener(TOUR_EVENT, start)
-    return () => window.removeEventListener(TOUR_EVENT, start)
-  }, [nextVisible])
+    return () => { clearTimeout(t); window.removeEventListener(TOUR_EVENT, start) }
+  }, [nextVisible, email])
 
   // The spotlight is position:fixed, so any scroll or resize desyncs it from
   // its element — remeasure rather than trying to forbid scrolling.
@@ -104,7 +113,7 @@ export default function GuidedTour() {
   }, [step, measure])
 
   const finish = () => {
-    try { localStorage.setItem(DONE_KEY, '1') } catch { /* still closes */ }
+    try { localStorage.setItem(tourDoneKey(email), '1') } catch { /* still closes */ }
     setStep(-1)
     setRect(null)
   }

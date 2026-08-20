@@ -76,7 +76,7 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
     {/* Mounted here because this nav is on every teacher page — the tour can
         start on first sign-in and be replayed from Settings without either
         page knowing about it. */}
-    <GuidedTour />
+    <GuidedTour email={email} />
     <aside className="app-sidebar" aria-label="Teacher workspace navigation">
       <div className="sidebar-top">
         <Link className="logo" href="/" aria-label="Lesson Studio overview">

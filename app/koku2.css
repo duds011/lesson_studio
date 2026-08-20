@@ -1500,3 +1500,89 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
     font-size: 16px !important;
   }
 }
+
+/* ══ Trial welcome — the first thing a new account sees ══
+   One card, one number. The conic ring and the staggered rise are the
+   whole show; it should feel like a gift, not a popup. */
+.tw-layer{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:16px;
+  background:rgba(10,16,13,.45);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:tw-fade .4s ease both}
+@keyframes tw-fade{from{opacity:0}}
+.tw-card{position:relative;width:min(460px,100%);background:var(--surface);border-radius:26px;
+  padding:42px 38px 34px;text-align:center;box-shadow:0 30px 90px rgba(0,0,0,.4);
+  animation:tw-pop .6s .1s cubic-bezier(.18,1.2,.32,1) both;overflow:hidden}
+@keyframes tw-pop{from{opacity:0;transform:translateY(26px) scale(.93)}}
+.tw-ring{position:relative;width:112px;height:112px;margin:0 auto 20px;border-radius:50%;display:grid;place-items:center}
+.tw-ring::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,var(--forest),#7cc0ff,#a24ee0,var(--forest));
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 8px));
+  animation:tw-spin 6s linear infinite}
+@keyframes tw-spin{to{transform:rotate(360deg)}}
+.tw-num{font-size:46px;font-weight:800;letter-spacing:-.05em;animation:tw-rise .5s .35s ease both}
+.tw-kicker{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--forest);
+  animation:tw-rise .5s .25s ease both}
+.tw-title{font-size:24px;font-weight:700;letter-spacing:-.035em;line-height:1.15;margin:6px 0 8px;
+  animation:tw-rise .5s .35s ease both}
+.tw-sub{font-size:13.5px;line-height:1.6;color:var(--muted);max-width:34ch;margin:0 auto;
+  animation:tw-rise .5s .45s ease both}
+.tw-actions{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap;
+  animation:tw-rise .5s .55s ease both}
+@keyframes tw-rise{from{opacity:0;transform:translateY(12px)}}
+.tw-spark{position:absolute;border-radius:50%;pointer-events:none;opacity:0;animation:tw-spark 2.6s ease-in-out infinite}
+@keyframes tw-spark{0%,100%{opacity:0;transform:translateY(6px) scale(.6)}40%{opacity:.9;transform:translateY(-4px) scale(1)}}
+@media(prefers-reduced-motion:reduce){
+  .tw-layer,.tw-card,.tw-num,.tw-kicker,.tw-title,.tw-sub,.tw-actions{animation:none}
+  .tw-ring::before{animation:none}
+  .tw-spark{display:none}
+}
+
+/* ══ Recorder guide — steps that reveal as you reach them ══ */
+.rg-reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.rg-reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rg-reveal{opacity:1;transform:none;transition:none}}
+
+.rg-step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:16px;position:relative;padding-bottom:34px}
+.rg-step:not(:last-child)::before{content:"";position:absolute;left:21px;top:48px;bottom:6px;width:2px;
+  background:var(--line-strong);border-radius:999px}
+.rg-n{width:44px;height:44px;border-radius:50%;background:var(--forest);color:#fff;display:grid;place-items:center;
+  font-weight:800;font-size:16px;flex:0 0 auto;box-shadow:0 6px 16px rgba(10,97,201,.3)}
+.rg-body h3{margin:8px 0 6px;font-size:17px;letter-spacing:-.02em}
+.rg-body>p{margin:0 0 14px;color:var(--muted);font-size:13.5px;line-height:1.6;max-width:52ch}
+
+/* The drawn "screenshots" — markup, so they can't go stale. */
+.rg-art{background:var(--surface);border-radius:16px;padding:16px;box-shadow:var(--shadow-soft);max-width:460px}
+.rg-browser{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rg-chrome{display:flex;align-items:center;gap:8px;background:var(--surface-2);padding:8px 10px;border-bottom:1px solid var(--line)}
+.rg-dots{display:flex;gap:4px}
+.rg-dots i{width:8px;height:8px;border-radius:50%;background:#d6d6cd}
+.rg-url{flex:1;background:#fff;border-radius:999px;font-size:10.5px;font-weight:600;color:var(--muted);padding:4px 12px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rg-puzzle{font-size:13px}
+.rg-pin{width:20px;height:20px;border-radius:6px;background:var(--forest);color:#fff;display:grid;place-items:center;
+  font-size:10px;font-weight:800}
+.rg-page{padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rg-store-name{font-size:13px;font-weight:800;letter-spacing:-.02em}
+.rg-store-sub{font-size:10px;color:var(--muted);font-weight:600}
+.rg-cta{border-radius:999px;background:var(--forest);color:#fff;font-size:11.5px;font-weight:700;padding:8px 14px;white-space:nowrap}
+
+.rg-popup{border:1px solid var(--line);border-radius:14px;max-width:250px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.1)}
+.rg-pop-head{display:flex;align-items:center;gap:8px;background:var(--forest);color:#fff;padding:9px 12px;
+  font-size:11.5px;font-weight:800;letter-spacing:-.01em}
+.rg-pop-head .rg-pin{background:rgba(255,255,255,.2)}
+.rg-pop-body{padding:12px;display:grid;gap:8px}
+.rg-field{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:10.5px;color:var(--muted);font-weight:600;background:#fff}
+.rg-field b{color:var(--ink)}
+.rg-rec-btn{border-radius:999px;padding:9px 12px;text-align:center;font-size:11.5px;font-weight:800;color:#fff}
+.rg-rec-btn.start{background:#c43d3d}
+.rg-rec-btn.send{background:var(--green)}
+.rg-timer{display:flex;align-items:center;justify-content:center;gap:7px;font-size:16px;font-weight:800;letter-spacing:.02em;padding:4px 0}
+.rg-timer i{width:9px;height:9px;border-radius:50%;background:#c43d3d;animation:rg-blink 1.2s steps(1) infinite}
+@keyframes rg-blink{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.rg-timer i{animation:none}}
+.rg-queue-row{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.rg-queue-row .num{width:26px;height:26px;border-radius:8px;background:var(--brand-soft);color:var(--forest);
+  display:grid;place-items:center;font-size:10px;font-weight:800}
+.rg-queue-row .who{flex:1;min-width:0}
+.rg-queue-row .who b{display:block;font-size:12px}
+.rg-queue-row .who span{display:block;font-size:10px;color:var(--muted);font-weight:600}
+.rg-queue-row .go{border-radius:999px;background:var(--forest);color:#fff;font-size:10px;font-weight:800;padding:6px 11px;white-space:nowrap}

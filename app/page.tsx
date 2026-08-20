@@ -17,6 +17,7 @@ import PendingRecordings from '@/components/portal/PendingRecordings'
 import RecorderMissing from '@/components/portal/RecorderMissing'
 import { resolveTeachingPlatform, TEACHING_PLATFORM_META } from '@/lib/teaching-platform'
 import { getRecapUsage } from '@/lib/recap-quota'
+import TrialWelcome from '@/components/TrialWelcome'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
 
@@ -227,6 +228,7 @@ async function RecordingsHome() {
     <>
       <AppNav email={user?.email} connected={false} calendar={false} />
       <main className="wrap page-fade">
+        {usage?.trial && <TrialWelcome email={user?.email} freeRecaps={usage.limit} />}
         {!recorderReady && <RecorderMissing />}
         <PendingRecordings recordings={pending} students={studentOptions} />
         <RecordingsOverview
@@ -297,6 +299,7 @@ export default async function Home() {
     <>
       <AppNav email={token.email} connected />
       <main className="wrap page-fade">
+        {usage?.trial && <TrialWelcome email={me?.email ?? token.email} freeRecaps={usage.limit} />}
         {/* One slim line. The calendar is what this page is for, so the header
             gets a strip and nothing more. */}
         <header className="k-thead slim">
