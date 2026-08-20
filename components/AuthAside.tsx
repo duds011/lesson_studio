@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react'
  * Hidden under 900px (see .k-auth-side) — on a phone the form is the page.
  */
 
-const HOLD_MS = 5000
+const HOLD_MS = 3200
 
 /** A bar chart of the last five lesson scores, out of ten. */
 function ScoreBars({ scores }: { scores: number[] }) {

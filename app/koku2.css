@@ -303,10 +303,13 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
    Pictures of the product, not claims about it. Every slide is markup drawn
    with the same shapes the real pages use, so nothing here can go stale in the
    way a screenshot does. See components/AuthAside. */
-.k-ac{margin-top:22px;max-width:520px}
-.k-ac-stage{position:relative;height:264px}
+/* Sized to the panel, not to a constant: on a large monitor a fixed 520×264
+   card left the aside mostly empty blue. The stage now grows with the
+   viewport (capped so the small-type mocks stay in proportion). */
+.k-ac{margin-top:min(22px,2.5vh);width:100%;max-width:680px}
+.k-ac-stage{position:relative;height:clamp(264px,42vh,460px)}
 .k-ac-slide{position:absolute;inset:0;opacity:0;transform:translateY(9px) scale(.985);
-  transition:opacity .55s ease,transform .55s ease;pointer-events:none}
+  transition:opacity .35s ease,transform .35s ease;pointer-events:none}
 .k-ac-slide.on{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.k-ac-slide{transition:none}}
 
