@@ -6,14 +6,14 @@
  * OpenAI completion. lib/lesson-limits caps what a single recap can cost; this
  * caps how many of them a single account can run.
  *
- * The number is deliberately far above real teaching. Someone teaching thirty
- * hours a week lands near 120 a month, so the ceiling only ever bites on
- * something that is not teaching.
+ * The default matches the Studio plan sold on kokulabs.net: 30 recaps a
+ * month. Existing accounts were set to it explicitly (migration 0023) and new
+ * ones fall through to this constant.
  */
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /** Overridable per teacher (profiles.recap_monthly_limit) and per deploy. */
-export const DEFAULT_RECAP_MONTHLY_LIMIT = Number(process.env.RECAP_MONTHLY_LIMIT || 200)
+export const DEFAULT_RECAP_MONTHLY_LIMIT = Number(process.env.RECAP_MONTHLY_LIMIT || 30)
 
 /** First instant of the current month, UTC — the window everything counts in. */
 function monthStart(): string {
@@ -55,6 +55,27 @@ export async function checkRecapQuota(teacherId: string): Promise<QuotaCheck> {
     ok: false,
     message: `You have built ${used} recaps this month, which is the limit on this account. It resets at the start of next month — get in touch if you need it raised.`,
   }
+}
+
+export type RecapUsage = { used: number; limit: number; left: number }
+
+/**
+ * The same count as checkRecapQuota, but always with numbers — for showing a
+ * teacher where they stand rather than deciding whether a build may run.
+ */
+export async function getRecapUsage(teacherId: string): Promise<RecapUsage> {
+  const admin = createAdminClient()
+  const [{ data: profile }, { count, error }] = await Promise.all([
+    admin.from('profiles').select('recap_monthly_limit').eq('id', teacherId).maybeSingle(),
+    admin
+      .from('recap_runs')
+      .select('id', { count: 'exact', head: true })
+      .eq('teacher_id', teacherId)
+      .gte('created_at', monthStart()),
+  ])
+  const limit = (profile as any)?.recap_monthly_limit ?? DEFAULT_RECAP_MONTHLY_LIMIT
+  const used = error ? 0 : (count ?? 0)
+  return { used, limit, left: Math.max(0, limit - used) }
 }
 
 /**

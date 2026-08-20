@@ -16,6 +16,7 @@ import { listPendingRecordings } from '@/app/actions/recordings'
 import PendingRecordings from '@/components/portal/PendingRecordings'
 import RecorderMissing from '@/components/portal/RecorderMissing'
 import { resolveTeachingPlatform, TEACHING_PLATFORM_META } from '@/lib/teaching-platform'
+import { getRecapUsage } from '@/lib/recap-quota'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
 
@@ -220,6 +221,7 @@ async function RecordingsHome() {
   const studentOptions = (students ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
   const publishedCount = await publishedLessonCount(supabase, user?.id ?? '')
   const recorderReady = await hasRecorder(user?.id ?? '')
+  const usage = user ? await getRecapUsage(user.id) : null
 
   return (
     <>
@@ -231,6 +233,7 @@ async function RecordingsHome() {
           studentCount={(students ?? []).length}
           draftCount={draftRecaps.length}
           publishedCount={publishedCount}
+          usage={usage}
           recent={recent.filter((l) => l.status === 'published')}
           platformLabel={TEACHING_PLATFORM_META[platform].label}
           review={<RecapsToReview drafts={draftRecaps} students={studentOptions} />}
@@ -288,6 +291,7 @@ export default async function Home() {
   const studentOptions = (myStudents ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
   const publishedCount = await publishedLessonCount(supabaseForStudents, me?.id ?? '')
   const recorderReady = await hasRecorder(me?.id ?? '')
+  const usage = me ? await getRecapUsage(me.id) : null
 
   return (
     <>
@@ -353,6 +357,13 @@ export default async function Home() {
                 <div className="k-stat-val"><b><CountUp value={publishedCount} /></b></div>
                 <p className="k-stat-sub">sent to students</p>
               </div>
+              {usage && (
+                <div className="k-stat green">
+                  <div className="k-stat-head"><span>Recaps left</span></div>
+                  <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
+                  <p className="k-stat-sub">{usage.used} used of {usage.limit} this month</p>
+                </div>
+              )}
             </div>
 
             {calendars.length > 1 && (

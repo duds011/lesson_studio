@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import CountUp from '@/components/portal/CountUp'
 import HowLessonsReachYou from '@/components/HowLessonsReachYou'
+import type { RecapUsage } from '@/lib/recap-quota'
 
 export type RecentLesson = {
   id: string
@@ -16,6 +17,8 @@ type Props = {
   studentCount: number
   draftCount: number
   publishedCount: number
+  /** This month's recap allowance — every teacher sees where they stand. */
+  usage?: RecapUsage | null
   recent: RecentLesson[]
   /** Where they told us they teach — quoted back so the page feels theirs. */
   platformLabel: string
@@ -36,7 +39,7 @@ const fmtDate = (d: string | null) =>
  * mentions a connection they've already declined.
  */
 export default function RecordingsOverview({
-  studentCount, draftCount, publishedCount, recent, platformLabel, review,
+  studentCount, draftCount, publishedCount, usage, recent, platformLabel, review,
 }: Props) {
   return (
     <>
@@ -114,6 +117,13 @@ export default function RecordingsOverview({
               <div className="k-stat-val"><b><CountUp value={publishedCount} /></b></div>
               <p className="k-stat-sub">sent to students</p>
             </div>
+            {usage && (
+              <div className="k-stat green">
+                <div className="k-stat-head"><span>Recaps left</span></div>
+                <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
+                <p className="k-stat-sub">{usage.used} used of {usage.limit} this month</p>
+              </div>
+            )}
           </div>
 
           {/* The door back, offered once and quietly — not a wall. */}

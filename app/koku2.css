@@ -121,6 +121,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-stat.yellow{background:var(--c-yellow);color:var(--c-yellow-ink)}
 .k-stat.blue{background:var(--c-blue)}
 .k-stat.purple{background:var(--c-purple)}
+.k-stat.green{background:var(--green)}
 .k-stat-head{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14.5px;letter-spacing:-.01em}
 .k-stat-head .ui-icon{width:19px;height:19px;flex:0 0 auto}
 .k-stat-val{display:flex;align-items:center;gap:9px;margin-top:auto}
