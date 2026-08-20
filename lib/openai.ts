@@ -191,12 +191,14 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocab_level_distribution": {"N5": [count], "N4": [count], "N3": [count], "N2": [count], "N1": [count]},
   "vocabulary": [{"word": "[Japanese]", "reading": "[romaji]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[N5/N4/N3/N2/N1]", "example_sentence": "[Japanese sentence]"}],
   "vocabulary_all": [{"word": "[Japanese]", "level": "[N5/N4/N3/N2/N1]"}],
-  "homework": [{"description": "[task]"}],
-  "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
+  "homework": [],
+  "exercises": [{"type": "[speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
   "sections": [{"title": "[see SECTION FORMAT — content/activity sections FIRST, then grammar]", "content": "[see SECTION FORMAT]"}],
   "corrections": [{"said": "[verbatim student quote]", "correction": "[fixed]", "categories": ["[label]"], "explanation": "[one sentence]"}],
   "did_well": [{"said": "[verbatim student quote]", "note": "[one sentence]"}]
 }
+
+HOMEWORK: ALWAYS the empty array []. Homework is the teacher's own to assign — never invent it, even if homework was mentioned in the lesson.
 
 SCORING:
 - score: Student accuracy, grammar, fluency, engagement. 0.0-10.0 one decimal.
@@ -238,14 +240,13 @@ A section whose bullets and Pattern line are glued into one paragraph is WRONG �
 
 AUDIO SCRIPT — for the "audio_script" field:
 Write based on the recap. One paragraph per topic, no transitions between paragraphs.
-Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic (Japanese word — meaning — short example, written per the SCRIPT rules). Homework sentence. Personal closing line.
+Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic (Japanese word — meaning — short example, written per the SCRIPT rules). Personal closing line.
 Total: 45-75 seconds when read aloud.
 
-EXERCISES — generate exactly 10 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud (with 4 sentences), 2 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
+EXERCISES — generate exactly 10 practice exercises based ONLY on this lesson's grammar and vocabulary, in this order: 3 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
 Every Japanese string below follows the SCRIPT rules. Keep everything at this student's level.
 The "data" object depends on "type":
-- read_aloud → prompt: "Read these sentences aloud". data: {"focus": "[grammar focus]", "sentences": [{"jp": "[Japanese sentence, per SCRIPT rules]", "en": "[English]"}, {"jp":"...","en":"..."}, {"jp":"...","en":"..."}]}
-- speak → prompt: "Answer out loud". data: {"prompt_jp": "[a question, per SCRIPT rules]", "prompt_en": "[English]", "hint": "[which grammar/words to use]"}
+- speak → prompt: "Answer out loud". A QUESTION ABOUT THIS LESSON'S CONTENT — the material read, the discussion had, the situations practiced — that the student answers in their own words using today's grammar and vocabulary. Never "read this sentence": it must require the student to produce an answer. data: {"prompt_jp": "[the question, per SCRIPT rules]", "prompt_en": "[English]", "hint": "[a genuine help: the pattern to reach for and 1-2 of today's words to use, e.g. \"Use それから to connect two actions — try いきます and たべます\"]"}
 - multiple_choice → prompt: "Quick check". data: {"question": "[question in English about this lesson]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": [integer index 0-2 of the correct option]}
 - fill_blank → prompt: "Fill in the blank". data: {"before": "[text before the gap, per SCRIPT rules]", "after": "[text after the gap, per SCRIPT rules]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": "[the correct option, must exactly match one option]", "en": "[English translation]"}
 
@@ -482,11 +483,14 @@ export async function generateTest(opts: {
   const fillCounts = (s: string) => s
     .replace('{{DIRECTIONS}}', directionsBlock)
     .replace('{{LESSON_COUNT}}', String(n))
-    .replace('{{N_VOCAB}}', scale(10, 4, 24))
-    .replace('{{N_GRAMMAR_MC}}', scale(10, 4, 22))
-    .replace('{{N_GRAMMAR_FB}}', scale(8, 3, 16))
-    .replace('{{N_PASSAGES}}', scale(2, 1, 4))
-    .replace('{{N_SPEAKING}}', scale(6, 2, 12))
+    // A one-lesson test is ~20 questions, not an exam paper. Counts grow with
+    // the lessons covered (so a many-lesson review is genuinely longer) but
+    // sub-linearly and capped — reasonable, never exhausting.
+    .replace('{{N_VOCAB}}', scale(6, 3, 16))
+    .replace('{{N_GRAMMAR_MC}}', scale(6, 3, 16))
+    .replace('{{N_GRAMMAR_FB}}', scale(5, 2, 12))
+    .replace('{{N_PASSAGES}}', scale(1, 1, 3))
+    .replace('{{N_SPEAKING}}', scale(3, 1, 8))
 
   // Japanese keeps its dedicated JLPT prompt (script rules and all); English
   // and French share the CEFR prompt. Anything else falls back to Japanese
@@ -588,12 +592,14 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "vocab_level_distribution": {"A1": [count], "A2": [count], "B1": [count], "B2": [count], "C1": [count], "C2": [count]},
   "vocabulary": [{"word": "[{{LANGUAGE}}]", "reading": "[pronunciation guide]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[{{LANGUAGE}} sentence]"}],
   "vocabulary_all": [{"word": "[{{LANGUAGE}}]", "level": "[A1/A2/B1/B2/C1/C2]"}],
-  "homework": [{"description": "[task]"}],
-  "exercises": [{"type": "[read_aloud|speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
+  "homework": [],
+  "exercises": [{"type": "[speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
   "sections": [{"title": "[see SECTION FORMAT — content/activity sections FIRST, then grammar]", "content": "[see SECTION FORMAT]"}],
   "corrections": [{"said": "[verbatim student quote]", "correction": "[fixed]", "categories": ["[label]"], "explanation": "[one sentence]"}],
   "did_well": [{"said": "[verbatim student quote]", "note": "[one sentence]"}]
 }
+
+HOMEWORK: ALWAYS the empty array []. Homework is the teacher's own to assign — never invent it, even if homework was mentioned in the lesson.
 
 SCORING:
 - score: Student accuracy, grammar, fluency, engagement. 0.0-10.0 one decimal.
@@ -634,14 +640,13 @@ A section whose bullets and Pattern line are glued into one paragraph is WRONG �
 
 AUDIO SCRIPT — for the "audio_script" field:
 Write based on the recap. One paragraph per topic, no transitions between paragraphs.
-Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic ({{LANGUAGE}} word [pronunciation] — meaning — short example). Homework sentence. Personal closing line.
+Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic ({{LANGUAGE}} word [pronunciation] — meaning — short example). Personal closing line.
 Total: 45-75 seconds when read aloud.
 
-EXERCISES — generate exactly 10 interactive homework exercises based ONLY on this lesson's grammar and vocabulary, in this order: 1 read_aloud (with 4 sentences), 2 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
+EXERCISES — generate exactly 10 practice exercises based ONLY on this lesson's grammar and vocabulary, in this order: 3 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
 Keep everything at this student's level. The JSON keys below are structural — keep them exactly as written even though the content is {{LANGUAGE}}.
 The "data" object depends on "type":
-- read_aloud → prompt: "Read these sentences aloud". data: {"focus": "[grammar focus]", "sentences": [{"jp": "[sentence in {{LANGUAGE}}]", "en": "[English]"}, {"jp":"...","en":"..."}, {"jp":"...","en":"..."}]}
-- speak → prompt: "Answer out loud". data: {"prompt_jp": "[a question in {{LANGUAGE}}]", "prompt_en": "[English]", "hint": "[which grammar/words to use]"}
+- speak → prompt: "Answer out loud". A QUESTION ABOUT THIS LESSON'S CONTENT — the material read, the discussion had, the situations practiced — that the student answers in their own words using today's grammar and vocabulary. Never "read this sentence": it must require the student to produce an answer. data: {"prompt_jp": "[the question in {{LANGUAGE}}]", "prompt_en": "[English]", "hint": "[a genuine help: the pattern to reach for and 1-2 of today's words to use]"}
 - multiple_choice → prompt: "Quick check". data: {"question": "[question in English about this lesson]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": [integer index 0-2 of the correct option]}
 - fill_blank → prompt: "Fill in the blank". data: {"before": "[{{LANGUAGE}} text before the gap]", "after": "[{{LANGUAGE}} text after the gap]", "options": ["[opt1]", "[opt2]", "[opt3]"], "answer": "[the correct option, must exactly match one option]", "en": "[English translation]"}
 
@@ -678,7 +683,7 @@ Transcript:
 function explanationOverride(target: string, native: string): string {
   if (!native || /^(en|eng|english)$/i.test(native)) return ''
   return `EXPLANATION LANGUAGE — FINAL OVERRIDE, APPLIES TO EVERY RULE ABOVE:
-This teacher explains lessons in ${native}, not English. Everywhere the rules above say English, write natural ${native} instead: "lesson_title", "recap", "teacher_note", "audio_script", every section's explanatory sentences and the descriptive half of its title, every vocabulary "definition" and "explanation", every correction "explanation" and did_well "note", every homework "description", every exercise "prompt", every multiple_choice "question" and its options, every "hint" and "focus", and every translation value — "en", "prompt_en" and read_aloud "en" values now hold the ${native} translation (the KEYS stay exactly "en"/"prompt_en").
+This teacher explains lessons in ${native}, not English. Everywhere the rules above say English, write natural ${native} instead: "lesson_title", "recap", "teacher_note", "audio_script", every section's explanatory sentences and the descriptive half of its title, every vocabulary "definition" and "explanation", every correction "explanation" and did_well "note", every exercise "prompt", every multiple_choice "question" and its options, every "hint" and "focus", and every translation value — "en", "prompt_en" and read_aloud "en" values now hold the ${native} translation (the KEYS stay exactly "en"/"prompt_en").
 Do NOT translate: the ${target} lesson material itself (words, phrases, example sentences, verbatim "said" quotes), pronunciation readings, CEFR/JLPT level labels, and JSON keys — every key stays exactly as specified above.`
 }
 
@@ -746,7 +751,7 @@ export async function translateRecap(recap: Recap, opts: { native: string; targe
   if (!key) throw new Error('Missing OPENAI_API_KEY')
 
   const target = String(opts.target ?? '').trim() || 'the language being taught'
-  const content = `Below is a language-lesson recap as JSON. The lesson teaches ${target}; the explanations are currently written in the wrong language. Rewrite the JSON so that ALL explanatory prose is natural ${opts.native}: "lesson_title", "recap", "teacher_note", "audio_script", every section's explanatory sentences and the descriptive half of its title, every vocabulary "definition" and "explanation", every correction "explanation" and did_well "note", every homework "description", every exercise "prompt", every multiple_choice "question" and its options, every "hint" and "focus", and every translation value ("en", "prompt_en" — the keys themselves never change).
+  const content = `Below is a language-lesson recap as JSON. The lesson teaches ${target}; the explanations are currently written in the wrong language. Rewrite the JSON so that ALL explanatory prose is natural ${opts.native}: "lesson_title", "recap", "teacher_note", "audio_script", every section's explanatory sentences and the descriptive half of its title, every vocabulary "definition" and "explanation", every correction "explanation" and did_well "note", every exercise "prompt", every multiple_choice "question" and its options, every "hint" and "focus", and every translation value ("en", "prompt_en" — the keys themselves never change).
 
 Do NOT change: the ${target} material itself (words, phrases, example sentences, verbatim "said" quotes), pronunciation readings, level labels, numbers, and the JSON structure — return the COMPLETE JSON with exactly the same keys and array lengths, nothing added or dropped.
 
