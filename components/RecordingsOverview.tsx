@@ -121,7 +121,11 @@ export default function RecordingsOverview({
               <div className="k-stat green">
                 <div className="k-stat-head"><span>Recaps left</span></div>
                 <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
-                <p className="k-stat-sub">{usage.used} used of {usage.limit} this month</p>
+                <p className="k-stat-sub">
+                  {usage.trial
+                    ? `${usage.used} used of ${usage.limit} free trial recaps`
+                    : `${usage.used} used of ${usage.limit} this month`}
+                </p>
               </div>
             )}
           </div>

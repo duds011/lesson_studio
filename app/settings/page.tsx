@@ -50,7 +50,7 @@ export default async function SettingsPage() {
     connected: Boolean((profile as any)?.stripe_account_id),
     chargesEnabled: Boolean((profile as any)?.stripe_charges_enabled),
   }
-  const usage = user ? await getRecapUsage(user.id) : { used: 0, limit: 0, left: 0 }
+  const usage = user ? await getRecapUsage(user.id) : { used: 0, limit: 0, left: 0, trial: false }
 
   return (
     <>

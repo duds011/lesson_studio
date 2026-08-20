@@ -186,6 +186,10 @@ export default function AuthAside({ headline, sub }: { headline: string; sub: st
             <small>{SLIDES[i].body}</small>
           </div>
 
+          {/* One ring per slide; the active one fills over exactly HOLD_MS,
+              so the fill IS the countdown to the next slide. Keyed by the
+              active index so it restarts from empty on every change, and
+              paused together with the rotation while the pointer holds it. */}
           <div className="k-ac-dots" role="tablist" aria-label="Product features">
             {SLIDES.map((s, n) => (
               <button
@@ -196,7 +200,26 @@ export default function AuthAside({ headline, sub }: { headline: string; sub: st
                 aria-label={s.title}
                 className={n === i ? 'on' : ''}
                 onClick={() => setI(n)}
-              />
+              >
+                {n === i && (
+                  // Keyed on `held` too: releasing the pointer restarts the
+                  // interval from a full HOLD_MS, so the ring must restart
+                  // from empty with it or it would finish ahead of the switch.
+                  <svg key={`${i}${held ? '-held' : ''}`} viewBox="0 0 20 20" aria-hidden>
+                    <circle className="k-dot-track" cx="10" cy="10" r="8" />
+                    <circle
+                      className="k-dot-fill"
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      style={{
+                        animationDuration: `${HOLD_MS}ms`,
+                        animationPlayState: held ? 'paused' : 'running',
+                      }}
+                    />
+                  </svg>
+                )}
+              </button>
             ))}
           </div>
         </div>

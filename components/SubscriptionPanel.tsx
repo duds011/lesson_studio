@@ -18,7 +18,7 @@ function planFor(limit: number) {
 }
 
 export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
-  const current = planFor(usage.limit)
+  const current = usage.trial ? null : planFor(usage.limit)
   const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0
 
   return (
@@ -34,13 +34,17 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
           <strong style={{ fontSize: 22, letterSpacing: '-.03em' }}>
-            {current ? current.name : `Custom · ${usage.limit} recaps`}
+            {usage.trial ? 'Free trial' : current ? current.name : `Custom · ${usage.limit} recaps`}
           </strong>
-          {current && (
+          {usage.trial ? (
+            <span style={{ color: 'var(--muted)', fontWeight: 600 }}>
+              {usage.limit} recaps on the house — see what a lesson turns into
+            </span>
+          ) : current ? (
             <span style={{ color: 'var(--muted)', fontWeight: 600 }}>
               ${current.price}/month · {current.recaps} recaps
             </span>
-          )}
+          ) : null}
         </div>
 
         <div style={{ maxWidth: 460 }}>
@@ -59,8 +63,10 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
             />
           </div>
           <p className="desc" style={{ marginTop: 8 }}>
-            A recap counts when it&rsquo;s built; reviewing, editing and re-sending are free.
-            The counter resets on the 1st of each month.
+            A recap counts when it&rsquo;s built; reviewing, editing and re-sending are free.{' '}
+            {usage.trial
+              ? 'Trial recaps don’t renew — pick a plan below to keep going.'
+              : 'The counter resets on the 1st of each month.'}
           </p>
         </div>
       </section>
@@ -107,7 +113,7 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
                     className="btn btn-ghost btn-sm"
                     href={`mailto:${CONTACT}?subject=${encodeURIComponent(`Switch my Lesson Studio plan to ${p.name}`)}`}
                   >
-                    Switch to {p.name}
+                    {usage.trial ? `Choose ${p.name}` : `Switch to ${p.name}`}
                   </a>
                 )}
               </div>
