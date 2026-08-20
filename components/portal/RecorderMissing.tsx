@@ -30,6 +30,9 @@ export default function RecorderMissing() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          <Link href="/recorder" className="btn btn-ghost btn-sm">
+            Setup guide
+          </Link>
           <Link
             href={RECORDER_STORE_URL}
             target="_blank"

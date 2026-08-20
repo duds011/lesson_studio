@@ -75,7 +75,10 @@ export default async function SettingsPage() {
                 <span className="k-sec-icon" aria-hidden>🎙️</span>
                 <div>
                   <h3>Lesson recorder</h3>
-                  <p className="desc">The Chrome extension that records a lesson and turns it into a recap.</p>
+                  <p className="desc">
+                    The Chrome extension that records a lesson and turns it into a recap.{' '}
+                    <a href="/recorder" style={{ color: 'var(--brand)', fontWeight: 700 }}>Step-by-step guide →</a>
+                  </p>
                 </div>
               </div>
               <ExtTokenPanel
