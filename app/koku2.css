@@ -1594,3 +1594,10 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
   border-bottom:3px solid var(--forest);border-radius:0;background:transparent;
   padding:0 2px 3px;cursor:pointer;max-width:100%}
 .k-onb-sentence select:focus{outline:none;border-bottom-color:var(--forest-deep)}
+
+/* The recaps-left tile drains as the month is spent, and clicks through to
+   Settings -> Subscription. */
+.k-stat-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.28);margin-top:10px;overflow:hidden}
+.k-stat-bar i{display:block;height:100%;border-radius:999px;background:#fff;transition:width .6s ease}
+a.k-stat{text-decoration:none;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(18,24,17,.16)}

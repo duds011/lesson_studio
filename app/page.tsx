@@ -361,15 +361,18 @@ export default async function Home() {
                 <p className="k-stat-sub">sent to students</p>
               </div>
               {usage && (
-                <div className="k-stat green">
+                <Link href="/settings#subscription" className="k-stat green" aria-label="Recaps left — manage your subscription">
                   <div className="k-stat-head"><span>Recaps left</span></div>
                   <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
+                  <div className="k-stat-bar" aria-hidden>
+                    <i style={{ width: `${usage.limit + usage.extra > 0 ? Math.min(100, Math.round((usage.left / (usage.limit + usage.extra)) * 100)) : 0}%` }} />
+                  </div>
                   <p className="k-stat-sub">
                     {usage.trial
                       ? `${usage.used} used of ${usage.limit} free trial recaps`
-                      : `${usage.used} used of ${usage.limit} this month`}
+                      : `${usage.used} used of ${usage.limit} this month${usage.extra > 0 ? ` · +${usage.extra} extra` : ''}`}
                   </p>
-                </div>
+                </Link>
               )}
             </div>
 

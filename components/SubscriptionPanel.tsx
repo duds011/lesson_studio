@@ -67,9 +67,52 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
             {usage.trial
               ? 'Trial recaps don’t renew — pick a plan below to keep going.'
               : 'The counter resets on the 1st of each month.'}
+            {usage.extra > 0 && (
+              <> You also hold <strong>{usage.extra} extra recap{usage.extra === 1 ? '' : 's'}</strong> —
+              they never expire and are only spent after the month&rsquo;s allowance.</>
+            )}
           </p>
         </div>
       </section>
+
+      {/* Top-ups: for the month that ran long. Priced above every plan's
+          per-recap rate on purpose — recurring need should upgrade instead. */}
+      {!usage.trial && (
+        <section className="k-sec" style={{ marginBottom: 18 }}>
+          <div className="k-sec-head">
+            <span className="k-sec-icon" aria-hidden>➕</span>
+            <div>
+              <h3>Need a few more this month?</h3>
+              <p className="desc">Top-ups never expire, and are only spent after your plan&rsquo;s monthly recaps.</p>
+            </div>
+          </div>
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+              border: '1px solid var(--line)', borderRadius: 14, padding: '14px 18px', background: 'var(--surface)',
+            }}
+          >
+            <div>
+              <strong style={{ fontSize: 16, letterSpacing: '-.02em' }}>5 extra recaps</strong>
+              <span style={{ color: 'var(--muted)', fontWeight: 600, marginLeft: 10 }}>$10 · one-time</span>
+              {usage.extra > 0 && (
+                <span className="pill" style={{ background: 'var(--green-soft)', color: 'var(--green)', marginLeft: 10 }}>
+                  {usage.extra} unspent
+                </span>
+              )}
+            </div>
+            <a
+              className="btn btn-primary btn-sm"
+              href={`mailto:${CONTACT}?subject=${encodeURIComponent('Buy 5 extra Lesson Studio recaps ($10)')}`}
+            >
+              Get 5 more — $10
+            </a>
+          </div>
+          <p className="desc" style={{ marginTop: 10 }}>
+            Topping up two months in a row? The bigger plan is cheaper — switch below.
+          </p>
+        </section>
+      )}
 
       <section className="k-sec">
         <div className="k-sec-head">
