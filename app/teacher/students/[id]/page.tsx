@@ -146,7 +146,11 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
           was taught, and what tests it — and stacking them hid the tests. */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, alignItems: 'start' }}>
       <section>
-        <h2 className="section-heading">Lessons & recaps</h2>
+        {/* Same header shape as the tests column (which carries a button), so
+            the two lists start on the same line. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 44, margin: '0 0 11px' }}>
+          <h2 className="section-heading" style={{ margin: 0 }}>Lessons & recaps</h2>
+        </div>
         {rows.length === 0 ? (
           <div className="empty"><strong style={{ color: 'var(--ink)' }}>No lessons yet</strong><br />Recorded lessons for this student will appear here.</div>
         ) : (
@@ -173,7 +177,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
       </section>
 
       <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, margin: '0 0 11px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, minHeight: 44, margin: '0 0 11px' }}>
           <h2 className="section-heading" style={{ margin: 0 }}>Practice tests</h2>
           <GenerateTestButton studentId={student.id} lessons={testableLessons} language={teachingLanguage} instructionLanguage={(student as any).instruction_language ?? ''} />
         </div>
