@@ -80,22 +80,57 @@ async function loadDraftRecaps(recapRecs: Record<string, any>): Promise<DraftRec
     .filter((r: any) => r.status === 'draft' || r.status === 'processing' || r.status === 'failed')
     .sort((a: any, b: any) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
 
-  return Promise.all(draftList.map(async (r: any) => {
-    let lessonNumber: number | null = null
+  /**
+   * The number shown here is a forecast of the number the database will assign
+   * on publish — and that assignment is chronological by lesson DATE, not by
+   * which recap gets reviewed first. So the forecast must be too: an Aug 16
+   * recording slots in ahead of an already-published Aug 19 lesson, and two
+   * drafts for the same student get distinct numbers in date order rather than
+   * both claiming "next".
+   */
+  const linkedDrafts = await Promise.all(draftList.map(async (r: any) => {
     try {
-      const linked = await mapEventToStudent(admin, r.eventId, r.attendees ?? [])
-      if (linked) {
-        const { data: ls } = await admin.from('lessons').select('lesson_number, source_event_id, status').eq('student_id', linked.studentId)
-        const existing = (ls || []).find((x: any) => x.source_event_id === r.eventId)
-        if (existing?.lesson_number) lessonNumber = existing.lesson_number
-        else {
-          const maxN = (ls || []).filter((x: any) => x.status === 'published').reduce((m: number, x: any) => Math.max(m, x.lesson_number ?? 0), 0)
-          lessonNumber = maxN + 1
-        }
-      }
-    } catch { /* leave null */ }
-    return { eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, error: r.error, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle, createdAt: r.createdAt, lessonNumber }
+      return { r, linked: await mapEventToStudent(admin, r.eventId, r.attendees ?? []) }
+    } catch {
+      return { r, linked: null }
+    }
   }))
+
+  const draftDate = (r: any) =>
+    (r.lessonDate ? String(r.lessonDate).slice(0, 10) : '') ||
+    (r.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : '9999-12-31')
+
+  const studentIds = Array.from(new Set(linkedDrafts.flatMap((x) => (x.linked ? [x.linked.studentId] : []))))
+  const lessonsByStudent = new Map<string, any[]>()
+  await Promise.all(studentIds.map(async (sid) => {
+    const { data } = await admin.from('lessons').select('lesson_number, lesson_date, source_event_id, status').eq('student_id', sid)
+    lessonsByStudent.set(sid, data ?? [])
+  }))
+
+  return linkedDrafts.map(({ r, linked }) => {
+    let lessonNumber: number | null = null
+    if (linked) {
+      const ls = lessonsByStudent.get(linked.studentId) ?? []
+      const existing = ls.find((x: any) => x.source_event_id === r.eventId)
+      if (existing?.lesson_number) lessonNumber = existing.lesson_number
+      else {
+        const date = draftDate(r)
+        // A published lesson on the same date was created first, so it sorts
+        // ahead of this draft — hence <=, not <.
+        const publishedBefore = ls.filter(
+          (x: any) => x.status === 'published' && x.source_event_id !== r.eventId && String(x.lesson_date ?? '') <= date,
+        ).length
+        const queuedBefore = linkedDrafts.filter((o) => {
+          if (o.r === r || o.linked?.studentId !== linked.studentId) return false
+          if (ls.some((x: any) => x.source_event_id === o.r.eventId)) return false // already counted as a lesson row
+          const od = draftDate(o.r)
+          return od < date || (od === date && (o.r.createdAt ?? 0) < (r.createdAt ?? 0))
+        }).length
+        lessonNumber = publishedBefore + queuedBefore + 1
+      }
+    }
+    return { eventId: r.eventId, studentName: r.studentName, status: r.status, recap: r.recap, error: r.error, lessonDate: r.lessonDate, lessonTitle: r.lessonTitle, createdAt: r.createdAt, lessonNumber }
+  })
 }
 
 /**
