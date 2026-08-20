@@ -127,29 +127,21 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {/* ── 1. Language ── */}
           {step === 0 && (
             <>
-              <h1>What language do your lessons sound like?</h1>
-              {/* What each student is LEARNING is asked when that student is
-                  added, where it belongs: one teacher can teach two languages,
-                  and answering once here made that a per-account fact. This
-                  step keeps only the question that really is per teacher. */}
-              <p className="k-onb-lead">
-                Not what you teach — what is actually spoken in the room. It is what the transcriber listens for.
-              </p>
-
-              <label className="k-field">
-                <span>The language you explain in</span>
+              {/* One sentence, one choice. What each student is LEARNING is
+                  asked when that student is added, where it belongs — this
+                  keeps only the per-teacher fact, worn as plain words. */}
+              <div className="k-onb-sentence" aria-label="The language your lessons are spoken in">
+                <span>I teach in</span>
                 <select
-                  className="k-input"
                   value={spokenLanguage}
                   onChange={(e) => setSpokenLanguage(e.target.value)}
                 >
-                  <option value="" disabled>Choose a language…</option>
+                  <option value="" disabled>choose…</option>
                   {SPOKEN_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
-              </label>
-              <p className="k-onb-lead" style={{ fontSize: 12, marginTop: -4 }}>
-                With beginners most of an hour is the language you share, not the one being learned. Telling us which
-                it is keeps the transcript honest, and it is what the recorder offers first.
+              </div>
+              <p className="k-onb-lead" style={{ fontSize: 12.5 }}>
+                The language most of your lesson is actually spoken in — it&rsquo;s what the recorder listens for.
               </p>
 
               <label className="k-field">
