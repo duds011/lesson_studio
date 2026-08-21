@@ -28,7 +28,42 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { eventId, studentTrack = 'tab' } = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => ({}))
+
+  /**
+   * mode 'transcribe': run ONE stored audio file through a chosen STT model
+   * and return the raw text — the A/B half of the cost experiments (whisper-1
+   * vs gpt-4o-mini-transcribe, full vs silence-stripped). Nothing saved.
+   */
+  if (body.mode === 'transcribe') {
+    const { path, model = 'gpt-4o-mini-transcribe', language = 'fr' } = body
+    if (!path || typeof path !== 'string' || path.includes('..')) {
+      return NextResponse.json({ ok: false, error: 'Missing path' }, { status: 400 })
+    }
+    const admin2 = createAdminClient()
+    const dl = await admin2.storage.from(RECORDING_BUCKET).download(path)
+    if (!dl.data) return NextResponse.json({ ok: false, error: `No file at ${path}` }, { status: 404 })
+
+    const key = process.env.OPENAI_API_KEY
+    if (!key) return NextResponse.json({ ok: false, error: 'No OpenAI key' }, { status: 500 })
+    const form = new FormData()
+    form.append('file', dl.data, 'track.webm')
+    form.append('model', String(model))
+    form.append('language', String(language))
+    // gpt-4o-*-transcribe supports json/text only (no verbose_json timestamps).
+    form.append('response_format', 'json')
+    const t0 = Date.now()
+    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}` },
+      body: form,
+    })
+    if (!res.ok) return NextResponse.json({ ok: false, error: `STT failed (${res.status}): ${(await res.text()).slice(0, 300)}` }, { status: 502 })
+    const j = await res.json()
+    return NextResponse.json({ ok: true, model, path, bytes: dl.data.size, ms: Date.now() - t0, text: j.text ?? '' })
+  }
+
+  const { eventId, studentTrack = 'tab' } = body
   const recordingId = String(eventId ?? '').startsWith('ext:') ? String(eventId).slice(4) : ''
   if (!recordingId) return NextResponse.json({ ok: false, error: 'Missing ext: eventId' }, { status: 400 })
   if (studentTrack !== 'tab' && studentTrack !== 'mic') {
