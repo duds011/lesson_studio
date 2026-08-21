@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   // Who the recording belongs to, and that it is this teacher's to rebuild.
   const { data: link } = await admin
     .from('lesson_event_links')
-    .select('student_id, teacher_id')
+    .select('student_id, teacher_id, mic_is')
     .eq('event_id', eventId)
     .maybeSingle()
   if (!link) return NextResponse.json({ ok: false, error: 'No student is linked to this recording.' }, { status: 404 })
@@ -66,9 +66,11 @@ export async function POST(req: Request) {
   if (!student) return NextResponse.json({ ok: false, error: 'Student not found.' }, { status: 404 })
 
   try {
-    // Whoever held the mic decides which track is the host. Unspecified means
-    // the teacher recorded, which is the recorder's own default.
-    const micIsTeacher = micIs !== 'student'
+    // Whoever held the mic decides which track is the host. The request may
+    // override; otherwise the orientation REMEMBERED from the original
+    // recording wins — a rebuild that guessed "teacher" used to flip the
+    // speakers on any lesson a student recorded of themselves.
+    const micIsTeacher = (micIs ?? (link as any).mic_is) !== 'student'
     const wanted = [
       { track: 'mic', speaker: micIsTeacher ? 'Teacher' : student.full_name, isHost: micIsTeacher },
       { track: 'tab', speaker: micIsTeacher ? student.full_name : 'Teacher', isHost: !micIsTeacher },

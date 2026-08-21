@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authenticateExtension } from '@/lib/ext-auth'
-import { transcribeTracksDetailed, toWhisperLanguage } from '@/lib/whisper'
+import { transcribeTracksDetailed, assembleTracks, toWhisperLanguage } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/transcript'
+import { toRealTime } from '@/lib/cutmap'
 import { checkRecapQuota, recordRecapRun } from '@/lib/recap-quota'
 import { generateRecap } from '@/lib/openai'
 import { saveRecap } from '@/lib/store'
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
   const caller = await authenticateExtension(req)
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { recordingId, studentId, micIs, seconds, lessonDate, heard, language, spokenLanguage } =
+  const { recordingId, studentId, micIs, seconds, lessonDate, heard, language, spokenLanguage, cutMaps } =
     await req.json().catch(() => ({}))
   if (!recordingId) return NextResponse.json({ error: 'Missing recordingId' }, { status: 400 })
 
@@ -95,7 +96,15 @@ export async function POST(req: Request) {
    * the row up front, a build that dies leaves a lesson the studio can rebuild.
    */
   const { error: linkError } = await admin.from('lesson_event_links').upsert(
-    { event_id: eventId, student_id: student.id, teacher_id: caller.teacherId },
+    {
+      event_id: eventId,
+      student_id: student.id,
+      teacher_id: caller.teacherId,
+      // Who held the mic, remembered — so a rebuild months later doesn't have
+      // to guess and flip the speakers (it used to assume "teacher", which
+      // inverted every lesson a student recorded of themselves).
+      mic_is: micIs === 'student' ? 'student' : micIs === 'teacher' ? 'teacher' : null,
+    },
     { onConflict: 'event_id' },
   )
   if (linkError) {
@@ -130,7 +139,7 @@ export async function POST(req: Request) {
   await runAsTeacher(caller.teacherId, () => saveRecap({ ...placeholder, status: 'processing' }))
 
   waitUntil(
-    buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage })
+    buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage, cutMaps })
       .catch(async (e) => {
         const error = String(e?.message ?? e)
         console.error(`[ext/complete] recap build failed for ${eventId}: ${error}`)
@@ -147,7 +156,7 @@ export async function POST(req: Request) {
 
 /** Everything the extension no longer waits for. */
 async function buildRecap({
-  admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage,
+  admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage, cutMaps,
 }: any) {
   {
     // Whoever holds the mic decides which track is the host. Recording your own
@@ -192,7 +201,18 @@ async function buildRecap({
     const targetLanguage = student.language ?? language ?? null
 
     const det = await transcribeTracksDetailed(tracks, code)
-    const t = normalizeSegments(det.filtered)
+
+    /**
+     * Silence-stripped recordings arrive in compressed time. Shift every word
+     * back onto the real lesson clock BEFORE interleaving and BEFORE caching,
+     * so speaker order, talk-time, and any later rebuild all live in real
+     * time and never need to know stripping happened.
+     */
+    const remapped = det.words.map((w: any, i: number) => ({
+      ...w,
+      words: toRealTime(w.words, cutMaps?.[tracks[i].track] ?? null),
+    }))
+    const t = normalizeSegments(assembleTracks(remapped).filtered)
     if (!t.plain.trim()) throw new Error('Nothing was said on either track.')
 
     /**
@@ -210,7 +230,7 @@ async function buildRecap({
       v: 1,
       language: code ?? null,
       createdAt: new Date().toISOString(),
-      tracks: Object.fromEntries(det.words.map((w, i) => [tracks[i].track, w.words])),
+      tracks: Object.fromEntries(remapped.map((w: any, i: number) => [tracks[i].track, w.words])),
     }
     const { error: cacheError } = await admin.storage
       .from(RECORDING_BUCKET)
