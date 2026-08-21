@@ -438,7 +438,9 @@ REQUIRED LENGTH — this is a full practice exam, not a quiz. It covers {{LESSON
 - fill_blank: exactly 3 options; "answer" must match one option character-for-character.
 - "explanation": ONE short English sentence saying why the answer is right (shown to the teacher, and to the student after they answer).
 - If the student's own language and the taught language coincide (an English test for an English learner), still keep instructions plain and simple.
-- Base questions on the lesson content — vocabulary from its vocab list, grammar from its sections. Do not invent unrelated advanced material.`
+- Base questions on the lesson content — vocabulary from its vocab list, grammar from its sections. Do not invent unrelated advanced material.
+
+{{LANGUAGE_NOTES}}`
 
 /** Languages the test builder has a dedicated prompt for. */
 export const TEST_LANGUAGES = ['Japanese', 'English', 'French'] as const
@@ -518,6 +520,7 @@ Do NOT translate: the ${lang} material being tested (words, sentences, passages,
         .replace('{{SCRIPT_RULES}}', SCRIPT_RULES[opts.script ?? 'hiragana'])
     : fillCounts(TEST_PROMPT_GENERIC)
         .replace(/\{\{LANGUAGE\}\}/g, lang)
+        .replace('{{LANGUAGE_NOTES}}', profileFor(lang).notes)
         .replace('{{STUDENT}}', opts.studentName)
         .replace('{{LESSON_TITLE}}', opts.lessonTitle)
         .replace('{{LESSON_CONTENT}}', opts.lessonContent)) + testOverride
@@ -627,7 +630,7 @@ SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT section
 MANDATORY LAYOUT for the "content" string of EVERY section, both kinds. Each element goes on its OWN line — put real newlines inside the JSON string; NEVER run bullets, examples, or callouts together into one paragraph:
 - Start with 1-3 short plain English sentences.
 - Vocab bullets, ONE PER LINE: - **word in {{LANGUAGE}}** *pronunciation* — English meaning
-- Pronunciation is a plain-letter respelling a learner can read aloud (e.g. "zhuh voo-DREH" for "je voudrais") — NEVER IPA symbols (ʒ, ɛ̃, ʁ…), which read as gibberish to students.
+- PRONUNCIATION RULE (applies everywhere a pronunciation appears): {{PRONUNCIATION_RULES}} NEVER IPA symbols (ʒ, ɛ̃, ʁ…) — they read as gibberish to students.
 - Example sentences as a block, one sentence per line.
 - Grammar callouts on their own line: **Pattern:** structure
 - Tips on their own line: Natural note: text OR Important: text
@@ -636,6 +639,8 @@ A section whose bullets and Pattern line are glued into one paragraph is WRONG �
 
 (A) CONTENT sections — one per activity or discussion topic (typically 1-4), in lesson order. Title: "Activity: Subject", e.g. "1. Reading: Japan Work Survey" or "2. Discussion: Working Culture and Peer Pressure". Body: 2-4 short sentences saying what the material or discussion was actually ABOUT — including its key facts and figures — and what the student did with it, then the notable expressions it introduced as vocab bullets (one per line), and 1-2 example sentences from the material as a block.
 (B) GRAMMAR sections — one per DISTINCT grammar point. Include ALL of them (typically 10-16 for a full lesson) — do not cap at a small number, do not merge distinct points. Order them as they appeared in the lesson. Title: "3. {{LANGUAGE}} phrase: English" (e.g. "3. il faut que: You Have To"). Body: explanation sentences, vocab bullets, an example block, and a **Pattern:** line, per the layout above.
+
+{{LANGUAGE_NOTES}}
 
 {{CORRECTIONS_RULES}}
 
@@ -653,12 +658,12 @@ The "data" object depends on "type":
 
 VOCABULARY RULES:
 - Include exactly 10 vocabulary words, drawn from what was actually said.
-- "reading": a pronunciation guide in plain letters a learner can read aloud (e.g. "zhuh voo-DREH") — NEVER IPA symbols. Where the spelling is already phonetic, repeat the word. Never empty.
+- "reading": a pronunciation guide following the PRONUNCIATION RULE above. Where the spelling is already phonetic, repeat the word. Never empty.
 - "definition": short English meaning ending with a period.
 - "explanation": 1-2 short warm sentences.
 
 CEFR LEVEL — STRICT RULES:
-Anchor: A1: greetings, numbers, everyday nouns, basic present tense | A2: past tense, simple connectors, routine description | B1: opinions, conditionals, common abstract nouns | B2: complex moods, nuanced connectors, formal register | C1: idiomatic and literary usage | C2: rare, specialist or literary only.
+Anchor: {{ANCHORS}}
 1. Everyday conversational words belong at B1 or below.
 2. Cultural nuance or formality does NOT raise the level.
 3. When unsure between B1 and B2, always choose B1.
@@ -669,6 +674,122 @@ Say so plainly. Set score to 0, leave vocabulary, sections, homework, exercises,
 
 Transcript:
 {{TRANSCRIPT}}`
+
+/**
+ * Per-language teaching profiles.
+ *
+ * The recap skeleton — JSON shape, section layout, corrections, exercises —
+ * is deliberately identical for every language; what differs is how the
+ * language ITSELF must be handled. A French recap that shows a noun without
+ * its article, or a Spanish one that files ser and estar as one verb, is
+ * wrong in a way no generic prompt can know. Each profile supplies three
+ * things the skeleton slots in: CEFR anchors with words from that language,
+ * how to write pronunciations for it, and the list of things a recap in it
+ * must never fail to capture.
+ *
+ * Levels stay on the CEFR A1-C2 scale for every profiled language (including
+ * Korean and Chinese) — the portal's level charts key on those labels.
+ * Japanese is not here: its scripts make it structurally different, and it
+ * keeps its dedicated prompt.
+ */
+type LanguageProfile = {
+  match: RegExp
+  anchors: string
+  pronunciation: string
+  notes: string
+}
+
+const LANGUAGE_PROFILES: LanguageProfile[] = [
+  {
+    match: /french|français|francais|fr\b/i,
+    anchors: `A1: bonjour, je voudrais, acheter, la baguette, être/avoir au présent | A2: le passé composé, il faut, aller + infinitif, hier/demain | B1: opinions, si + imparfait, pronoms relatifs (qui/que), en/y | B2: subjonctif, registre formel, connecteurs nuancés | C1: idiomatique, littéraire | C2: rare or specialist only.`,
+    pronunciation: `Respell so an English reader says it right: nasal vowels as "ohn"/"ahn"/"ehn" (bon = "bohn"), silent final letters dropped (payez = "pay-YAY"), French "u" as "ew", "j"/soft "g" as "zh", "r" as a soft "r". Stressed syllable in CAPS.`,
+    notes: `FRENCH — a recap of a French lesson must always capture:
+- EVERY noun with its gender article: write "le pain", "la baguette", "l'argent" — a noun bullet without le/la/l' is an error.
+- Verbs with their group (-er/-ir/-re or irregular) and the conjugated forms that actually came up in the lesson, not just the infinitive.
+- Elision and liaison where they change what the student hears (l'eau, vous‿avez).
+- Register when it appeared: tu vs vous, "je voudrais" vs "je veux".`,
+  },
+  {
+    match: /spanish|español|espanol|castellano/i,
+    anchors: `A1: hola, quiero, comprar, la casa, ser/estar/tener en presente | A2: pretérito indefinido, ir a + infinitivo, me gusta | B1: opiniones, subjuntivo presente común, por/para | B2: subjuntivo pasado, matices formales | C1: idiomático, literario | C2: rare or specialist only.`,
+    pronunciation: `Respell so an English reader says it right: "j" as "h" (trabajo = "trah-BAH-ho"), "ll" as "y", "ñ" as "ny", "z/ce/ci" as "s" (Latin) — vowels are pure and short. Stressed syllable in CAPS.`,
+    notes: `SPANISH — a recap of a Spanish lesson must always capture:
+- EVERY noun with its gender article: "el pan", "la casa" — never a bare noun.
+- ser vs estar as SEPARATE grammar points whenever both appeared; never merge them.
+- Verbs with their conjugated forms from the lesson, flagged regular/irregular and stem-changing (e→ie, o→ue) where relevant.
+- Written accents that distinguish words (él/el, está/esta) exactly as spelled.`,
+  },
+  {
+    match: /german|deutsch/i,
+    anchors: `A1: hallo, ich möchte, kaufen, das Brot, sein/haben im Präsens | A2: Perfekt, Modalverben, weil/denn | B1: Nebensätze, Wechselpräpositionen, Konjunktiv II höflich | B2: Passiv, Nominalstil | C1: idiomatisch, literarisch | C2: rare or specialist only.`,
+    pronunciation: `Respell so an English reader says it right: "ü" as "ue" (tight "ee" with rounded lips), "ö" as "er", "ch" after e/i as "hy" (ich = "ihh"), "w" as "v", "z" as "ts". Stressed syllable in CAPS.`,
+    notes: `GERMAN — a recap of a German lesson must always capture:
+- EVERY noun with its article AND capital letter: "das Brot", "der Laden", "die Bäckerei" — gender is part of the word.
+- Word order as its own grammar point when it came up: verb-second, verb-final in subordinate clauses, separable prefixes (einkaufen → ich kaufe ein).
+- Case whenever an article changed form (den/dem/der), named plainly.`,
+  },
+  {
+    match: /italian|italiano/i,
+    anchors: `A1: ciao, vorrei, comprare, il pane, essere/avere al presente | A2: passato prossimo, ci/ne semplici, mi piace | B1: opinioni, imperfetto vs passato prossimo, condizionale | B2: congiuntivo, registro formale | C1: idiomatico, letterario | C2: rare or specialist only.`,
+    pronunciation: `Respell so an English reader says it right: "c" before e/i as "ch" (cento = "CHEN-toh"), "ch" as hard "k", "gli" as "lyee", "gn" as "ny". Double consonants held slightly. Stressed syllable in CAPS.`,
+    notes: `ITALIAN — a recap of an Italian lesson must always capture:
+- EVERY noun with its article: "il pane", "la casa", "lo zaino" — article choice is a rule worth noting when it varied.
+- essere vs avere as auxiliaries, kept separate whenever the passato prossimo appeared.
+- Verbs with the conjugated forms from the lesson, flagged regular/irregular.`,
+  },
+  {
+    match: /portuguese|português|portugues/i,
+    anchors: `A1: olá, eu queria, comprar, o pão, ser/estar/ter no presente | A2: pretérito perfeito, ir + infinitivo, gostar de | B1: opiniões, subjuntivo presente comum, por/para | B2: subjuntivo futuro, registo formal | C1: idiomático, literário | C2: rare or specialist only.`,
+    pronunciation: `Respell so an English reader says it right: nasal endings "-ão" as "-owng" (pão = "powng"), "nh" as "ny", "lh" as "ly", "s" between vowels as "z". Note European vs Brazilian pronunciation only when the teacher did. Stressed syllable in CAPS.`,
+    notes: `PORTUGUESE — a recap of a Portuguese lesson must always capture:
+- EVERY noun with its article: "o pão", "a padaria" — never bare.
+- ser vs estar as separate points whenever both appeared.
+- Verbs with their conjugated lesson forms, flagged regular/irregular.
+- Contractions as they actually occur (no = em+o, do = de+o), spelled out once.`,
+  },
+  {
+    match: /english|inglês|ingles|英語/i,
+    anchors: `A1: greetings, numbers, everyday nouns, present simple of be/have/do | A2: past simple, going to, comparatives | B1: present perfect vs past simple, conditionals 1-2, common phrasal verbs | B2: passive nuance, reported speech, register | C1: idiomatic, literary | C2: rare or specialist only.`,
+    pronunciation: `Respell so a learner says it right, syllable by syllable with the stressed one in CAPS (comfortable = "KUMF-tuh-bul") — English spelling hides pronunciation, so never just repeat the word for irregular ones.`,
+    notes: `ENGLISH — a recap of an English lesson must always capture:
+- Phrasal verbs as whole units ("pick up", "run out of") with the particle — never just the bare verb.
+- Irregular past/participle forms whenever a verb came up (go–went–gone).
+- Articles (a/an/the/none) as a grammar point when the student stumbled on them.
+- Word stress and weak forms where the teacher corrected pronunciation.`,
+  },
+  {
+    match: /korean|한국어|hangug/i,
+    anchors: `A1: 안녕하세요, 주세요, 사다, 빵, basic 이에요/예요 | A2: past -았/었어요, -고 싶어요, counters | B1: -(으)니까, -는데, honorific verbs | B2: indirect speech, formal written style | C1: idiomatic, literary | C2: rare or specialist only. (Label levels on this A1-C2 scale.)`,
+    pronunciation: `Always give a romanized reading after every hangul word (감사합니다 = "gam-sa-ham-ni-da"), hyphenated by syllable. Note sound changes the student actually hears (합니다 = "ham-ni-da", not "hap-ni-da").`,
+    notes: `KOREAN — a recap of a Korean lesson must always capture:
+- Every word in hangul WITH its romanization — hangul alone is unreadable to a beginner.
+- Politeness level as its own point whenever it varied (-아/어요 vs -습니다 vs casual).
+- Particles (은/는, 이/가, 을/를) as separate grammar points when they came up.
+- Counters with the noun class they count.`,
+  },
+  {
+    match: /chinese|mandarin|中文|汉语|普通话/i,
+    anchors: `A1: 你好, 我要, 买, 面包, basic 是/有 | A2: 了 for completed action, measure words, 想/要 | B1: 把 sentences, comparisons with 比, resultative complements | B2: formal connectors, written style | C1: idiomatic, literary | C2: rare or specialist only. (Label levels on this A1-C2 scale.)`,
+    pronunciation: `Always give pinyin WITH tone marks after every Chinese word (谢谢 = "xièxie") — characters alone are unreadable to a beginner, and a tone mark is part of the word, never optional.`,
+    notes: `CHINESE — a recap of a Chinese lesson must always capture:
+- Every word in characters WITH pinyin and tone marks — all three, every time.
+- Measure words with the nouns they classify (一个人, 一杯茶) as their own points.
+- Tone-pair corrections whenever the teacher fixed tones — say which tone was wrong.
+- Word order patterns plainly (Subject + Time + Place + Verb).`,
+  },
+]
+
+/** The neutral fallback for languages without a profile — today's behaviour. */
+const DEFAULT_PROFILE: Omit<LanguageProfile, 'match'> = {
+  anchors: `A1: greetings, numbers, everyday nouns, basic present tense | A2: past tense, simple connectors, routine description | B1: opinions, conditionals, common abstract nouns | B2: complex moods, nuanced connectors, formal register | C1: idiomatic and literary usage | C2: rare, specialist or literary only.`,
+  pronunciation: `Write a plain-letter respelling a learner can read aloud, syllable by syllable, stressed syllable in CAPS.`,
+  notes: '',
+}
+
+function profileFor(language: string): Omit<LanguageProfile, 'match'> {
+  return LANGUAGE_PROFILES.find((p) => p.match.test(language)) ?? DEFAULT_PROFILE
+}
 
 /**
  * Wanted when the teacher explains in something other than English — empty
@@ -708,7 +829,14 @@ export async function generateRecap(opts: {
   // Absent language keeps the existing behaviour, so the bot path is untouched.
   const isJapanese = !lang || /^(ja|jp|japanese|日本語)$/i.test(lang)
   const override = explanationOverride(isJapanese ? 'Japanese' : lang, String(opts.instructionLanguage ?? '').trim())
-  const content = (isJapanese ? PROMPT : GENERIC_PROMPT.replace(/\{\{LANGUAGE\}\}/g, lang))
+  const profile = profileFor(lang)
+  const content = (isJapanese
+    ? PROMPT
+    : GENERIC_PROMPT
+        .replace(/\{\{LANGUAGE\}\}/g, lang)
+        .replace('{{ANCHORS}}', profile.anchors)
+        .replace('{{PRONUNCIATION_RULES}}', profile.pronunciation)
+        .replace('{{LANGUAGE_NOTES}}', profile.notes))
     .replace('{{RECAP_SCRIPT_RULES}}', RECAP_SCRIPT_RULES[opts.script ?? 'hiragana'])
     .replace('{{VERBATIM_EXEMPTION}}', VERBATIM_EXEMPTION)
     .replace('{{CORRECTIONS_RULES}}', CORRECTIONS_RULES)
