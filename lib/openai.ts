@@ -629,8 +629,8 @@ SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT section
 
 MANDATORY LAYOUT for the "content" string of EVERY section, both kinds. Each element goes on its OWN line — put real newlines inside the JSON string; NEVER run bullets, examples, or callouts together into one paragraph:
 - Start with 1-3 short plain English sentences.
-- Vocab bullets, ONE PER LINE: - **word in {{LANGUAGE}}** *pronunciation* — English meaning
-- PRONUNCIATION RULE (applies everywhere a pronunciation appears): {{PRONUNCIATION_RULES}} NEVER IPA symbols (ʒ, ɛ̃, ʁ…) — they read as gibberish to students.
+- Vocab bullets, ONE PER LINE: - **word in {{LANGUAGE}}** — English meaning
+- PRONUNCIATION RULE: {{PRONUNCIATION_RULES}} Never IPA symbols (ʒ, ɛ̃, ʁ…) anywhere.
 - Example sentences as a block, one sentence per line.
 - Grammar callouts on their own line: **Pattern:** structure
 - Tips on their own line: Natural note: text OR Important: text
@@ -646,7 +646,7 @@ A section whose bullets and Pattern line are glued into one paragraph is WRONG �
 
 AUDIO SCRIPT — for the "audio_script" field:
 Write based on the recap. One paragraph per topic, no transitions between paragraphs.
-Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic ({{LANGUAGE}} word [pronunciation] — meaning — short example). Personal closing line.
+Structure: Opening line "Hi [first name], great work on today's lesson." Then one paragraph per topic ({{LANGUAGE}} word — meaning — short example). Personal closing line.
 Total: 45-75 seconds when read aloud.
 
 EXERCISES — generate exactly 10 practice exercises based ONLY on this lesson's grammar and vocabulary, in this order: 3 speak, 4 multiple_choice, 3 fill_blank. Every exercise drills something that actually came up in this lesson; do not pad with generic material.
@@ -658,7 +658,7 @@ The "data" object depends on "type":
 
 VOCABULARY RULES:
 - Include exactly 10 vocabulary words, drawn from what was actually said.
-- "reading": a pronunciation guide following the PRONUNCIATION RULE above. Where the spelling is already phonetic, repeat the word. Never empty.
+- "reading": exactly what the PRONUNCIATION RULE dictates — a romanization/pinyin where one is required, otherwise the EMPTY STRING "". Never a phonetic respelling of an alphabet the student already reads.
 - "definition": short English meaning ending with a period.
 - "explanation": 1-2 short warm sentences.
 
@@ -703,7 +703,7 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
   {
     match: /french|français|francais|fr\b/i,
     anchors: `A1: bonjour, je voudrais, acheter, la baguette, être/avoir au présent | A2: le passé composé, il faut, aller + infinitif, hier/demain | B1: opinions, si + imparfait, pronoms relatifs (qui/que), en/y | B2: subjonctif, registre formel, connecteurs nuancés | C1: idiomatique, littéraire | C2: rare or specialist only.`,
-    pronunciation: `Respell so an English reader says it right: nasal vowels as "ohn"/"ahn"/"ehn" (bon = "bohn"), silent final letters dropped (payez = "pay-YAY"), French "u" as "ew", "j"/soft "g" as "zh", "r" as a soft "r". Stressed syllable in CAPS.`,
+    pronunciation: `None. French is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "".`,
     notes: `FRENCH — a recap of a French lesson must always capture:
 - EVERY noun with its gender article: write "le pain", "la baguette", "l'argent" — a noun bullet without le/la/l' is an error.
 - Verbs with their group (-er/-ir/-re or irregular) and the conjugated forms that actually came up in the lesson, not just the infinitive.
@@ -713,7 +713,7 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
   {
     match: /spanish|español|espanol|castellano/i,
     anchors: `A1: hola, quiero, comprar, la casa, ser/estar/tener en presente | A2: pretérito indefinido, ir a + infinitivo, me gusta | B1: opiniones, subjuntivo presente común, por/para | B2: subjuntivo pasado, matices formales | C1: idiomático, literario | C2: rare or specialist only.`,
-    pronunciation: `Respell so an English reader says it right: "j" as "h" (trabajo = "trah-BAH-ho"), "ll" as "y", "ñ" as "ny", "z/ce/ci" as "s" (Latin) — vowels are pure and short. Stressed syllable in CAPS.`,
+    pronunciation: `None. Spanish is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "".`,
     notes: `SPANISH — a recap of a Spanish lesson must always capture:
 - EVERY noun with its gender article: "el pan", "la casa" — never a bare noun.
 - ser vs estar as SEPARATE grammar points whenever both appeared; never merge them.
@@ -723,7 +723,7 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
   {
     match: /german|deutsch/i,
     anchors: `A1: hallo, ich möchte, kaufen, das Brot, sein/haben im Präsens | A2: Perfekt, Modalverben, weil/denn | B1: Nebensätze, Wechselpräpositionen, Konjunktiv II höflich | B2: Passiv, Nominalstil | C1: idiomatisch, literarisch | C2: rare or specialist only.`,
-    pronunciation: `Respell so an English reader says it right: "ü" as "ue" (tight "ee" with rounded lips), "ö" as "er", "ch" after e/i as "hy" (ich = "ihh"), "w" as "v", "z" as "ts". Stressed syllable in CAPS.`,
+    pronunciation: `None. German is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "".`,
     notes: `GERMAN — a recap of a German lesson must always capture:
 - EVERY noun with its article AND capital letter: "das Brot", "der Laden", "die Bäckerei" — gender is part of the word.
 - Word order as its own grammar point when it came up: verb-second, verb-final in subordinate clauses, separable prefixes (einkaufen → ich kaufe ein).
@@ -732,7 +732,7 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
   {
     match: /italian|italiano/i,
     anchors: `A1: ciao, vorrei, comprare, il pane, essere/avere al presente | A2: passato prossimo, ci/ne semplici, mi piace | B1: opinioni, imperfetto vs passato prossimo, condizionale | B2: congiuntivo, registro formale | C1: idiomatico, letterario | C2: rare or specialist only.`,
-    pronunciation: `Respell so an English reader says it right: "c" before e/i as "ch" (cento = "CHEN-toh"), "ch" as hard "k", "gli" as "lyee", "gn" as "ny". Double consonants held slightly. Stressed syllable in CAPS.`,
+    pronunciation: `None. Italian is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "".`,
     notes: `ITALIAN — a recap of an Italian lesson must always capture:
 - EVERY noun with its article: "il pane", "la casa", "lo zaino" — article choice is a rule worth noting when it varied.
 - essere vs avere as auxiliaries, kept separate whenever the passato prossimo appeared.
@@ -741,7 +741,7 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
   {
     match: /portuguese|português|portugues/i,
     anchors: `A1: olá, eu queria, comprar, o pão, ser/estar/ter no presente | A2: pretérito perfeito, ir + infinitivo, gostar de | B1: opiniões, subjuntivo presente comum, por/para | B2: subjuntivo futuro, registo formal | C1: idiomático, literário | C2: rare or specialist only.`,
-    pronunciation: `Respell so an English reader says it right: nasal endings "-ão" as "-owng" (pão = "powng"), "nh" as "ny", "lh" as "ly", "s" between vowels as "z". Note European vs Brazilian pronunciation only when the teacher did. Stressed syllable in CAPS.`,
+    pronunciation: `None. Portuguese is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "".`,
     notes: `PORTUGUESE — a recap of a Portuguese lesson must always capture:
 - EVERY noun with its article: "o pão", "a padaria" — never bare.
 - ser vs estar as separate points whenever both appeared.
@@ -751,7 +751,7 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
   {
     match: /english|inglês|ingles|英語/i,
     anchors: `A1: greetings, numbers, everyday nouns, present simple of be/have/do | A2: past simple, going to, comparatives | B1: present perfect vs past simple, conditionals 1-2, common phrasal verbs | B2: passive nuance, reported speech, register | C1: idiomatic, literary | C2: rare or specialist only.`,
-    pronunciation: `Respell so a learner says it right, syllable by syllable with the stressed one in CAPS (comfortable = "KUMF-tuh-bul") — English spelling hides pronunciation, so never just repeat the word for irregular ones.`,
+    pronunciation: `None. English is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "". Only when the teacher explicitly corrected pronunciation may a section NOTE how a word sounds, in plain words.`,
     notes: `ENGLISH — a recap of an English lesson must always capture:
 - Phrasal verbs as whole units ("pick up", "run out of") with the particle — never just the bare verb.
 - Irregular past/participle forms whenever a verb came up (go–went–gone).
@@ -783,7 +783,7 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
 /** The neutral fallback for languages without a profile — today's behaviour. */
 const DEFAULT_PROFILE: Omit<LanguageProfile, 'match'> = {
   anchors: `A1: greetings, numbers, everyday nouns, basic present tense | A2: past tense, simple connectors, routine description | B1: opinions, conditionals, common abstract nouns | B2: complex moods, nuanced connectors, formal register | C1: idiomatic and literary usage | C2: rare, specialist or literary only.`,
-  pronunciation: `Write a plain-letter respelling a learner can read aloud, syllable by syllable, stressed syllable in CAPS.`,
+  pronunciation: `None. This language is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "". (If the language uses a non-Latin script, give a romanized reading instead.)`,
   notes: '',
 }
 
