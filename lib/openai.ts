@@ -627,6 +627,7 @@ SECTION FORMAT — two kinds of sections, numbered continuously, CONTENT section
 MANDATORY LAYOUT for the "content" string of EVERY section, both kinds. Each element goes on its OWN line — put real newlines inside the JSON string; NEVER run bullets, examples, or callouts together into one paragraph:
 - Start with 1-3 short plain English sentences.
 - Vocab bullets, ONE PER LINE: - **word in {{LANGUAGE}}** *pronunciation* — English meaning
+- Pronunciation is a plain-letter respelling a learner can read aloud (e.g. "zhuh voo-DREH" for "je voudrais") — NEVER IPA symbols (ʒ, ɛ̃, ʁ…), which read as gibberish to students.
 - Example sentences as a block, one sentence per line.
 - Grammar callouts on their own line: **Pattern:** structure
 - Tips on their own line: Natural note: text OR Important: text
@@ -652,7 +653,7 @@ The "data" object depends on "type":
 
 VOCABULARY RULES:
 - Include exactly 10 vocabulary words, drawn from what was actually said.
-- "reading": a pronunciation guide. Where the spelling is already phonetic, repeat the word. Never empty.
+- "reading": a pronunciation guide in plain letters a learner can read aloud (e.g. "zhuh voo-DREH") — NEVER IPA symbols. Where the spelling is already phonetic, repeat the word. Never empty.
 - "definition": short English meaning ending with a period.
 - "explanation": 1-2 short warm sentences.
 
@@ -754,6 +755,12 @@ export async function translateRecap(recap: Recap, opts: { native: string; targe
   const content = `Below is a language-lesson recap as JSON. The lesson teaches ${target}; the explanations are currently written in the wrong language. Rewrite the JSON so that ALL explanatory prose is natural ${opts.native}: "lesson_title", "recap", "teacher_note", "audio_script", every section's explanatory sentences and the descriptive half of its title, every vocabulary "definition" and "explanation", every correction "explanation" and did_well "note", every exercise "prompt", every multiple_choice "question" and its options, every "hint" and "focus", and every translation value ("en", "prompt_en" — the keys themselves never change).
 
 Do NOT change: the ${target} material itself (words, phrases, example sentences, verbatim "said" quotes), pronunciation readings, level labels, numbers, and the JSON structure — return the COMPLETE JSON with exactly the same keys and array lengths, nothing added or dropped.
+
+IF ${opts.native} IS THE SAME LANGUAGE AS ${target} (explanations in the language being taught), translating naively destroys the teaching — guard against it:
+- A vocabulary "definition" must NEVER merely repeat the word. Define it with a short paraphrase in simpler ${opts.native} a beginner already knows (e.g. for "acheter": "payer pour avoir quelque chose").
+- Same for vocab bullets inside sections: word, then a simple-words paraphrase — never the word twice.
+- Any question shaped like "How do you say X in ${target}?" becomes self-answering once translated. Rephrase it to test something real (the form, the article, the word order, the right verb) and make sure no question contains its own correct answer verbatim.
+- Translation values ("en", "prompt_en") that would now equal their source sentence should instead give a simpler rephrasing or a short gloss.
 
 ${JSON.stringify(recap)}`
 

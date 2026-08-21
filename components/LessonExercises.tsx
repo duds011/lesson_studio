@@ -92,11 +92,27 @@ function GradedExercise({ ex }: { ex: Exercise }) {
       </div>
       {ex.data?.en && <p className="analytics-note" style={{ margin: '0 0 .5rem' }}>{ex.data.en}</p>}
       <div className="ex-opts row">
-        {opts.map((o, i) => (
-          <button key={i} className="ex-opt pill" disabled={picked !== null} onClick={() => setPicked(o)}>{o}</button>
-        ))}
+        {opts.map((o, i) => {
+          // Same verdict colours as multiple choice: the right answer goes
+          // green, a wrong pick goes red, the rest fade.
+          let cls = 'ex-opt pill'
+          if (picked !== null) {
+            if (o === correct) cls += ' correct'
+            else if (o === picked) cls += ' wrong'
+            else cls += ' dim'
+          }
+          return (
+            <button key={i} className={cls} disabled={picked !== null} onClick={() => setPicked(o)}>
+              {o}{picked !== null && o === correct && ' ✓'}{picked !== null && o === picked && o !== correct && ' ✗'}
+            </button>
+          )
+        })}
       </div>
-      {picked !== null && !isCorrect && <p style={{ color: 'var(--green)', fontWeight: 700, fontSize: '.82rem', marginTop: '.5rem' }}>✓ Correct: {correct}</p>}
+      {picked !== null && (
+        isCorrect
+          ? <p style={{ color: 'var(--green)', fontWeight: 700, fontSize: '.82rem', marginTop: '.5rem' }}>✓ Correct!</p>
+          : <p style={{ color: 'var(--red)', fontWeight: 700, fontSize: '.82rem', marginTop: '.5rem' }}>✗ Not quite — the answer is <span style={{ color: 'var(--green)' }}>{correct}</span></p>
+      )}
     </div>
   )
 }

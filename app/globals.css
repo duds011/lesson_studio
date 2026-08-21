@@ -355,3 +355,8 @@ th.is-today .notes-day{color:var(--brand)}
   transition:background .15s ease,width .15s ease}
 .k-metric-dot:hover{background:var(--muted)}
 .k-metric-dot.sel{width:20px;background:var(--brand)}
+
+/* Fill-blank gap verdict — these classes were applied but never styled, so a
+   student's pick showed no right/wrong at all. */
+.ex-gap.ok{border-bottom-color:var(--green);color:var(--green);font-weight:700}
+.ex-gap.no{border-bottom-color:var(--red);color:var(--red);font-weight:700;text-decoration:line-through}

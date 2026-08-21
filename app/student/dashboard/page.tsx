@@ -123,10 +123,9 @@ export default async function StudentDashboard() {
     .from('profiles').select('brand').eq('id', student.teacher_id).single()
   const brand = resolveBrand((teacherProfile as any)?.brand)
 
-  // The pillar reads earliest lesson first — `rows` comes back newest first.
+  // Newest lesson first — the student opens this to reach their latest recap,
+  // not to scroll past the whole course. `rows` already comes newest first.
   const pillarLessons: PillarLesson[] = rows
-    .slice()
-    .reverse()
     .map((lesson) => {
       const s = summaryOf(lesson)
       return {
