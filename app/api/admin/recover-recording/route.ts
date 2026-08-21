@@ -188,7 +188,7 @@ export async function POST(req: Request) {
         status: 'draft',
         createdAt: Date.now(),
         lessonDate: lessonDate || new Date().toISOString().slice(0, 10),
-        lessonTitle: recap.title || 'Recorded lesson',
+        lessonTitle: recap.lesson_title || recap.title || 'Recorded lesson',
       })
     })
 
@@ -201,7 +201,7 @@ export async function POST(req: Request) {
       language: code ?? null,
       studentTalkPct: t.studentTalkPct,
       speakers: t.talk.map((s) => s.name),
-      title: recap.title ?? null,
+      title: recap.lesson_title ?? recap.title ?? null,
     })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message ?? 'Failed to rebuild the recap.' }, { status: 500 })

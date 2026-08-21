@@ -276,7 +276,7 @@ async function buildRecap({
         status: 'draft',
         createdAt: Date.now(),
         lessonDate: lessonDate || new Date().toISOString().slice(0, 10),
-        lessonTitle: recap.title || 'Recorded lesson',
+        lessonTitle: recap.lesson_title || recap.title || 'Recorded lesson',
       })
     })
 
