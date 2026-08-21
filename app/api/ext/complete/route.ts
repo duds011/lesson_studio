@@ -36,9 +36,20 @@ export async function POST(req: Request) {
   const caller = await authenticateExtension(req)
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { recordingId, studentId, micIs, seconds, lessonDate, heard, language, spokenLanguage, cutMaps } =
+  const { recordingId, studentId, seconds, lessonDate, heard, language, spokenLanguage, cutMaps } =
     await req.json().catch(() => ({}))
   if (!recordingId) return NextResponse.json({ error: 'Missing recordingId' }, { status: 400 })
+
+  /**
+   * Who holds the mic is not a question to ask — the signed-in account IS the
+   * answer. A teacher's install records the teacher; a student account (the
+   * standalone student product) records the student. Derived here, once, and
+   * remembered on the link so rebuilds never guess.
+   */
+  const admin0 = createAdminClient()
+  const { data: callerProfile } = await admin0
+    .from('profiles').select('role').eq('id', caller.teacherId).maybeSingle()
+  const micIs = (callerProfile as any)?.role === 'student' ? 'student' : 'teacher'
 
   // The upload-init check already turned this away once, but that one guards
   // storage and this one guards the invoice: everything expensive happens
