@@ -1,24 +1,30 @@
 import type { RecapUsage } from '@/lib/recap-quota'
+import { PLANS, TOPUP, planById, planForLimit } from '@/lib/plans'
+import BillingButton from '@/components/BillingButton'
 
 /**
  * Settings → Subscription: which plan this account is on, how much of it is
- * used, and what the other plan costs. Billing isn't self-serve yet, so
- * switching is a prefilled email to the same address the privacy page names.
+ * used, and what the others cost. Every button here goes to Stripe — plans and
+ * top-ups through Checkout, everything else (card, invoices, cancelling)
+ * through Stripe's own billing portal.
+ *
+ * A grandfathered account is shown its real plan by name and is never nudged
+ * to "upgrade" to something smaller: the plan list below hides any tier whose
+ * allowance is lower than the one they already hold.
  */
 
-const CONTACT = 'wogaoliveira@gmail.com'
-
-const PLANS = [
-  { id: 'starter', name: 'Starter', price: 27, recaps: 15, tag: 'Teaching on the side' },
-  { id: 'studio', name: 'Studio', price: 45, recaps: 30, tag: 'For a full schedule' },
-]
-
-function planFor(limit: number) {
-  return PLANS.find((p) => p.recaps === limit) ?? null
-}
-
-export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
-  const current = usage.trial ? null : planFor(usage.limit)
+export default function SubscriptionPanel({
+  usage,
+  planId,
+  hasBilling,
+}: {
+  usage: RecapUsage
+  /** profiles.plan_id — authoritative; the allowance is only the fallback. */
+  planId?: string | null
+  /** Has a Stripe customer, so the billing portal has something to show. */
+  hasBilling?: boolean
+}) {
+  const current = usage.trial ? null : planById(planId) ?? planForLimit(usage.limit)
   const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0
 
   return (
@@ -93,20 +99,17 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
             }}
           >
             <div>
-              <strong style={{ fontSize: 16, letterSpacing: '-.02em' }}>5 extra recaps</strong>
-              <span style={{ color: 'var(--muted)', fontWeight: 600, marginLeft: 10 }}>$10 · one-time</span>
+              <strong style={{ fontSize: 16, letterSpacing: '-.02em' }}>{TOPUP.recaps} extra recaps</strong>
+              <span style={{ color: 'var(--muted)', fontWeight: 600, marginLeft: 10 }}>${TOPUP.price} · one-time</span>
               {usage.extra > 0 && (
                 <span className="pill" style={{ background: 'var(--green-soft)', color: 'var(--green)', marginLeft: 10 }}>
                   {usage.extra} unspent
                 </span>
               )}
             </div>
-            <a
-              className="btn btn-primary btn-sm"
-              href={`mailto:${CONTACT}?subject=${encodeURIComponent('Buy 5 extra Lesson Studio recaps ($10)')}`}
-            >
-              Get 5 more — $10
-            </a>
+            <BillingButton topup>
+              Get {TOPUP.recaps} more — ${TOPUP.price}
+            </BillingButton>
           </div>
           <p className="desc" style={{ marginTop: 10 }}>
             Topping up two months in a row? The bigger plan is cheaper — switch below.
@@ -124,7 +127,12 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-          {PLANS.map((p) => {
+          {PLANS.filter(
+            // Someone grandfathered on a bigger allowance is not shown the
+            // smaller tiers — that is not an upgrade path, it is a downgrade
+            // dressed as one.
+            (p) => usage.trial || !current || p.recaps > current.recaps || p.id === current.id,
+          ).map((p) => {
             const isCurrent = current?.id === p.id
             return (
               <div
@@ -152,17 +160,28 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
                   {p.recaps} AI recaps a month · unlimited students &amp; portals
                 </p>
                 {!isCurrent && (
-                  <a
-                    className="btn btn-ghost btn-sm"
-                    href={`mailto:${CONTACT}?subject=${encodeURIComponent(`Switch my Lesson Studio plan to ${p.name}`)}`}
-                  >
+                  <BillingButton planId={p.id} className="btn btn-ghost btn-sm">
                     {usage.trial ? `Choose ${p.name}` : `Switch to ${p.name}`}
-                  </a>
+                  </BillingButton>
                 )}
               </div>
             )
           })}
         </div>
+
+        {hasBilling && (
+          <div style={{ marginTop: 16 }}>
+            <BillingButton portal className="btn btn-ghost btn-sm">
+              Manage billing
+            </BillingButton>
+            <p className="desc" style={{ marginTop: 8 }}>
+              Card, invoices and cancelling all live on Stripe.
+              {current && !PLANS.some((p) => p.id === current.id) && (
+                <> Your {current.name} plan is no longer sold — it stays at ${current.price}/month for as long as you keep it.</>
+              )}
+            </p>
+          </div>
+        )}
       </section>
     </>
   )

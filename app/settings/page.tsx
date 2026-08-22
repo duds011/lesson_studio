@@ -38,7 +38,7 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = user
-    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode, plan_id, stripe_customer_id').eq('id', user.id).single()
     : { data: null }
   const calendarMode = resolveCalendarMode((profile as any)?.calendar_mode)
   // The teacher's own recorder token, read with their own client so RLS
@@ -165,7 +165,11 @@ export default async function SettingsPage() {
 
           {/* ── Subscription: plan, monthly usage, and the other plan ── */}
           <SettingsPanel id="subscription">
-            <SubscriptionPanel usage={usage} />
+            <SubscriptionPanel
+              usage={usage}
+              planId={(profile as any)?.plan_id ?? null}
+              hasBilling={Boolean((profile as any)?.stripe_customer_id)}
+            />
           </SettingsPanel>
 
           {/* ── Booking preference: meeting platform + lesson defaults ── */}
