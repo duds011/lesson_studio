@@ -308,7 +308,8 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
    card left the aside mostly empty blue. The stage now grows with the
    viewport (capped so the small-type mocks stay in proportion). */
 .k-ac{margin-top:min(22px,2.5vh);width:100%;max-width:680px}
-.k-ac-stage{position:relative;height:clamp(264px,42vh,460px)}
+.k-ac-stage{position:relative;height:clamp(348px,40vh,404px)}  /* min raised with the slides: at 40vh a 720px laptop gave 288px and
+     clipped the corrections, the vocabulary row and the lesson list. */
 .k-ac-slide{position:absolute;inset:0;opacity:0;transform:translateY(9px) scale(.985);
   transition:opacity .35s ease,transform .35s ease;pointer-events:none}
 .k-ac-slide.on{opacity:1;transform:none}
@@ -346,6 +347,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-ac-note p.ok b{border-bottom:2px solid var(--brand)}
 .k-ac-note p.why{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-size:8.5px;color:var(--muted)}
 .k-ac-note p.why b{color:var(--ink)}
+.k-ac-note p.gap{margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
 
 .k-ac-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .k-ac-head b{font-size:11px;font-weight:800;letter-spacing:-.02em}
@@ -353,7 +355,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 
 /* Grows into whatever the screen has left, so a slide with less to say does
    not end in a band of empty white. */
-.k-ac-bars{display:flex;align-items:flex-end;gap:9px;flex:1;min-height:80px;padding:14px 4px 0}
+.k-ac-bars{display:flex;align-items:flex-end;gap:9px;flex:1 1 auto;min-height:74px;max-height:132px;padding:15px 4px 0}
 .k-ac-bars span{position:relative;flex:1;border-radius:5px 5px 2px 2px;background:#bcd6f2;min-width:0}
 .k-ac-bars span.now{background:var(--brand)}
 .k-ac-bars b{position:absolute;top:-13px;left:0;right:0;text-align:center;font-size:8px;font-weight:800;color:var(--muted)}
@@ -365,6 +367,27 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-ac-track b{display:block;font-size:8.5px;font-weight:800;color:var(--brand);margin-top:4px}
 .k-ac-track em{display:block;font-style:normal;font-size:7px;color:var(--muted)}
 
+.k-ac-words{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.k-ac-words span{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:9px;font-weight:600;white-space:nowrap}
+.k-ac-words i{font-style:normal;color:var(--line-strong,#d3d3ca)}
+.k-ac-words em{font-style:normal;font-size:8px;color:var(--muted);font-weight:700}
+
+.k-ac-langs{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.k-ac-langs span{border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:9.5px;font-weight:700;
+  background:#fafaf7;white-space:nowrap}
+.k-ac-langs span:nth-child(1),.k-ac-langs span:nth-child(2),.k-ac-langs span:nth-child(7){
+  background:var(--brand-soft);border-color:#cfe0f6;color:var(--brand)}
+
+.k-ac-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex:1;min-height:0;margin-top:10px}
+.k-ac-pair>div{border:1px solid var(--line);border-radius:10px;padding:10px 11px;min-width:0;display:flex;
+  flex-direction:column;justify-content:center}
+.k-ac-pair p.why{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-size:8.5px;color:var(--muted);line-height:1.45}
+.k-ac-pair p.why b{color:var(--ink)}
+.k-ac-pair small{display:block;font-size:6.5px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.k-ac-pair p{margin:0 0 3px;font-size:10px;line-height:1.5}
+.k-ac-pair s{color:var(--muted)}
+.k-ac-pair p.ok b{border-bottom:2px solid var(--brand)}
+
 .k-ac-practice{display:grid;grid-template-columns:38% minmax(0,1fr);gap:9px;flex:1;min-height:0}
 .k-ac-card{border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center;background:#fafaf7;
   display:flex;flex-direction:column;justify-content:center;min-width:0}
@@ -372,18 +395,38 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-ac-card b.jp{display:block;font-size:23px;font-weight:700;letter-spacing:-.02em;margin-top:7px}
 .k-ac-card em{display:block;font-style:normal;font-size:9px;color:var(--muted);margin-top:2px}
 .k-ac-card p{margin:7px 0 0;font-size:10.5px;font-weight:600}
+.k-ac-card q{display:block;quotes:none;margin-top:9px;padding-top:9px;border-top:1px solid var(--line);
+  font-size:9.5px;line-height:1.55;color:var(--muted)}
+.k-ac-card q u{text-decoration:none;border-bottom:2px solid var(--brand);color:var(--ink)}
+.k-ac-card q b{display:block;margin-top:5px;font-weight:600;font-size:8.5px;color:var(--muted)}
+.k-ac-deck{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;padding-top:9px}
+.k-ac-deck i{width:14px;height:3px;border-radius:999px;background:#e2e2dc}
+.k-ac-deck i:first-child{background:var(--brand)}
+.k-ac-deck span{margin-left:4px;font-size:7px;font-weight:800;color:var(--muted)}
 
-.k-ac-q{border:1px solid var(--line);border-radius:11px;padding:10px 11px;display:grid;gap:5px;min-width:0;align-content:center}
+.k-ac-q{border:1px solid var(--line);border-radius:11px;padding:11px 12px;display:grid;gap:5px;min-width:0;align-content:center}
 .k-ac-q small{font-size:6.5px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
 .k-ac-q>span{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:10px}
 .k-ac-q>span.right{border-color:#8fd0aa;background:#e7f5ec;color:#1c6b40;font-weight:700;display:flex;justify-content:space-between}
 .k-ac-q i{font-style:normal}
+.k-ac-fill{border:1px solid var(--line);border-radius:8px;padding:8px 9px;margin-top:2px}
+.k-ac-fill small{margin-bottom:4px}
+.k-ac-fill p{margin:0;font-size:10px}
+.k-ac-fill u{text-decoration:none;border-bottom:2px solid var(--brand);padding:0 2px}
+.k-ac-qfoot{margin-top:4px;padding-top:9px;border-top:1px solid var(--line)}
+.k-ac-qfoot b{display:block;font-size:9px;font-weight:800}
+.k-ac-qfoot em{display:block;font-style:normal;font-size:8px;color:var(--muted);margin-top:3px;line-height:1.45}
 
 .k-ac-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .k-ac-top small{display:block;font-size:8px;color:var(--muted);font-weight:700}
 .k-ac-top b{display:block;font-size:17px;font-weight:800;letter-spacing:-.035em}
 .k-ac-mark{padding:5px 10px;border-radius:999px;background:#f4f4ef;font-size:9px;font-weight:700;white-space:nowrap}
-.k-ac-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;flex:1;min-height:0}
+.k-ac-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;flex:0 0 auto;height:clamp(58px,9vh,74px)}
+.k-ac-lessons{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;margin-top:9px}
+.k-ac-lessons span{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;min-width:0}
+.k-ac-lessons b{font-size:9px;font-weight:800;color:var(--muted);white-space:nowrap}
+.k-ac-lessons em{flex:1;min-width:0;font-style:normal;font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-ac-lessons i{font-style:normal;font-size:10.5px;font-weight:800;color:var(--brand)}
 .k-ac-stats div{background:var(--s);border-radius:10px;padding:9px 10px;color:#fff;display:flex;flex-direction:column;justify-content:center}
 .k-ac-stats small{font-size:8px;font-weight:800;opacity:.85}
 .k-ac-stats b{font-size:21px;font-weight:800;letter-spacing:-.04em;margin-top:2px}
@@ -412,8 +455,29 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 @media(prefers-reduced-motion:reduce){.k-dot-fill{animation:none;stroke-dashoffset:0}}
 
 /* A short window loses the picture before it loses the words. */
-@media(max-height:780px){.k-ac-stage{height:216px}.k-ac{margin-top:16px}}
-@media(max-height:660px){.k-ac-stage{height:170px}.k-ac-cap small{display:none}.k-ac-cap{min-height:0}}
+/* Short laptops.
+   The stage used to drop to 216px, which just clipped whatever did not fit —
+   and hiding rows instead only traded a cut edge for a thinner slide. So the
+   mock is laid out at its full size and scaled down to whatever height is
+   going: every feature stays on screen, in proportion, and the only thing
+   that changes is how big it is. */
+@media(max-height:780px){
+  .k-ac{margin-top:14px}
+  .k-auth-side{padding:34px}
+  .k-ac-stage{height:300px}
+  .k-ac-screen{width:calc(100% / .82);height:calc(100% / .82);
+    transform:scale(.82);transform-origin:top left}
+}
+/* Merged with the older short-screen rule, which set 170px and won on order —
+   so the scaling above was silently undone on exactly the screens that needed
+   it most. One block now, one stage height. */
+@media(max-height:660px){
+  .k-ac-stage{height:266px}
+  .k-ac-screen{width:calc(100% / .72);height:calc(100% / .72);transform:scale(.72)}
+  .k-ac-cap small{display:none}
+  .k-ac-cap{min-height:0}
+  .k-auth-side{padding:28px}
+}
 
 /* Signing up is the other half of this page, not a footnote to it. */
 .k-auth-alt{display:flex;align-items:center;gap:12px;margin:24px 0 14px;

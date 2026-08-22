@@ -19,13 +19,24 @@ import { useEffect, useRef, useState } from 'react'
 
 const HOLD_MS = 3200
 
-/** A bar chart of the last five lesson scores, out of ten. */
+/**
+ * A bar chart of the last five lesson scores.
+ *
+ * Drawn against a floor rather than against zero. Real lesson scores live
+ * between about 6 and 9, so measuring them from 0/10 pins every bar to roughly
+ * the same height and leaves the top third of the chart permanently empty —
+ * which is exactly how it looked. Starting the axis below the lowest score
+ * fills the space and makes the climb legible, which is the only thing this
+ * chart is here to show.
+ */
 function ScoreBars({ scores }: { scores: number[] }) {
-  const top = 10
+  const floor = Math.min(...scores) - 1.2
+  const ceil = Math.max(...scores) + 0.3
+  const at = (s: number) => Math.max(12, ((s - floor) / (ceil - floor)) * 100)
   return (
     <div className="k-ac-bars">
       {scores.map((s, i) => (
-        <span key={i} style={{ height: `${(s / top) * 100}%` }} className={i === scores.length - 1 ? 'now' : ''}>
+        <span key={i} style={{ height: `${at(s)}%` }} className={i === scores.length - 1 ? 'now' : ''}>
           <b>{s.toFixed(1)}</b>
         </span>
       ))}
@@ -66,6 +77,9 @@ const SLIDES = [
           <p><s>I go to go to Vancouver</s></p>
           <p className="ok">I <b>have</b> to go to Vancouver</p>
           <p className="why"><b>Verb form</b> — the repeated verb becomes “have to”, which states necessity.</p>
+          <p className="gap"><s>Yesterday I go to the market</s></p>
+          <p className="ok">Yesterday I <b>went</b> to the market</p>
+          <p className="why"><b>Past tense</b> — a finished action needs the past form.</p>
         </div>
       </div>
     ),
@@ -92,6 +106,43 @@ const SLIDES = [
             </span>
           ))}
         </div>
+        <div className="k-ac-head k-ac-trim" style={{ marginTop: 12 }}><b>Vocabulary</b><span>this month</span></div>
+        <div className="k-ac-words k-ac-trim">
+          <span>the market <i>·</i> <em>noun</em></span>
+          <span>to have to <i>·</i> <em>verb</em></span>
+          <span>although <i>·</i> <em>linker</em></span>
+          <span>+29 more</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'languages',
+    title: 'Whatever language you teach',
+    body: 'Japanese, French, Korean, Spanish and thirty-odd more — corrected in the language of the lesson, explained in the one your student thinks in.',
+    art: (
+      <div className="k-ac-screen">
+        <div className="k-ac-head"><b>Languages</b><span>40+ supported</span></div>
+        <div className="k-ac-langs">
+          {['日本語', 'Français', 'Español', 'Deutsch', 'Italiano', 'Português',
+            '한국어', '中文', 'English', 'Русский', 'Nederlands', 'Polski'].map((l) => (
+            <span key={l}>{l}</span>
+          ))}
+        </div>
+        <div className="k-ac-pair">
+          <div>
+            <small>FRENCH LESSON</small>
+            <p><s>j’avais pas des cours</s></p>
+            <p className="ok">je n’avais pas <b>de</b> cours</p>
+            <p className="why">After <b>pas</b>, the article becomes <b>de</b>.</p>
+          </div>
+          <div>
+            <small>日本語のレッスン</small>
+            <p><s>きのう 学校に行きます</s></p>
+            <p className="ok">きのう 学校に<b>行きました</b></p>
+            <p className="why">「きのう」は過去形と使います。</p>
+          </div>
+        </div>
       </div>
     ),
   },
@@ -109,12 +160,21 @@ const SLIDES = [
             <b className="jp">けど</b>
             <em>kedo</em>
             <p>but, although</p>
+            <q>駅は近い<u>けど</u>、静かです。<b>The station is close, but it’s quiet.</b></q>
+            <div className="k-ac-deck"><i /><i /><i /><span>3 of 31</span></div>
           </div>
           <div className="k-ac-q">
             <small>WHICH ONE CONTRASTS TWO IDEAS?</small>
             <span>駅は近いです。</span>
             <span className="right">近いけど、静かです。 <i>✓</i></span>
-            <span>静かですか。</span>
+            <div className="k-ac-fill">
+              <small>COMPLETE THE SENTENCE</small>
+              <p>駅は近い<u>けど</u>、静かです。</p>
+            </div>
+            <div className="k-ac-qfoot">
+              <b>Speaking test</b>
+              <em>“Describe where you live.” — read it aloud, scored on the way back</em>
+            </div>
           </div>
         </div>
       </div>
@@ -135,6 +195,19 @@ const SLIDES = [
           <div style={{ ['--s' as any]: '#f0b429' }}><small>Lessons</small><b>12</b></div>
           <div style={{ ['--s' as any]: '#0a61c9' }}><small>Avg score</small><b>7.4</b></div>
           <div style={{ ['--s' as any]: '#8b5cf6' }}><small>Speaking</small><b>41%</b></div>
+        </div>
+        <div className="k-ac-lessons">
+          {[
+            { n: '12', t: 'Shopping and asking prices', s: '8.3' },
+            { n: '11', t: 'Partitive articles', s: '7.8' },
+            { n: '10', t: 'Giving directions', s: '6.9' },
+          ].map((l) => (
+            <span key={l.n}>
+              <b>Lesson {l.n}</b>
+              <em>{l.t}</em>
+              <i>{l.s}</i>
+            </span>
+          ))}
         </div>
       </div>
     ),
