@@ -41,6 +41,9 @@ export default async function OnboardingPage() {
         calendarMode: isCalendarMode(profile.calendar_mode) ? profile.calendar_mode : null,
         step: profile.onboarding_step ?? 0,
         brand: resolveBrand(profile.brand),
+        // Raw, not resolved: resolveBrand always hands back a name, so the
+        // step could never tell "chose Lesson Studio" from "never asked".
+        portalNameSet: String((profile.brand as any)?.portalName ?? '').slice(0, 40),
       }}
       googleConnected={Boolean(token)}
       zoomConnected={zoomConnected}

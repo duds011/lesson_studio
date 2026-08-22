@@ -10,6 +10,9 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { mapEventToStudent } from '@/lib/lesson-link'
 import { pgSafeJson } from '@/lib/pg-json'
+import { resolveBrand } from '@/lib/brand'
+import { isEmailConfigured, sendEmail } from '@/lib/email'
+import { recapReadyHtml, recapReadySubject, recapReadyText } from '@/lib/emails/recap-ready'
 
 export type DeliveryResult =
   | { delivered: true; lessonId: string; studentId: string }
@@ -127,5 +130,87 @@ export async function deliverRecapToStudent(eventId: string, rec: any): Promise<
     if (ve) console.error('vocabulary_items write failed', ve.message)
   }
 
+  // Everything the student can see is now in place, so tell them it is.
+  // Deliberately last, and deliberately unable to fail the publish.
+  await notifyStudent(admin, lessonRow.id, linked.studentId, linked.teacherId, title, lessonDate, recapObj)
+
   return { delivered: true, lessonId: lessonRow.id, studentId: linked.studentId }
+}
+
+/**
+ * Email the student that their recap is up.
+ *
+ * Sent ONCE per lesson, guarded by lessons.recap_notified_at. A teacher who
+ * edits a recap and publishes again is correcting their own work, not
+ * announcing it a second time — and the publish button is easy to press twice.
+ *
+ * The whole thing is best-effort: no throw escapes, because the recap is
+ * already delivered and a bounced notification must not be reported as a
+ * failed publish.
+ */
+async function notifyStudent(
+  admin: any,
+  lessonId: string,
+  studentId: string,
+  teacherId: string,
+  lessonTitle: string,
+  lessonDate: string,
+  recapObj: any,
+): Promise<void> {
+  try {
+    if (!isEmailConfigured()) return
+
+    const { data: lesson } = await admin
+      .from('lessons').select('recap_notified_at').eq('id', lessonId).maybeSingle()
+    if ((lesson as any)?.recap_notified_at) return
+
+    const { data: student } = await admin
+      .from('students').select('full_name, email').eq('id', studentId).maybeSingle()
+    const to = String((student as any)?.email ?? '').trim()
+    if (!to) return // nothing to send to; not an error
+
+    const { data: teacher } = await admin
+      .from('profiles').select('full_name, email, brand').eq('id', teacherId).maybeSingle()
+    const brand = resolveBrand((teacher as any)?.brand)
+
+    const words = (Array.isArray(recapObj?.vocabulary) ? recapObj.vocabulary : [])
+      .map((v: any) => String(v?.word ?? '').trim())
+      .filter(Boolean)
+      .slice(0, 6)
+
+    const input = {
+      studentName: String((student as any)?.full_name ?? '').split(' ')[0] || 'there',
+      teacherName: String((teacher as any)?.full_name ?? '').split(' ')[0] || 'Your teacher',
+      portalName: brand.portalName,
+      accent: brand.accent,
+      lessonTitle,
+      lessonDate,
+      score: typeof recapObj?.score === 'number' ? recapObj.score : null,
+      talkPct: typeof recapObj?.talk_percentage === 'number' ? recapObj.talk_percentage : null,
+      words,
+    }
+
+    // Claimed BEFORE sending. If the send throws after the mail has actually
+    // gone out, a retry would send a second copy; a claimed-but-unsent
+    // notification is the cheaper mistake.
+    await admin.from('lessons').update({ recap_notified_at: new Date().toISOString() }).eq('id', lessonId)
+
+    const res = await sendEmail({
+      to,
+      subject: recapReadySubject(input),
+      html: recapReadyHtml(input),
+      text: recapReadyText(input),
+      from: `${brand.portalName} <${(process.env.RECAP_FROM_EMAIL || 'recaps@koku-library.app').replace(/^.*<|>.*$/g, '')}>`,
+      replyTo: String((teacher as any)?.email ?? '').trim() || undefined,
+    })
+    if (!res.sent) {
+      console.error(`[recap-delivery] notification not sent for ${lessonId}: ${res.reason}`)
+      // Let a later publish try again — the student never got anything.
+      await admin.from('lessons').update({ recap_notified_at: null }).eq('id', lessonId)
+      return
+    }
+    console.log(`[recap-delivery] notified ${to} about ${lessonId} (${res.id})`)
+  } catch (e: any) {
+    console.error('[recap-delivery] notification failed:', e?.message || e)
+  }
 }

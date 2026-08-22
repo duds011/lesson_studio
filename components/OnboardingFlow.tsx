@@ -23,6 +23,12 @@ type Props = {
     calendarMode: CalendarMode | null
     step: number
     brand: Brand
+    /**
+     * The portal name as STORED, empty when they have never answered.
+     * `brand` is resolved and therefore always carries a name, which is the
+     * whole problem this separates out.
+     */
+    portalNameSet: string
   }
   googleConnected: boolean
   zoomConnected: boolean
@@ -52,7 +58,11 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     googleConnected ? 'google' : initial.calendarMode
   )
   const [accent, setAccent] = useState(initial.brand.accent)
-  const [portalName, setPortalName] = useState(initial.brand.portalName)
+  // Empty until they answer, for the same reason calendarMode is: this field
+  // used to open pre-filled with the resolved default, so it read as already
+  // answered, the placeholder could never show, and every teacher through it
+  // ended up called "Lesson Studio" in their students' portal.
+  const [portalName, setPortalName] = useState(initial.portalNameSet)
 
   /** A marketplace teacher has no link for us to make and may have no calendar. */
   const external = isExternalPlatform(platform)
@@ -75,16 +85,17 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
       if (!calendarMode) { setError('Tell us whether your lessons live on a calendar.'); return }
       persist({ calendarMode, step: 3 }, () => setStep(3))
     } else if (step === 3) {
+      if (!portalName.trim()) { setError('Give the portal a name — your students will see it.'); return }
       // The look is saved on the way past, so the recorder step is the only
       // thing between here and finishing.
-      persist({ brand: { accent, portalName }, step: 4 }, () => setStep(4))
+      persist({ brand: { accent, portalName: portalName.trim() }, step: 4 }, () => setStep(4))
     }
   }
 
   const finish = () =>
     startTransition(async () => {
       setError('')
-      const saved = await saveOnboarding({ brand: { accent, portalName } })
+      const saved = await saveOnboarding({ brand: { accent, portalName: portalName.trim() } })
       if (!saved.success) { setError(saved.error || 'Could not save'); return }
       const done = await completeOnboarding()
       if (!done.success) { setError(done.error || 'Could not finish'); return }
@@ -269,7 +280,17 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
               <label className="k-field">
                 <span>Student portal name</span>
-                <input value={portalName} onChange={(e) => setPortalName(e.target.value)} placeholder="e.g. Sakura Japanese" maxLength={40} />
+                <input
+                  value={portalName}
+                  onChange={(e) => setPortalName(e.target.value)}
+                  placeholder="e.g. Sakura Japanese"
+                  maxLength={40}
+                  autoFocus
+                />
+                <small className="k-fine" style={{ textAlign: 'left', marginTop: 6 }}>
+                  This is the name across the top of every student&rsquo;s portal, and on the invite they
+                  open. Your own studio name, not ours.
+                </small>
               </label>
 
               <span className="k-field-label">Accent colour</span>
