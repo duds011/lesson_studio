@@ -1,6 +1,12 @@
 :root{--bg:#f1f1ec;--surface:#fff;--surface-2:#f4f4ef;--ink:#16211b;--muted:#6b7671;--line:#e6e6e0;--line-strong:#d3d3ca;--brand:#0a61c9;--brand-soft:#f1f7f9;--green:#2f8f5b;--green-soft:#e7f5ec;--amber:#9a6c05;--amber-soft:#fdf3d6;--red:#c43d3d;--red-soft:#fff0f0;--shadow:0 1px 2px rgba(18,24,17,.04),0 8px 24px rgba(18,24,17,.05);--radius:14px;--sidebar:248px;
 /* KOKU 2.0 — bright, friendly learning-platform look */
---forest:#0a61c9;--forest-deep:#06336d;--c-yellow:#f2b705;--c-yellow-ink:#5b4302;--c-blue:#2d7ff9;--c-blue-ink:#0b3f8f;--c-purple:#a24ee0;--c-purple-ink:#5a1f85;--c-pink:#ef6ba8;--c-sky:#8fd3f4;
+--forest:#0a61c9;--forest-deep:#06336d;
+/* The marketing site's brand gradient, carried into the product. --forest is
+   its deep stop, so these extend the accent rather than replacing it: -grad
+   for buttons and marks, -panel for large filled surfaces (it deepens toward
+   the far corner so white copy on top keeps its contrast). */
+--brand-grad:linear-gradient(135deg,#0a61c9,#4da3ff);--brand-grad-hover:linear-gradient(135deg,#0a55b0,#2d8cff);--brand-grad-panel:linear-gradient(155deg,#1670dd 0%,#0a61c9 45%,#073f8f 100%);
+--c-yellow:#f2b705;--c-yellow-ink:#5b4302;--c-blue:#2d7ff9;--c-blue-ink:#0b3f8f;--c-purple:#a24ee0;--c-purple-ink:#5a1f85;--c-pink:#ef6ba8;--c-sky:#8fd3f4;
 --r-md:16px;--r-lg:22px;--r-xl:28px;--rail:78px;
 --shadow-soft:0 2px 4px rgba(20,32,25,.03),0 14px 34px rgba(20,32,25,.06);--shadow-lift:0 8px 18px rgba(20,32,25,.07),0 24px 48px rgba(20,32,25,.09)}
 *{box-sizing:border-box}
