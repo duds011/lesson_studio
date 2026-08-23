@@ -86,6 +86,10 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <p className="k-fine" style={{ marginTop: 12, textAlign: 'center' }}>
+            <Link href="/forgot-password">Forgot your password?</Link>
+          </p>
+
           {/* A teacher arriving for the first time was offered a sentence in
               grey 12px under the fold of the form. Signing up is the other half
               of what this page is for, so it gets a button and a rule of its
