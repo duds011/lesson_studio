@@ -21,7 +21,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
     .from('lessons')
     .select(`id, lesson_number, lesson_date, title,
       lesson_summaries ( recap_json, score ),
-      students ( full_name, teacher_id )`)
+      students ( full_name, teacher_id, language )`)
     .eq('id', params.id)
     .single()
 
@@ -104,6 +104,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         studentFirst={studentName.split(' ')[0] || 'You'}
         teacherFirst={teacherFirst}
         brand={brand}
+        language={student?.language ?? null}
         files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={audios || []} />}
       />
     </div>

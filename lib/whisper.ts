@@ -95,6 +95,11 @@ async function transcribeOne(blob: Blob, language?: string): Promise<Word[]> {
     { name: 'model', value: 'whisper-1' },
     { name: 'response_format', value: 'verbose_json' },
     { name: 'timestamp_granularities[]', value: 'word' },
+    // Segments too, not just words: without asking for them the response has
+    // no `segments`, keepConfidentWords() had nothing to judge against, and
+    // the hallucination filter below silently never ran (verified across four
+    // real transcriptions — segments: 0 every time).
+    { name: 'timestamp_granularities[]', value: 'segment' },
   ]
   if (language) {
     parts.push({ name: 'language', value: language })
@@ -148,11 +153,21 @@ function keepConfidentWords(words: { text: string; start: number; end: number }[
   const trusted = segments.filter(
     (s) => (Number(s.no_speech_prob) || 0) < NO_SPEECH_MAX && (Number(s.avg_logprob) || 0) > AVG_LOGPROB_MIN,
   )
-  if (!trusted.length) return [] // the whole track was silence or noise
+  if (!trusted.length) {
+    console.warn(`[whisper] all ${segments.length} segments below confidence — track treated as silence`)
+    return [] // the whole track was silence or noise
+  }
 
-  return words.filter((w) =>
+  const kept = words.filter((w) =>
     trusted.some((s) => w.start >= (Number(s.start) || 0) - 0.05 && w.start <= (Number(s.end) || 0) + 0.05),
   )
+  // The thresholds have never run on live data, so make what they do visible:
+  // a filter quietly eating half a real lesson would otherwise look identical
+  // to a clean transcription.
+  if (kept.length < words.length) {
+    console.warn(`[whisper] confidence filter dropped ${words.length - kept.length}/${words.length} words (${segments.length - trusted.length}/${segments.length} segments untrusted)`)
+  }
+  return kept
 }
 
 /**

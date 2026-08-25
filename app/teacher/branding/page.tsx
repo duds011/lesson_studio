@@ -12,11 +12,15 @@ export default async function BrandingPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, brand')
+    .select('full_name, brand, teaching_language')
     .eq('id', user.id)
     .single()
 
   return (
-    <BrandStudio initial={resolveBrand(profile?.brand)} teacherName={(profile?.full_name ?? '').split(' ')[0]} />
+    <BrandStudio
+      initial={resolveBrand(profile?.brand)}
+      teacherName={(profile?.full_name ?? '').split(' ')[0]}
+      teachingLanguage={(profile as any)?.teaching_language ?? null}
+    />
   )
 }

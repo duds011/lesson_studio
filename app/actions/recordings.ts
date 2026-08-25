@@ -76,7 +76,7 @@ export async function assignRecording(
 
   const { data: pending } = await admin
     .from('pending_recordings')
-    .select('recording_id, lesson_date')
+    .select('recording_id, lesson_date, mic_is, spoken_language')
     .eq('recording_id', recordingId)
     .eq('teacher_id', auth.user.id)
     .maybeSingle()
@@ -89,8 +89,18 @@ export async function assignRecording(
   if (!student) return { success: false, error: 'Student not found.' }
 
   const eventId = `ext:${recordingId}`
+  // mic_is and spoken_language ride along from the queue row: the recorder
+  // captured who held the mic and what the room spoke, and dropping either
+  // here is how filed recordings used to get flipped speakers and a wrong
+  // Whisper language hint on rebuild.
   const { error: linkError } = await admin.from('lesson_event_links').upsert(
-    { event_id: eventId, student_id: studentId, teacher_id: auth.user.id },
+    {
+      event_id: eventId,
+      student_id: studentId,
+      teacher_id: auth.user.id,
+      mic_is: (pending as any).mic_is ?? null,
+      spoken_language: (pending as any).spoken_language ?? null,
+    },
     { onConflict: 'event_id' },
   )
   if (linkError) return { success: false, error: linkError.message }

@@ -21,7 +21,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
     .from('lessons')
     .select(`id, lesson_number, lesson_date, title, status, source_event_id,
       lesson_summaries ( recap_json, score ),
-      students ( full_name )`)
+      students ( full_name, language )`)
     .eq('id', params.lessonId)
     .single()
 
@@ -30,7 +30,8 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
   const l = lesson as any
   const summary = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
   const recap = summary?.recap_json
-  const studentName = (Array.isArray(l.students) ? l.students[0] : l.students)?.full_name ?? ''
+  const studentRow = Array.isArray(l.students) ? l.students[0] : l.students
+  const studentName = studentRow?.full_name ?? ''
 
   if (!recap) notFound()
 
@@ -104,6 +105,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
         studentFirst={studentName.split(' ')[0] || 'Student'}
         teacherFirst={teacherFirst}
         brand={brand}
+        language={studentRow?.language ?? null}
         files={<LessonExchange lessonId={l.id} role="teacher" files={files || []} audios={audios || []} />}
       />
     </div>

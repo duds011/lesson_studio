@@ -10,10 +10,10 @@ export const dynamic = 'force-dynamic'
 /**
  * Starts checkout for the teacher's OWN Lesson Studio subscription.
  *
- * Not to be confused with /api/stripe/checkout, which sells lesson packages on
- * the teacher's CONNECTED account — that is the teacher being paid. This is the
- * teacher paying us, so it runs on the platform account with no stripeAccount
- * option anywhere in it.
+ * This is the teacher paying us, so it runs on the platform account with no
+ * stripeAccount option anywhere in it. (Stripe Connect — the teacher being
+ * paid — was removed as an unreachable feature; /api/stripe/webhook remains
+ * for its historical events.)
  *
  * Two shapes: a plan id starts a subscription, `topup` buys one bundle of extra
  * recaps. Both land on the same webhook.

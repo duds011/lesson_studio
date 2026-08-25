@@ -188,6 +188,167 @@ const SAMPLE_RECAP = {
 }
 
 /**
+ * The same believable student, learning French. Numbers and structure are
+ * shared with the base sample — only the language-carrying content changes,
+ * so a French teacher previews their brand on a French page instead of a
+ * Japanese one. CEFR levels replace JLPT, nouns carry their articles, and
+ * readings are empty, exactly as the real French recaps come out.
+ */
+const SAMPLE_FR: DashboardData = {
+  ...SAMPLE,
+  pillarLessons: [
+    { id: 's3', number: 12, title: 'Contrasting ideas with mais', meta: '12th lesson · 2 Aug', score: 8.3, tag: 'Lesson 12', desc: 'Joining two ideas in one sentence, and softening a disagreement politely.' },
+    { id: 's2', number: 11, title: 'Ordering at a restaurant', meta: '11th lesson · 26 Jul', score: 7.8, tag: 'Lesson 11', desc: 'Asking for a table, ordering, and checking the bill without switching to English.' },
+    { id: 's1', number: 10, title: 'Talking about last weekend', meta: '10th lesson · 19 Jul', score: 6.9, tag: 'Lesson 10', desc: 'Past-tense practice: what you did, where you went, and how it was.' },
+  ],
+  vocabDistribution: { A1: 18, A2: 13, B1: 9, B2: 5 },
+  vocabWords: [
+    { word: 'mais', reading: '', definition: 'But.', level: 'A1', firstLessonNumber: 12, firstDate: '2 Aug', lessonCount: 1 },
+    { word: 'tranquille', reading: '', definition: 'Quiet, calm.', level: 'A2', firstLessonNumber: 12, firstDate: '2 Aug', lessonCount: 1 },
+    { word: "l'addition", reading: '', definition: 'The bill.', level: 'A1', firstLessonNumber: 11, firstDate: '26 Jul', lessonCount: 3 },
+    { word: 'la semaine dernière', reading: '', definition: 'Last week.', level: 'A2', firstLessonNumber: 10, firstDate: '19 Jul', lessonCount: 2 },
+  ],
+  tests: [
+    {
+      id: 't1', title: 'Passé composé — quick check', level: 'A2', lessonNumber: 12, date: '2 Aug',
+      score: null, correct: null, total: null, takenOn: null,
+    },
+    {
+      id: 't2', title: 'Restaurant phrases', level: 'A1', lessonNumber: 11, date: '26 Jul',
+      score: 82, correct: 9, total: 11, takenOn: '27 Jul',
+    },
+  ],
+}
+
+const SAMPLE_RECAP_FR = {
+  ...SAMPLE_RECAP,
+  vocab_level_distribution: { A1: 8, A2: 5, B1: 3 },
+  sections: [
+    { title: 'What you worked on', content: 'Contrasting two ideas in one sentence, and softening a disagreement.' },
+    { title: 'Where to focus next', content: '"mais" joins two clauses — practise starting the contrast in the middle of the sentence, not with it.' },
+  ],
+  corrections: [
+    { said: 'Je suis allé au le restaurant', correction: 'Je suis allé au restaurant', categories: ['Article'], explanation: '"au" already contains "le" — à + le contract into one word.' },
+    { said: "J'ai mangé une pain", correction: "J'ai mangé un pain", categories: ['Gender'], explanation: '"pain" is masculine: un pain, le pain.' },
+  ],
+  did_well: [
+    { said: "Je n'ai jamais visité Paris", note: 'Negation with "jamais" placed correctly around the auxiliary.' },
+  ],
+  homework: [
+    { description: 'Write five sentences contrasting something you like with something you do not.' },
+    { description: 'Record a voice memo introducing your week using "mais" twice.' },
+  ],
+  vocabulary: [
+    { word: 'mais', reading: '', definition: 'but', jlpt_level: 'A1' },
+    { word: 'tranquille', reading: '', definition: 'quiet, calm', jlpt_level: 'A2' },
+  ],
+  exercises: [
+    {
+      type: 'read_aloud', prompt: 'Read these aloud, focusing on mais.',
+      data: {
+        focus: 'Contrasting with mais',
+        sentences: [
+          { jp: "La gare est proche, mais c'est tranquille.", en: 'The station is close, but it is quiet.' },
+          { jp: "C'est cher, mais c'est délicieux.", en: 'It is expensive, but delicious.' },
+        ],
+      },
+    },
+    {
+      type: 'speak', prompt: 'Answer out loud.',
+      data: { prompt_jp: "Qu'est-ce que tu as fait le week-end dernier ?", prompt_en: 'What did you do at the weekend?', hint: 'Try one sentence with "mais".' },
+    },
+    {
+      type: 'multiple_choice', prompt: '',
+      data: { question: 'Which sentence contrasts two ideas?', options: ['La gare est proche.', "Proche, mais tranquille.", "C'est tranquille ?"], answer: 1 },
+    },
+    {
+      type: 'fill_blank', prompt: '',
+      data: { before: "C'est cher, ", after: " c'est délicieux.", en: 'It is expensive, but delicious.', options: ['mais', 'parce que', 'donc'], answer: 'mais' },
+    },
+  ],
+}
+
+/** And learning English — phrasal verbs and CEFR levels. */
+const SAMPLE_EN: DashboardData = {
+  ...SAMPLE,
+  pillarLessons: [
+    { id: 's3', number: 12, title: 'Contrasting ideas with although', meta: '12th lesson · 2 Aug', score: 8.3, tag: 'Lesson 12', desc: 'Joining two ideas in one sentence, and softening a disagreement politely.' },
+    { id: 's2', number: 11, title: 'Ordering at a restaurant', meta: '11th lesson · 26 Jul', score: 7.8, tag: 'Lesson 11', desc: 'Asking for a table, ordering, and checking the bill with confidence.' },
+    { id: 's1', number: 10, title: 'Talking about last weekend', meta: '10th lesson · 19 Jul', score: 6.9, tag: 'Lesson 10', desc: 'Past-tense practice: what you did, where you went, and how it was.' },
+  ],
+  vocabDistribution: { A2: 18, B1: 13, B2: 9, C1: 5 },
+  vocabWords: [
+    { word: 'although', reading: '', definition: 'In spite of the fact that.', level: 'B1', firstLessonNumber: 12, firstDate: '2 Aug', lessonCount: 1 },
+    { word: 'run out of', reading: '', definition: 'To use all of something.', level: 'B1', firstLessonNumber: 12, firstDate: '2 Aug', lessonCount: 1 },
+    { word: 'the bill', reading: '', definition: 'What you pay at the end.', level: 'A2', firstLessonNumber: 11, firstDate: '26 Jul', lessonCount: 3 },
+    { word: 'last week', reading: '', definition: 'The week before this one.', level: 'A2', firstLessonNumber: 10, firstDate: '19 Jul', lessonCount: 2 },
+  ],
+  tests: [
+    {
+      id: 't1', title: 'Past simple vs present perfect', level: 'B1', lessonNumber: 12, date: '2 Aug',
+      score: null, correct: null, total: null, takenOn: null,
+    },
+    {
+      id: 't2', title: 'Restaurant phrases', level: 'A2', lessonNumber: 11, date: '26 Jul',
+      score: 82, correct: 9, total: 11, takenOn: '27 Jul',
+    },
+  ],
+}
+
+const SAMPLE_RECAP_EN = {
+  ...SAMPLE_RECAP,
+  vocab_level_distribution: { A2: 8, B1: 5, B2: 3 },
+  sections: [
+    { title: 'What you worked on', content: 'Contrasting two ideas in one sentence, and softening a disagreement.' },
+    { title: 'Where to focus next', content: '"Although" starts the contrast — it never sits between two full sentences the way "but" does. Practise both.' },
+  ],
+  homework: [
+    { description: 'Write five sentences contrasting something you like with something you do not.' },
+    { description: 'Record a voice memo introducing your week using "although" twice.' },
+  ],
+  vocabulary: [
+    { word: 'although', reading: '', definition: 'in spite of the fact that', jlpt_level: 'B1' },
+    { word: 'run out of', reading: '', definition: 'to use all of something', jlpt_level: 'B1' },
+  ],
+  exercises: [
+    {
+      type: 'read_aloud', prompt: 'Read these aloud, focusing on although.',
+      data: {
+        focus: 'Contrasting with although',
+        sentences: [
+          { jp: 'Although the station is close, it is quiet.', en: 'Contrast: close, yet quiet.' },
+          { jp: 'Although it is expensive, it is delicious.', en: 'Contrast: expensive, yet delicious.' },
+        ],
+      },
+    },
+    {
+      type: 'speak', prompt: 'Answer out loud.',
+      data: { prompt_jp: 'What did you do at the weekend?', prompt_en: 'Talk for 30 seconds.', hint: 'Try one sentence with "although".' },
+    },
+    {
+      type: 'multiple_choice', prompt: '',
+      data: { question: 'Which sentence contrasts two ideas?', options: ['The station is close.', 'Although it is close, it is quiet.', 'Is it quiet?'], answer: 1 },
+    },
+    {
+      type: 'fill_blank', prompt: '',
+      data: { before: '', after: ' it is expensive, it is delicious.', en: 'It is expensive, but delicious.', options: ['Although', 'Because', 'So'], answer: 'Although' },
+    },
+  ],
+}
+
+/**
+ * The sample student in the teacher's own teaching language, so the studio
+ * previews the page their students actually get. Japanese is the base sample;
+ * unknown or unset languages read as English, the least surprising default.
+ */
+function sampleFor(teachingLanguage?: string | null): { data: DashboardData; recap: any; lessonTitle: string } {
+  const l = (teachingLanguage ?? '').toLowerCase()
+  if (/japanese|日本語/.test(l)) return { data: SAMPLE, recap: SAMPLE_RECAP, lessonTitle: 'Contrasting ideas with けど' }
+  if (/french|français|francais/.test(l)) return { data: SAMPLE_FR, recap: SAMPLE_RECAP_FR, lessonTitle: 'Contrasting ideas with mais' }
+  return { data: SAMPLE_EN, recap: SAMPLE_RECAP_EN, lessonTitle: 'Contrasting ideas with although' }
+}
+
+/**
  * One tool drawer in the studio menu: a header that opens its body. Defined at
  * module scope on purpose — a component declared inside BrandStudio would be a
  * new type on every render, and React would remount the open drawer (and drop
@@ -269,7 +430,8 @@ function SectionRow({ title, hint, on, onToggle, optionsOpen, onOptions, childre
  * at a time to arrive somewhere a preset already goes. A preset is that whole
  * decision, made once.
  */
-export default function BrandStudio({ initial, teacherName }: { initial: Brand; teacherName: string }) {
+export default function BrandStudio({ initial, teacherName, teachingLanguage }: { initial: Brand; teacherName: string; teachingLanguage?: string | null }) {
+  const sample = sampleFor(teachingLanguage)
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [brand, setBrand] = useState<Brand>(initial)
@@ -376,7 +538,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
    * off. The preview used to keep every tab on the bar and put "everything
    * here is off" behind it, which is not what the student would find.
    */
-  const placed = DASHBOARD_LAYOUT.filter(({ id }) => blockHasContent(id, brand, SAMPLE))
+  const placed = DASHBOARD_LAYOUT.filter(({ id }) => blockHasContent(id, brand, sample.data))
   const liveTabs = DASH_TABS.filter((t) => placed.some(({ id }) => DASH_BLOCK_TAB[id] === t))
   const activeDash = liveTabs.includes(dashTab) ? dashTab : liveTabs[0]
   const tabBlocks = placed.filter(({ id }) => DASH_BLOCK_TAB[id] === activeDash)
@@ -731,7 +893,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                             >✕</button>
                           </>
                         )}
-                        <DashboardBlock id={id} brand={brand} data={SAMPLE} preview onRemoveStat={removeStat} onRemoveSpeak={removeSpeak} />
+                        <DashboardBlock id={id} brand={brand} data={sample.data} preview onRemoveStat={removeStat} onRemoveSpeak={removeSpeak} />
                       </div>
                     )
                   })}
@@ -749,7 +911,7 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                 <header className="k-phead">
                   <div>
                     <div className="k-phead-eyebrow">Lesson 12 · Recap</div>
-                    <h1>Contrasting ideas with けど</h1>
+                    <h1>{sample.lessonTitle}</h1>
                     <div className="k-pmeta"><span>2 Aug</span></div>
                   </div>
                   <div className="k-pscore">
@@ -762,7 +924,8 @@ export default function BrandStudio({ initial, teacherName }: { initial: Brand; 
                 </header>
 
                 <LessonPageTabs
-                  lesson={{ id: 'preview', lessonNumber: 12, date: '2 Aug', title: 'Contrasting ideas with けど', recap: SAMPLE_RECAP }}
+                  lesson={{ id: 'preview', lessonNumber: 12, date: '2 Aug', title: sample.lessonTitle, recap: sample.recap }}
+                  language={teachingLanguage}
                   studentFirst="Derek"
                   teacherFirst={teacherName || 'Your teacher'}
                   brand={brand}

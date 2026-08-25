@@ -7,8 +7,8 @@ const clean = (s?: string) => (s ?? '').replace(/^﻿/, '').trim()
  * Auth guard for the Supabase-backed portal ONLY.
  *
  * The matcher below deliberately scopes this middleware to /login, /student/*
- * and /teacher/* so the existing teacher tooling (/, /students, /settings,
- * /book, /api/*) keeps working exactly as before with no login required.
+ * and /teacher/* so the existing teacher tooling (/, /settings, /book,
+ * /api/*) keeps working exactly as before with no login required.
  */
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -93,14 +93,12 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Route buckets. The student PORTAL is /student/* (note: /students is the
-  // teacher's student list, so match /student/ with a trailing slash).
+  // Route buckets. The student PORTAL is /student/*.
   const isStudentPortal = path === '/student' || path.startsWith('/student/')
   const isOnboarding = path === '/onboarding'
   const isTeacherArea =
     path === '/' ||
     path.startsWith('/settings') ||
-    path.startsWith('/students') ||
     path.startsWith('/teacher')
   // Not logged in → send to login for any gated route, remembering where they
   // were headed so signing in finishes the click they made.
@@ -150,9 +148,9 @@ export const config = {
   // /api/portal) are deliberately NOT matched. Only the teacher-only
   // API routes below are gated (they had no auth of their own).
   matcher: [
-    '/', '/login', '/onboarding', '/settings/:path*', '/students/:path*', '/student/:path*', '/teacher/:path*',
+    '/', '/login', '/onboarding', '/settings/:path*', '/student/:path*', '/teacher/:path*',
     '/api/recap', '/api/recap/:path*',
     '/api/settings', '/api/google/disconnect', '/api/google/select-calendar',
-    '/api/zoom/disconnect', '/api/zoom/status',
+    '/api/zoom/disconnect',
   ],
 }

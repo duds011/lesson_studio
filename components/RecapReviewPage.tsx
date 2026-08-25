@@ -9,6 +9,7 @@ import TeacherVoiceMemo, { type HeldMemo } from './portal/TeacherVoiceMemo'
 import PendingFiles from './portal/PendingFiles'
 import { uploadPortalFile } from '@/lib/portal-upload'
 import { asHomework } from '@/lib/portal-utils'
+import { hesitationExamples } from '@/lib/languages'
 import type { DraftRecap } from './RecapReview'
 
 type Section = { title: string; content: string }
@@ -34,7 +35,7 @@ function AutoTextarea({ value, onChange, placeholder, minRows = 3 }: {
 const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
 type Tab = typeof TABS[number]
 
-export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
+export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; language?: string | null }) {
   const router = useRouter()
   const r = rec.recap || {}
   const [tab, setTab] = useState<Tab>('Progress')
@@ -195,7 +196,7 @@ export default function RecapReviewPage({ rec }: { rec: DraftRecap }) {
                   <div className="metric"><div className="mv">{m.avgResponseSec != null ? `${m.avgResponseSec}s` : '—'}</div><div className="mk">thinking time</div><div className="mn">avg gap before {first} replies</div></div>
                   <div className="metric"><div className="mv">{m.longestTurnSec != null ? `${m.longestTurnSec}s` : '—'}</div><div className="mk">longest answer</div><div className="mn">best unbroken stretch</div></div>
                   <div className="metric"><div className="mv">{m.avgTurnWords ?? '—'}</div><div className="mk">words / answer</div><div className="mn">avg turn length</div></div>
-                  <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">um, euh, えーと…</div></div>
+                  <div className="metric"><div className="mv">{m.fillerCount ?? '—'}</div><div className="mk">hesitation words</div><div className="mn">{hesitationExamples(language)}</div></div>
                   <div className="metric"><div className="mv">{m.longPauseCount ?? '—'}</div><div className="mk">long pauses</div><div className="mn">silences ≥ 1.5s</div></div>
                 </div>
               </section>

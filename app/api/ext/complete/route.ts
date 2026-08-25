@@ -115,6 +115,9 @@ export async function POST(req: Request) {
       // to guess and flip the speakers (it used to assume "teacher", which
       // inverted every lesson a student recorded of themselves).
       mic_is: micIs === 'student' ? 'student' : micIs === 'teacher' ? 'teacher' : null,
+      // What the room actually spoke, remembered for the same reason: a
+      // rebuild re-transcribes with this hint, not the target language.
+      spoken_language: (typeof spokenLanguage === 'string' && spokenLanguage) || (typeof language === 'string' && language) || null,
     },
     { onConflict: 'event_id' },
   )

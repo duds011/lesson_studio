@@ -9,7 +9,7 @@ import {
   TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
 } from '@/lib/teaching-platform'
 import { CALENDAR_MODE_META, type CalendarMode } from '@/lib/calendar-mode'
-import { SPOKEN_LANGUAGES } from '@/lib/languages'
+import { SPOKEN_LANGUAGES, TEACHING_LANGUAGES } from '@/lib/languages'
 
 type Props = {
   initial: {
@@ -50,6 +50,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
   // Resume where they left off, but never past the last step.
   const [step, setStep] = useState(Math.min(initial.step, STEPS.length - 1))
+  const [teachingLanguage, setTeachingLanguage] = useState(initial.teachingLanguage ?? '')
   const [spokenLanguage, setSpokenLanguage] = useState(initial.speakingLanguage ?? '')
   const [timezone, setTimezone] = useState(initial.timezone)
   const [platform, setPlatform] = useState<TeachingPlatform>(initial.teachingPlatform)
@@ -77,8 +78,9 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
   const next = () => {
     if (step === 0) {
+      if (!teachingLanguage) { setError('Pick the language you teach.'); return }
       if (!spokenLanguage) { setError('Pick the language your lessons are spoken in.'); return }
-      persist({ speakingLanguage: spokenLanguage, timezone, step: 1 }, () => setStep(1))
+      persist({ teachingLanguage, speakingLanguage: spokenLanguage, timezone, step: 1 }, () => setStep(1))
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
@@ -138,11 +140,27 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {/* ── 1. Language ── */}
           {step === 0 && (
             <>
-              {/* One sentence, one choice. What each student is LEARNING is
-                  asked when that student is added, where it belongs — this
-                  keeps only the per-teacher fact, worn as plain words. */}
+              {/* Two sentences, two different facts. What each student is
+                  LEARNING is asked when that student is added, where it
+                  belongs — these keep only the per-teacher facts, worn as
+                  plain words. */}
+              <div className="k-onb-sentence" aria-label="The language you teach">
+                <span>I teach</span>
+                <select
+                  value={teachingLanguage}
+                  onChange={(e) => setTeachingLanguage(e.target.value)}
+                >
+                  <option value="" disabled>choose…</option>
+                  {TEACHING_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+              <p className="k-onb-lead" style={{ fontSize: 12.5 }}>
+                Recaps and practice tests are built for this language. It&rsquo;s the default for every student you add —
+                each student can be switched individually later.
+              </p>
+
               <div className="k-onb-sentence" aria-label="The language your lessons are spoken in">
-                <span>I teach in</span>
+                <span>my lessons are mostly spoken in</span>
                 <select
                   value={spokenLanguage}
                   onChange={(e) => setSpokenLanguage(e.target.value)}
@@ -152,7 +170,8 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 </select>
               </div>
               <p className="k-onb-lead" style={{ fontSize: 12.5 }}>
-                The language most of your lesson is actually spoken in — it&rsquo;s what the recorder listens for.
+                Often not the language being learned — a beginner&rsquo;s hour runs mostly in the language you share.
+                It&rsquo;s what the recorder listens for.
               </p>
 
               <label className="k-field">

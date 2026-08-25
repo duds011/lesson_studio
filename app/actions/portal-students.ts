@@ -158,6 +158,36 @@ export async function setInstructionLanguage(studentId: string, language: string
 }
 
 /**
+ * Set the language this student is LEARNING — the field that picks the recap
+ * and test prompts. Only affects lessons generated from here on; recaps
+ * already written stay as they are.
+ */
+export async function setLearningLanguage(studentId: string, language: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireTeacher()
+  if ('error' in auth) return { success: false, error: auth.error }
+
+  const value = language.trim().slice(0, 40)
+  if (!value) return { success: false, error: 'Pick a language' }
+
+  const { data: student } = await auth.supabase
+    .from('students')
+    .select('id')
+    .eq('id', studentId)
+    .eq('teacher_id', auth.user.id)
+    .single()
+  if (!student) return { success: false, error: 'Student not found' }
+
+  const { error } = await createAdminClient()
+    .from('students')
+    .update({ language: value })
+    .eq('id', studentId)
+  if (error) return { success: false, error: error.message }
+
+  revalidatePath(`/teacher/students/${studentId}`)
+  return { success: true }
+}
+
+/**
  * How this student reads Japanese — decides whether their recaps carry romaji.
  * NULL/'hiragana' is the behaviour every recap had before this existed.
  */

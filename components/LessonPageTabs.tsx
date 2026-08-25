@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { FormattedContent } from './RecapView'
 import LessonExercises from './LessonExercises'
 import LessonCorrections from './LessonCorrections'
+import { hesitationExamples } from '@/lib/languages'
 import Flashcards from './Flashcards'
 import CountUp from './portal/CountUp'
 import {
@@ -23,9 +24,11 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, files, preview,
-  tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
+  language, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
+  /** The language this student is learning — picks the hesitation examples. */
+  language?: string | null
   /** File exchange, filling the Files tab. Omitted = no tab. */
   files?: React.ReactNode
   /**
@@ -122,7 +125,7 @@ export default function LessonPageTabs({
           think: { v: m.avgResponseSec, decimals: 1, suffix: 's', mk: 'thinking time', mn: 'before you reply' },
           longest: { v: m.longestTurnSec, suffix: 's', mk: 'longest answer', mn: 'best stretch' },
           turn: { v: m.avgTurnWords, mk: 'words / answer', mn: 'avg turn length' },
-          fillers: { v: m.fillerCount, mk: 'hesitation words', mn: 'um, euh, えーと…' },
+          fillers: { v: m.fillerCount, mk: 'hesitation words', mn: hesitationExamples(language) },
           pauses: { v: m.longPauseCount, mk: 'long pauses', mn: 'silences ≥ 1.5s' },
         }
         const hidden = brand.hiddenMetrics ?? []

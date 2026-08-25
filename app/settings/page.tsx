@@ -10,6 +10,7 @@ import AppNav from '@/components/AppNav'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
 import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
+import LanguagesPanel from '@/components/LanguagesPanel'
 import ExtTokenPanel from '@/components/ExtTokenPanel'
 import ReplayTourButton from '@/components/ReplayTourButton'
 import SubscriptionPanel from '@/components/SubscriptionPanel'
@@ -38,7 +39,7 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = user
-    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode, plan_id, stripe_customer_id').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode, plan_id, stripe_customer_id, teaching_language, speaking_language').eq('id', user.id).single()
     : { data: null }
   const calendarMode = resolveCalendarMode((profile as any)?.calendar_mode)
   // The teacher's own recorder token, read with their own client so RLS
@@ -161,6 +162,14 @@ export default async function SettingsPage() {
                 </div>
               </section>
             )}
+          </SettingsPanel>
+
+          {/* ── Languages: the teacher's two facts + the model explained ── */}
+          <SettingsPanel id="languages">
+            <LanguagesPanel
+              teachingLanguage={(profile as any)?.teaching_language ?? null}
+              speakingLanguage={(profile as any)?.speaking_language ?? null}
+            />
           </SettingsPanel>
 
           {/* ── Subscription: plan, monthly usage, and the other plan ── */}

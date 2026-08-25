@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   // Who the recording belongs to, and that it is this teacher's to rebuild.
   const { data: link } = await admin
     .from('lesson_event_links')
-    .select('student_id, teacher_id, mic_is')
+    .select('student_id, teacher_id, mic_is, spoken_language')
     .eq('event_id', eventId)
     .maybeSingle()
   if (!link) return NextResponse.json({ ok: false, error: 'No student is linked to this recording.' }, { status: 404 })
@@ -119,7 +119,11 @@ export async function POST(req: Request) {
         if (data.size > 0) tracks.push({ blob: data, speaker: w.speaker, isHost: w.isHost })
       }
       if (!tracks.length) return NextResponse.json({ ok: false, error: 'Both tracks were empty.' }, { status: 422 })
-      segments = await transcribeTracks(tracks, toWhisperLanguage(language))
+      // Whisper gets the language SPOKEN in the room when the recorder told
+      // us, and the target language only as a fallback — forcing the target
+      // onto a beginner lesson conducted in a shared language does not skip
+      // those parts, it renders them as target-language nonsense.
+      segments = await transcribeTracks(tracks, toWhisperLanguage((link as any).spoken_language ?? language))
     }
 
     const t = normalizeSegments(segments)

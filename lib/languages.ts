@@ -30,6 +30,22 @@ export const SPOKEN_LANGUAGES = [
 ]
 
 /**
+ * Example hesitation words for the "hesitation words" metric tile's caption.
+ *
+ * The COUNT is deliberately cross-language (see FILLERS in lib/transcript.ts:
+ * a beginner's hour hesitates in two languages at once) — but the caption is
+ * just an illustration, and showing えーと to a French student reads as the
+ * app speaking the wrong language.
+ */
+export function hesitationExamples(language?: string | null): string {
+  const l = (language ?? '').toLowerCase()
+  if (/japanese|日本語/.test(l)) return 'えーと, あの, うーん…'
+  if (/french|français|francais/.test(l)) return 'euh, ben, alors…'
+  if (/english|inglês|ingles|英語/.test(l)) return 'um, uh, er…'
+  return 'um, euh…'
+}
+
+/**
  * The menu plus whatever this teacher already had.
  *
  * A teacher whose profile predates the picker can hold a language that is not

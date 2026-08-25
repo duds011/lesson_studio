@@ -8,6 +8,7 @@ import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 import GenerateTestButton from '@/components/portal/GenerateTestButton'
 import InstructionLanguageEditor from '@/components/portal/InstructionLanguageEditor'
+import LearningLanguageEditor from '@/components/portal/LearningLanguageEditor'
 import JpScriptEditor from '@/components/portal/JpScriptEditor'
 import PageHeader from '@/components/PageHeader'
 
@@ -99,6 +100,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
         wideActions
         actions={
           <>
+            <LearningLanguageEditor studentId={student.id} value={student.language ?? null} />
             <InstructionLanguageEditor studentId={student.id} value={(student as any).instruction_language ?? null} />
             {/* Only Japanese has a script to choose — the same gate the test
                 generator uses, and for the same reason. */}
