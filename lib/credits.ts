@@ -15,7 +15,7 @@
  */
 type Client = { from: (t: string) => any }
 
-export const LOW_THRESHOLD = 1
+export const LOW_THRESHOLD = 2
 
 /** Only a published lesson has reached the student, so only it spends a credit. */
 const SPENT_STATUS = 'published'

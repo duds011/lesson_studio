@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import GuidedTour from '@/components/GuidedTour'
 
-type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note'
+type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note' | 'menu' | 'close'
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -23,6 +23,8 @@ function Icon({ name }: { name: IconName }) {
     // The panel glyph, not a chevron: a frame with the rail drawn inside it, so
     // the button shows the thing it collapses rather than a direction.
     collapse: <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></>,
+    menu: <><path d="M3 6h18M3 12h18M3 18h18"/></>,
+    close: <><path d="M6 6l12 12M18 6 6 18"/></>,
   }
   return <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
 }
@@ -55,6 +57,10 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
   const accountLabel = email?.split('@')[0] || 'Teacher workspace'
   const [collapsed, setCollapsed] = useState(false)
+  // The phone drawer. Closed is the resting state; opening is always a tap on
+  // the top-bar button, and navigating anywhere closes it again.
+  const [mobileOpen, setMobileOpen] = useState(false)
+  useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
     const saved = localStorage.getItem(NAV_KEY) === '1'
@@ -77,7 +83,29 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         start on first sign-in and be replayed from Settings without either
         page knowing about it. */}
     <GuidedTour email={email} />
-    <aside className="app-sidebar" aria-label="Teacher workspace navigation">
+
+    {/* Phone chrome: a slim bar with the logo and one button. The nav itself
+        never lives up here — it slides in from the side, the same rail as on
+        desktop, so the app has one navigation and two ways to summon it. */}
+    <header className="mobile-topbar">
+      <Link className="logo" href="/" aria-label="Lesson Studio overview">
+        <LogoMark />
+        <span className="brand-word">Lesson Studio</span>
+      </Link>
+      <button
+        type="button"
+        className="mobile-nav-btn"
+        onClick={() => setMobileOpen((v) => !v)}
+        aria-expanded={mobileOpen}
+        aria-controls="teacher-nav"
+        aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+      >
+        <Icon name={mobileOpen ? 'close' : 'menu'} />
+      </button>
+    </header>
+    {mobileOpen && <div className="mobile-nav-scrim" onClick={() => setMobileOpen(false)} aria-hidden />}
+
+    <aside id="teacher-nav" className={`app-sidebar ${mobileOpen ? 'mobile-open' : ''}`} aria-label="Teacher workspace navigation">
       <div className="sidebar-top">
         <Link className="logo" href="/" aria-label="Lesson Studio overview">
           <LogoMark />

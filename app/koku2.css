@@ -707,19 +707,30 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .status-dot.online{background:var(--green)}
 .wrap{margin-left:264px;padding:30px clamp(20px,3vw,42px) 70px}
 @media(max-width:860px){
-  /* Sidebar becomes a compact horizontal bar. Without laying the children
-     out explicitly the account row (and its Sign out button) overflows the
-     card and gets clipped by overflow:hidden. */
-  .app-sidebar{position:static;width:auto;inset:auto;margin:14px 14px 0;border-radius:var(--r-lg);flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;height:auto}
-  .sidebar-top{flex:1 1 100%;padding:0 0 4px}
-  .sidebar-scroll{flex:1 1 100%;padding:0;display:flex;gap:6px;overflow-x:auto}
-  .nav-section-label{display:none}
-  .side-nav{display:flex;gap:6px}
-  .side-link{white-space:nowrap;padding:9px 12px}
-  .sidebar-account{flex:1 1 100%;margin-top:4px;padding:10px 0 0}
+  /* The sidebar used to flatten into a horizontal bar across the top here.
+     Now it keeps its desktop shape and hides off-canvas: a slim top bar holds
+     the logo and one menu button, and tapping it slides the same rail in from
+     the left. One navigation, summoned two ways. */
+  .mobile-topbar{display:flex;position:sticky;top:0;z-index:40;height:56px;align-items:center;justify-content:space-between;padding:0 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .mobile-topbar .logo{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em}
+  .mobile-nav-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;color:var(--ink);cursor:pointer}
+  .mobile-nav-scrim{position:fixed;inset:0;background:rgba(31,41,55,.38);backdrop-filter:blur(2px);z-index:88}
+  .app-sidebar{position:fixed;inset:0 auto 0 0;width:min(300px,86vw);height:100%;margin:0;border-radius:0 18px 18px 0;flex-direction:column;transform:translateX(-104%);transition:transform .22s ease;z-index:89;box-shadow:24px 0 60px rgba(31,41,55,.18)}
+  .app-sidebar.mobile-open{transform:translateX(0)}
+  .sidebar-top{padding:20px 18px 14px}
+  .sidebar-scroll{padding:6px 12px;flex:1;overflow-y:auto}
+  .side-link{justify-content:flex-start;padding:11px 12px}
+  .sidebar-account{justify-content:flex-start;padding:15px 16px}
+  /* The 900px icon rail hides labels; the drawer is full width, bring them back. */
+  .app-sidebar .logo>span:not(.mark){display:inline}
+  .app-sidebar .nav-section-label{display:block}
+  .app-sidebar .side-link span{display:inline}
+  .app-sidebar .sidebar-account .account-copy{display:flex}
   .wrap{margin-left:0;padding:20px 16px 60px}
+  .wrap::before{inset:0}
   .k-thead{padding:24px 22px}
 }
+@media(max-width:860px) and (prefers-reduced-motion:reduce){.app-sidebar{transition:none}}
 /* .settings-stack is display:grid with no explicit columns, so its implicit
    track sizes to the widest child's max-content and overflows narrow screens.
    Pin it to the container instead. */

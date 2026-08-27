@@ -5,6 +5,19 @@ import './koku2.css'
 export const metadata: Metadata = {
   title: 'Lesson Studio',
   description: 'Bookings, recorded lessons, and AI recaps for language teachers.',
+  // Added to home screen on iOS this opens as its own app: no Safari chrome,
+  // its own icon, its own name under it. `manifest` covers Android the same
+  // way for free. No service worker on purpose — the app is useless offline
+  // and a stale-cache bug is worse than a network error.
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Lesson Studio',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
 }
 
 /**
@@ -17,6 +30,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // Paints the iOS status bar / Android toolbar in the brand rather than grey.
+  themeColor: '#0a61c9',
+  // Standalone mode ignores safe areas unless asked — without this the app
+  // draws under the notch and the home indicator.
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
