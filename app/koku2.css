@@ -327,7 +327,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
    here; it has to be said at the same weight. */
 .k-ac-screen p{margin:0;color:var(--ink)}
 
-.k-ac-tabs{display:flex;gap:3px;background:#f4f4ef;border-radius:999px;padding:3px;flex:0 0 auto}
+.k-ac-tabs{display:flex;gap:3px;background:var(--surface-2);border-radius:999px;padding:3px;flex:0 0 auto}
 .k-ac-tabs span{padding:5px 10px;border-radius:999px;font-size:9.5px;font-weight:700;color:var(--muted);white-space:nowrap}
 .k-ac-tabs span.on{background:var(--brand);color:#fff}
 
@@ -372,12 +372,12 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 
 .k-ac-words{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
 .k-ac-words span{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:9px;font-weight:600;white-space:nowrap}
-.k-ac-words i{font-style:normal;color:var(--line-strong,#d3d3ca)}
+.k-ac-words i{font-style:normal;color:var(--line-strong,var(--line-strong))}
 .k-ac-words em{font-style:normal;font-size:8px;color:var(--muted);font-weight:700}
 
 .k-ac-langs{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .k-ac-langs span{border:1px solid var(--line);border-radius:999px;padding:4px 9px;font-size:9.5px;font-weight:700;
-  background:#fafaf7;white-space:nowrap}
+  background:var(--surface-2);white-space:nowrap}
 .k-ac-langs span:nth-child(1),.k-ac-langs span:nth-child(2),.k-ac-langs span:nth-child(7){
   background:var(--brand-soft);border-color:#cfe0f6;color:var(--brand)}
 
@@ -392,7 +392,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-ac-pair p.ok b{border-bottom:2px solid var(--brand)}
 
 .k-ac-practice{display:grid;grid-template-columns:38% minmax(0,1fr);gap:9px;flex:1;min-height:0}
-.k-ac-card{border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center;background:#fafaf7;
+.k-ac-card{border:1px solid var(--line);border-radius:11px;padding:12px 10px;text-align:center;background:var(--surface-2);
   display:flex;flex-direction:column;justify-content:center;min-width:0}
 .k-ac-lvl{align-self:center;padding:2px 7px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-size:7px;font-weight:800}
 .k-ac-card b.jp{display:block;font-size:23px;font-weight:700;letter-spacing:-.02em;margin-top:7px}
@@ -403,7 +403,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-ac-card q u{text-decoration:none;border-bottom:2px solid var(--brand);color:var(--ink)}
 .k-ac-card q b{display:block;margin-top:5px;font-weight:600;font-size:8.5px;color:var(--muted)}
 .k-ac-deck{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:12px;padding-top:9px}
-.k-ac-deck i{width:14px;height:3px;border-radius:999px;background:#e2e2dc}
+.k-ac-deck i{width:14px;height:3px;border-radius:999px;background:var(--line)}
 .k-ac-deck i:first-child{background:var(--brand)}
 .k-ac-deck span{margin-left:4px;font-size:7px;font-weight:800;color:var(--muted)}
 
@@ -423,7 +423,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-ac-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .k-ac-top small{display:block;font-size:8px;color:var(--muted);font-weight:700}
 .k-ac-top b{display:block;font-size:17px;font-weight:800;letter-spacing:-.035em}
-.k-ac-mark{padding:5px 10px;border-radius:999px;background:#f4f4ef;font-size:9px;font-weight:700;white-space:nowrap}
+.k-ac-mark{padding:5px 10px;border-radius:999px;background:var(--surface-2);font-size:9px;font-weight:700;white-space:nowrap}
 .k-ac-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;flex:0 0 auto;height:clamp(58px,9vh,74px)}
 .k-ac-lessons{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;margin-top:9px}
 .k-ac-lessons span{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;min-width:0}
@@ -862,7 +862,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
      a quiet icon until hovered, so the mark is clearly the only logo. */
   html[data-nav="collapsed"] .sidebar-top{flex-direction:column;gap:14px;padding:18px 0 8px}
   html[data-nav="collapsed"] .sidebar-top .logo{flex:0 0 auto}
-  html[data-nav="collapsed"] .nav-toggle{background:transparent;color:#9a9e96;width:32px;height:32px}
+  html[data-nav="collapsed"] .nav-toggle{background:transparent;color:var(--muted);width:32px;height:32px}
   html[data-nav="collapsed"] .nav-toggle:hover{background:var(--surface-2);color:var(--forest)}
   html[data-nav="collapsed"] .nav-toggle .ui-icon{transform:rotate(180deg)}
   html[data-nav="collapsed"] .logo>span:not(.mark),
@@ -1019,7 +1019,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-table{background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-soft);overflow:hidden}
 .k-table-head{display:grid;gap:14px;padding:13px 20px;background:var(--surface-2);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .k-row{display:grid;gap:14px;align-items:center;padding:15px 20px;border-top:1px solid var(--line);font-size:13px;transition:.14s ease}
-.k-row:hover{background:#fafbf9}
+.k-row:hover{background:var(--surface-2)}
 .k-row:first-child{border-top:0}
 @media(max-width:760px){
   .k-table-head{display:none}
@@ -1200,7 +1200,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
   cursor:pointer;flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);
   transition:transform .12s ease,border-color .12s ease}
 .k-swatch:hover{transform:scale(1.12)}
-.k-swatch.sel{border-color:var(--ink,#16211b);transform:scale(1.08)}
+.k-swatch.sel{border-color:var(--ink,var(--ink));transform:scale(1.08)}
 .k-swatch:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .k-studio-controls .k-swatch{width:30px;height:30px;border-radius:10px}
 .k-studio-controls .k-preset-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:7px}
