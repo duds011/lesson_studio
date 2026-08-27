@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createStudent } from '@/app/actions/portal-students'
 import { addPayment } from '@/app/actions/payments'
-import { currencySymbol } from '@/lib/currency'
 import { languageOptions, SPOKEN_LANGUAGES } from '@/lib/languages'
 import InviteLink from '@/components/portal/InviteLink'
 
@@ -21,9 +20,11 @@ const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
   // teacher's own answer — it was optional-and-blank before, which read as
   // "leave it" and quietly meant English for students who could not read it.
   instruction_language: defaultInstruction.trim() || 'English',
-  // Optional starting package. No payment method: it was one more box between
-  // the teacher and a saved student, and Payments is where that belongs.
-  lessons: '', amount: '',
+  // How many lessons they have in hand. Not a price and not a payment — money
+  // lives in Payments. This is the number the balance counts down from as
+  // recaps are published, and the only reason it is asked for here is that a
+  // teacher adding a student almost always knows it.
+  lessons: '',
 })
 
 export default function AddStudentForm({ currency = 'USD', teachingLanguage = '', speakingLanguage = '' }: { currency?: string; teachingLanguage?: string; speakingLanguage?: string }) {
@@ -61,21 +62,23 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
       return
     }
 
-    // Optionally record the starting package as their first payment/credit.
+    // The balance is Σ paid payments' lessons_covered − published lessons, so
+    // the starting count is still written as a payment row — with no amount,
+    // because this is a lesson count and not a sale. Recording it any other way
+    // would need a second source of truth for the same number.
     const lessons = form.lessons ? parseInt(form.lessons, 10) : 0
-    const amount = form.amount ? parseFloat(form.amount) : 0
     let note = ''
-    if (lessons > 0 || amount > 0) {
+    if (lessons > 0) {
       const pay = await addPayment(res.studentId, {
-        amount, currency, status: 'paid',
-        description: lessons > 0 ? `${lessons}-lesson starting package` : 'Starting payment',
-        lessons_covered: lessons > 0 ? lessons : null,
+        amount: 0, currency, status: 'paid',
+        description: `${lessons} lesson${lessons === 1 ? '' : 's'} to start`,
+        lessons_covered: lessons,
         payment_date: new Date().toISOString().slice(0, 10),
         method: '',
       })
       note = pay.success
-        ? (lessons > 0 ? `${lessons} lessons added to their balance.` : 'Payment recorded.')
-        : `Student created, but the payment failed: ${pay.error}`
+        ? `${lessons} lesson${lessons === 1 ? '' : 's'} on their balance — it counts down as you publish recaps.`
+        : `Student created, but the lesson count failed to save: ${pay.error}`
     }
 
     setBusy(false)
@@ -186,20 +189,21 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
             </p>
           </div>
 
-          {/* Optional starting package */}
+          {/* How many lessons they have. One number, no money — the teacher
+              gets warned when it runs down, which is the whole point of it. */}
           <div style={{ borderTop: '1px solid var(--line)', margin: '8px 0 4px', paddingTop: 12 }}>
-            <div className="analytics-label" style={{ marginBottom: 8 }}>Starting package (optional)</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div className="field">
-                <label>Lessons purchased</label>
-                <input type="number" min="0" step="1" value={form.lessons} onChange={set('lessons')} placeholder="e.g. 4" style={inputStyle} />
-              </div>
-              <div className="field">
-                <label>Amount paid ({currencySymbol(currency)})</label>
-                <input type="number" min="0" step="0.01" value={form.amount} onChange={set('amount')} placeholder="0.00" style={inputStyle} />
-              </div>
+            <div className="field" style={{ maxWidth: 220 }}>
+              <label>Lessons they have</label>
+              <input
+                type="number" min="0" step="1" inputMode="numeric"
+                value={form.lessons} onChange={set('lessons')}
+                placeholder="e.g. 4" style={inputStyle}
+              />
             </div>
-            <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0 }}>Leave blank if they haven&rsquo;t paid yet — you can record it later in Payments.</p>
+            <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0 }}>
+              Counts down by one each time you publish a recap, and warns you when they are nearly
+              out. Leave it blank if you don&rsquo;t track lessons this way.
+            </p>
           </div>
 
           {error && <div className="warn-box" style={{ marginTop: 8, borderColor: '#f0cece', background: 'var(--red-soft)', color: 'var(--red)' }}>{error}</div>}

@@ -13,7 +13,7 @@
 .k-rail-toggle{width:28px;height:28px;border:0;border-radius:9px;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:.15s ease;flex:0 0 auto}
 .k-rail-toggle:hover{background:var(--brand-soft);color:var(--forest)}
 .k-rail-toggle .ui-icon{width:15px;height:15px;transition:transform .2s ease}
-.k-rail-link{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#98a29c;transition:.16s ease;flex:0 0 auto}
+.k-rail-link{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:var(--muted);transition:.16s ease;flex:0 0 auto}
 .k-rail-link:hover{background:var(--surface-2);color:var(--ink)}
 .k-rail-link.active{background:var(--brand-soft);color:var(--forest)}
 .k-rail-link .ui-icon{width:20px;height:20px}
@@ -563,7 +563,13 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-memo-time{flex:0 0 auto;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.62);font-variant-numeric:tabular-nums}
 .k-memo-time b{color:#fff;font-weight:800}
 
+/* The tab strip scrolls rather than wraps, so on a phone the last tab is cut
+   by the frame edge and reads as broken rather than as "swipe for more".
+   Fade it out instead. */
 @container (max-width:430px){
+  .k-dtabs{-webkit-mask-image:linear-gradient(90deg,#000 84%,transparent 100%);
+    mask-image:linear-gradient(90deg,#000 84%,transparent 100%)}
+
   .k-memo-wave{height:24px}
   .k-memo-t small{display:none}
   .k-memo-row{gap:8px}
@@ -691,7 +697,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .logo{gap:11px}
 .logo small{color:var(--muted)}
 .sidebar-scroll{padding:6px 12px}
-.nav-section-label{padding:15px 10px 7px;color:#a3aaa5}
+.nav-section-label{padding:15px 10px 7px;color:var(--muted)}
 .side-nav{gap:4px}
 .side-link{border-radius:14px;padding:11px 12px;color:#5d635e;font-weight:700;font-size:12.5px}
 .side-link:hover{background:var(--surface-2);color:var(--ink)}
@@ -1229,6 +1235,18 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
   grid-template-columns:minmax(0,1fr);gap:14px;overflow:hidden;
   width:var(--canvas-w,1180px);transform:scale(var(--canvas-scale,1));transform-origin:top left}
 
+/* The phone canvas is 390px and the pane is far wider, so its scale is pinned
+   at 1 and it was left-aligned against a wide empty gutter — which read as a
+   broken layout rather than as a phone. Centre it and give it a bezel, so the
+   narrow column is obviously the device and not the page falling over.
+   The bezel is a box-shadow ring, not a border: the frame is the container for
+   the @container queries inside it, and a border would shrink that width and
+   move the breakpoints. */
+.k-preview-frame.mobile{
+  margin-inline:auto;
+  border-radius:30px;
+  box-shadow:0 0 0 9px #1f2937,0 0 0 10px rgba(255,255,255,.14),0 30px 70px -20px rgba(31,41,55,.5)}
+
 /* A card given a whole row's height spends it, rather than clumping its
    content at the top of an empty rectangle: charts grow into it, lists sit in
    the middle of it. */
@@ -1621,7 +1639,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .rg-browser{border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .rg-chrome{display:flex;align-items:center;gap:8px;background:var(--surface-2);padding:8px 10px;border-bottom:1px solid var(--line)}
 .rg-dots{display:flex;gap:4px}
-.rg-dots i{width:8px;height:8px;border-radius:50%;background:#d6d6cd}
+.rg-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
 .rg-url{flex:1;background:#fff;border-radius:999px;font-size:10.5px;font-weight:600;color:var(--muted);padding:4px 12px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rg-puzzle{font-size:13px}
@@ -1667,4 +1685,4 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-stat-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.28);margin-top:10px;overflow:hidden}
 .k-stat-bar i{display:block;height:100%;border-radius:999px;background:#fff;transition:width .6s ease}
 a.k-stat{text-decoration:none;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
-a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(18,24,17,.16)}
+a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.16)}
