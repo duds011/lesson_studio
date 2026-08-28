@@ -6,6 +6,7 @@ import { zoomConnection, isZoomConfigured } from '@/lib/zoom'
 import { createClient } from '@/lib/supabase/server'
 import { CALENDAR_MODES, CALENDAR_MODE_META, resolveCalendarMode } from '@/lib/calendar-mode'
 import { chooseCalendarMode } from '@/app/actions/calendar'
+import { chooseSpeakingSubmissions } from '@/app/actions/portal-settings'
 import AppNav from '@/components/AppNav'
 import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
@@ -39,9 +40,12 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = user
-    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode, plan_id, stripe_customer_id, teaching_language, speaking_language').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode, plan_id, stripe_customer_id, teaching_language, speaking_language, speaking_submissions').eq('id', user.id).single()
     : { data: null }
   const calendarMode = resolveCalendarMode((profile as any)?.calendar_mode)
+  // Unset is on: every recap already writes the exercises, and a teacher who
+  // would rather not be sent audio says so here.
+  const speakingOn = (profile as any)?.speaking_submissions !== false
   // The teacher's own recorder token, read with their own client so RLS
   // confirms it is theirs rather than the page taking the id on trust.
   const { data: extToken } = user
@@ -179,6 +183,39 @@ export default async function SettingsPage() {
               planId={(profile as any)?.plan_id ?? null}
               hasBilling={Boolean((profile as any)?.stripe_customer_id)}
             />
+          </SettingsPanel>
+
+          {/* ── Student portal: what the student's side is allowed to do ── */}
+          <SettingsPanel id="portal">
+            <section className="k-sec">
+              <div className="k-sec-head">
+                <span className="k-sec-icon" aria-hidden>🎙️</span>
+                <div>
+                  <h3>Speaking exercises</h3>
+                  <p className="desc">
+                    Every recap ends with three speaking exercises. Let your students record their answers and the
+                    takes land on the lesson page, under the sentence they were answering — and you get an email
+                    when they do. Turn it off and those three exercises come off the recap entirely.
+                  </p>
+                </div>
+              </div>
+              <div className="k-choices">
+                <form action={chooseSpeakingSubmissions}>
+                  <input type="hidden" name="on" value="yes" />
+                  <button type="submit" className={`k-choice ${speakingOn ? 'sel' : ''}`}>
+                    <span className="k-choice-tick" aria-hidden>✓</span>
+                    <span>Let students record them<small>You listen back on the lesson page</small></span>
+                  </button>
+                </form>
+                <form action={chooseSpeakingSubmissions}>
+                  <input type="hidden" name="on" value="no" />
+                  <button type="submit" className={`k-choice ${!speakingOn ? 'sel' : ''}`}>
+                    <span className="k-choice-tick" aria-hidden>✓</span>
+                    <span>Leave them out<small>The recap keeps its seven written exercises</small></span>
+                  </button>
+                </form>
+              </div>
+            </section>
           </SettingsPanel>
 
           {/* ── Booking preference: meeting platform + lesson defaults ── */}

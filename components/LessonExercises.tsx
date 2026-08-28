@@ -1,20 +1,47 @@
 'use client'
 
 import { useState } from 'react'
+import { formatDateShort } from '@/lib/portal-utils'
+import { speakingExercises, type Exercise } from '@/lib/speaking'
+import SpeakingRecorder from './portal/SpeakingRecorder'
+import AudioPlayer from './portal/AudioPlayer'
 
-type Exercise = { type: string; prompt: string; data: any }
+/** A take the student has already sent, keyed by the exercise it answers. */
+export type SpeakingTake = { id: string; prompt_index: number; created_at: string }
+
+/**
+ * Everything the speaking half of this tab needs to be more than a printout.
+ * Left off entirely — the branding studio's preview does — the exercises render
+ * as they always did, read-only.
+ */
+export type SpeakingConfig = {
+  lessonId: string
+  /** The teacher collects speaking recordings. Off, and these are dropped. */
+  enabled: boolean
+  role: 'student' | 'teacher'
+  takes: SpeakingTake[]
+}
 
 // Interactive practice exercises (mirrors teacher-portal LessonExercises, but
-// self-contained — answers are checked locally, no backend submission needed).
-export default function LessonExercises({ exercises }: { exercises: Exercise[] }) {
+// self-contained — the graded answers are checked locally, and only the spoken
+// ones reach the server).
+export default function LessonExercises({ exercises, speaking }: { exercises: Exercise[]; speaking?: SpeakingConfig }) {
   if (!exercises?.length) return <p className="analytics-note">No practice exercises for this lesson.</p>
 
-  const speaking = exercises.filter((e) => e.type === 'read_aloud' || e.type === 'speak')
+  // Switched off, the speaking exercises are not shown as homework nobody can
+  // hand in — they are not shown at all.
+  const spoken = speaking && !speaking.enabled ? [] : speakingExercises(exercises)
   const graded = exercises.filter((e) => e.type === 'multiple_choice' || e.type === 'fill_blank')
+
+  if (!spoken.length && !graded.length) return <p className="analytics-note">No practice exercises for this lesson.</p>
+
+  const takeFor = (index: number) => speaking?.takes.find((t) => t.prompt_index === index) ?? null
 
   return (
     <div>
-      {speaking.map((ex, i) => <SpeakingExercise key={`s${i}`} ex={ex} />)}
+      {spoken.map(({ ex, index }) => (
+        <SpeakingExercise key={`s${index}`} ex={ex} index={index} speaking={speaking} take={takeFor(index)} />
+      ))}
       {graded.map((ex, i) => <GradedExercise key={`g${i}`} ex={ex} />)}
     </div>
   )
@@ -24,7 +51,11 @@ function Tag({ children }: { children: React.ReactNode }) {
   return <span className="ex-tag">{children}</span>
 }
 
-function SpeakingExercise({ ex }: { ex: Exercise }) {
+function SpeakingExercise({
+  ex, index, speaking, take,
+}: {
+  ex: Exercise; index: number; speaking?: SpeakingConfig; take: SpeakingTake | null
+}) {
   return (
     <div className="ex-card">
       <div className="ex-head"><Tag>🎙️ Speaking</Tag><span className="ex-prompt">{ex.prompt}</span></div>
@@ -44,6 +75,33 @@ function SpeakingExercise({ ex }: { ex: Exercise }) {
           {ex.data?.prompt_en && <p className="analytics-note" style={{ margin: '.1rem 0 0' }}>{ex.data.prompt_en}</p>}
           {ex.data?.hint && <p style={{ margin: '.4rem 0 0', fontSize: '.8rem', color: 'var(--brand)' }}>💡 {ex.data.hint}</p>}
         </div>
+      )}
+
+      {/* The student records here; the teacher hears it in the same place,
+          under the sentence it answers. Without a config — the studio preview
+          — neither appears and the card is the printout it always was. */}
+      {speaking?.enabled && speaking.role === 'student' && (
+        <SpeakingRecorder
+          lessonId={speaking.lessonId}
+          promptIndex={index}
+          existing={take}
+          cta={ex.type === 'read_aloud' ? 'Record yourself reading these' : 'Record your answer'}
+        />
+      )}
+      {speaking?.enabled && speaking.role === 'teacher' && (
+        take ? (
+          <div className="ex-speak">
+            <AudioPlayer
+              src={`/api/portal/download?kind=audio&id=${take.id}`}
+              title="Their recording"
+              meta={formatDateShort(take.created_at)}
+            />
+          </div>
+        ) : (
+          <div className="ex-speak">
+            <p className="analytics-note" style={{ margin: 0 }}>Not recorded yet.</p>
+          </div>
+        )
       )}
     </div>
   )

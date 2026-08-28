@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { FormattedContent } from './RecapView'
-import LessonExercises from './LessonExercises'
+import LessonExercises, { type SpeakingConfig } from './LessonExercises'
 import LessonCorrections from './LessonCorrections'
 import { hesitationExamples } from '@/lib/languages'
 import Flashcards from './Flashcards'
@@ -24,13 +24,19 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, files, preview,
-  language, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
+  language, speaking, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
   /** The language this student is learning — picks the hesitation examples. */
   language?: string | null
   /** File exchange, filling the Files tab. Omitted = no tab. */
   files?: React.ReactNode
+  /**
+   * Makes the speaking exercises live: the student records into them and the
+   * teacher hears the takes. Omitted — the branding studio's preview — they
+   * render read-only, exactly as they did before any of this existed.
+   */
+  speaking?: SpeakingConfig
   /**
    * Branding-studio canvas. The memo and the file drawer are the two sections
    * whose contents come from uploads rather than the recap, so a preview has
@@ -232,7 +238,7 @@ export default function LessonPageTabs({
             {/* Flashcards first: a warm-up over the lesson's own words before
                 the graded questions that use them. */}
             <Flashcards vocabulary={r.vocabulary || []} />
-            <LessonExercises exercises={r.exercises || []} />
+            <LessonExercises exercises={r.exercises || []} speaking={speaking} />
           </div>
         )
       case 'vocabWords':

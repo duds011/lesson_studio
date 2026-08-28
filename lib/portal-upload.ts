@@ -12,6 +12,12 @@ export async function uploadPortalFile(
   file: File | Blob,
   fileName: string,
   note?: string,
+  /**
+   * Set for a recap's speaking exercise: the take belongs to one exercise on
+   * the lesson, and re-recording it replaces the previous one. Left off, the
+   * audio is free-form practice for the lesson and simply stacks up.
+   */
+  promptIndex?: number,
 ) {
   const initRes = await fetch('/api/portal/upload-init', {
     method: 'POST',
@@ -30,7 +36,7 @@ export async function uploadPortalFile(
   const completeRes = await fetch('/api/portal/upload-complete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ kind, lessonId, path, fileName, contentType: (file as File).type, size: (file as any).size, note }),
+    body: JSON.stringify({ kind, lessonId, path, fileName, contentType: (file as File).type, size: (file as any).size, note, promptIndex }),
   })
   if (!completeRes.ok) throw new Error((await completeRes.json()).error || 'Could not save upload')
 }

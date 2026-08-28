@@ -6,6 +6,7 @@ const ALL_TABS = [
   { id: 'connections', label: 'Connections', calendarOnly: false },
   { id: 'languages', label: 'Languages', calendarOnly: false },
   { id: 'subscription', label: 'Subscription', calendarOnly: false },
+  { id: 'portal', label: 'Student portal', calendarOnly: false },
   { id: 'booking', label: 'Booking preference', calendarOnly: true },
   { id: 'availability', label: 'Availability', calendarOnly: true },
 ]

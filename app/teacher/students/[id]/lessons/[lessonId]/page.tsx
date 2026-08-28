@@ -39,12 +39,18 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
   // page is a preview of theirs rather than a different page about it.
   const [{ data: files }, { data: audios }, { data: profile }] = await Promise.all([
     supabase.from('lesson_attachments').select('id, file_name, created_at, content_type').eq('lesson_id', l.id).order('created_at', { ascending: false }),
-    supabase.from('student_audio_submissions').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
-    supabase.from('profiles').select('brand, full_name').eq('id', user.id).single(),
+    supabase.from('student_audio_submissions').select('id, file_name, created_at, prompt_index').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+    supabase.from('profiles').select('brand, full_name, speaking_submissions').eq('id', user.id).single(),
   ])
   const brand = resolveBrand((profile as any)?.brand)
   const teacherFirst = ((profile as any)?.full_name ?? '').split(' ')[0] || 'You'
   const memos = (files || []).filter(isMemo)
+
+  // Answers to a speaking exercise play under that exercise; free-form
+  // practice audio stays in the file drawer. Same split as the student's page.
+  const takes = (audios || []).filter((a: any) => a.prompt_index != null)
+  const practice = (audios || []).filter((a: any) => a.prompt_index == null)
+  const speakingEnabled = (profile as any)?.speaking_submissions !== false
 
   return (
     <div className="k-scope page-fade" style={{ maxWidth: 900, ...brandVars(brand) }}>
@@ -106,7 +112,8 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
         teacherFirst={teacherFirst}
         brand={brand}
         language={studentRow?.language ?? null}
-        files={<LessonExchange lessonId={l.id} role="teacher" files={files || []} audios={audios || []} />}
+        speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'teacher', takes: takes as any }}
+        files={<LessonExchange lessonId={l.id} role="teacher" files={files || []} audios={practice} />}
       />
     </div>
   )

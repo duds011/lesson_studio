@@ -39,14 +39,22 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   const admin = createAdminClient()
   const [{ data: files }, { data: audios }, { data: teacherProfile }] = await Promise.all([
     supabase.from('lesson_attachments').select('id, file_name, created_at, content_type').eq('lesson_id', l.id).order('created_at', { ascending: false }),
-    supabase.from('student_audio_submissions').select('id, file_name, created_at').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+    supabase.from('student_audio_submissions').select('id, file_name, created_at, prompt_index').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     student?.teacher_id
-      ? admin.from('profiles').select('brand, full_name').eq('id', student.teacher_id).single()
+      ? admin.from('profiles').select('brand, full_name, speaking_submissions').eq('id', student.teacher_id).single()
       : Promise.resolve({ data: null }),
   ])
   const brand = resolveBrand((teacherProfile as any)?.brand)
   const teacherFirst = ((teacherProfile as any)?.full_name ?? '').split(' ')[0] || 'Your teacher'
   const memos = (files || []).filter(isMemo)
+
+  // Two kinds of audio share the table: answers to a speaking exercise, which
+  // belong under the exercise they answer, and free-form practice for the
+  // lesson, which belongs in the file drawer. Splitting them here keeps each
+  // in one place instead of both.
+  const takes = (audios || []).filter((a: any) => a.prompt_index != null)
+  const practice = (audios || []).filter((a: any) => a.prompt_index == null)
+  const speakingEnabled = (teacherProfile as any)?.speaking_submissions !== false
 
   return (
     <div style={{ maxWidth: 900 }}>
@@ -105,7 +113,8 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         teacherFirst={teacherFirst}
         brand={brand}
         language={student?.language ?? null}
-        files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={audios || []} />}
+        speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'student', takes: takes as any }}
+        files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={practice} />}
       />
     </div>
   )

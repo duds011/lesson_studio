@@ -11,6 +11,11 @@ type Row = { id: string; file_name: string | null; created_at: string; content_t
  *  - Teacher shares files (presentations, PDFs) → student downloads
  *  - Student submits audio recordings → teacher listens
  *
+ * The audio here is free-form practice for the lesson as a whole. Answers to
+ * the recap's speaking exercises are recorded and heard on the Practice tab,
+ * under the exercise they answer, and the pages hand them to LessonExercises
+ * rather than to this list — each take belongs in one place, not two.
+ *
  * Teacher voice memos are attachments too, but they belong in the recap's page
  * header rather than a file drawer — see MemoPlayer. isMemo keeps them out.
  */
@@ -63,7 +68,7 @@ export default function LessonExchange({
         </div>
 
         <div className="lesson-block" style={{ padding: 14 }}>
-          <span style={{ fontWeight: 700, fontSize: 13 }}>🎙️ Practice audio <span style={{ color: 'var(--muted)', fontWeight: 400 }}>— record yourself, your teacher hears it</span></span>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>🎙️ Practice audio <span style={{ color: 'var(--muted)', fontWeight: 400 }}>— anything you want your teacher to hear</span></span>
           <div style={{ marginTop: 10 }}><StudentAudioUpload lessonId={lessonId} /></div>
           {audioList}
         </div>
@@ -86,7 +91,7 @@ export default function LessonExchange({
 
       <div className="lesson-block">
         <h3 style={{ margin: '0 0 4px' }}>🎙️ Student audio submissions</h3>
-        <p className="analytics-note" style={{ margin: '0 0 14px' }}>Recordings this student submitted for the lesson.</p>
+        <p className="analytics-note" style={{ margin: '0 0 14px' }}>Free practice this student recorded for the lesson. Their answers to the speaking exercises are on the Practice tab.</p>
         {audios.length === 0 ? <p className="analytics-note" style={{ margin: 0 }}>No audio submitted yet.</p> : audioList}
       </div>
     </div>
