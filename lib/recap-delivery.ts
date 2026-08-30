@@ -12,6 +12,7 @@ import { mapEventToStudent } from '@/lib/lesson-link'
 import { pgSafeJson } from '@/lib/pg-json'
 import { resolveBrand } from '@/lib/brand'
 import { isEmailConfigured, sendEmail } from '@/lib/email'
+import { PARTS_OF_SPEECH } from '@/lib/openai'
 import { recapReadyHtml, recapReadySubject, recapReadyText } from '@/lib/emails/recap-ready'
 
 export type DeliveryResult =
@@ -114,6 +115,10 @@ export async function deliverRecapToStudent(eventId: string, rec: any): Promise<
       explanation: detail?.explanation ? String(detail.explanation).trim() : null,
       example_sentence: detail?.example_sentence ? String(detail.example_sentence).trim() : null,
       jlpt_level: levelOf.get(dedupe) ?? (level ? String(level).trim() : null),
+      // Only ever what the model actually returned, and only from the closed
+      // set — a word tagged with something invented would fail the column's
+      // check constraint and take the whole vocabulary write down with it.
+      part_of_speech: PARTS_OF_SPEECH.includes(detail?.part_of_speech) ? detail.part_of_speech : null,
       sort_order: rows.length,
       is_key: isKey,
     })

@@ -8,6 +8,10 @@ import { pgSafeJson } from '@/lib/pg-json'
 
 const OPENAI_MODEL = 'gpt-4.1'
 
+/** The closed set of word kinds. The practice decks are built from these. */
+export const PARTS_OF_SPEECH = ['noun', 'verb', 'adjective', 'adverb', 'phrase', 'other'] as const
+export type PartOfSpeech = (typeof PARTS_OF_SPEECH)[number]
+
 export type VocabItem = {
   word: string
   reading: string
@@ -15,6 +19,15 @@ export type VocabItem = {
   explanation: string
   jlpt_level: 'N5' | 'N4' | 'N3' | 'N2' | 'N1' | string
   example_sentence: string
+  /**
+   * What kind of word it is, for the practice decks. Asked for here rather
+   * than worked out later: this model has the word, its definition and the
+   * sentence it came from. Deriving it afterwards from the word alone was
+   * wrong about half the time — it called `itinéraire` a verb and
+   * `initiative` an adjective. Optional, so a recap written before this field
+   * existed still parses; those words sit in the untagged deck.
+   */
+  part_of_speech?: PartOfSpeech
 }
 export type Exercise = { type: string; prompt: string; data: any }
 export type Section = { title: string; content: string }
@@ -189,7 +202,7 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "audio_script": "[voice memo script — follow AUDIO SCRIPT rules below]",
   "vocab_total_count": [integer — total distinct vocabulary items in this lesson],
   "vocab_level_distribution": {"N5": [count], "N4": [count], "N3": [count], "N2": [count], "N1": [count]},
-  "vocabulary": [{"word": "[Japanese]", "reading": "[romaji]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[N5/N4/N3/N2/N1]", "example_sentence": "[Japanese sentence]"}],
+  "vocabulary": [{"word": "[Japanese]", "reading": "[romaji]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[N5/N4/N3/N2/N1]", "example_sentence": "[Japanese sentence]", "part_of_speech": "[noun|verb|adjective|adverb|phrase|other]"}],
   "vocabulary_all": [{"word": "[Japanese]", "level": "[N5/N4/N3/N2/N1]"}],
   "homework": [],
   "exercises": [{"type": "[speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
@@ -593,7 +606,7 @@ Return this exact structure. Replace ALL bracketed placeholders with calculated 
   "audio_script": "[voice memo script — follow AUDIO SCRIPT rules below]",
   "vocab_total_count": [integer — total distinct vocabulary items in this lesson],
   "vocab_level_distribution": {"A1": [count], "A2": [count], "B1": [count], "B2": [count], "C1": [count], "C2": [count]},
-  "vocabulary": [{"word": "[{{LANGUAGE}}]", "reading": "[pronunciation guide]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[{{LANGUAGE}} sentence]"}],
+  "vocabulary": [{"word": "[{{LANGUAGE}}]", "reading": "[pronunciation guide]", "definition": "[English.]", "explanation": "[1-2 warm sentences]", "jlpt_level": "[A1/A2/B1/B2/C1/C2]", "example_sentence": "[{{LANGUAGE}} sentence]", "part_of_speech": "[noun|verb|adjective|adverb|phrase|other]"}],
   "vocabulary_all": [{"word": "[{{LANGUAGE}}]", "level": "[A1/A2/B1/B2/C1/C2]"}],
   "homework": [],
   "exercises": [{"type": "[speak|multiple_choice|fill_blank]", "prompt": "[short instruction]", "data": {}}],
@@ -955,4 +968,78 @@ export function cleanStrengths(raw: unknown): Strength[] {
     out.push({ said, note })
   }
   return out.slice(0, 6)
+}
+
+/**
+ * Tag existing vocabulary with what kind of word it is.
+ *
+ * New recaps carry `part_of_speech` from generation, but everything published
+ * before that field existed has none, and the feature that needs it — the
+ * practice decks — would be empty until every student had a fresh lesson. This
+ * is the catch-up pass, run once per untagged batch.
+ *
+ * Deliberately not a heuristic: guessing from the word alone got about half of
+ * a real student's list wrong, calling `itinéraire` a verb and `initiative` an
+ * adjective. The definition and the example sentence are what make it decidable,
+ * so both go in the prompt.
+ */
+export async function tagPartsOfSpeech(
+  language: string,
+  words: { id: string; word: string; definition?: string | null; example_sentence?: string | null }[],
+): Promise<Record<string, PartOfSpeech>> {
+  const key = process.env.OPENAI_API_KEY
+  if (!key) throw new Error('OPENAI_API_KEY is not set')
+  if (words.length === 0) return {}
+
+  const list = words
+    .map((w, i) => {
+      const bits = [`${i + 1}. ${w.word}`]
+      if (w.definition) bits.push(`   meaning: ${w.definition}`)
+      if (w.example_sentence) bits.push(`   used as: ${w.example_sentence}`)
+      return bits.join('\n')
+    })
+    .join('\n')
+
+  const content = [
+    `These are ${language} vocabulary entries a student met in their lessons.`,
+    `For each one, say what kind of word it is.`,
+    ``,
+    `Answer with exactly one of: ${PARTS_OF_SPEECH.join(', ')}.`,
+    `- "phrase" for anything that is more than one word and works as a set expression`,
+    `  ("faire des courses", "combien ça coûte", "je voudrais").`,
+    `- "other" for grammar terms and anything that fits nothing else`,
+    `  ("le gérondif", "て-form").`,
+    `- Judge the entry as the student met it. A noun written with its article`,
+    `  ("la charcuterie") is still a noun, not a phrase.`,
+    ``,
+    `Return JSON: {"items": [{"n": 1, "pos": "noun"}, ...]} with one entry per`,
+    `number, in order, and nothing else.`,
+    ``,
+    list,
+  ].join('\n')
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      max_tokens: 4000,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content }],
+    }),
+  })
+  if (!res.ok) throw new Error(`OpenAI failed (${res.status}): ${await res.text()}`)
+
+  const parsed = JSON.parse((await res.json()).choices[0].message.content)
+  const out: Record<string, PartOfSpeech> = {}
+  for (const item of (parsed?.items ?? [])) {
+    const idx = Number(item?.n) - 1
+    const pos = String(item?.pos ?? '').toLowerCase()
+    // Index and value both checked: a model that renumbers or invents a
+    // category must not write a row that the column's constraint will reject.
+    if (words[idx] && (PARTS_OF_SPEECH as readonly string[]).includes(pos)) {
+      out[words[idx].id] = pos as PartOfSpeech
+    }
+  }
+  return out
 }
