@@ -27,6 +27,10 @@ export type DashboardData = {
   avgScore: number | null
   scoreDelta: number | null
   latestTalk: number | null
+  /** Practice decks, sized and filtered — empty ones never reach here. */
+  decks: { id: string; label: string; sub: string; tone: string; total: number; due: number; known: number }[]
+  cardTotal: number
+  cardDue: number
   /** Talk share in the earliest scored lesson — the gauge's starting mark. */
   firstTalk: number | null
   talkDelta: number | null
@@ -113,6 +117,8 @@ export const DASHBOARD_LAYOUT: { id: BlockId; w: number }[] = [
   { id: 'speaking', w: 12 },
   { id: 'progress', w: 12 },
   { id: 'vocab', w: 12 },
+  // Practice sits with the words it is made of.
+  { id: 'flashcards', w: 12 },
   { id: 'files', w: 12 },
   { id: 'tests', w: 12 },
 ]
@@ -138,6 +144,7 @@ export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): bo
         || (d.latestTalk != null && !hid.includes('share'))
       )
     }
+    case 'flashcards': return brand.showFlashcards && d.decks.length > 0
     case 'files': return brand.showFiles && d.files.length > 0
     default: return false
   }
@@ -438,6 +445,35 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
                 {node}
               </div>
             ))}
+          </div>
+        </>
+      )
+    }
+
+    case 'flashcards': {
+      // Decks are already filtered to the ones with cards, so a student who has
+      // only ever met nouns sees one deck rather than five empty boxes.
+      const label = d.cardDue === d.cardTotal ? 'all new' : `${d.cardDue} ready`
+      return (
+        <>
+          <div className="k-sec-head"><h2>Practise your words</h2><span className="k-link">{label}</span></div>
+          <div className="k-card k-decks-card">
+            <p className="k-decks-sub">
+              Every word from your lessons, split by what kind of word it is.
+              Cards you get right come back later; ones you miss come back today.
+            </p>
+            <div className="k-decks">
+              {d.decks.map((deck) => (
+                <Go key={deck.id} href={`/student/practice?deck=${deck.id}`} className={`k-deck ${deck.tone}`} preview={preview}>
+                  <span className="k-deck-n">{deck.total}</span>
+                  <span className="k-deck-k">{deck.label}</span>
+                  <span className="k-deck-s">{deck.due > 0 ? `${deck.due} to review` : 'all caught up'}</span>
+                </Go>
+              ))}
+            </div>
+            <Go href="/student/practice" className="k-deck-all" preview={preview}>
+              Practise everything<span>{d.cardTotal} cards →</span>
+            </Go>
           </div>
         </>
       )

@@ -17,7 +17,7 @@ export type PropStyle = 'orbs' | 'geometric' | 'minimal' | 'none'
 /** Blocks a teacher can arrange on the student dashboard. */
 export const DASHBOARD_BLOCKS = [
   'stats', 'lessons', 'progress', 'vocab', 'vocabTotals',
-  'milestone', 'scores', 'tests', 'speaking', 'files',
+  'milestone', 'scores', 'tests', 'speaking', 'files', 'flashcards',
 ] as const
 export type BlockId = (typeof DASHBOARD_BLOCKS)[number]
 
@@ -32,6 +32,7 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   tests: 'Practice tests',
   speaking: 'Speaking habits',
   files: 'Lesson files',
+  flashcards: 'Flashcards',
 }
 
 /** The student dashboard is tabbed; each block belongs to one tab. */
@@ -41,7 +42,7 @@ export type DashTab = (typeof DASH_TABS)[number]
 export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
   stats: 'Overview', scores: 'Overview', milestone: 'Overview', vocabTotals: 'Overview',
   lessons: 'Lessons',
-  progress: 'Progress', vocab: 'Progress', speaking: 'Progress',
+  progress: 'Progress', vocab: 'Progress', speaking: 'Progress', flashcards: 'Progress',
   files: 'Files',
   tests: 'Tests',
 }
@@ -82,6 +83,7 @@ export const BLOCK_TOGGLE: Record<BlockId, keyof Brand> = {
   tests: 'showTests',
   speaking: 'showSpeaking',
   files: 'showFiles',
+  flashcards: 'showFlashcards',
 }
 
 /**
@@ -362,6 +364,7 @@ export type Brand = {
   showTests: boolean
   showSpeaking: boolean
   showFiles: boolean
+  showFlashcards: boolean
   /** Speaking-measured tiles the teacher has taken off the recap. */
   hiddenMetrics: RecapMetricId[]
   /** Stat cards taken off the dashboard's Overview. */
@@ -404,6 +407,7 @@ export const DEFAULT_BRAND: Brand = {
   showTests: true,
   showSpeaking: true,
   showFiles: true,
+  showFlashcards: true,
   hiddenMetrics: [],
   hiddenStats: [],
   hiddenSpeaking: [],
@@ -541,6 +545,7 @@ export function resolveBrand(raw: unknown): Brand {
     showTests: true,
     showSpeaking: bool(b.showSpeaking, DEFAULT_BRAND.showSpeaking),
     showFiles: true,
+  showFlashcards: true,
     hiddenMetrics: Array.isArray(b.hiddenMetrics)
       ? (b.hiddenMetrics as unknown[]).filter((x): x is RecapMetricId => RECAP_METRICS.some((mm) => mm.id === x))
       : [],

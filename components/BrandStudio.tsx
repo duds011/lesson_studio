@@ -32,6 +32,7 @@ const BLOCK_HINTS: Record<BlockId, string> = {
   progress: 'Score, talk-time and vocabulary trends',
   vocabTotals: 'How much vocabulary they have picked up',
   vocab: 'Every word, and the lesson it came from',
+  flashcards: 'Practice decks, split by kind of word',
   tests: 'Tests you publish to them',
   speaking: 'Pace and thinking time',
   files: 'Every file you share, in one place',
@@ -74,6 +75,14 @@ const SAMPLE: DashboardData = {
   scoreDelta: 1.9,
   latestTalk: 41,
   firstTalk: 30,
+  decks: [
+    { id: 'noun', label: 'Nouns', sub: 'things and places', tone: 'blue', total: 33, due: 12, known: 8 },
+    { id: 'verb', label: 'Verbs', sub: 'actions', tone: 'green', total: 16, due: 5, known: 4 },
+    { id: 'phrase', label: 'Phrases', sub: 'whole expressions', tone: 'purple', total: 18, due: 18, known: 0 },
+    { id: 'adjective', label: 'Adjectives', sub: 'describing words', tone: 'amber', total: 6, due: 2, known: 1 },
+  ],
+  cardTotal: 73,
+  cardDue: 37,
   talkDelta: 8,
   pillarLessons: [
     { id: 's3', number: 12, title: 'Contrasting ideas with けど', meta: '12th lesson · 2 Aug', score: 8.3, tag: 'Lesson 12', desc: 'Joining two ideas in one sentence, and softening a disagreement politely.' },

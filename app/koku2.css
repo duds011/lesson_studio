@@ -1942,3 +1942,74 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
   .k-climb-line{margin:8px auto 9px;max-width:22ch}
   .k-climb-sub{margin-bottom:13px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRACTICE — decks on the dashboard, and the cards themselves
+   Decks come from the part of speech the recap records; the block
+   only ever shows the ones with cards in them.
+   ═══════════════════════════════════════════════════════════════════ */
+.k-decks-card{display:block}
+.k-decks-sub{margin:0 0 14px;font-size:12px;color:var(--muted);line-height:1.55;max-width:58ch}
+.k-decks{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px}
+.k-deck{display:block;border-radius:var(--r-md);padding:15px 16px 16px;transition:.16s ease}
+.k-deck:hover{transform:translateY(-2px)}
+.k-deck.blue{background:#e9f1fd}
+.k-deck.green{background:#e9f6ef}
+.k-deck.amber{background:#fdf3e1}
+.k-deck.teal{background:#e6f4f3}
+.k-deck.purple{background:#f4ecfd}
+.k-deck.slate{background:#eef1f6}
+.k-deck-n{display:block;font-size:28px;font-weight:800;letter-spacing:-.045em;line-height:1}
+.k-deck.blue .k-deck-n{color:#0a4a99}
+.k-deck.green .k-deck-n{color:#0f5738}
+.k-deck.amber .k-deck-n{color:#6b4507}
+.k-deck.teal .k-deck-n{color:#0b6a63}
+.k-deck.purple .k-deck-n{color:#5b2a90}
+.k-deck.slate .k-deck-n{color:#2c3b54}
+.k-deck-k{display:block;font-size:13px;font-weight:800;letter-spacing:-.015em;margin-top:8px}
+.k-deck-s{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
+.k-deck-all{display:flex;align-items:center;gap:10px;margin-top:11px;background:var(--brand);
+  color:#fff;border-radius:var(--r-md);padding:14px 17px;font-size:13.5px;font-weight:800;transition:.16s ease}
+.k-deck-all:hover{background:var(--forest-deep)}
+.k-deck-all span{margin-left:auto;font-size:12px;font-weight:700;opacity:.82}
+
+/* — the session — */
+.k-prac{display:flex;flex-direction:column;gap:12px}
+.k-prac-top{display:flex;align-items:flex-start;gap:14px}
+.k-prac-title{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.04em;margin:0;line-height:1.1}
+.k-prac-sub{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
+.k-prac-count{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;padding-top:6px}
+.k-prac-bar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.k-prac-bar i{display:block;height:100%;background:var(--brand);border-radius:2px;transition:width .25s ease}
+.k-prac-card{position:relative;width:100%;min-height:min(52vh,380px);background:var(--surface);
+  border-radius:var(--r-xl);box-shadow:var(--shadow-soft);padding:30px 24px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:0;
+  border:0;cursor:pointer;font:inherit;color:inherit}
+.k-prac-pos{position:absolute;top:16px;left:18px;font-size:9.5px;font-weight:800;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.k-prac-lvl{position:absolute;top:14px;right:16px;font-size:10px;font-weight:800;letter-spacing:.04em;
+  background:var(--brand-soft);color:var(--brand);padding:4px 9px;border-radius:999px}
+.k-prac-word{font-size:clamp(26px,5.5vw,34px);font-weight:800;letter-spacing:-.04em;line-height:1.18;
+  text-wrap:balance;max-width:18ch}
+.k-prac-reading{font-size:13px;color:var(--muted);margin-top:6px}
+.k-prac-tap{margin-top:16px;font-size:11px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted)}
+.k-prac-def{font-size:16px;font-weight:600;line-height:1.45;margin-top:14px;max-width:28ch}
+.k-prac-eg{font-size:13.5px;font-style:italic;line-height:1.5;color:#4b5c70;margin-top:16px;
+  padding-top:14px;border-top:1px solid var(--line);max-width:30ch}
+.k-prac-from{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--line-strong);margin-top:14px}
+.k-prac-acts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.k-prac-act{border-radius:var(--r-md);padding:15px;text-align:center;font-size:13.5px;
+  font-weight:800;border:0;cursor:pointer;font-family:inherit;transition:.16s ease}
+.k-prac-act.again{background:var(--surface);color:var(--muted);box-shadow:var(--shadow-soft)}
+.k-prac-act.again:hover{color:var(--ink)}
+.k-prac-act.knew{background:var(--green);color:#fff}
+.k-prac-act.knew:hover{filter:brightness(1.06)}
+.k-prac-hint{margin:0;text-align:center;font-size:11.5px;color:var(--muted)}
+.k-prac-empty{text-align:center;padding:36px 24px}
+.k-prac-empty h2{font-size:20px;letter-spacing:-.03em;margin:0 0 8px;font-weight:800}
+.k-prac-tick{display:block;width:46px;height:46px;margin:0 auto 14px;border-radius:50%;
+  background:var(--green-soft);color:var(--green);font-size:20px;font-weight:800;line-height:46px}
+.k-prac-empty .k-prac-acts{margin-top:18px;justify-content:center}

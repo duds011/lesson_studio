@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatDateShort, lessonBlurb, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import { PillarLesson } from '@/components/portal/LessonPillar'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from '@/components/portal/DashboardBlocks'
+import { DECKS, isDeckId, isDue, TOP_BOX } from '@/lib/flashcards'
 import DashboardTabs from '@/components/portal/DashboardTabs'
 import { DASH_BLOCK_TAB, DASH_TABS, resolveBrand, type DashTab } from '@/lib/brand'
 
@@ -106,6 +107,44 @@ export default async function StudentDashboard() {
     .from('vocabulary_items')
     .select('word, reading, definition, jlpt_level, is_key, lessons!inner ( lesson_number, lesson_date )')
     .order('sort_order', { ascending: true })
+
+  /**
+   * The practice decks: every key word this student has met, by kind, and how
+   * many are due. Key words only — they are the ones carrying a definition and
+   * an example, which is what makes a card. Words the recap never tagged come
+   * back as null and land in "everything" rather than a wrong deck.
+   */
+  const { data: cardRows } = await supabase
+    .from('vocabulary_items')
+    .select('id, part_of_speech, lessons!inner ( student_id )')
+    .eq('is_key', true)
+  const { data: reviewRows } = await supabase
+    .from('flashcard_reviews')
+    .select('vocabulary_item_id, due_at, box')
+    .eq('student_id', student.id)
+
+  const dueBy = new Map<string, string>()
+  const boxBy = new Map<string, number>()
+  for (const r of (reviewRows ?? []) as any[]) {
+    dueBy.set(r.vocabulary_item_id, r.due_at)
+    boxBy.set(r.vocabulary_item_id, r.box)
+  }
+  const nowMs = Date.now()
+  const deckTally = new Map<string, { total: number; due: number; known: number }>()
+  let cardTotal = 0
+  let cardDue = 0
+  for (const c of (cardRows ?? []) as any[]) {
+    const key = isDeckId(c.part_of_speech) ? c.part_of_speech : 'other'
+    const t = deckTally.get(key) ?? { total: 0, due: 0, known: 0 }
+    t.total++
+    cardTotal++
+    if (isDue(dueBy.has(c.id) ? { due_at: dueBy.get(c.id) } : undefined, nowMs)) { t.due++; cardDue++ }
+    if ((boxBy.get(c.id) ?? 0) >= TOP_BOX) t.known++
+    deckTally.set(key, t)
+  }
+  const decks = DECKS
+    .map((d) => ({ ...d, ...(deckTally.get(d.id) ?? { total: 0, due: 0, known: 0 }) }))
+    .filter((d) => d.total > 0)
 
   // Teacher-shared files across every lesson — the Files tab. RLS only returns
   // rows for this student.
@@ -227,6 +266,9 @@ export default async function StudentDashboard() {
     latestTalk,
     firstTalk,
     talkDelta,
+    decks,
+    cardTotal,
+    cardDue,
     pillarLessons,
     progressLessons: rows.map((l) => {
       const s = summaryOf(l)
