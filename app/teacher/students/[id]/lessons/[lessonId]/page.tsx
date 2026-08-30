@@ -52,8 +52,9 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
   const practice = (audios || []).filter((a: any) => a.prompt_index == null)
   const speakingEnabled = (profile as any)?.speaking_submissions !== false
 
+  // 1180 to match the student's copy — this page is a preview of theirs.
   return (
-    <div className="k-scope page-fade" style={{ maxWidth: 900, ...brandVars(brand) }}>
+    <div className="k-scope page-fade" style={{ maxWidth: 1180, ...brandVars(brand) }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         <Link href={`/teacher/students/${params.id}`} className="btn btn-ghost btn-sm">← {studentName || 'Student'}</Link>
         <LessonAdminActions lessonId={l.id} studentId={params.id} sourceEventId={l.source_event_id} />

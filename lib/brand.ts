@@ -236,6 +236,38 @@ export type Placement<T extends string = BlockId> = { id: T; w: number }
 
 /** The recap page's fixed arrangement. The dashboard's is DASHBOARD_LAYOUT,
  *  next to the components it places. */
+/**
+ * The recap reads as one scroll, in movements. Tabs are gone: a student who
+ * had to find the corrections behind the second tab mostly never did.
+ *
+ * Each movement is named by the progress strip as you reach it, and carries
+ * its own tint. The order is the order a lesson matters in — how it went,
+ * what was good, what to fix, what was covered, then the things to go and do.
+ */
+export const LESSON_MOVEMENTS = [
+  { id: 'spoke', label: 'How you spoke' },
+  { id: 'won', label: 'What you nailed' },
+  { id: 'fix', label: 'What to fix' },
+  { id: 'covered', label: 'What we covered' },
+  { id: 'words', label: 'Words from today' },
+  { id: 'practice', label: 'Practice' },
+  { id: 'files', label: 'Files & audio' },
+] as const
+export type MovementId = (typeof LESSON_MOVEMENTS)[number]['id']
+
+/**
+ * Where each old tab now lands. The branding studio still thinks in tabs — it
+ * jumps the preview to the tab a section belongs to — so this keeps every one
+ * of those jumps pointing at something without touching the studio.
+ */
+export const TAB_MOVEMENT: Record<LessonTab, MovementId> = {
+  Progress: 'spoke',
+  Lesson: 'fix',
+  Practice: 'practice',
+  Vocabulary: 'words',
+  Files: 'files',
+}
+
 export const LESSON_LAYOUT: Placement<LessonBlockId>[] = [
   // No 'memo' entry: the voice memo lives in the page header now, next to the
   // date — it is the teacher speaking, not a section of the write-up. The id

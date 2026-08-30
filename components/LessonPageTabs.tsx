@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { FormattedContent } from './RecapView'
+import RecapSections from './RecapSections'
 import LessonExercises, { type SpeakingConfig } from './LessonExercises'
 import LessonCorrections from './LessonCorrections'
 import { hesitationExamples } from '@/lib/languages'
 import Flashcards from './Flashcards'
 import CountUp from './portal/CountUp'
 import {
-  DEFAULT_BRAND, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE, LESSON_LAYOUT, LESSON_LOCKED,
-  LESSON_TABS, RECAP_METRICS,
-  type Brand, type LessonBlockId, type LessonTab, type RecapMetricId,
+  DEFAULT_BRAND, LESSON_BLOCK_LABELS, LESSON_BLOCK_TOGGLE, LESSON_LAYOUT, LESSON_LOCKED,
+  LESSON_MOVEMENTS, RECAP_METRICS, TAB_MOVEMENT,
+  type Brand, type LessonBlockId, type LessonTab, type MovementId, type RecapMetricId,
 } from '@/lib/brand'
 
 type Recap = any
@@ -184,20 +185,10 @@ export default function LessonPageTabs({
         )
       case 'sections':
         if (lessonSections.length === 0) return null
-        // .lesson-stack, not a bare div: the recap preview gives every direct
-        // child of a flow cell the full row height, and an unnamed wrapper
-        // passed that down to each note inside it — the first note grew to fill
-        // the tab and pushed the rest off the bottom.
-        return (
-          <div className="lesson-stack">
-            {lessonSections.map((s, i) => (
-              <div className="lesson-block" key={i}>
-                <h3>{s.title}</h3>
-                <FormattedContent content={s.content} />
-              </div>
-            ))}
-          </div>
-        )
+        // Was a stack of complete write-ups — the longest thing in the recap
+        // and the part students stopped reading. Now a contents list that
+        // opens one part at a time; see RecapSections.
+        return <RecapSections sections={lessonSections} />
       case 'memo':
         // The memo lives in the page header now, beside the date — and the
         // script it was read from is a recording aid, not recap content. It
@@ -262,54 +253,195 @@ export default function LessonPageTabs({
   // Our arrangement, block by block. The teacher styles the recap; they do not
   // rearrange it — see LESSON_LAYOUT in lib/brand.
   //
-  // Rendered up front rather than per tab so a tab with nothing in it can be
-  // left off the bar entirely: a student whose teacher shared no files should
-  // not be offered a Files tab that opens onto an apology.
+  // Built up front so a movement with nothing in it drops out entirely: a
+  // student whose teacher shared no files is not shown an empty Files heading.
   // Locked sections ignore their stored toggle: they are the recap, and a
   // brand saved before the lock existed may still carry a false for them.
   const built = LESSON_LAYOUT
     .filter(({ id }) => LESSON_LOCKED.has(id) || brand[LESSON_BLOCK_TOGGLE[id]] !== false)
-    .map(({ id, w }) => ({ id, w, tab: LESSON_BLOCK_TAB[id], content: section(id) }))
+    .map(({ id, w }) => ({ id, w, content: section(id) }))
     .filter((b) => b.content)
 
-  const tabs = LESSON_TABS.filter((t) => built.some((b) => b.tab === t))
-  // The remembered tab can vanish — a memo deleted, the last file removed.
-  const active = tabs.includes(tab) ? tab : tabs[0]
-  if (!active) return null
+  // ── the recap, as one scroll in movements ───────────────────────────
+  // Tabs are gone. The corrections — the most useful thing in any recap —
+  // sat as a card behind the second tab, and most students never opened it.
+  const byId = new Map(built.map((b) => [b.id, b] as const))
+
+  /** One arranged block, carrying the studio's remove chrome where it applies. */
+  const cell = (b: { id: LessonBlockId; w: number; content: React.ReactNode }) => {
+    // Locked sections get no ✕ even in the studio — the notes, the practice
+    // and the files are the recap, not options on it.
+    const removable = Boolean(onRemoveSection) && !LESSON_LOCKED.has(b.id)
+    return (
+      <div key={b.id} style={{ ['--w' as any]: b.w }} className={removable ? 'k-zap' : undefined}>
+        {removable && (
+          <>
+            <span className="k-zap-tag" aria-hidden>{LESSON_BLOCK_LABELS[b.id]}</span>
+            <button
+              type="button"
+              className="k-zap-x"
+              aria-label={`Remove ${LESSON_BLOCK_LABELS[b.id]}`}
+              title={`Remove ${LESSON_BLOCK_LABELS[b.id]}`}
+              onClick={() => onRemoveSection!(b.id)}
+            >✕</button>
+          </>
+        )}
+        {b.content}
+      </div>
+    )
+  }
+
+  const flowOf = (ids: LessonBlockId[]) => {
+    const cells = ids.map((id) => byId.get(id)).filter(Boolean)
+    return cells.length > 0 ? <div className="k-flow">{cells.map((b) => cell(b!))}</div> : null
+  }
+
+  const moves: { id: MovementId; label: string; count: string; node: React.ReactNode }[] = []
+  const push = (id: MovementId, count: string, node: React.ReactNode) => {
+    if (node) moves.push({ id, label: LESSON_MOVEMENTS.find((x) => x.id === id)!.label, count, node })
+  }
+
+  const shownMetrics = RECAP_METRICS.filter(({ id }) => !(brand.hiddenMetrics ?? []).includes(id))
+  push('spoke', `${shownMetrics.length} measurements`, flowOf(['balance', 'score', 'grammar', 'metrics']))
+
+  // The one block that becomes two movements. What went well and what to fix
+  // are read at different moments, and LessonCorrections already renders
+  // either half on its own — with the changed words still marked.
+  if (byId.has('corrections')) {
+    const zap = (node: React.ReactNode) =>
+      onRemoveSection ? (
+        <div className="k-zap">
+          <span className="k-zap-tag" aria-hidden>{LESSON_BLOCK_LABELS.corrections}</span>
+          <button
+            type="button"
+            className="k-zap-x"
+            aria-label={`Remove ${LESSON_BLOCK_LABELS.corrections}`}
+            title={`Remove ${LESSON_BLOCK_LABELS.corrections}`}
+            onClick={() => onRemoveSection('corrections')}
+          >✕</button>
+          {node}
+        </div>
+      ) : node
+
+    if (didWell.length > 0) {
+      push('won', `${didWell.length} ${didWell.length === 1 ? 'thing' : 'things'}`,
+        <LessonCorrections corrections={[]} didWell={didWell} who={studentFirst} />)
+    }
+    if (corrections.length > 0) {
+      push('fix', `${corrections.length} ${corrections.length === 1 ? 'correction' : 'corrections'}`,
+        zap(<LessonCorrections corrections={corrections} didWell={[]} who={studentFirst} />))
+    } else if (didWell.length === 0 && legacyCorrections) {
+      push('fix', '', zap(<FormattedContent content={legacyCorrections.content} />))
+    }
+  }
+
+  push('covered', `${lessonSections.length} parts`, flowOf(['sections']))
+  push('words', `${(r.vocabulary || []).length} words`, flowOf(['vocabWords']))
+  push('practice', `${(r.exercises || []).length} exercises`, flowOf(['homework', 'exercises']))
+  push('files', '', flowOf(['files']))
+
+  // ── where you are in it ─────────────────────────────────────────────
+  const flowRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLSpanElement>(null)
+  const fillRef = useRef<HTMLSpanElement>(null)
+  const mvRefs = useRef<(HTMLElement | null)[]>([])
+  const [active, setActive] = useState(0)
+
+  const track = useCallback(() => {
+    const flow = flowRef.current
+    if (!flow) return
+    const box = flow.getBoundingClientRect()
+    const vh = window.innerHeight || 1
+    // Progress through the write-up itself, 0 to 1 — measured on the flow, so
+    // the page header above it and anything below it are not counted.
+    const span = Math.max(box.height - vh, 1)
+    const pct = Math.min(1, Math.max(-box.top, 0) / span)
+    if (barRef.current) barRef.current.style.width = `${pct * 100}%`
+    if (fillRef.current) fillRef.current.style.height = `${pct * 100}%`
+    // Whichever movement has crossed the top of the viewport is the one being
+    // read; the last such wins.
+    let best = 0
+    mvRefs.current.forEach((el, i) => { if (el && el.getBoundingClientRect().top <= 90) best = i })
+    setActive(best)
+  }, [])
+
+  useEffect(() => {
+    // The studio's preview is a scaled panel, not the page — window scroll
+    // says nothing about it, so it rests on the first movement.
+    if (preview) return
+    track()
+    window.addEventListener('scroll', track, { passive: true })
+    window.addEventListener('resize', track)
+    return () => {
+      window.removeEventListener('scroll', track)
+      window.removeEventListener('resize', track)
+    }
+  }, [preview, track])
+
+  const jump = useCallback((i: number) => {
+    const el = mvRefs.current[i]
+    if (!el) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 62, behavior: reduce ? 'auto' : 'smooth' })
+  }, [])
+
+  // The studio still thinks in tabs and jumps its preview to the one a section
+  // belongs to. Mapping that to a movement keeps every one of those jumps
+  // landing on something without the studio having to change.
+  const moveIds = moves.map((mv) => mv.id).join(',')
+  useEffect(() => {
+    if (!controlledTab || preview) return
+    const i = moveIds.split(',').indexOf(TAB_MOVEMENT[controlledTab])
+    if (i >= 0) jump(i)
+  }, [controlledTab, preview, moveIds, jump])
+
+  if (moves.length === 0) return null
+  const now = moves[Math.min(active, moves.length - 1)]
 
   return (
-    <div>
-      <div className="tabs" role="tablist" aria-label="Lesson recap sections">
-        {tabs.map((t) => (
-          <button key={t} role="tab" aria-selected={active === t} className={`tab ${active === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{t}</button>
-        ))}
+    <div className="kr">
+      {/* Narrow: a hairline that fills, naming the movement underneath it. */}
+      <div className="kr-strip">
+        <div className="kr-bar"><span ref={barRef} /></div>
+        <div className="kr-now">
+          <span className="kr-name">{now.label}</span>
+          {now.count && <span className="kr-count">{now.count}</span>}
+        </div>
       </div>
 
-      {/* Keyed on the tab so switching remounts the panel and its cards run
-          their entrance again — the page answers the click. */}
-      <div className="k-flow" role="tabpanel" key={active}>
-        {built.filter((b) => b.tab === active).map(({ id, w, content }) => {
-          // Locked sections get no ✕ even in the studio — the notes, the
-          // practice and the files are the recap, not options on it.
-          const removable = Boolean(onRemoveSection) && !LESSON_LOCKED.has(id)
-          return (
-            <div key={id} style={{ ['--w' as any]: w }} className={removable ? 'k-zap' : undefined}>
-              {removable && (
-                <>
-                  <span className="k-zap-tag" aria-hidden>{LESSON_BLOCK_LABELS[id]}</span>
-                  <button
-                    type="button"
-                    className="k-zap-x"
-                    aria-label={`Remove ${LESSON_BLOCK_LABELS[id]}`}
-                    title={`Remove ${LESSON_BLOCK_LABELS[id]}`}
-                    onClick={() => onRemoveSection!(id)}
-                  >✕</button>
-                </>
-              )}
-              {content}
-            </div>
-          )
-        })}
+      <div className="kr-body">
+        {/* Wide: the same thing unrolled, so all of it is visible at once. */}
+        <nav className="kr-rail" aria-label="Lesson sections">
+          <p className="kr-rail-h">This lesson</p>
+          <span className="kr-rail-track"><span className="kr-rail-fill" ref={fillRef} /></span>
+          {moves.map((mv, i) => (
+            <button
+              key={mv.id}
+              type="button"
+              className={`kr-r${i === active ? ' on' : ''}`}
+              aria-current={i === active ? 'true' : undefined}
+              onClick={() => jump(i)}
+            >
+              <span className="kr-pip" aria-hidden />
+              <span className="kr-lab">{mv.label}</span>
+              {mv.count && <span className="kr-cnt">{mv.count}</span>}
+            </button>
+          ))}
+        </nav>
+
+        <div className="kr-flow" ref={flowRef}>
+          {moves.map((mv, i) => (
+            <section
+              key={mv.id}
+              className={`kr-mv kr-mv--${mv.id}`}
+              ref={(el) => { mvRefs.current[i] = el }}
+              aria-label={mv.label}
+            >
+              <h3 className="kr-mv-h">{mv.label}{mv.count && <s>{mv.count}</s>}</h3>
+              {mv.node}
+            </section>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -56,8 +56,10 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   const practice = (audios || []).filter((a: any) => a.prompt_index == null)
   const speakingEnabled = (teacherProfile as any)?.speaking_submissions !== false
 
+  // Wider than the old 900: the recap's movements put a section rail beside
+  // the content on a laptop, and 900 left the opened part cramped.
   return (
-    <div style={{ maxWidth: 900 }}>
+    <div style={{ maxWidth: 1180 }}>
       <Link href="/student/dashboard" className="k-back">← Dashboard</Link>
 
       <header className={`k-phead${memos.length > 0 ? ' has-memo' : ''}`}>

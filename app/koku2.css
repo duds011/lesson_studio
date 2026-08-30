@@ -1697,3 +1697,142 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-stat-bar i{display:block;height:100%;border-radius:999px;background:#fff;transition:width .6s ease}
 a.k-stat{text-decoration:none;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
 a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.16)}
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE RECAP, AS MOVEMENTS
+   One scroll instead of five tabs. Every class here is prefixed `kr-`
+   on purpose: the movement tints (kr-mv--fix, kr-mv--covered …) share a
+   namespace with nothing, because the prototype hit the same collision
+   three times — a tint class called `cov` also matched the master/detail
+   grid called `cov` and turned the wrapper into a two-column grid.
+   ═══════════════════════════════════════════════════════════════════ */
+/* The recap measures itself, not the window: the same page renders inside
+   the branding studio's narrow preview panel, where a media query would
+   report the desktop and lay out the wrong thing.
+   CAUTION, as with .k-main: container-type applies containment, making
+   this a containing block for position:fixed descendants. Nothing inside
+   the recap is fixed today; render any future modal in a portal. */
+.kr{container-type:inline-size;position:relative}
+
+/* — narrow: a hairline that fills, naming the movement under it — */
+.kr-strip{position:sticky;top:0;z-index:20;margin:0 -14px 2px;padding:0 14px;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px)}
+.kr-bar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.kr-bar span{display:block;height:100%;width:0;border-radius:2px;background:var(--mv-ink,var(--brand));
+  transition:width .1s linear,background-color .45s ease}
+.kr-now{display:flex;align-items:center;gap:10px;padding:8px 2px 9px;min-height:32px}
+.kr-name{font-size:12.5px;font-weight:800;letter-spacing:-.015em;color:var(--mv-ink,var(--ink));
+  transition:color .45s ease}
+.kr-count{margin-left:auto;font-size:9.5px;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted)}
+
+/* — the rail only exists once there is room for it — */
+.kr-rail{display:none}
+.kr-flow{display:grid;gap:12px}
+
+/* — a movement — */
+.kr-mv{border-radius:var(--r-lg);padding:15px 15px 18px;scroll-margin-top:70px}
+.kr-mv--spoke{background:#e9f1fd;--mv-ink:#0a4a99}
+.kr-mv--won{background:#e9f6ef;--mv-ink:#0f5738}
+.kr-mv--fix{background:#fdf3e1;--mv-ink:#6b4507}
+.kr-mv--covered{background:#eef1f6;--mv-ink:#2c3b54}
+.kr-mv--words{background:#f4ecfd;--mv-ink:#5b2a90}
+.kr-mv--practice{background:#e6f4f3;--mv-ink:#0b6a63}
+.kr-mv--files{background:#f2f5f7;--mv-ink:#41536b}
+/* Named by the strip on a phone, so saying it again inside the block only
+   costs a line. The wide layout brings it back — see the container query. */
+.kr-mv-h{display:none}
+
+/* The blocks inside a movement keep their own chrome, minus the card
+   background the movement now provides. */
+.kr-mv .k-flow{margin:0}
+.kr-mv .lesson-block,.kr-mv .corrections-card,.kr-mv .stat-card,.kr-mv .ex-card{
+  background:rgba(255,255,255,.78);box-shadow:none}
+.kr-mv .lesson-block:last-child{margin-bottom:0}
+
+/* — "what we covered": accordion here, master/detail once there is room — */
+.kr-md{display:block}
+.kr-sec-btn{width:100%;display:grid;grid-template-columns:21px minmax(0,1fr) 13px;gap:9px;
+  align-items:center;padding:11px 2px;border:0;background:none;cursor:pointer;text-align:left;
+  border-bottom:1px solid rgba(44,59,84,.12);font:inherit;color:inherit}
+.kr-sec-btn:last-of-type{border-bottom:0}
+.kr-sec-n{font-size:9.5px;font-weight:700;color:#9db3d0;font-variant-numeric:tabular-nums}
+.kr-sec-t{font-size:12.5px;font-weight:600;line-height:1.35;letter-spacing:-.01em}
+.kr-sec-chev{width:13px;height:13px;color:#8fa9cc;transition:transform .28s ease;justify-self:end}
+.kr-sec-btn.open .kr-sec-chev{transform:rotate(90deg);color:var(--mv-ink)}
+.kr-sec-btn.open .kr-sec-t{color:var(--mv-ink)}
+.kr-sec-body{overflow:hidden;transition:max-height .32s cubic-bezier(.3,.8,.35,1)}
+.kr-sec-in{padding:2px 0 15px 30px}
+.kr-sec-title{display:none}
+.kr-prose{font-size:11.5px;line-height:1.6;color:#43536c;margin:0 0 12px}
+/* Not .kr-lab: that is the rail's movement label, and sharing the name gave
+   the rail this rule's uppercase. Prefix by component, not by feature. */
+.kr-sublab{font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+  color:#93a8c4;margin:0 0 6px}
+.kr-terms{margin:0 0 12px}
+.kr-term{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;font-size:11.5px;
+  padding:4px 0;align-items:baseline;border-bottom:1px solid rgba(70,86,117,.1)}
+.kr-term:last-child{border-bottom:0}
+.kr-term b{font-weight:700;color:#16233a}
+.kr-term span{color:#5b6b85}
+.kr-eg{font-size:12px;font-style:italic;line-height:1.5;padding:4px 0 4px 10px;
+  border-left:2px solid rgba(10,97,201,.28);margin:0 0 6px;color:#22324c}
+.kr-note{font-size:10.5px;line-height:1.5;background:rgba(10,97,201,.07);border-radius:9px;
+  padding:8px 10px;margin-top:9px;color:#3c4d68}
+.kr-note b{font-weight:800;color:#0a4a99}
+
+/* ── wide: the strip unrolls into a rail, the accordion into two panes ── */
+@container (min-width:860px){
+  .kr-strip{display:none}
+  .kr-body{display:grid;grid-template-columns:222px minmax(0,1fr);gap:16px;align-items:start}
+
+  .kr-rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:16px;
+    background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-soft);
+    padding:16px 14px}
+  .kr-rail-h{font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--muted);padding:0 8px 10px;margin:0}
+  /* The track sits behind the pips, which are 9px wide inside 8px of row
+     padding and 14px of rail padding — hence 26px to the centre. */
+  .kr-rail-track{position:absolute;left:26px;top:52px;bottom:22px;width:2px;
+    background:#e3e8ef;border-radius:2px;overflow:hidden}
+  .kr-rail-fill{display:block;width:100%;height:0;border-radius:2px;
+    background:var(--mv-ink,var(--brand));transition:height .1s linear,background-color .45s ease}
+  .kr-r{display:grid;grid-template-columns:9px minmax(0,1fr);gap:11px;align-items:center;
+    padding:9px 8px;border:0;background:none;border-radius:12px;cursor:pointer;
+    position:relative;z-index:1;font:inherit;color:inherit;text-align:left;transition:background .18s ease}
+  .kr-r:hover{background:var(--surface-2)}
+  .kr-pip{width:9px;height:9px;border-radius:50%;background:var(--line-strong);
+    box-shadow:0 0 0 3px var(--surface);transition:transform .22s ease,background-color .22s ease}
+  .kr-r.on .kr-pip{background:var(--mv-ink,var(--brand));transform:scale(1.5)}
+  .kr-lab{font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:-.01em;transition:.2s ease}
+  .kr-r.on .kr-lab{font-weight:800;color:var(--ink)}
+  .kr-cnt{grid-column:2;font-size:10px;font-weight:700;color:#a4b0bf;margin-top:1px}
+
+  /* Six tiles, one row — auto-fit fitted five and orphaned the sixth. */
+  .kr-mv--spoke .metric-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .kr-mv{padding:20px 22px 24px}
+  .kr-mv-h{display:flex;align-items:baseline;gap:11px;font-size:16px;font-weight:800;
+    letter-spacing:-.03em;margin:0 0 14px;color:var(--mv-ink)}
+  .kr-mv-h s{text-decoration:none;font-size:9.5px;font-weight:800;letter-spacing:.09em;
+    text-transform:uppercase;opacity:.6}
+
+  /* Buttons pin to column one; the open body fills column two beside them, so
+     opening a part never pushes the other thirteen down the page. */
+  .kr-md{display:grid;grid-template-columns:312px minmax(0,1fr);gap:14px;align-items:start}
+  .kr-sec-btn{grid-column:1;padding:10px 11px;border-radius:12px;border-bottom:0}
+  .kr-sec-btn:hover{background:rgba(255,255,255,.7)}
+  .kr-sec-btn.open{background:#fff;box-shadow:0 1px 3px rgba(20,32,25,.1)}
+  .kr-sec-body{grid-column:2;grid-row:1/-1;max-height:none !important;
+    background:#fff;border-radius:18px;display:none;position:sticky;top:16px}
+  .kr-sec-body.open{display:block}
+  .kr-sec-in{padding:20px 22px}
+  .kr-sec-title{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.028em;margin:0 0 11px}
+  .kr-prose{font-size:12.5px;margin-bottom:15px}
+  .kr-terms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;margin-bottom:15px}
+  .kr-eg{font-size:12.5px}
+}
+
+/* On a phone the movements sit edge to edge with the page, not inset twice. */
+@container (max-width:859px){
+  .kr-mv{margin:0 -2px}
+}
