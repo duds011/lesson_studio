@@ -73,6 +73,7 @@ const SAMPLE: DashboardData = {
   avgScore: 7.4,
   scoreDelta: 1.9,
   latestTalk: 41,
+  firstTalk: 30,
   talkDelta: 8,
   pillarLessons: [
     { id: 's3', number: 12, title: 'Contrasting ideas with けど', meta: '12th lesson · 2 Aug', score: 8.3, tag: 'Lesson 12', desc: 'Joining two ideas in one sentence, and softening a disagreement politely.' },

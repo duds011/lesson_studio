@@ -27,6 +27,8 @@ export type DashboardData = {
   avgScore: number | null
   scoreDelta: number | null
   latestTalk: number | null
+  /** Talk share in the earliest scored lesson — the gauge's starting mark. */
+  firstTalk: number | null
   talkDelta: number | null
   pillarLessons: PillarLesson[]
   progressLessons: {
@@ -148,6 +150,87 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
   switch (id) {
     case 'stats': {
       const hid = brand.hiddenStats ?? []
+
+      /**
+       * The dashboard's job is to answer "am I getting better?" before you
+       * scroll, and three stat tiles never did. The one number that moved is
+       * the share of the lesson this student did the talking in, so it becomes
+       * the page: an arc for where they are now, a mark for where they began.
+       *
+       * Falls back to the tiles when there is nothing to compare yet — a first
+       * lesson has no journey, and an arc with the mark under the needle would
+       * be a worse way to say so.
+       */
+      const canArc = !hid.includes('speaking') && d.latestTalk != null
+        && d.firstTalk != null && d.talkDelta != null && d.scoredCount > 1
+      if (canArc) {
+        const now = d.latestTalk as number
+        const then = d.firstTalk as number
+        const delta = d.talkDelta as number
+        // A half circle: 0% at the left, 100% at the right.
+        const R = 132, CX = 165, CY = 170, SW = 22
+        const pt = (v: number) => {
+          const a = Math.PI * (1 - v / 100)
+          return [CX + Math.cos(a) * R, CY - Math.sin(a) * R] as const
+        }
+        const arc = (to: number) => {
+          const A = pt(0), B = pt(to)
+          // large-arc-flag stays 0: the sweep is never more than a half turn.
+          return `M${A[0].toFixed(1)} ${A[1].toFixed(1)} A${R} ${R} 0 0 1 ${B[0].toFixed(1)} ${B[1].toFixed(1)}`
+        }
+        const mark = pt(then)
+        const ma = Math.PI * (1 - then / 100)
+        const headline = delta > 0
+          ? (now >= 50
+            ? <>You went from listening to <em>leading the conversation</em>.</>
+            : <>You are speaking <em>{delta} points more</em> than when you started.</>)
+          : <>You spoke <em>{now}%</em> of your last lesson.</>
+
+        const strip = DASH_STAT_TILES
+          .filter(({ id: sid }) => sid !== 'speaking' && !hid.includes(sid))
+          .map(({ id: sid, label }) => (
+            <div className={`k-climb-stat ${onRemoveStat ? 'k-zap' : ''}`} key={sid}>
+              {onRemoveStat && <TileX label={label} onClick={() => onRemoveStat(sid)} />}
+              <b>
+                {sid === 'lessons'
+                  ? <CountUp value={d.lessonCount} />
+                  : d.avgScore != null ? <CountUp value={d.avgScore} decimals={1} /> : '—'}
+              </b>
+              <s>{sid === 'lessons' ? L.statLessons : L.statScore}</s>
+            </div>
+          ))
+
+        return (
+          <div className={`k-climb ${onRemoveStat ? 'k-zap' : ''}`}>
+            {onRemoveStat && <TileX label="Speaking share" onClick={() => onRemoveStat('speaking')} />}
+            <div className="k-climb-arc">
+              <svg viewBox="0 0 330 196" role="img"
+                   aria-label={`You spoke ${now} percent of your last lesson, up from ${then} percent`}>
+                <path d={arc(100)} fill="none" stroke="var(--surface-2)" strokeWidth={SW} strokeLinecap="round" />
+                <path className="k-climb-fill" d={arc(now)} fill="none" stroke="var(--forest)"
+                      strokeWidth={SW} strokeLinecap="round" pathLength={100} />
+                <line
+                  x1={(mark[0] - Math.cos(ma) * 14).toFixed(1)} y1={(mark[1] + Math.sin(ma) * 14).toFixed(1)}
+                  x2={(mark[0] + Math.cos(ma) * 14).toFixed(1)} y2={(mark[1] - Math.sin(ma) * 14).toFixed(1)}
+                  stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round" opacity=".5"
+                />
+              </svg>
+              <div className="k-climb-mid">
+                <b><CountUp value={now} /><span>%</span></b>
+                <s>You spoke</s>
+              </div>
+            </div>
+            <div className="k-climb-copy">
+              <div className="k-climb-eyebrow">Across {d.lessonCount} lesson{d.lessonCount === 1 ? '' : 's'}</div>
+              <h2 className="k-climb-line">{headline}</h2>
+              <p className="k-climb-sub">The mark on the arc is where you started — <b>{then}%</b>.</p>
+              {delta > 0 && <span className="k-climb-delta">▲ {delta} points since lesson 1</span>}
+              {strip.length > 0 && <div className="k-climb-strip">{strip}</div>}
+            </div>
+          </div>
+        )
+      }
+
       // One entry per card, so the teacher keeps the average and drops the
       // talk-share (or any mix) instead of all three or none.
       const CARD: Record<DashStatId, React.ReactNode> = {

@@ -1743,6 +1743,31 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
    costs a line. The wide layout brings it back — see the container query. */
 .kr-mv-h{display:none}
 
+/* — how you spoke: one panel, not three cards —
+   The three stat cards this replaces were the reason the old recap read as a
+   stack of white boxes, and one of them repeated the header's score. */
+.kr-spoke{background:rgba(255,255,255,.8);border-radius:18px;padding:15px 17px 17px}
+.kr-spoke-head{display:flex;align-items:center;gap:12px}
+.kr-spoke-head .kr-sublab{margin:0}
+.kr-verdict{margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;background:var(--green-soft);color:var(--green);
+  padding:4px 10px;border-radius:999px}
+.kr-talk{display:flex;height:10px;border-radius:999px;overflow:hidden;
+  background:var(--surface-2);margin:9px 0 9px}
+.kr-talk i{display:block}
+.kr-talk i:first-child{background:var(--brand)}
+.kr-talk i:last-child{background:var(--yellow)}
+.kr-talk-key{display:flex;gap:16px;font-size:11.5px;font-weight:700;color:#5b6b85;margin-bottom:15px}
+.kr-talk-key span{display:flex;align-items:center;gap:6px}
+.kr-talk-key b{width:9px;height:9px;border-radius:50%;display:block}
+.kr-talk-key span:first-child b{background:var(--brand)}
+.kr-talk-key span:last-child b{background:var(--yellow)}
+.kr-mv--spoke .metric-grid{margin-top:0}
+.kr-mv--spoke .metric{background:var(--surface-2)}
+.kr-grammar{margin:14px 0 0;padding-top:12px;font-size:12px;color:#5b6b85;
+  border-top:1px solid rgba(70,86,117,.12)}
+.kr-grammar b{color:var(--ink);font-weight:700;margin-right:9px}
+
 /* The blocks inside a movement keep their own chrome, minus the card
    background the movement now provides. */
 .kr-mv .k-flow{margin:0}
@@ -1835,4 +1860,50 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 /* On a phone the movements sit edge to edge with the page, not inset twice. */
 @container (max-width:859px){
   .kr-mv{margin:0 -2px}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE CLIMB — the dashboard's answer to "am I getting better?"
+   Replaces three stat tiles that never answered it. The arc is where
+   the student is now; the mark on it is where they began, and the gap
+   between the two is the whole point.
+   Named k-climb, not k-gauge: .k-gauge is already the vocabulary donut
+   further up this file, and .k-gauge-mid would have been overwritten.
+   ═══════════════════════════════════════════════════════════════════ */
+.k-climb{background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-soft);
+  padding:20px 24px;display:grid;grid-template-columns:330px minmax(0,1fr);
+  gap:30px;align-items:center;position:relative}
+.k-climb-arc{position:relative;width:100%;max-width:330px;justify-self:center}
+.k-climb-arc svg{display:block;width:100%;height:auto}
+.k-climb-fill{stroke-dasharray:100 100;animation:k-climb-draw 1.2s cubic-bezier(.3,.8,.35,1) both}
+@keyframes k-climb-draw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.k-climb-fill{animation:none;stroke-dashoffset:0}}
+.k-climb-mid{position:absolute;left:0;right:0;bottom:2px;text-align:center;pointer-events:none}
+.k-climb-mid b{display:block;font-size:clamp(38px,7vw,56px);font-weight:800;letter-spacing:-.05em;line-height:1}
+.k-climb-mid b span{font-size:.46em;color:var(--muted);margin-left:1px}
+.k-climb-mid s{display:block;text-decoration:none;font-size:11px;font-weight:800;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.k-climb-eyebrow{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.k-climb-line{font-size:clamp(22px,3vw,30px);line-height:1.16;letter-spacing:-.04em;
+  font-weight:800;margin:9px 0 10px;max-width:19ch;text-wrap:balance}
+.k-climb-line em{font-style:normal;color:var(--forest)}
+.k-climb-sub{margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.55;max-width:46ch}
+.k-climb-sub b{color:var(--ink);font-weight:700}
+.k-climb-delta{display:inline-flex;align-items:center;gap:7px;background:var(--green-soft);
+  color:var(--green);font-size:12px;font-weight:800;padding:7px 14px;border-radius:999px}
+.k-climb-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:18px}
+.k-climb-stat{background:var(--surface-2);border-radius:15px;padding:12px 14px;position:relative}
+.k-climb-stat b{display:block;font-size:21px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.k-climb-stat s{display:block;text-decoration:none;font-size:9.5px;font-weight:800;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+/* Stacked and centred on a phone — the arc is the headline there. */
+@container (max-width:760px){
+  .k-climb{grid-template-columns:minmax(0,1fr);gap:4px;padding:16px 18px 18px;text-align:center}
+  .k-climb-copy{display:flex;flex-direction:column;align-items:center}
+  /* The centred column shrinks its children to content, which collapsed the
+     two-up strip into a stack. */
+  .k-climb-strip{align-self:stretch}
+  .k-climb-line{margin:8px auto 9px;max-width:22ch}
+  .k-climb-sub{margin-bottom:13px}
 }

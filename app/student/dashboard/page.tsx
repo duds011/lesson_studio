@@ -225,6 +225,7 @@ export default async function StudentDashboard() {
     avgScore,
     scoreDelta: scoreDeltaNum,
     latestTalk,
+    firstTalk,
     talkDelta,
     pillarLessons,
     progressLessons: rows.map((l) => {

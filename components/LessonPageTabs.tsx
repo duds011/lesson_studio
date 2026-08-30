@@ -140,10 +140,11 @@ export default function LessonPageTabs({
         // Every tile removed removes the card — an empty measurement panel
         // would only ask the student what used to be there.
         if (tiles.length === 0) return null
+        // Bare grid: the "how you spoke" panel owns the heading and the card
+        // around it, so the six tiles sit with the talk bar instead of in a
+        // third box of their own.
         return (
-          <div className="corrections-card">
-            <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">⚡</span><span className="stat-card-label">Your speaking, measured</span></div>
-            <div className="metric-grid">
+          <div className="metric-grid">
               {tiles.map(({ id, label }) => {
                 const t = TILE[id]
                 return (
@@ -163,7 +164,6 @@ export default function LessonPageTabs({
                   </div>
                 )
               })}
-            </div>
           </div>
         )
       }
@@ -302,7 +302,59 @@ export default function LessonPageTabs({
   }
 
   const shownMetrics = RECAP_METRICS.filter(({ id }) => !(brand.hiddenMetrics ?? []).includes(id))
-  push('spoke', `${shownMetrics.length} measurements`, flowOf(['balance', 'score', 'grammar', 'metrics']))
+
+  /**
+   * How you spoke, as one panel.
+   *
+   * This was three near-identical white cards — speaking balance, score,
+   * grammar density — and they were the thing that made the old recap read as
+   * a stack of boxes. The score card also just repeated the score already in
+   * the page header. So: one talk bar, the six measured tiles, and grammar as
+   * a closing line. Each piece still answers its own toggle in the studio.
+   */
+  const spoke = (() => {
+    const hasBalance = byId.has('balance')
+    const hasScore = byId.has('score')
+    const hasGrammar = byId.has('grammar')
+    const metricGrid = byId.get('metrics')?.content
+    if (!hasBalance && !hasScore && !hasGrammar && !metricGrid) return null
+    return (
+      <div className="kr-spoke">
+        {(hasBalance || (hasScore && r.confidence_label)) && (
+          <div className="kr-spoke-head">
+            {hasBalance && <p className="kr-sublab">Who did the talking</p>}
+            {/* The number is in the header already; the word for it is not. */}
+            {hasScore && r.confidence_label && <span className="kr-verdict">{r.confidence_label}</span>}
+          </div>
+        )}
+        {hasBalance && (
+          <>
+            <div className="kr-talk">
+              <i style={{ width: `${studentTalk}%` }} />
+              <i style={{ width: `${teacherTalk}%` }} />
+            </div>
+            <div className="kr-talk-key">
+              <span><b />{studentFirst} {studentTalk}%</span>
+              <span><b />{teacherFirst} {teacherTalk}%</span>
+            </div>
+          </>
+        )}
+        {metricGrid && (
+          <>
+            <p className="kr-sublab">Your speaking, measured</p>
+            {metricGrid}
+          </>
+        )}
+        {hasGrammar && r.grammar_density && (
+          <p className="kr-grammar">
+            <b>Grammar density</b>{r.grammar_density}
+            {r.vocab_total_count ? ` · ${r.vocab_total_count} vocabulary items` : ''}
+          </p>
+        )}
+      </div>
+    )
+  })()
+  push('spoke', `${shownMetrics.length} measurements`, spoke)
 
   // The one block that becomes two movements. What went well and what to fix
   // are read at different moments, and LessonCorrections already renders
