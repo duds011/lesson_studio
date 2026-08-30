@@ -1715,12 +1715,32 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .kr{container-type:inline-size;position:relative}
 
 /* — narrow: a hairline that fills, naming the movement under it — */
-.kr-strip{position:sticky;top:0;z-index:20;margin:0 -14px 2px;padding:0 14px;
-  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px)}
+/* Bleeds to the screen edge so the sticky bar reads as chrome rather than as
+   another card. -12px because that is .k-shell's padding at phone widths (it
+   is 14px above 720, where this strip is replaced by the rail anyway). */
+.kr-strip{position:sticky;top:0;z-index:20;margin:0 -12px 2px;padding:0 12px;background:var(--bg)}
 .kr-bar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
 .kr-bar span{display:block;height:100%;width:0;border-radius:2px;background:var(--mv-ink,var(--brand));
   transition:width .1s linear,background-color .45s ease}
-.kr-now{display:flex;align-items:center;gap:10px;padding:8px 2px 9px;min-height:32px}
+.kr-now{display:flex;align-items:center;gap:10px;width:100%;padding:9px 2px 8px;
+  min-height:34px;border:0;background:none;cursor:pointer;font:inherit;color:inherit;text-align:left}
+.kr-caret{width:13px;height:13px;color:var(--muted);flex:0 0 auto;margin-left:-2px;
+  transition:transform .22s ease}
+.kr-now.open .kr-caret{transform:rotate(180deg);color:var(--mv-ink,var(--brand))}
+/* The list of movements, for going straight to one instead of scrolling. */
+.kr-picker{position:absolute;left:12px;right:12px;top:100%;z-index:22;
+  background:var(--surface);border-radius:var(--r-md);box-shadow:0 10px 34px rgba(20,32,25,.18);
+  padding:6px;display:grid;gap:1px;animation:kr-drop .16s ease both}
+@keyframes kr-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.kr-picker button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;
+  border:0;background:none;border-radius:11px;font:inherit;color:inherit;text-align:left;
+  cursor:pointer;font-size:13px;font-weight:600}
+.kr-picker button:hover{background:var(--surface-2)}
+.kr-picker button.on{background:var(--brand-soft);color:var(--brand);font-weight:800}
+.kr-picker button>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kr-picker s{flex:0 0 auto;text-decoration:none;font-size:10px;font-weight:700;white-space:nowrap;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.kr-picker button.on s{color:var(--brand)}
 .kr-name{font-size:12.5px;font-weight:800;letter-spacing:-.015em;color:var(--mv-ink,var(--ink));
   transition:color .45s ease}
 .kr-count{margin-left:auto;font-size:9.5px;font-weight:800;letter-spacing:.09em;
@@ -1742,6 +1762,19 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 /* Named by the strip on a phone, so saying it again inside the block only
    costs a line. The wide layout brings it back — see the container query. */
 .kr-mv-h{display:none}
+
+/* — words: one box, not three —
+   The movement is already a panel and every word is already a card, so the
+   .lesson-block between them was a third box around a box around a box. Its
+   heading said "Words from this lesson" directly under the movement's own
+   "Words from today", too. */
+/* Doubled class on purpose: the generic `.kr-mv .lesson-block` rule below is
+   the same weight and comes later, so a single class here lost and put the
+   middle box straight back. */
+.kr-mv.kr-mv--words .lesson-block{background:none;box-shadow:none;padding:0;margin:0}
+.kr-mv.kr-mv--words .lesson-block>h3{display:none}
+.kr-mv.kr-mv--words .example{background:var(--surface);margin-bottom:9px}
+.kr-mv.kr-mv--words .example:last-child{margin-bottom:0}
 
 /* — how you spoke: one panel, not three cards —
    The three stat cards this replaces were the reason the old recap read as a
@@ -1835,6 +1868,8 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 
   /* Six tiles, one row — auto-fit fitted five and orphaned the sixth. */
   .kr-mv--spoke .metric-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .kr-mv.kr-mv--words .lesson-block{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .kr-mv.kr-mv--words .example{margin-bottom:0}
   .kr-mv{padding:20px 22px 24px}
   .kr-mv-h{display:flex;align-items:baseline;gap:11px;font-size:16px;font-weight:800;
     letter-spacing:-.03em;margin:0 0 14px;color:var(--mv-ink)}

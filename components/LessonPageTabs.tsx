@@ -398,6 +398,7 @@ export default function LessonPageTabs({
   const fillRef = useRef<HTMLSpanElement>(null)
   const mvRefs = useRef<(HTMLElement | null)[]>([])
   const [active, setActive] = useState(0)
+  const [picking, setPicking] = useState(false)
 
   const track = useCallback(() => {
     const flow = flowRef.current
@@ -415,6 +416,7 @@ export default function LessonPageTabs({
     let best = 0
     mvRefs.current.forEach((el, i) => { if (el && el.getBoundingClientRect().top <= 90) best = i })
     setActive(best)
+    setPicking(false)
   }, [])
 
   useEffect(() => {
@@ -452,13 +454,43 @@ export default function LessonPageTabs({
 
   return (
     <div className="kr">
-      {/* Narrow: a hairline that fills, naming the movement underneath it. */}
+      {/* Narrow: the movement you are in, and a way to go to another one.
+          Scrolling was the only way through the recap, which is fine for
+          reading it once and useless for coming back to one part of it.
+          The bar sits under the name rather than above it: against the blue
+          page header a blue bar at the very top read as part of the header. */}
       <div className="kr-strip">
-        <div className="kr-bar"><span ref={barRef} /></div>
-        <div className="kr-now">
+        <button
+          type="button"
+          className={`kr-now${picking ? ' open' : ''}`}
+          aria-expanded={picking}
+          aria-haspopup="menu"
+          onClick={() => setPicking((o) => !o)}
+        >
           <span className="kr-name">{now.label}</span>
           {now.count && <span className="kr-count">{now.count}</span>}
-        </div>
+          <svg className="kr-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5 9l7 7 7-7" />
+          </svg>
+        </button>
+        <div className="kr-bar"><span ref={barRef} /></div>
+        {picking && (
+          <div className="kr-picker" role="menu">
+            {moves.map((mv, i) => (
+              <button
+                key={mv.id}
+                type="button"
+                role="menuitem"
+                className={i === active ? 'on' : undefined}
+                onClick={() => { setPicking(false); jump(i) }}
+              >
+                <span>{mv.label}</span>
+                {mv.count && <s>{mv.count}</s>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="kr-body">
