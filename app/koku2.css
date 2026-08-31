@@ -1715,23 +1715,30 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .kr{container-type:inline-size;position:relative}
 
 /* — narrow: a hairline that fills, naming the movement under it — */
-/* Bleeds to the screen edge so the sticky bar reads as chrome rather than as
-   another card. -12px because that is .k-shell's padding at phone widths (it
-   is 14px above 720, where this strip is replaced by the rail anyway). */
-.kr-strip{position:sticky;top:0;z-index:20;margin:0 -12px 2px;padding:0 12px;background:var(--bg)}
-.kr-bar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
-.kr-bar span{display:block;height:100%;width:0;border-radius:2px;background:var(--mv-ink,var(--brand));
+/* Stuck to the BOTTOM of the screen, not the top: this is a control you reach
+   for while reading, and the top of a phone is a stretch every time.
+   Bleeds to the screen edge so it reads as chrome rather than another card —
+   -12px because that is .k-shell's padding at phone widths (14px above 720,
+   where this strip is replaced by the rail anyway).
+   The student portal is .k-shell.solo, one column with a top bar and no fixed
+   bottom rail, so bottom:0 is free. If a bottom rail is ever added to these
+   pages this has to clear it. */
+.kr-strip{position:sticky;top:auto;bottom:0;z-index:20;margin:2px -12px 0;
+  padding:0 12px env(safe-area-inset-bottom,0px);background:var(--bg);
+  box-shadow:0 -10px 20px -12px rgba(20,32,25,.18)}
+.kr-bar{height:3px;background:var(--line);overflow:hidden}
+.kr-bar span{display:block;height:100%;width:0;border-radius:0 2px 2px 0;background:var(--mv-ink,var(--brand));
   transition:width .1s linear,background-color .45s ease}
 .kr-now{display:flex;align-items:center;gap:10px;width:100%;padding:9px 2px 8px;
   min-height:34px;border:0;background:none;cursor:pointer;font:inherit;color:inherit;text-align:left}
 .kr-caret{width:13px;height:13px;color:var(--muted);flex:0 0 auto;margin-left:-2px;
-  transition:transform .22s ease}
-.kr-now.open .kr-caret{transform:rotate(180deg);color:var(--mv-ink,var(--brand))}
+  transform:rotate(180deg);transition:transform .22s ease}
+.kr-now.open .kr-caret{transform:rotate(0deg);color:var(--mv-ink,var(--brand))}
 /* The list of movements, for going straight to one instead of scrolling. */
-.kr-picker{position:absolute;left:12px;right:12px;top:100%;z-index:22;
+.kr-picker{position:absolute;left:12px;right:12px;bottom:100%;top:auto;z-index:22;
   background:var(--surface);border-radius:var(--r-md);box-shadow:0 10px 34px rgba(20,32,25,.18);
   padding:6px;display:grid;gap:1px;animation:kr-drop .16s ease both}
-@keyframes kr-drop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes kr-drop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .kr-picker button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;
   border:0;background:none;border-radius:11px;font:inherit;color:inherit;text-align:left;
   cursor:pointer;font-size:13px;font-weight:600}

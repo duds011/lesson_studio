@@ -454,45 +454,6 @@ export default function LessonPageTabs({
 
   return (
     <div className="kr">
-      {/* Narrow: the movement you are in, and a way to go to another one.
-          Scrolling was the only way through the recap, which is fine for
-          reading it once and useless for coming back to one part of it.
-          The bar sits under the name rather than above it: against the blue
-          page header a blue bar at the very top read as part of the header. */}
-      <div className="kr-strip">
-        <button
-          type="button"
-          className={`kr-now${picking ? ' open' : ''}`}
-          aria-expanded={picking}
-          aria-haspopup="menu"
-          onClick={() => setPicking((o) => !o)}
-        >
-          <span className="kr-name">{now.label}</span>
-          {now.count && <span className="kr-count">{now.count}</span>}
-          <svg className="kr-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M5 9l7 7 7-7" />
-          </svg>
-        </button>
-        <div className="kr-bar"><span ref={barRef} /></div>
-        {picking && (
-          <div className="kr-picker" role="menu">
-            {moves.map((mv, i) => (
-              <button
-                key={mv.id}
-                type="button"
-                role="menuitem"
-                className={i === active ? 'on' : undefined}
-                onClick={() => { setPicking(false); jump(i) }}
-              >
-                <span>{mv.label}</span>
-                {mv.count && <s>{mv.count}</s>}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       <div className="kr-body">
         {/* Wide: the same thing unrolled, so all of it is visible at once. */}
         <nav className="kr-rail" aria-label="Lesson sections">
@@ -526,6 +487,47 @@ export default function LessonPageTabs({
             </section>
           ))}
         </div>
+      </div>
+
+      {/* Narrow: the movement you are in, and a way to go to another one.
+          Last in the DOM and stuck to the BOTTOM of the screen — a control at
+          the top of a phone is a stretch every time you want it, and this one
+          is meant to be used while reading. Being last also means the space it
+          reserves falls after the content instead of leaving a gap above it.
+          The progress hairline runs along its top edge, where it doubles as
+          the seam between the bar and what you are reading. */}
+      <div className="kr-strip">
+        <div className="kr-bar"><span ref={barRef} /></div>
+        <button
+          type="button"
+          className={`kr-now${picking ? ' open' : ''}`}
+          aria-expanded={picking}
+          aria-haspopup="menu"
+          onClick={() => setPicking((o) => !o)}
+        >
+          <span className="kr-name">{now.label}</span>
+          {now.count && <span className="kr-count">{now.count}</span>}
+          <svg className="kr-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5 9l7 7 7-7" />
+          </svg>
+        </button>
+        {picking && (
+          <div className="kr-picker" role="menu">
+            {moves.map((mv, i) => (
+              <button
+                key={mv.id}
+                type="button"
+                role="menuitem"
+                className={i === active ? 'on' : undefined}
+                onClick={() => { setPicking(false); jump(i) }}
+              >
+                <span>{mv.label}</span>
+                {mv.count && <s>{mv.count}</s>}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
