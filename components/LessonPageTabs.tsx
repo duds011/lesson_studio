@@ -25,7 +25,7 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, files, preview,
-  language, speaking, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
+  language, speaking, back, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
   /** The language this student is learning — picks the hesitation examples. */
@@ -46,6 +46,13 @@ export default function LessonPageTabs({
    * themselves, in the page's own markup.
    */
   preview?: boolean
+  /**
+   * Where "back" goes, and what to call it. Rendered inside the sticky chrome
+   * rather than at the top of the page: a back link that scrolls away means
+   * scrolling all the way up again to leave, and on a phone the top of the
+   * screen is the hardest place to reach anyway.
+   */
+  back?: { href: string; label: string }
   /** Drive the tab from outside — the studio's Sections menu does, so picking a
    *  group there opens the tab it edits. Left off, the page owns its own. */
   tab?: LessonTab
@@ -396,6 +403,8 @@ export default function LessonPageTabs({
   const flowRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLSpanElement>(null)
   const fillRef = useRef<HTMLSpanElement>(null)
+  const trackRef = useRef<HTMLSpanElement>(null)
+  const railRef = useRef<HTMLElement>(null)
   const mvRefs = useRef<(HTMLElement | null)[]>([])
   const [active, setActive] = useState(0)
   const [picking, setPicking] = useState(false)
@@ -418,6 +427,32 @@ export default function LessonPageTabs({
     setActive(best)
     setPicking(false)
   }, [])
+
+  /**
+   * Run the rail's track from the first pip to the last, measured rather than
+   * offset from the top: anything above the list — the back link, a longer
+   * heading — would otherwise slide the line off the dots it belongs to.
+   */
+  useEffect(() => {
+    const place = () => {
+      const rail = railRef.current
+      const line = trackRef.current
+      if (!rail || !line) return
+      const pips = rail.querySelectorAll('.kr-pip')
+      if (pips.length < 2) return
+      const box = rail.getBoundingClientRect()
+      const a = pips[0].getBoundingClientRect()
+      const z = pips[pips.length - 1].getBoundingClientRect()
+      const top = a.top - box.top + a.height / 2
+      line.style.top = `${top}px`
+      line.style.bottom = 'auto'
+      line.style.height = `${z.top - box.top + z.height / 2 - top}px`
+      line.style.left = `${a.left - box.left + a.width / 2 - 1}px`
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [moves.length])
 
   useEffect(() => {
     // The studio's preview is a scaled panel, not the page — window scroll
@@ -456,9 +491,18 @@ export default function LessonPageTabs({
     <div className="kr">
       <div className="kr-body">
         {/* Wide: the same thing unrolled, so all of it is visible at once. */}
-        <nav className="kr-rail" aria-label="Lesson sections">
+        <nav className="kr-rail" aria-label="Lesson sections" ref={railRef}>
+          {back && (
+            <a className="kr-rail-back" href={back.href}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+                   strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+              {back.label}
+            </a>
+          )}
           <p className="kr-rail-h">This lesson</p>
-          <span className="kr-rail-track"><span className="kr-rail-fill" ref={fillRef} /></span>
+          <span className="kr-rail-track" ref={trackRef}><span className="kr-rail-fill" ref={fillRef} /></span>
           {moves.map((mv, i) => (
             <button
               key={mv.id}
@@ -498,6 +542,17 @@ export default function LessonPageTabs({
           the seam between the bar and what you are reading. */}
       <div className="kr-strip">
         <div className="kr-bar"><span ref={barRef} /></div>
+        <div className="kr-row">
+        {back && (
+          // Icon only: the label would crowd the movement name, and a left
+          // chevron in the bottom bar is not ambiguous.
+          <a className="kr-back-btn" href={back.href} aria-label={`Back to ${back.label}`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+                 strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </a>
+        )}
         <button
           type="button"
           className={`kr-now${picking ? ' open' : ''}`}
@@ -512,6 +567,7 @@ export default function LessonPageTabs({
             <path d="M5 9l7 7 7-7" />
           </svg>
         </button>
+        </div>
         {picking && (
           <div className="kr-picker" role="menu">
             {moves.map((mv, i) => (

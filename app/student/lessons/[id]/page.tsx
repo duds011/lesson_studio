@@ -60,8 +60,6 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   // the content on a laptop, and 900 left the opened part cramped.
   return (
     <div style={{ maxWidth: 1180 }}>
-      <Link href="/student/dashboard" className="k-back">← Dashboard</Link>
-
       <header className={`k-phead${memos.length > 0 ? ' has-memo' : ''}`}>
         <div className="k-phead-top">
           <div>
@@ -115,6 +113,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         teacherFirst={teacherFirst}
         brand={brand}
         language={student?.language ?? null}
+        back={{ href: '/student/dashboard', label: 'Dashboard' }}
         speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'student', takes: takes as any }}
         files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={practice} />}
       />

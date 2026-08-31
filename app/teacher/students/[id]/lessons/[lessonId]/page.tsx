@@ -56,7 +56,6 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
   return (
     <div className="k-scope page-fade" style={{ maxWidth: 1180, ...brandVars(brand) }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-        <Link href={`/teacher/students/${params.id}`} className="btn btn-ghost btn-sm">← {studentName || 'Student'}</Link>
         <LessonAdminActions lessonId={l.id} studentId={params.id} sourceEventId={l.source_event_id} />
       </div>
 
@@ -113,6 +112,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
         teacherFirst={teacherFirst}
         brand={brand}
         language={studentRow?.language ?? null}
+        back={{ href: `/teacher/students/${params.id}`, label: studentName || 'Student' }}
         speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'teacher', takes: takes as any }}
         files={<LessonExchange lessonId={l.id} role="teacher" files={files || []} audios={practice} />}
       />

@@ -1729,8 +1729,16 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .kr-bar{height:3px;background:var(--line);overflow:hidden}
 .kr-bar span{display:block;height:100%;width:0;border-radius:0 2px 2px 0;background:var(--mv-ink,var(--brand));
   transition:width .1s linear,background-color .45s ease}
-.kr-now{display:flex;align-items:center;gap:10px;width:100%;padding:9px 2px 8px;
+/* Back sits beside the section picker, not above the page: a back link that
+   scrolls away means scrolling all the way up again just to leave. */
+.kr-row{display:flex;align-items:center;gap:9px;padding:7px 0 8px}
+.kr-back-btn{flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:var(--surface);color:var(--muted);box-shadow:var(--shadow-soft);transition:.16s ease}
+.kr-back-btn:hover,.kr-back-btn:active{color:var(--ink)}
+.kr-back-btn svg{width:15px;height:15px}
+.kr-now{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:2px;
   min-height:34px;border:0;background:none;cursor:pointer;font:inherit;color:inherit;text-align:left}
+.kr-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kr-caret{width:13px;height:13px;color:var(--muted);flex:0 0 auto;margin-left:-2px;
   transform:rotate(180deg);transition:transform .22s ease}
 .kr-now.open .kr-caret{transform:rotate(0deg);color:var(--mv-ink,var(--brand))}
@@ -1854,11 +1862,19 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
   .kr-rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:16px;
     background:var(--surface);border-radius:var(--r-xl);box-shadow:var(--shadow-soft);
     padding:16px 14px}
+  .kr-rail-back{display:flex;align-items:center;gap:8px;padding:8px 9px;margin:0 0 8px;
+    border-radius:11px;font-size:12.5px;font-weight:700;color:var(--muted);transition:.16s ease}
+  .kr-rail-back:hover{background:var(--surface-2);color:var(--ink)}
+  .kr-rail-back svg{width:14px;height:14px;flex:0 0 auto}
   .kr-rail-h{font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
     color:var(--muted);padding:0 8px 10px;margin:0}
   /* The track sits behind the pips, which are 9px wide inside 8px of row
      padding and 14px of rail padding — hence 26px to the centre. */
-  .kr-rail-track{position:absolute;left:26px;top:52px;bottom:22px;width:2px;
+  /* Placed by JS from the first and last pip — anything above the list (the
+     back link, a longer heading) would otherwise slide it off the dots. Starts
+     with no height so a mis-measured line is never painted; the fill it holds
+     needs JS anyway, so there is nothing to lose if that never runs. */
+  .kr-rail-track{position:absolute;left:26px;top:0;bottom:auto;height:0;width:2px;
     background:#e3e8ef;border-radius:2px;overflow:hidden}
   .kr-rail-fill{display:block;width:100%;height:0;border-radius:2px;
     background:var(--mv-ink,var(--brand));transition:height .1s linear,background-color .45s ease}
