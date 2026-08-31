@@ -122,7 +122,9 @@ export default function SubscriptionPanel({
           <span className="k-sec-icon b" aria-hidden>📦</span>
           <div>
             <h3>Plans</h3>
-            <p className="desc">Both plans are the full Lesson Studio — the difference is recaps per month.</p>
+            {/* "Both" was left from two tiers, and the list below is filtered
+                per account anyway — it never reliably named what was on screen. */}
+            <p className="desc">Every plan is the full Lesson Studio — the difference is recaps per month.</p>
           </div>
         </div>
 
