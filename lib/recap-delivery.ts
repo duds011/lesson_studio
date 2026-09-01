@@ -14,6 +14,7 @@ import { resolveBrand } from '@/lib/brand'
 import { isEmailConfigured, sendEmail } from '@/lib/email'
 import { PARTS_OF_SPEECH } from '@/lib/openai'
 import { recapReadyHtml, recapReadySubject, recapReadyText } from '@/lib/emails/recap-ready'
+import { noteFromRecap } from '@/lib/lesson-note'
 
 export type DeliveryResult =
   | { delivered: true; lessonId: string; studentId: string }
@@ -135,11 +136,61 @@ export async function deliverRecapToStudent(eventId: string, rec: any): Promise<
     if (ve) console.error('vocabulary_items write failed', ve.message)
   }
 
+  // The teacher's own record of the lesson, so the Notes tab is already filled
+  // by the time they go looking for it. Like the email below: last, and unable
+  // to fail the publish.
+  await writeTeacherNote(admin, linked.teacherId, linked.studentId, lessonDate, recapObj, title)
+
   // Everything the student can see is now in place, so tell them it is.
   // Deliberately last, and deliberately unable to fail the publish.
   await notifyStudent(admin, lessonRow.id, linked.studentId, linked.teacherId, title, lessonDate, recapObj)
 
   return { delivered: true, lessonId: lessonRow.id, studentId: linked.studentId }
+}
+
+/**
+ * Fill in the teacher's note for this lesson.
+ *
+ * Written once and never rewritten: a teacher who already has something in
+ * this cell — put there before publishing, or edited after we wrote it — owns
+ * it, and re-publishing an edited recap must not replace her words with ours.
+ * That is what makes this safe to run on every publish, repeats included.
+ *
+ * Nothing here can fail a publish. A missing note is a small loss; a recap
+ * that refuses to publish because of one is a much larger one.
+ */
+async function writeTeacherNote(
+  admin: ReturnType<typeof createAdminClient>,
+  teacherId: string,
+  studentId: string,
+  lessonDate: string,
+  recapObj: any,
+  fallbackTitle: string,
+) {
+  try {
+    const content = noteFromRecap(recapObj, fallbackTitle)
+    if (!content) return
+
+    const { data: existing } = await admin
+      .from('student_notes')
+      .select('id')
+      .eq('teacher_id', teacherId)
+      .eq('student_id', studentId)
+      .eq('note_date', lessonDate)
+      .maybeSingle()
+    if (existing) return
+
+    const { error } = await admin.from('student_notes').insert({
+      teacher_id: teacherId,
+      student_id: studentId,
+      content,
+      note_date: lessonDate,
+      pinned: false,
+    })
+    if (error) console.error('student_notes write failed', error.message)
+  } catch (e: any) {
+    console.error('student_notes write failed', e?.message || e)
+  }
 }
 
 /**

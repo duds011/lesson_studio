@@ -47,57 +47,46 @@ const db = createClient(
   { auth: { persistSession: false } },
 )
 
-/** Japanese recaps get Japanese labels. Anything else reads as English. */
-const isJa = (s) => /[぀-ヿ一-龯]/.test(s || '')
-
-/** "3. 仮定法と現在形" -> "仮定法と現在形" — the numbering is the recap's, not the note's. */
-const clean = (t) => String(t || '').replace(/^\s*\d+\s*[.、）)]\s*/, '').trim()
-
 /**
- * A few lines a teacher can read in the ten seconds before the next lesson.
+ * MIRRORS lib/lesson-note.ts — keep the two in step.
  *
- * Deliberately not the whole recap: the first sections say what the hour was
- * spent on, the next few say what came out of it, and the counts say how dense
- * it was. Anything more and they would be reading the recap again.
+ * A .mjs script cannot import the TypeScript module, and the two must agree:
+ * publishing writes notes through lib/lesson-note.ts, and this backfills the
+ * lessons published before that existed. Any change belongs in both.
  */
-function noteFor({ lessonNumber, title, sections, vocab, corrections, score, ja }) {
-  const titles = sections.map((s) => clean(s?.title)).filter(Boolean)
+const clean = (t) => String(t ?? '').replace(/^\s*\d+\s*[.、）)]\s*/, '').trim()
 
-  // The recap prompt puts activities first and language points after them.
-  const did = titles.slice(0, 3)
-  const points = titles.slice(3, 7)
+function clip(s, max) {
+  if (s.length <= max) return s
+  const cut = s.slice(0, max)
+  const sp = cut.lastIndexOf(' ')
+  return `${(sp > max * 0.6 ? cut.slice(0, sp) : cut).trimEnd()}…`
+}
 
-  const L = ja
-    ? { lesson: `第${lessonNumber}回`, did: 'やったこと', points: '扱った項目', vocab: '語彙', corr: '訂正', score: 'スコア' }
-    : { lesson: `Lesson ${lessonNumber}`, did: 'Did', points: 'Covered', vocab: 'vocab', corr: 'corrections', score: 'score' }
+const TOPICS = 3
+const TOPIC_MAX = 46
 
-  const lines = [`${L.lesson} · ${clean(title)}`]
-  if (did.length) lines.push(`${L.did}: ${did.join(ja ? '／' : ' · ')}`)
-  if (points.length) lines.push(`${L.points}: ${points.join(ja ? '／' : ' · ')}`)
+function noteFromRecap(recap, fallbackTitle) {
+  if (!recap || typeof recap !== 'object') return ''
+  const title = clean(recap.lesson_title) || clean(fallbackTitle)
+  const sections = Array.isArray(recap.sections) ? recap.sections : []
+  const topics = sections
+    .map((s) => clean(s?.title))
+    .filter(Boolean)
+    .slice(0, TOPICS)
+    .map((t) => clip(t, TOPIC_MAX))
 
-  const stats = []
-  if (vocab) stats.push(`${L.vocab} ${vocab}`)
-  if (corrections) stats.push(`${L.corr} ${corrections}`)
-  if (score != null) stats.push(`${L.score} ${score}/10`)
-  if (stats.length) lines.push(stats.join(ja ? '・' : ' · '))
-
+  const lines = []
+  if (title) lines.push(clip(title, 80))
+  if (topics.length && !(topics.length === 1 && topics[0] === title)) {
+    lines.push(topics.join(' · '))
+  }
   return lines.join('\n')
 }
 
 const { data: teacher } = await db
-  .from('profiles').select('id, full_name, speaking_language, teaching_language')
-  .eq('email', TEACHER).maybeSingle()
+  .from('profiles').select('id, full_name').eq('email', TEACHER).maybeSingle()
 if (!teacher) { console.error(`No profile for ${TEACHER}`); process.exit(1) }
-
-/**
- * The labels follow the TEACHER, not the recap.
- *
- * A note is her private record, and she reads one language whatever the lesson
- * was in — so a Japanese teacher of English gets Japanese labels around the
- * English topics, rather than the scaffolding flipping language from student to
- * student. Only when we know nothing about her does the content decide.
- */
-const teacherJa = /japanese|日本語/i.test(teacher.speaking_language || teacher.teaching_language || '')
 
 const { data: lessons, error } = await db
   .from('lessons')
@@ -123,19 +112,8 @@ for (const l of lessons ?? []) {
   if (!recap) { skipped++; continue }
   if (taken.has(`${l.student_id}|${l.lesson_date}`)) { skipped++; continue }
 
-  const sections = Array.isArray(recap.sections) ? recap.sections : []
-  const content = noteFor({
-    lessonNumber: l.lesson_number,
-    title: recap.lesson_title || l.title,
-    sections,
-    vocab: recap.vocab_total_count ?? null,
-    corrections: Array.isArray(recap.corrections) ? recap.corrections.length : 0,
-    score: sum?.score ?? recap.score ?? null,
-    // Her language when the profile says so; otherwise let the lesson decide.
-    ja: teacher.speaking_language || teacher.teaching_language
-      ? teacherJa
-      : isJa([recap.lesson_title || l.title, ...sections.map((s) => s?.title)].join(' ')),
-  })
+  const content = noteFromRecap(recap, l.title)
+  if (!content) { skipped++; continue }
 
   rows.push({
     student_id: l.student_id,
