@@ -7,6 +7,8 @@ import ExerciseEditor from './ExerciseEditor'
 import LessonTopics from './LessonTopics'
 import TeacherVoiceMemo, { type HeldMemo } from './portal/TeacherVoiceMemo'
 import PendingFiles from './portal/PendingFiles'
+import MaterialPicker from './portal/MaterialPicker'
+import { attachMaterial, type Material } from '@/app/actions/materials'
 import { uploadPortalFile } from '@/lib/portal-upload'
 import { asHomework } from '@/lib/portal-utils'
 import { hesitationExamples } from '@/lib/languages'
@@ -105,6 +107,9 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
   const memoRef = useRef<HeldMemo | null>(null)
   // Same deal for attachments: no lesson row to hang them on until publish.
   const filesRef = useRef<File[]>([])
+  // Library materials picked during review, attached once publishing has
+  // created the lesson.
+  const materialsRef = useRef<Material[]>([])
 
   // Creeps toward whatever the last finished step set, never past it.
   useEffect(() => {
@@ -167,6 +172,15 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
         setBusy('')
         setMsg('Recap sent, but an attachment failed to upload — add it from the lesson page.')
         return
+      }
+
+      // Links are rows, not uploads, so they are quick — and a material that
+      // fails to attach must not cost the teacher a recap that is already sent.
+      if (materialsRef.current.length) {
+        step(96, 'Attaching your materials…')
+        for (const m of materialsRef.current) {
+          await attachMaterial(m.id, res.lessonId).catch(() => {})
+        }
       }
     }
 
@@ -377,11 +391,15 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
             ))}
             <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => setSections([...sections, { title: '', content: '' }])}>+ Add section</button>
             <section className="block">
-              <h4>📎 Files for {first}</h4>
+              <h4>📎 Materials for {first}</h4>
               <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
-                Slides, a worksheet, anything from the lesson. They go out with the recap when you approve.
+                Slides, a worksheet, a video — anything from the lesson. They go out with the recap when you approve.
               </p>
               <PendingFiles studentFirst={first} onChange={(f) => { filesRef.current = f }} />
+              {/* Saved links, chosen rather than hunted down again. Attached
+                  after publishing, for the same reason the files are: there is
+                  no lesson row to hang them on until then. */}
+              <MaterialPicker onChange={(m) => { materialsRef.current = m }} />
             </section>
           </div>
         )}

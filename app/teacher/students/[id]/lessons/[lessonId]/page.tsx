@@ -37,7 +37,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
   // Same branding the student's copy of this recap is rendered with, so this
   // page is a preview of theirs rather than a different page about it.
   const [{ data: files }, { data: audios }, { data: profile }] = await Promise.all([
-    supabase.from('lesson_attachments').select('id, file_name, created_at, content_type').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+    supabase.from('lesson_attachments').select('id, file_name, created_at, content_type, url, kind, thumbnail').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     supabase.from('student_audio_submissions').select('id, file_name, created_at, prompt_index').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     supabase.from('profiles').select('brand, full_name, speaking_submissions').eq('id', user.id).single(),
   ])

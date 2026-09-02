@@ -37,7 +37,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   // The teacher owns how this page is arranged — same brand the studio edits.
   const admin = createAdminClient()
   const [{ data: files }, { data: audios }, { data: teacherProfile }] = await Promise.all([
-    supabase.from('lesson_attachments').select('id, file_name, created_at, content_type').eq('lesson_id', l.id).order('created_at', { ascending: false }),
+    supabase.from('lesson_attachments').select('id, file_name, created_at, content_type, url, kind, thumbnail').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     supabase.from('student_audio_submissions').select('id, file_name, created_at, prompt_index').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     student?.teacher_id
       ? admin.from('profiles').select('brand, full_name, speaking_submissions').eq('id', student.teacher_id).single()

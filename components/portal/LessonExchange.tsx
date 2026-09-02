@@ -3,8 +3,15 @@ import TeacherFileUpload from '@/components/portal/TeacherFileUpload'
 import StudentAudioUpload from '@/components/portal/StudentAudioUpload'
 import { isMemo } from '@/components/portal/LessonMemo'
 import AudioPlayer from '@/components/portal/AudioPlayer'
+import { youtubeId } from '@/lib/link-preview'
 
-type Row = { id: string; file_name: string | null; created_at: string; content_type?: string | null }
+type Row = {
+  id: string; file_name: string | null; created_at: string; content_type?: string | null
+  /** Set when this is a saved link rather than an upload — see teacher_materials. */
+  url?: string | null
+  kind?: string | null
+  thumbnail?: string | null
+}
 
 /**
  * Two-way content exchange for a lesson:
@@ -47,12 +54,37 @@ export default function LessonExchange({
 
   const fileList = (
     <div style={{ display: 'grid', gap: 8 }}>
-      {docs.map((f) => (
-        <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface-2)' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.file_name || 'file'}</span>
-          <a className="btn btn-ghost btn-sm" href={`/api/portal/download?kind=file&id=${f.id}`} target="_blank" rel="noopener">Download</a>
-        </div>
-      ))}
+      {docs.map((f) => {
+        // A link has no storage object behind it, so it opens rather than
+        // downloads — and a video is worth showing as one.
+        const vid = f.url ? youtubeId(f.url) : null
+        if (f.url) {
+          return (
+            <div key={f.id} className="k-matrow">
+              {vid ? (
+                <iframe
+                  className="k-matrow-embed"
+                  src={`https://www.youtube-nocookie.com/embed/${vid}`}
+                  title={f.file_name || 'Video'}
+                  allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  loading="lazy"
+                />
+              ) : null}
+              <div className="k-matrow-bar">
+                <span className="k-matrow-name">{f.kind === 'video' ? '▶' : '🔗'} {f.file_name || f.url}</span>
+                <a className="btn btn-ghost btn-sm" href={f.url} target="_blank" rel="noopener noreferrer">Open</a>
+              </div>
+            </div>
+          )
+        }
+        return (
+          <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface-2)' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.file_name || 'file'}</span>
+            <a className="btn btn-ghost btn-sm" href={`/api/portal/download?kind=file&id=${f.id}`} target="_blank" rel="noopener">Download</a>
+          </div>
+        )
+      })}
     </div>
   )
 

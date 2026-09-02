@@ -38,6 +38,7 @@ const LINKS = [
   { href: '/', label: 'Overview', icon: 'home' as IconName, tour: 'overview' },
   { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName, tour: 'students' },
   { href: '/teacher/notes', label: 'Notes', icon: 'note' as IconName, tour: 'notes' },
+  { href: '/teacher/materials', label: 'Materials', icon: 'book' as IconName, tour: 'materials' },
   { href: '/teacher/branding', label: 'Student view', icon: 'eye' as IconName, tour: 'student-view' },
   { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName, tour: 'payments' },
 ]
