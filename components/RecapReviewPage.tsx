@@ -35,6 +35,35 @@ function AutoTextarea({ value, onChange, placeholder, minRows = 3 }: {
 const TABS = ['Progress', 'Lesson', 'Homework', 'Vocabulary'] as const
 type Tab = typeof TABS[number]
 
+/**
+ * What the teacher watches while a recap is being sent.
+ *
+ * Publishing writes the lesson, its summary, every vocabulary row, her note,
+ * the student's email and any attachments — a few seconds in which the old UI
+ * only greyed a button out, which reads as a page that has hung. The skeleton
+ * lines stand in for the recap being assembled on the other side.
+ */
+function PublishOverlay({ pct, label }: { pct: number; label: string }) {
+  return (
+    <div className="k-pub" role="status" aria-live="polite">
+      <div className="k-pub-card">
+        <div className="k-pub-pct">
+          {Math.round(pct)}<span>%</span>
+        </div>
+        <div className="k-pub-track">
+          <i style={{ width: `${Math.max(2, pct)}%` }} />
+        </div>
+        <p className="k-pub-label">{label}</p>
+        <div className="k-pub-skel" aria-hidden>
+          <i style={{ width: '72%' }} />
+          <i style={{ width: '94%' }} />
+          <i style={{ width: '58%' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; language?: string | null }) {
   const router = useRouter()
   const r = rec.recap || {}
@@ -55,11 +84,41 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
   const [busy, setBusy] = useState<'' | 'save' | 'publish' | 'delete'>('')
   const [rebuilding, setRebuilding] = useState(false)
   const [msg, setMsg] = useState('')
+  /**
+   * Publishing progress, 0-100.
+   *
+   * The percentage is real in the sense that every jump is a step that has
+   * actually finished — saved, sent, each attachment uploaded. What it cannot
+   * be is linear: the server does the publish in one request and does not
+   * report from inside it. So each finished step sets a TARGET and the bar
+   * eases toward it, slowing as it approaches, and only the final step reaches
+   * 100. A teacher watching it sees motion the whole time and never sees it
+   * sit at a number that is a lie.
+   */
+  const [pct, setPct] = useState(0)
+  const [phase, setPhase] = useState('')
+  const targetRef = useRef(0)
+  const step = (target: number, label: string) => { targetRef.current = target; setPhase(label) }
+
   // A voice memo recorded during review. The lesson row doesn't exist until
   // publish, so the blob waits here and is uploaded right after.
   const memoRef = useRef<HeldMemo | null>(null)
   // Same deal for attachments: no lesson row to hang them on until publish.
   const filesRef = useRef<File[]>([])
+
+  // Creeps toward whatever the last finished step set, never past it.
+  useEffect(() => {
+    if (busy !== 'publish') return
+    const id = setInterval(() => {
+      setPct((p) => {
+        const t = targetRef.current
+        if (p >= t) return p
+        // A floor under the easing so the bar never appears to stall.
+        return Math.min(t, p + Math.max(0.35, (t - p) * 0.11))
+      })
+    }, 55)
+    return () => clearInterval(id)
+  }, [busy])
 
   const setSection = (i: number, patch: Partial<Section>) => setSections(sections.map((s, j) => (j === i ? { ...s, ...patch } : s)))
   const cleanSections = () => sections.map((s) => ({ title: s.title.trim(), content: s.content.trim() })).filter((s) => s.title || s.content)
@@ -78,19 +137,31 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
   }
   async function approve() {
     setBusy('publish'); setMsg('')
+    setPct(0); step(20, 'Saving your edits…')
+
     await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
+
+    step(58, `Sending the recap to ${first}…`)
     const res = await fetch('/api/recap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ eventId: rec.eventId }) }).then((x) => x.json())
     if (!res.delivered && res.warning) { setBusy(''); setMsg(res.warning); return }
+
     // Publishing created the lesson — now the memo and files have somewhere to
     // go. The recap is already sent at this point, so a failure here reports
     // what is missing rather than pretending the whole thing failed.
     if (res.lessonId) {
+      const queue: { blob: Blob; name: string }[] = [
+        ...(memoRef.current ? [memoRef.current] : []),
+        ...filesRef.current.map((f) => ({ blob: f as Blob, name: f.name })),
+      ]
       try {
-        if (memoRef.current) {
-          await uploadPortalFile('teacher-file', res.lessonId, memoRef.current.blob, memoRef.current.name)
-        }
-        for (const f of filesRef.current) {
-          await uploadPortalFile('teacher-file', res.lessonId, f, f.name)
+        let done = 0
+        for (const item of queue) {
+          step(
+            72 + Math.round((done / queue.length) * 22),
+            done === 0 && memoRef.current ? 'Uploading your voice memo…' : `Uploading ${item.name}…`,
+          )
+          await uploadPortalFile('teacher-file', res.lessonId, item.blob, item.name)
+          done++
         }
       } catch {
         setBusy('')
@@ -98,6 +169,11 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
         return
       }
     }
+
+    // Let it actually land on 100 before the page changes under them — a bar
+    // that vanishes at 94% reads as something having gone wrong.
+    step(100, `Sent to ${first} ✓`)
+    await new Promise((r) => setTimeout(r, 550))
     router.push('/'); router.refresh()
   }
 
@@ -360,6 +436,8 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
             </section>
           </div>
         )}
+
+        {busy === 'publish' && <PublishOverlay pct={pct} label={phase} />}
 
         <div className="review-actions">
           <span style={{ fontSize: 13, color: 'var(--green)', marginRight: 'auto' }}>{msg}</span>

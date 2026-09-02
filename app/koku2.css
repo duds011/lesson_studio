@@ -2067,3 +2067,32 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
   .k-askmemo{animation:none}
   .k-askmemo-script>summary::before{transition:none}
 }
+
+/* ── Publishing a recap: progress, not a greyed-out button ────────────────
+   Publishing writes the lesson, its summary, the vocabulary rows, the
+   teacher's note, the student's email and any attachments. That is a few
+   seconds in which the page used to do nothing visible. */
+.k-pub{position:fixed;inset:0;z-index:80;display:grid;place-items:center;
+  background:rgba(17,20,24,.42);backdrop-filter:blur(3px);padding:24px}
+.k-pub-card{width:min(380px,100%);background:var(--surface);border-radius:20px;
+  padding:28px 26px 24px;box-shadow:0 26px 70px rgba(0,0,0,.26);text-align:center}
+.k-pub-pct{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--brand)}
+.k-pub-pct span{font-size:19px;font-weight:700;margin-left:2px;color:var(--muted)}
+.k-pub-track{height:7px;border-radius:999px;background:var(--surface-2);
+  overflow:hidden;margin:16px 0 12px}
+.k-pub-track i{display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,#0a61c9,#4da3ff);transition:width .45s cubic-bezier(.22,.61,.36,1)}
+.k-pub-label{margin:0;font-size:12.5px;font-weight:600;color:var(--muted);min-height:17px}
+/* Standing in for the recap being assembled on the other side. */
+.k-pub-skel{display:grid;gap:8px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.k-pub-skel i{height:9px;border-radius:999px;
+  background:linear-gradient(90deg,var(--surface-2) 25%,rgba(10,97,201,.12) 50%,var(--surface-2) 75%);
+  background-size:220% 100%;animation:k-pub-shine 1.4s ease-in-out infinite}
+.k-pub-skel i:nth-child(2){animation-delay:.16s}
+.k-pub-skel i:nth-child(3){animation-delay:.32s}
+@keyframes k-pub-shine{to{background-position:-220% 0}}
+@media (prefers-reduced-motion:reduce){
+  .k-pub-skel i{animation:none}
+  .k-pub-track i{transition:none}
+}
