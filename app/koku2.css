@@ -2036,3 +2036,34 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-prac-tick{display:block;width:46px;height:46px;margin:0 auto 14px;border-radius:50%;
   background:var(--green-soft);color:var(--green);font-size:20px;font-weight:800;line-height:46px}
 .k-prac-empty .k-prac-acts{margin-top:18px;justify-content:center}
+
+/* ── Voice-memo invitation (recap review, first tab) ──
+   NB: not .k-memo — that is the student portal's memo PLAYER above, which
+   sets color:#fff for its dark band. Reusing the name rendered this card's
+   heading white on white. ──────────────────────
+   The one part of a recap that only exists if the teacher decides to make it,
+   so it opens the review rather than sitting under the section editors. The
+   moving gradient is the whole point: a static card reads as another field to
+   fill in, and this is an invitation. */
+.k-askmemo{position:relative;padding:2px;border-radius:18px;
+  background:linear-gradient(115deg,#0a61c9,#4da3ff,#7a3fd1,#4da3ff,#0a61c9);
+  background-size:300% 100%;animation:k-askmemo-drift 9s linear infinite;
+  box-shadow:0 14px 34px rgba(10,97,201,.16)}
+.k-askmemo-in{border-radius:16px;background:var(--surface);padding:20px 22px}
+@keyframes k-askmemo-drift{to{background-position:300% 0}}
+.k-askmemo h4{margin:0 0 5px;font-size:16.5px;letter-spacing:-.02em}
+.k-askmemo-lead{margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.55}
+/* Collapsed by default — it is a prompt for the teacher who wants one, not
+   half a page of Japanese between her and the record button. */
+.k-askmemo-script{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.k-askmemo-script>summary{cursor:pointer;font-size:12px;font-weight:700;
+  color:var(--brand);list-style:none;display:flex;align-items:center;gap:6px}
+.k-askmemo-script>summary::-webkit-details-marker{display:none}
+.k-askmemo-script>summary::before{content:'▸';font-size:10px;transition:transform .15s ease}
+.k-askmemo-script[open]>summary::before{transform:rotate(90deg)}
+.k-askmemo-script p{white-space:pre-wrap;font-size:13px;color:var(--muted);
+  margin:10px 0 0;line-height:1.6}
+@media (prefers-reduced-motion:reduce){
+  .k-askmemo{animation:none}
+  .k-askmemo-script>summary::before{transition:none}
+}

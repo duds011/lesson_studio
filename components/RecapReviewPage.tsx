@@ -181,6 +181,30 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
         {/* ── PROGRESS: stats + short summary ── */}
         {tab === 'Progress' && (
           <div role="tabpanel" style={{ display: 'grid', gap: 18, paddingTop: 4 }}>
+            {/* The first thing on the first tab. A memo is the one part of a
+                recap that exists only if the teacher decides to make it, and
+                it used to sit on the Lesson tab under a variable number of
+                section editors — far enough down that the decision was never
+                really put to her. */}
+            <section className="k-askmemo">
+              <div className="k-askmemo-in">
+                <h4>🎙️ Record an audio for {first}</h4>
+                <p className="k-askmemo-lead">
+                  A quick spoken note — encouragement, pronunciation, anything text can&rsquo;t carry. It goes out with the recap when you approve.
+                </p>
+                <TeacherVoiceMemo onHold={(m) => { memoRef.current = m }} />
+                {/* Folded away: the script is for the teacher who wants a
+                    prompt, and open by default it put half a page of text
+                    between her and the record button. */}
+                {r.audio_script && (
+                  <details className="k-askmemo-script">
+                    <summary>Suggested script</summary>
+                    <p>{r.audio_script}</p>
+                  </details>
+                )}
+              </div>
+            </section>
+
             <div className="mini-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
               <div className="mini"><div className="k">Score</div><div className="v">{r.score ?? '—'}<span style={{ fontSize: 13, color: 'var(--muted)' }}>/10</span></div></div>
               <div className="mini"><div className="k">Student talk</div><div className="v">{r.talk_percentage ?? '—'}%</div></div>
@@ -266,27 +290,6 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
         {/* ── LESSON: the voice memo, then the editable sections ── */}
         {tab === 'Lesson' && (
           <div role="tabpanel" style={{ display: 'grid', gap: 16, paddingTop: 4 }}>
-            {/* First on the tab, not after the sections and the Add button.
-                A memo is the one part of a recap that only exists if the
-                teacher decides to make it, and it was sitting below a variable
-                number of section editors — far enough down that the decision
-                was never really put to them. It leads now. */}
-            <section className="block">
-              <h4>🎙️ Voice memo for {first}</h4>
-              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
-                A quick spoken note — encouragement, pronunciation, anything text can&rsquo;t carry. It goes out with the recap when you approve.
-              </p>
-              <TeacherVoiceMemo onHold={(m) => { memoRef.current = m }} />
-              {/* The script the AI drafted for exactly this recording, right
-                  where it is read — it was nowhere on this page before. */}
-              {r.audio_script && (
-                <div style={{ marginTop: 12, borderTop: '1px solid var(--line)', paddingTop: 10 }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 6px' }}>Suggested script</p>
-                  <p style={{ whiteSpace: 'pre-wrap', fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>{r.audio_script}</p>
-                </div>
-              )}
-            </section>
-
             {sections.map((s, i) => (
               <section className="block" key={i}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
