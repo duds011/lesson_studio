@@ -37,7 +37,7 @@ STATE (2026-08-11)
   privacy policy at /privacy.
 
 ACCOUNTS (Supabase project pbxyilslgxuxoztixotw)
-- Noa noanoayo46@gmail.com — the real teacher. Student: Duarte
+- Noa noanoayo46@icloud.com — the real teacher. Student: Duarte
   (wogaoliveira@gmail.com, learns French).
 - Akio kentoakio@gmail.com — beta teacher, teaches English, speaks Japanese.
   Students Fukunishi + Eylul (both English). Her recap was rebuilt to English

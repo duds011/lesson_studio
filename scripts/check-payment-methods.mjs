@@ -26,7 +26,7 @@ const URL = process.env.NEXT_PUBLIC_SUPABASE_URL.trim()
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.trim()
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY.trim()
 
-const TEACHER = { email: 'noanoayo46@gmail.com', password: 'genoa12345' }
+const TEACHER = { email: 'noanoayo46@icloud.com', password: 'genoa12345' }
 const STUDENT = { email: 'jeffganly@gmail.com', password: 'JeffLesson26!' }
 
 const admin = createClient(URL, SERVICE, { auth: { persistSession: false } })
