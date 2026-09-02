@@ -295,6 +295,21 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
               </div>
             </section>
 
+            {/* Everything that goes OUT with this recap, together and first:
+                the memo above, then the files and the saved links. They used to
+                be a tab apart, so approving without them was the easy path. */}
+            <section className="block">
+              <h4>📎 Materials for {first}</h4>
+              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
+                Slides, a worksheet, a video — anything from the lesson. They go out with the recap when you approve.
+              </p>
+              <PendingFiles studentFirst={first} initial={filesRef.current} onChange={(f) => { filesRef.current = f }} />
+              {/* Saved links, chosen rather than hunted down again. Attached
+                  after publishing, for the same reason the files are: there is
+                  no lesson row to hang them on until then. */}
+              <MaterialPicker initial={materialsRef.current} onChange={(m) => { materialsRef.current = m }} />
+            </section>
+
             <div className="mini-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
               <div className="mini"><div className="k">Score</div><div className="v">{r.score ?? '—'}<span style={{ fontSize: 13, color: 'var(--muted)' }}>/10</span></div></div>
               <div className="mini"><div className="k">Student talk</div><div className="v">{r.talk_percentage ?? '—'}%</div></div>
@@ -390,17 +405,6 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
               </section>
             ))}
             <button className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }} onClick={() => setSections([...sections, { title: '', content: '' }])}>+ Add section</button>
-            <section className="block">
-              <h4>📎 Materials for {first}</h4>
-              <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>
-                Slides, a worksheet, a video — anything from the lesson. They go out with the recap when you approve.
-              </p>
-              <PendingFiles studentFirst={first} onChange={(f) => { filesRef.current = f }} />
-              {/* Saved links, chosen rather than hunted down again. Attached
-                  after publishing, for the same reason the files are: there is
-                  no lesson row to hang them on until then. */}
-              <MaterialPicker onChange={(m) => { materialsRef.current = m }} />
-            </section>
           </div>
         )}
 

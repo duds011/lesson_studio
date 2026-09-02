@@ -11,12 +11,21 @@ import { useRef, useState } from 'react'
  * memo uses. Without this the teacher had to publish, navigate to the lesson,
  * and upload as a second errand.
  */
-export default function PendingFiles({ onChange, studentFirst = 'the student' }: {
+export default function PendingFiles({ onChange, studentFirst = 'the student', initial }: {
   onChange: (files: File[]) => void
   studentFirst?: string
+  /**
+   * What the parent is already holding.
+   *
+   * Switching tabs unmounts this, and remounting used to start from an empty
+   * list while the parent's ref still had the files — so they were shown as
+   * gone and then attached anyway. Seeding from the parent makes what is on
+   * screen the truth again.
+   */
+  initial?: File[]
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [files, setFiles] = useState<File[]>([])
+  const [files, setFiles] = useState<File[]>(initial ?? [])
 
   const update = (next: File[]) => {
     setFiles(next)

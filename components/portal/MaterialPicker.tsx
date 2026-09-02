@@ -16,10 +16,14 @@ const ICON: Record<string, string> = { video: '▶', article: '📄', link: '�
  * until the recap is approved. Same shape as the voice memo and the pending
  * files beside it; the parent attaches them once publishing has made a lesson.
  */
-export default function MaterialPicker({ onChange }: { onChange: (picked: Material[]) => void }) {
+export default function MaterialPicker({ onChange, initial }: {
+  onChange: (picked: Material[]) => void
+  /** What the parent already holds — see PendingFiles: tabs unmount this. */
+  initial?: Material[]
+}) {
   const [open, setOpen] = useState(false)
   const [all, setAll] = useState<Material[] | null>(null)
-  const [picked, setPicked] = useState<Material[]>([])
+  const [picked, setPicked] = useState<Material[]>(initial ?? [])
   const [q, setQ] = useState('')
 
   useEffect(() => {
