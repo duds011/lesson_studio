@@ -99,14 +99,20 @@ export async function POST(req: Request) {
    *
    * The recorder used to ask before every lesson and keep the answer in one
    * browser's storage. It is a fact about the student, so the student's own
-   * record wins; failing that the teacher's onboarding answer, and only then
-   * whatever an extension that has not updated yet happened to send.
+   * record wins.
+   *
+   * What an older extension sends comes next, ahead of the teacher's own
+   * onboarding answer — deliberately. That build's dropdown already remembered
+   * a choice per student, so it is the more specific answer of the two, and
+   * demoting it would quietly re-transcribe an advanced student's Japanese
+   * hour as English the moment this deployed. The teacher's default is the
+   * last resort, for a new build that sends nothing.
    */
   const spokenResolved =
     (typeof (student as any).spoken_language === 'string' && (student as any).spoken_language.trim()) ||
+    (typeof spokenLanguage === 'string' && spokenLanguage.trim()) ||
+    (typeof language === 'string' && language.trim()) ||
     (typeof (callerProfile as any)?.speaking_language === 'string' && (callerProfile as any).speaking_language.trim()) ||
-    (typeof spokenLanguage === 'string' && spokenLanguage) ||
-    (typeof language === 'string' && language) ||
     null
 
   // Checked before the upload is claimed, so a teacher over the ceiling is
