@@ -17,20 +17,42 @@ export async function GET(req: Request) {
 
   const admin = createAdminClient()
   const [{ data, error }, { data: profile }] = await Promise.all([
-    admin.from('students').select('id, full_name, language').eq('teacher_id', caller.teacherId).order('full_name'),
+    // `*` rather than a column list: `spoken_language` arrives in migration
+    // 0032, and a named column that does not exist yet fails the whole request
+    // rather than coming back empty.
+    admin.from('students').select('*').eq('teacher_id', caller.teacherId).order('full_name'),
     admin.from('profiles').select('full_name, teaching_language, speaking_language').eq('id', caller.teacherId).maybeSingle(),
   ])
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  /**
+   * Only the fields the recorder uses, with the spoken language already
+   * resolved.
+   *
+   * That last one replaced a dropdown. The recorder used to ask, before every
+   * lesson, what the hour would be spoken in — a fact about the student, not
+   * about the hour. It is answered on their record now, falling back to the
+   * teacher's own onboarding answer, and /api/ext/complete trusts the same
+   * resolution over anything the extension sends.
+   */
+  const teacherSpoken = (profile as any)?.speaking_language ?? null
+  const students = (data ?? []).map((s: any) => ({
+    id: s.id,
+    full_name: s.full_name,
+    language: s.language,
+    spoken_language: (typeof s.spoken_language === 'string' && s.spoken_language.trim()) || teacherSpoken || 'English',
+  }))
+
   return NextResponse.json({
-    students: data ?? [],
+    students,
     teacher: {
       name: (profile as any)?.full_name ?? null,
-      // `language` is what they teach; `speaking` is what they explain in. The
-      // recorder needs the second to guess what a lesson will actually sound
-      // like, which for a beginner is not the language being learned.
+      // Kept for extensions that have not updated yet: they still fill their
+      // own dropdown from these. Newer builds ignore them and read each
+      // student's `spoken_language` above.
       language: (profile as any)?.teaching_language ?? null,
-      speaking: (profile as any)?.speaking_language ?? null,
+      speaking: teacherSpoken,
     },
   })
 }

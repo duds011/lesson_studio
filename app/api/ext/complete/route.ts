@@ -48,7 +48,7 @@ export async function POST(req: Request) {
    */
   const admin0 = createAdminClient()
   const { data: callerProfile } = await admin0
-    .from('profiles').select('role').eq('id', caller.teacherId).maybeSingle()
+    .from('profiles').select('role, speaking_language').eq('id', caller.teacherId).maybeSingle()
   const micIs = (callerProfile as any)?.role === 'student' ? 'student' : 'teacher'
 
   // The upload-init check already turned this away once, but that one guards
@@ -76,7 +76,10 @@ export async function POST(req: Request) {
         seconds: typeof seconds === 'number' ? Math.round(seconds) : null,
         lesson_date: lessonDate || new Date().toISOString().slice(0, 10),
         mic_is: micIs ?? null,
-        spoken_language: spokenLanguage || language || null,
+        // Nobody to read a setting from yet. The recorder no longer asks, so
+        // this is usually the teacher's own spoken language from onboarding;
+        // filing the recording to a student later lets theirs take over.
+        spoken_language: spokenLanguage || language || (callerProfile as any)?.speaking_language || null,
         heard: heard ?? null,
       },
       { onConflict: 'recording_id' },
@@ -85,9 +88,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, pending: true, recordingId }, { status: 202 })
   }
 
+  // `*` rather than a column list: `spoken_language` arrives in migration
+  // 0032, and naming a column that does not exist yet fails the whole request.
   const { data: student } = await admin
-    .from('students').select('id, full_name, language, instruction_language, jp_script').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
+    .from('students').select('*').eq('id', studentId).eq('teacher_id', caller.teacherId).maybeSingle()
   if (!student) return NextResponse.json({ error: 'Student not found for this teacher' }, { status: 404 })
+
+  /**
+   * What this hour is spoken in, settled here rather than in the popup.
+   *
+   * The recorder used to ask before every lesson and keep the answer in one
+   * browser's storage. It is a fact about the student, so the student's own
+   * record wins; failing that the teacher's onboarding answer, and only then
+   * whatever an extension that has not updated yet happened to send.
+   */
+  const spokenResolved =
+    (typeof (student as any).spoken_language === 'string' && (student as any).spoken_language.trim()) ||
+    (typeof (callerProfile as any)?.speaking_language === 'string' && (callerProfile as any).speaking_language.trim()) ||
+    (typeof spokenLanguage === 'string' && spokenLanguage) ||
+    (typeof language === 'string' && language) ||
+    null
 
   // Checked before the upload is claimed, so a teacher over the ceiling is
   // told plainly instead of having the recording silently swallowed.
@@ -117,7 +137,7 @@ export async function POST(req: Request) {
       mic_is: micIs === 'student' ? 'student' : micIs === 'teacher' ? 'teacher' : null,
       // What the room actually spoke, remembered for the same reason: a
       // rebuild re-transcribes with this hint, not the target language.
-      spoken_language: (typeof spokenLanguage === 'string' && spokenLanguage) || (typeof language === 'string' && language) || null,
+      spoken_language: spokenResolved,
     },
     { onConflict: 'event_id' },
   )
@@ -153,7 +173,9 @@ export async function POST(req: Request) {
   await runAsTeacher(caller.teacherId, () => saveRecap({ ...placeholder, status: 'processing' }))
 
   waitUntil(
-    buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage, cutMaps })
+    // The resolved answer, not the posted one — the build must transcribe with
+    // the same hint the link just recorded.
+    buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage: spokenResolved, cutMaps })
       .catch(async (e) => {
         const error = String(e?.message ?? e)
         console.error(`[ext/complete] recap build failed for ${eventId}: ${error}`)

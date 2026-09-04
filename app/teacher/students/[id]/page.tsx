@@ -8,6 +8,7 @@ import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
 import GenerateTestButton from '@/components/portal/GenerateTestButton'
 import InstructionLanguageEditor from '@/components/portal/InstructionLanguageEditor'
+import SpokenLanguageEditor from '@/components/portal/SpokenLanguageEditor'
 import LearningLanguageEditor from '@/components/portal/LearningLanguageEditor'
 import JpScriptEditor from '@/components/portal/JpScriptEditor'
 import PageHeader from '@/components/PageHeader'
@@ -31,7 +32,9 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
   // per student, not per teacher, because one teacher can teach two languages.
   // No 'Japanese' fallback: that default put the hiragana/romaji picker in
   // front of every teacher whose profile predates the language field.
-  const { data: teacherProfile } = await supabase.from('profiles').select('teaching_language').eq('id', user.id).single()
+  // `speaking_language` too: it is what an unset student's spoken language
+  // falls back to, and the chip shows that default rather than a blank.
+  const { data: teacherProfile } = await supabase.from('profiles').select('teaching_language, speaking_language').eq('id', user.id).single()
   const teachingLanguage = (student as any).language || (teacherProfile as any)?.teaching_language || ''
 
   // Teacher RLS returns all their students' lessons, including drafts.
@@ -102,6 +105,13 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
           <>
             <LearningLanguageEditor studentId={student.id} value={student.language ?? null} />
             <InstructionLanguageEditor studentId={student.id} value={(student as any).instruction_language ?? null} />
+            {/* The third language fact: what the hour is spoken in. The
+                recorder reads it instead of asking before every lesson. */}
+            <SpokenLanguageEditor
+              studentId={student.id}
+              value={(student as any).spoken_language ?? null}
+              fallback={(teacherProfile as any)?.speaking_language ?? null}
+            />
             {/* Only Japanese has a script to choose — the same gate the test
                 generator uses, and for the same reason. */}
             {/japanese|日本語/i.test(teachingLanguage) && (

@@ -62,7 +62,9 @@ export async function POST(req: Request) {
   if (!quota.ok) return NextResponse.json({ ok: false, error: quota.message }, { status: 429 })
 
   const { data: student } = await admin
-    .from('students').select('id, full_name, language, instruction_language, jp_script').eq('id', link.student_id).single()
+    // `*`: `spoken_language` arrives in migration 0032, and naming a column
+    // that does not exist yet fails the whole request.
+    .from('students').select('*').eq('id', link.student_id).single()
   if (!student) return NextResponse.json({ ok: false, error: 'Student not found.' }, { status: 404 })
 
   try {
@@ -123,7 +125,16 @@ export async function POST(req: Request) {
       // us, and the target language only as a fallback — forcing the target
       // onto a beginner lesson conducted in a shared language does not skip
       // those parts, it renders them as target-language nonsense.
-      segments = await transcribeTracks(tracks, toWhisperLanguage((link as any).spoken_language ?? language))
+      /**
+       * The student's own setting first, then what the link remembered.
+       *
+       * A rebuild is usually a second attempt at a lesson whose first transcript
+       * came back wrong, and "wrong language" is the commonest reason — so a
+       * teacher who has since fixed the setting on the student should get their
+       * fix honoured here rather than the stale hint replayed.
+       */
+      const spokenHint = (student as any).spoken_language || (link as any).spoken_language || language
+      segments = await transcribeTracks(tracks, toWhisperLanguage(spokenHint))
     }
 
     const t = normalizeSegments(segments)

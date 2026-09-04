@@ -73,8 +73,9 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
             </select>
           </label>
           <p className="desc" style={{ margin: '-6px 0 0', fontSize: 12 }}>
-            Usually not the one being learned — a beginner&rsquo;s hour runs mostly in the language you share. The
-            recorder starts from this and remembers your choice per student.
+            Usually not the one being learned — a beginner&rsquo;s hour runs mostly in the language you share. Every
+            student follows this unless you switch them on their own page, and the recorder reads it from there
+            rather than asking before each lesson.
           </p>
 
           {(saved || error) && (
@@ -96,7 +97,7 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
         <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8, fontSize: 13.5, color: 'var(--ink)' }}>
           <li><strong>Each student&rsquo;s &ldquo;Learning&rdquo; language</strong> decides how their recaps and tests are generated — {TEACHING_LANGUAGES.join(', ')} are supported. Set when you add the student, changeable on their page.</li>
           <li><strong>Each student&rsquo;s &ldquo;Explained in&rdquo; language</strong> is what their recap text and test instructions are written in — English unless you change it, also on their page.</li>
-          <li><strong>The spoken language</strong> is what the recorder&rsquo;s transcriber listens for during the hour. You confirm it in the recorder popup before each lesson; it is remembered per student.</li>
+          <li><strong>Each student&rsquo;s &ldquo;Spoken in lessons&rdquo; language</strong> is what the recorder&rsquo;s transcriber listens for during the hour. It follows your answer above until you change it on their page — the recorder no longer asks, because the answer does not change from one lesson to the next.</li>
         </ul>
       </section>
     </>

@@ -158,6 +158,43 @@ export async function setInstructionLanguage(studentId: string, language: string
 }
 
 /**
+ * Set what this student's lessons are SPOKEN in — the transcriber's hint.
+ *
+ * The third of the three language fields, and the only one that used to live
+ * outside the app: the recorder asked for it before every lesson and kept the
+ * answer in that browser. It is a property of the student, so it belongs here,
+ * where the server can read it and the recorder can stop asking.
+ *
+ * Empty clears it back to NULL, which means "follow my own spoken language"
+ * from onboarding — the behaviour every teacher has today.
+ */
+export async function setSpokenLanguage(studentId: string, language: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireTeacher()
+  if ('error' in auth) return { success: false, error: auth.error }
+
+  const { data: student } = await auth.supabase
+    .from('students')
+    .select('id')
+    .eq('id', studentId)
+    .eq('teacher_id', auth.user.id)
+    .single()
+  if (!student) return { success: false, error: 'Student not found' }
+
+  const value = language.trim().slice(0, 40) || null
+  const { error } = await createAdminClient()
+    .from('students')
+    .update({ spoken_language: value })
+    .eq('id', studentId)
+  if (error) {
+    console.error('[setSpokenLanguage]', error.message)
+    return { success: false, error: 'That could not be saved. Try again in a moment.' }
+  }
+
+  revalidatePath(`/teacher/students/${studentId}`)
+  return { success: true }
+}
+
+/**
  * Set the language this student is LEARNING — the field that picks the recap
  * and test prompts. Only affects lessons generated from here on; recaps
  * already written stay as they are.
