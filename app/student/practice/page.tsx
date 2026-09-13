@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
-import { DECKS, isDeckId, isDue } from '@/lib/flashcards'
+import { DECKS, isDeckId, isDue, orderForPractice, SESSION_SIZE } from '@/lib/flashcards'
 import PracticeDeck from '@/components/portal/PracticeDeck'
 
 export const dynamic = 'force-dynamic'
@@ -63,18 +63,19 @@ export default async function PracticePage({
       }
     })
 
-  // Due first, then the least-known of the rest — so a short session spends
-  // its time where the forgetting is.
-  const cards = [...all].sort((a, b) =>
-    (a.due === b.due ? a.box - b.box : a.due ? -1 : 1))
+  // Due first, least-known first within that. The deck then hands these out a
+  // round at a time — see SESSION_SIZE.
+  const cards = orderForPractice(all)
+  const dueCount = all.filter((c) => c.due).length
 
   return (
     <div style={{ maxWidth: 720 }}>
       <Link href="/student/dashboard" className="k-back">← Dashboard</Link>
       <PracticeDeck
         cards={cards}
+        dueCount={dueCount}
+        sessionSize={SESSION_SIZE}
         title={deck ? deck.label : 'All your words'}
-        subtitle={deck ? deck.sub : 'every word from your lessons'}
       />
     </div>
   )

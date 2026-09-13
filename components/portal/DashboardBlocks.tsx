@@ -6,6 +6,7 @@ import { MilestoneTrack, ScoreTrendChart } from './BrandCharts'
 import CountUp from './CountUp'
 import LessonPillar, { PillarLesson } from './LessonPillar'
 import { DASH_SPEAK_TILES, DASH_STAT_TILES, levelProgress, type Brand, type BlockId, type DashSpeakId, type DashStatId } from '@/lib/brand'
+import { SESSION_SIZE } from '@/lib/flashcards'
 
 /**
  * Every block on the student dashboard, in one place.
@@ -453,26 +454,39 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
     case 'flashcards': {
       // Decks are already filtered to the ones with cards, so a student who has
       // only ever met nouns sees one deck rather than five empty boxes.
-      const label = d.cardDue === d.cardTotal ? 'all new' : `${d.cardDue} ready`
+      //
+      // A deck leads with how many are DUE, not how many exist. The total was
+      // the wrong number to set in 28pt: it only ever grows, it is never what
+      // is being asked of anyone, and a term in it reads as a backlog. "8 due"
+      // is a two-minute job; "94 cards" is a reason to close the tab.
+      const nothingDue = d.cardDue === 0
+      const firstRound = Math.min(SESSION_SIZE, Math.max(d.cardDue, 1))
       return (
         <>
-          <div className="k-sec-head"><h2>Practise your words</h2><span className="k-link">{label}</span></div>
+          <div className="k-sec-head">
+            <h2>Practise your words</h2>
+            <span className="k-link">{nothingDue ? 'all caught up' : `${d.cardDue} due`}</span>
+          </div>
           <div className="k-card k-decks-card">
             <p className="k-decks-sub">
-              Every word from your lessons, split by what kind of word it is.
-              Cards you get right come back later; ones you miss come back today.
+              {nothingDue
+                ? `Nothing is due today — every word is resting. Open a deck anyway if you want to keep one sharp; a round is ${SESSION_SIZE} cards, about two minutes.`
+                : `A round is ${SESSION_SIZE} cards, about two minutes. Words you know come back in a few days; ones you miss come back today.`}
             </p>
             <div className="k-decks">
               {d.decks.map((deck) => (
                 <Go key={deck.id} href={`/student/practice?deck=${deck.id}`} className={`k-deck ${deck.tone}`} preview={preview}>
-                  <span className="k-deck-n">{deck.total}</span>
+                  <span className="k-deck-n">{deck.due > 0 ? deck.due : '—'}</span>
                   <span className="k-deck-k">{deck.label}</span>
-                  <span className="k-deck-s">{deck.due > 0 ? `${deck.due} to review` : 'all caught up'}</span>
+                  <span className="k-deck-s">
+                    {deck.due > 0 ? `due of ${deck.total}` : `${deck.total} resting`}
+                  </span>
                 </Go>
               ))}
             </div>
             <Go href="/student/practice" className="k-deck-all" preview={preview}>
-              Practise everything<span>{d.cardTotal} cards →</span>
+              {nothingDue ? 'Practise anything' : 'Practise what is due'}
+              <span>{firstRound} card{firstRound === 1 ? '' : 's'} →</span>
             </Go>
           </div>
         </>

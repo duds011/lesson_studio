@@ -6,7 +6,7 @@ import { PillarLesson } from '@/components/portal/LessonPillar'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from '@/components/portal/DashboardBlocks'
 import { DECKS, isDeckId, isDue, TOP_BOX } from '@/lib/flashcards'
 import DashboardTabs from '@/components/portal/DashboardTabs'
-import { DASH_BLOCK_TAB, DASH_TABS, resolveBrand, type DashTab } from '@/lib/brand'
+import { DASH_BLOCK_TAB, DASH_TAB_SLOT, DASH_TABS, resolveBrand, type DashTab } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
 
@@ -329,7 +329,7 @@ export default async function StudentDashboard() {
   const tabs = DASH_TABS
     .map((tab) => ({
       id: tab as DashTab,
-      label: L[`tab${tab}` as 'tabOverview' | 'tabLessons' | 'tabProgress' | 'tabFiles' | 'tabTests'],
+      label: L[DASH_TAB_SLOT[tab]],
       blocks: placed.filter(({ id }) => DASH_BLOCK_TAB[id] === tab),
     }))
     .filter((t) => t.blocks.length > 0)

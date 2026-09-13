@@ -2036,6 +2036,9 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-prac-tick{display:block;width:46px;height:46px;margin:0 auto 14px;border-radius:50%;
   background:var(--green-soft);color:var(--green);font-size:20px;font-weight:800;line-height:46px}
 .k-prac-empty .k-prac-acts{margin-top:18px;justify-content:center}
+/* How much of the deck is left, said once and quietly — the round that
+   just finished is the achievement, not the pile still standing. */
+.k-prac-left{margin:10px 0 0;font-size:12px;color:var(--muted)}
 
 /* ── Voice-memo invitation (recap review, first tab) ──
    NB: not .k-memo — that is the student portal's memo PLAYER above, which

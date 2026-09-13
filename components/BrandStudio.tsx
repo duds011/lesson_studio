@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { saveBrand } from '@/app/actions/onboarding'
 import {
   DEFAULT_BRAND, BLOCK_LABELS, BLOCK_TEXT_SLOTS, BLOCK_TOGGLE,
-  DASH_BLOCK_TAB, DASH_LOCKED, DASH_SPEAK_TILES, DASH_STAT_TILES, DASH_TABS, PRESETS, FONTS, TEXT_SLOTS,
+  DASH_BLOCK_TAB, DASH_LOCKED, DASH_SPEAK_TILES, DASH_STAT_TILES, DASH_TABS, DASH_TAB_SLOT, PRESETS, FONTS, TEXT_SLOTS,
   LESSON_BLOCK_HINTS, LESSON_BLOCK_LABELS, LESSON_BLOCK_TAB, LESSON_BLOCK_TOGGLE,
   LESSON_LAYOUT, LESSON_LOCKED, LESSON_TABS, RECAP_METRICS,
   brandVars, backgroundClass, MAX_LEVELS, MAX_LEVEL_LESSONS, resolveLevels,
@@ -878,7 +878,7 @@ export default function BrandStudio({ initial, teacherName, teachingLanguage }: 
                   <div className="k-dtabs">
                     {liveTabs.map((t) => (
                       <button key={t} type="button" className={activeDash === t ? 'on' : ''} onClick={() => setDashTab(t)}>
-                        {L[`tab${t}` as 'tabOverview' | 'tabLessons' | 'tabProgress' | 'tabFiles' | 'tabTests']}
+                        {L[DASH_TAB_SLOT[t]]}
                       </button>
                     ))}
                   </div>

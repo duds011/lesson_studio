@@ -51,3 +51,32 @@ export function isDue(review: { due_at?: string | null } | undefined, now = Date
   if (!review?.due_at) return true
   return Date.parse(review.due_at) <= now
 }
+
+/**
+ * How many cards one sitting is.
+ *
+ * A student a term in has a hundred-odd words, and nobody sits down to a
+ * hundred flashcards: they start, flag somewhere around thirty, and stop coming
+ * back. Practice is worth far more little and often than once and never, so a
+ * session is a short round that can be finished, and the next one is offered
+ * rather than imposed.
+ *
+ * Twelve is about two minutes — the length of a queue or a kettle.
+ */
+export const SESSION_SIZE = 12
+
+/**
+ * Order a deck for practice: due first, least-known first within that, so a
+ * short round spends its time where the forgetting is.
+ *
+ * Ties break on the id rather than on input order, so the rounds of one deck
+ * partition it the same way every time instead of reshuffling around a card
+ * the student has already seen today.
+ */
+export function orderForPractice<T extends { box: number; due: boolean; id: string }>(cards: T[]): T[] {
+  return [...cards].sort((a, b) => {
+    if (a.due !== b.due) return a.due ? -1 : 1
+    if (a.box !== b.box) return a.box - b.box
+    return a.id < b.id ? -1 : 1
+  })
+}

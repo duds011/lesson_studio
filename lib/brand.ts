@@ -35,14 +35,22 @@ export const BLOCK_LABELS: Record<BlockId, string> = {
   flashcards: 'Flashcards',
 }
 
-/** The student dashboard is tabbed; each block belongs to one tab. */
-export const DASH_TABS = ['Overview', 'Lessons', 'Progress', 'Files', 'Tests'] as const
+/**
+ * The student dashboard is tabbed; each block belongs to one tab.
+ *
+ * Practice is a tab of its own rather than the tail of Progress. Progress is
+ * something you read — charts, numbers, how the month has gone. Practice is
+ * something you *do*, usually for two minutes on a phone. Parked under the
+ * charts, the decks were the thing students scrolled past.
+ */
+export const DASH_TABS = ['Overview', 'Lessons', 'Progress', 'Practice', 'Files', 'Tests'] as const
 export type DashTab = (typeof DASH_TABS)[number]
 
 export const DASH_BLOCK_TAB: Record<BlockId, DashTab> = {
   stats: 'Overview', scores: 'Overview', milestone: 'Overview', vocabTotals: 'Overview',
   lessons: 'Lessons',
-  progress: 'Progress', vocab: 'Progress', speaking: 'Progress', flashcards: 'Progress',
+  progress: 'Progress', vocab: 'Progress', speaking: 'Progress',
+  flashcards: 'Practice',
   files: 'Files',
   tests: 'Tests',
 }
@@ -96,6 +104,7 @@ export const TEXT_SLOTS = {
   tabOverview: 'Overview',
   tabLessons: 'Lessons',
   tabProgress: 'Progress',
+  tabPractice: 'Practice',
   tabFiles: 'Files',
   tabTests: 'Tests',
   statLessons: 'Lessons',
@@ -113,6 +122,15 @@ export const TEXT_SLOTS = {
 } as const
 export type TextSlot = keyof typeof TEXT_SLOTS
 export const TEXT_SLOT_IDS = Object.keys(TEXT_SLOTS) as TextSlot[]
+
+/**
+ * Which text slot names each tab. Derived rather than spelled out at every
+ * call site — the two that did carried a hand-written union of slot names, so
+ * adding a tab type-checked everywhere and then rendered `undefined`.
+ */
+export const DASH_TAB_SLOT = Object.fromEntries(
+  DASH_TABS.map((t) => [t, `tab${t}` as TextSlot]),
+) as Record<DashTab, TextSlot>
 
 /** Which slots belong to which block — the studio groups them that way. */
 export const BLOCK_TEXT_SLOTS: Partial<Record<BlockId, TextSlot[]>> = {
