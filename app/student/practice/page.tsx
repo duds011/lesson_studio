@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
-import { DECKS, isDeckId, isDue, orderForPractice, SESSION_SIZE } from '@/lib/flashcards'
+import { DECKS, isDeckId, isDue, masteryOf, orderForPractice, SESSION_SIZE } from '@/lib/flashcards'
 import PracticeDeck from '@/components/portal/PracticeDeck'
 
 export const dynamic = 'force-dynamic'
@@ -10,14 +10,18 @@ export const dynamic = 'force-dynamic'
 /**
  * A practice session over the student's own vocabulary.
  *
- * `?deck=` narrows to one part of speech; without it the session is every card
- * they have. Cards that are due come first — a session should start with the
- * words about to be forgotten, not the ones already solid.
+ * Narrowed two ways, because students ask for both: `?deck=` is a part of
+ * speech, `?lesson=` is one lesson's words — "the ones from last Tuesday" is
+ * how people actually think about what they need to revise. Neither means the
+ * whole collection.
+ *
+ * Cards that are due come first: a session should start with the words about
+ * to be forgotten, not the ones already solid.
  */
 export default async function PracticePage({
   searchParams,
 }: {
-  searchParams: { deck?: string }
+  searchParams: { deck?: string; lesson?: string }
 }) {
   const supabase = await createClient()
   const user = await requireUser(supabase, '/student/practice')
@@ -28,11 +32,12 @@ export default async function PracticePage({
 
   const deckId = isDeckId(searchParams?.deck) ? searchParams.deck : null
   const deck = deckId ? DECKS.find((d) => d.id === deckId) : null
+  const lessonId = typeof searchParams?.lesson === 'string' ? searchParams.lesson : null
 
   // RLS keeps this to the student's own published lessons.
   const { data: rows } = await supabase
     .from('vocabulary_items')
-    .select('id, word, reading, definition, explanation, example_sentence, jlpt_level, part_of_speech, lessons!inner ( lesson_number )')
+    .select('id, word, reading, definition, explanation, example_sentence, jlpt_level, part_of_speech, lesson_id, lessons!inner ( lesson_number, title )')
     .eq('is_key', true)
     .order('sort_order', { ascending: true })
 
@@ -47,6 +52,7 @@ export default async function PracticePage({
     // Untagged words belong to no deck in particular, so they answer to
     // "everything else" rather than disappearing from practice entirely.
     .filter((r: any) => (deckId ? (isDeckId(r.part_of_speech) ? r.part_of_speech : 'other') === deckId : true))
+    .filter((r: any) => (lessonId ? r.lesson_id === lessonId : true))
     .map((r: any) => {
       const rev = byItem.get(r.id)
       return {
@@ -63,10 +69,26 @@ export default async function PracticePage({
       }
     })
 
-  // Due first, least-known first within that. The deck then hands these out a
-  // round at a time — see SESSION_SIZE.
+  // Due first, least-known first within that. The deck hands these out a round
+  // at a time — see SESSION_SIZE.
   const cards = orderForPractice(all)
   const dueCount = all.filter((c) => c.due).length
+
+  /** Where this selection stands, for the panel above the first card. */
+  const mastery = { known: 0, learning: 0, new: 0 }
+  for (const c of all) {
+    mastery[masteryOf(byItem.has(c.id) ? c.box : undefined)]++
+  }
+
+  // The title says what was picked, so a student who followed a link from the
+  // dashboard knows which pile they are looking at.
+  const first: any = rows?.find((r: any) => r.lesson_id === lessonId)
+  const lessonMeta = Array.isArray(first?.lessons) ? first.lessons[0] : first?.lessons
+  const title = lessonId
+    ? (lessonMeta?.title || `Lesson ${lessonMeta?.lesson_number ?? ''}`.trim())
+    : deck
+      ? deck.label
+      : 'All your words'
 
   return (
     <div style={{ maxWidth: 720 }}>
@@ -74,8 +96,11 @@ export default async function PracticePage({
       <PracticeDeck
         cards={cards}
         dueCount={dueCount}
+        mastery={mastery}
         sessionSize={SESSION_SIZE}
-        title={deck ? deck.label : 'All your words'}
+        title={title}
+        deck={deckId}
+        lessonId={lessonId}
       />
     </div>
   )

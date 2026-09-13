@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatDateShort, lessonBlurb, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import { PillarLesson } from '@/components/portal/LessonPillar'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from '@/components/portal/DashboardBlocks'
-import { DECKS, isDeckId, isDue, TOP_BOX } from '@/lib/flashcards'
+import { DECKS, isDeckId, isDue, masteryOf, TOP_BOX } from '@/lib/flashcards'
 import DashboardTabs from '@/components/portal/DashboardTabs'
 import { DASH_BLOCK_TAB, DASH_TAB_SLOT, DASH_TABS, resolveBrand, type DashTab } from '@/lib/brand'
 
@@ -116,7 +116,7 @@ export default async function StudentDashboard() {
    */
   const { data: cardRows } = await supabase
     .from('vocabulary_items')
-    .select('id, part_of_speech, lessons!inner ( student_id )')
+    .select('id, part_of_speech, lesson_id, lessons!inner ( student_id, lesson_number, title, lesson_date )')
     .eq('is_key', true)
   const { data: reviewRows } = await supabase
     .from('flashcard_reviews')
@@ -131,6 +131,9 @@ export default async function StudentDashboard() {
   }
   const nowMs = Date.now()
   const deckTally = new Map<string, { total: number; due: number; known: number }>()
+  /** The same cards cut by lesson — "the ones from last Tuesday". */
+  const lessonTally = new Map<string, { id: string; number: number | null; title: string; date: string | null; total: number; due: number }>()
+  const cardMastery = { known: 0, learning: 0, new: 0 }
   let cardTotal = 0
   let cardDue = 0
   for (const c of (cardRows ?? []) as any[]) {
@@ -138,13 +141,74 @@ export default async function StudentDashboard() {
     const t = deckTally.get(key) ?? { total: 0, due: 0, known: 0 }
     t.total++
     cardTotal++
-    if (isDue(dueBy.has(c.id) ? { due_at: dueBy.get(c.id) } : undefined, nowMs)) { t.due++; cardDue++ }
+    const due = isDue(dueBy.has(c.id) ? { due_at: dueBy.get(c.id) } : undefined, nowMs)
+    if (due) { t.due++; cardDue++ }
     if ((boxBy.get(c.id) ?? 0) >= TOP_BOX) t.known++
     deckTally.set(key, t)
+
+    // A card with no review row has never been answered — undefined, not 0,
+    // which is a real box meaning "answered and missed".
+    cardMastery[masteryOf(boxBy.has(c.id) ? boxBy.get(c.id) : undefined)]++
+
+    const les = Array.isArray(c.lessons) ? c.lessons[0] : c.lessons
+    if (c.lesson_id) {
+      const lt = lessonTally.get(c.lesson_id) ?? {
+        id: c.lesson_id,
+        number: les?.lesson_number ?? null,
+        title: lessonDisplayTitle(null, les?.title, les?.lesson_number),
+        date: les?.lesson_date ?? null,
+        total: 0,
+        due: 0,
+      }
+      lt.total++
+      if (due) lt.due++
+      lessonTally.set(c.lesson_id, lt)
+    }
   }
   const decks = DECKS
     .map((d) => ({ ...d, ...(deckTally.get(d.id) ?? { total: 0, due: 0, known: 0 }) }))
     .filter((d) => d.total > 0)
+
+  /**
+   * Newest lessons first, and only a handful: this is a shortcut to the words
+   * still fresh enough to be worth drilling, not a second copy of the lesson
+   * list. Anything older is reachable from the deck that holds it.
+   */
+  const cardLessons = Array.from(lessonTally.values())
+    .sort((a, b) => (b.number ?? 0) - (a.number ?? 0))
+    .slice(0, 6)
+    .map(({ id, number, title, total, due }) => ({ id, number, title, total, due }))
+
+  /**
+   * A fortnight of finished rounds.
+   *
+   * flashcard_reviews cannot answer this — it keeps one row per card and only
+   * its latest touch, so practising a word again erases the day it was first
+   * met. flashcard_sessions is the append-only log that can (migration 0033).
+   * Until that migration is applied the query errors, `data` is null, and the
+   * strip simply does not render — a missing chart beats a wrong one.
+   */
+  const histFrom = new Date(nowMs - 13 * 86_400_000)
+  histFrom.setHours(0, 0, 0, 0)
+  const { data: sessionRows } = await supabase
+    .from('flashcard_sessions')
+    .select('cards, ended_at')
+    .eq('student_id', student.id)
+    .gte('ended_at', histFrom.toISOString())
+
+  const perDay = new Map<string, number>()
+  for (const r of (sessionRows ?? []) as any[]) {
+    const key = new Date(r.ended_at).toISOString().slice(0, 10)
+    perDay.set(key, (perDay.get(key) ?? 0) + (r.cards ?? 0))
+  }
+  // Every day in the window, including the empty ones: the gaps are the point
+  // of a practice chart.
+  const practiceDays = perDay.size === 0 ? [] : Array.from({ length: 14 }, (_, i) => {
+    const d0 = new Date(histFrom)
+    d0.setDate(d0.getDate() + i)
+    const key = d0.toISOString().slice(0, 10)
+    return { day: key, label: formatDateShort(key), cards: perDay.get(key) ?? 0 }
+  })
 
   // Teacher-shared files across every lesson — the Files tab. RLS only returns
   // rows for this student.
@@ -267,6 +331,9 @@ export default async function StudentDashboard() {
     firstTalk,
     talkDelta,
     decks,
+    cardLessons,
+    cardMastery,
+    practiceDays,
     cardTotal,
     cardDue,
     pillarLessons,

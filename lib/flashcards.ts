@@ -66,6 +66,37 @@ export function isDue(review: { due_at?: string | null } | undefined, now = Date
 export const SESSION_SIZE = 12
 
 /**
+ * The lengths a student can choose before starting.
+ *
+ * Twelve is the default because it is the one most people will finish. The
+ * others exist because a fixed round is a floor, not a cage: someone with an
+ * exam on Friday should be able to sit down to the lot, and `0` means exactly
+ * that — everything that is waiting.
+ */
+export const SESSION_SIZES = [12, 25, 0] as const
+export const sessionLabel = (n: number) => (n === 0 ? 'Everything' : String(n))
+
+/**
+ * How well a card is known, from its Leitner box.
+ *
+ * Three bands, not five: the boxes are a scheduling detail, and a student
+ * wants to know whether a word is new to them, coming along, or theirs. Box 3
+ * is a week between sightings, which is where "known" starts to mean it.
+ */
+export type Mastery = 'new' | 'learning' | 'known'
+
+export function masteryOf(box: number | undefined): Mastery {
+  if (box === undefined) return 'new'
+  return box >= 3 ? 'known' : 'learning'
+}
+
+export const MASTERY_META: Record<Mastery, { label: string; tone: string; note: string }> = {
+  known: { label: 'Known', tone: '#1c7f52', note: 'a week or more between sightings' },
+  learning: { label: 'Learning', tone: '#0a61c9', note: 'coming back every few days' },
+  new: { label: 'Not started', tone: '#c8ccd2', note: 'never practised' },
+}
+
+/**
  * Order a deck for practice: due first, least-known first within that, so a
  * short round spends its time where the forgetting is.
  *

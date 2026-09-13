@@ -30,6 +30,12 @@ export type DashboardData = {
   latestTalk: number | null
   /** Practice decks, sized and filtered — empty ones never reach here. */
   decks: { id: string; label: string; sub: string; tone: string; total: number; due: number; known: number }[]
+  /** The same words cut by lesson, for "the ones from last Tuesday". */
+  cardLessons: { id: string; number: number | null; title: string; total: number; due: number }[]
+  /** Where the collection stands: known / learning / never practised. */
+  cardMastery: { known: number; learning: number; new: number }
+  /** Cards practised per day, oldest first — empty when there is no history. */
+  practiceDays: { day: string; label: string; cards: number }[]
   cardTotal: number
   cardDue: number
   /** Talk share in the earliest scored lesson — the gauge's starting mark. */
@@ -457,22 +463,79 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
       //
       // A deck leads with how many are DUE, not how many exist. The total was
       // the wrong number to set in 28pt: it only ever grows, it is never what
-      // is being asked of anyone, and a term in it reads as a backlog. "8 due"
-      // is a two-minute job; "94 cards" is a reason to close the tab.
+      // is being asked of anyone, and a term in it reads as a backlog.
       const nothingDue = d.cardDue === 0
       const firstRound = Math.min(SESSION_SIZE, Math.max(d.cardDue, 1))
+      const m = d.cardMastery
+      const days = d.practiceDays
+      const busiest = Math.max(1, ...days.map((x) => x.cards))
+      // Every word met is either known, on its way, or untouched. This is the
+      // answer to "am I getting anywhere" — due counts only say how much is
+      // waiting, which goes up as often as it goes down.
+      const bands = [
+        { k: 'known' as const, label: 'known', tone: '#1c7f52' },
+        { k: 'learning' as const, label: 'learning', tone: '#0a61c9' },
+        { k: 'new' as const, label: 'not started', tone: '#c8ccd2' },
+      ]
       return (
         <>
           <div className="k-sec-head">
             <h2>Practise your words</h2>
             <span className="k-link">{nothingDue ? 'all caught up' : `${d.cardDue} due`}</span>
           </div>
-          <div className="k-card k-decks-card">
+
+          {/* Where the collection stands, and how the fortnight has gone. */}
+          <div className="k-card">
+            <div className="k-mastery">
+              <div className="k-mastery-head">
+                <b>{m.known}</b>
+                <span>of {d.cardTotal} words known</span>
+              </div>
+              <div className="k-mastery-bar">
+                {bands.map(({ k, tone }) =>
+                  m[k] > 0
+                    ? <i key={k} style={{ width: `${(m[k] / Math.max(1, d.cardTotal)) * 100}%`, background: tone }} />
+                    : null,
+                )}
+              </div>
+              <div className="k-mastery-key">
+                {bands.map(({ k, label, tone }) => (
+                  <span key={k}><b style={{ background: tone }} />{m[k]} {label}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Absent until the first round is logged. An empty fortnight of
+                nothing would only tell a new student they are already behind. */}
+            {days.length > 0 && (
+              <div className="k-hist">
+                <p className="k-hist-lab">Practice, last two weeks</p>
+                <div className="k-hist-bars">
+                  {days.map((day) => (
+                    <span
+                      key={day.day}
+                      className="k-hist-day"
+                      title={`${day.label}: ${day.cards} card${day.cards === 1 ? '' : 's'}`}
+                    >
+                      <i
+                        className={day.cards === 0 ? 'off' : ''}
+                        style={{ height: day.cards === 0 ? 3 : `${Math.max(12, (day.cards / busiest) * 100)}%` }}
+                      />
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="k-card k-decks-card" style={{ marginTop: 12 }}>
             <p className="k-decks-sub">
               {nothingDue
-                ? `Nothing is due today — every word is resting. Open a deck anyway if you want to keep one sharp; a round is ${SESSION_SIZE} cards, about two minutes.`
-                : `A round is ${SESSION_SIZE} cards, about two minutes. Words you know come back in a few days; ones you miss come back today.`}
+                ? `Nothing is due today — every word is resting. Open a pile anyway to keep one sharp; a round is ${SESSION_SIZE} cards, about two minutes.`
+                : `A round is ${SESSION_SIZE} cards by default, about two minutes — you pick how many before you start. Words you know come back in a few days; ones you miss come back today.`}
             </p>
+
+            <p className="k-prac-ask" style={{ marginTop: 0 }}>By kind of word</p>
             <div className="k-decks">
               {d.decks.map((deck) => (
                 <Go key={deck.id} href={`/student/practice?deck=${deck.id}`} className={`k-deck ${deck.tone}`} preview={preview}>
@@ -484,6 +547,29 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
                 </Go>
               ))}
             </div>
+
+            {/* The other way people ask for this: not "the verbs" but "the ones
+                from last Tuesday". Same cards, different cut. */}
+            {d.cardLessons.length > 0 && (
+              <>
+                <p className="k-prac-ask">By lesson</p>
+                <div className="k-lesspicks">
+                  {d.cardLessons.map((l) => (
+                    <Go key={l.id} href={`/student/practice?lesson=${l.id}`} className="k-lesspick" preview={preview}>
+                      <span className="k-lesspick-n">{l.number != null ? `#${l.number}` : '—'}</span>
+                      <span className="k-lesspick-b">
+                        <span className="k-lesspick-t">{l.title}</span>
+                        <span className="k-lesspick-m">
+                          {l.due > 0 ? `${l.due} due of ${l.total}` : `${l.total} word${l.total === 1 ? '' : 's'} · resting`}
+                        </span>
+                      </span>
+                      <span className="k-lesspick-go" aria-hidden>→</span>
+                    </Go>
+                  ))}
+                </div>
+              </>
+            )}
+
             <Go href="/student/practice" className="k-deck-all" preview={preview}>
               {nothingDue ? 'Practise anything' : 'Practise what is due'}
               <span>{firstRound} card{firstRound === 1 ? '' : 's'} →</span>
