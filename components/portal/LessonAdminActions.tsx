@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteLesson } from '@/app/actions/teacher-lessons'
+import Thinking from './Thinking'
 
 /** Teacher controls on a lesson: regenerate the recap from the recording, or delete the lesson. */
 export default function LessonAdminActions({ lessonId, studentId, sourceEventId }: {
@@ -50,7 +51,7 @@ export default function LessonAdminActions({ lessonId, studentId, sourceEventId 
       {sourceEventId && (
         <>
           <button className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={edit}>{busy === 'edit' ? 'Opening…' : '✎ Edit recap'}</button>
-          <button className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={regenerate}>{busy === 'regen' ? 'Rebuilding… (1-2 min)' : '↻ Rebuild recap'}</button>
+          <button className="btn btn-ghost btn-sm" disabled={busy !== ''} onClick={regenerate}>{busy === 'regen' ? <Thinking state="listening" label="Rebuilding… (1-2 min)" /> : '↻ Rebuild recap'}</button>
         </>
       )}
       <button className="btn btn-danger-ghost btn-sm" disabled={busy !== ''} onClick={remove}>{busy === 'del' ? 'Deleting…' : 'Delete lesson'}</button>

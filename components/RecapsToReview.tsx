@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DraftRecap } from './RecapReview'
 import { reassignRecapStudent } from '@/app/actions/recordings'
+import Thinking from './portal/Thinking'
 
 /**
  * The review queue: recaps built from recordings, waiting for the teacher.
@@ -195,7 +196,7 @@ export default function RecapsToReview({
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {isBuilding ? (
-                  <span className="pill" style={{ background: 'var(--brand-soft)', color: 'var(--brand)' }}>Building…</span>
+                  <Thinking state="listening" label="Building…" />
                 ) : (
                   <>
                     <button className="btn btn-danger-ghost btn-sm" disabled={deleting === d.eventId} onClick={() => deleteDraft(d)}>

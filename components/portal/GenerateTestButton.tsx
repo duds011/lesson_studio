@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Thinking from './Thinking'
 
 export interface TestLessonOption { id: string; label: string }
 
@@ -156,7 +157,7 @@ export default function GenerateTestButton({ studentId, lessons, language = '', 
             {error && <p style={{ color: 'var(--red)', fontSize: 12, margin: '0 0 10px' }}>{error}</p>}
 
             <button className="btn btn-primary" style={{ width: '100%' }} onClick={generate} disabled={busy || picked.length === 0}>
-              {busy ? 'Generating… this can take a minute ⏳' : 'Generate draft test'}
+              {busy ? <Thinking state="solving" label="Generating… this can take a minute" onSolid /> : 'Generate draft test'}
             </button>
           </div>
         </div>
