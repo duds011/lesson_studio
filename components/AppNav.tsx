@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import GuidedTour from '@/components/GuidedTour'
+import Thinking from '@/components/portal/Thinking'
 
 type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note' | 'menu' | 'close'
 
@@ -27,6 +28,18 @@ function Icon({ name }: { name: IconName }) {
     close: <><path d="M6 6l12 12M18 6 6 18"/></>,
   }
   return <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
+}
+
+/**
+ * An orb standing in an icon's place. The 18px box is the icon's own footprint,
+ * so swapping one for the other moves no label by a pixel.
+ */
+function NavWait() {
+  return (
+    <span className="ui-icon" style={{ display: 'grid', placeItems: 'center', overflow: 'visible' }}>
+      <Thinking size={20} />
+    </span>
+  )
 }
 
 export function LogoMark() {
@@ -62,6 +75,16 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
   // the top-bar button, and navigating anywhere closes it again.
   const [mobileOpen, setMobileOpen] = useState(false)
   useEffect(() => { setMobileOpen(false) }, [pathname])
+
+  // The rail answers the click; the server answers later. Every tab in here is
+  // a force-dynamic page that reads Supabase before it can render, so the gap
+  // between the tap and the new page is real and long enough to read as a dead
+  // click. The orb takes the clicked tab's own icon slot for exactly that gap.
+  // It is cleared by the new pathname landing, which is also why a link that
+  // leads where we already are never starts one: nothing would come to end it.
+  const [pending, setPending] = useState<string | null>(null)
+  useEffect(() => { setPending(null) }, [pathname])
+  const startNav = (href: string) => { if (href.split('#')[0] !== pathname) setPending(href) }
 
   useEffect(() => {
     const saved = localStorage.getItem(NAV_KEY) === '1'
@@ -128,8 +151,8 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         <div className="nav-section-label">Workspace</div>
         <nav className="side-nav">
           {LINKS.map((link) => (
-            <Link key={link.href} href={link.href} data-tour={link.tour} className={`side-link ${isActive(link.href) ? 'active' : ''}`}>
-              <Icon name={link.icon} /><span>{link.label}</span>
+            <Link key={link.href} href={link.href} data-tour={link.tour} onClick={() => startNav(link.href)} className={`side-link ${isActive(link.href) ? 'active' : ''}`}>
+              {pending === link.href ? <NavWait /> : <Icon name={link.icon} />}<span>{link.label}</span>
             </Link>
           ))}
         </nav>
@@ -139,12 +162,12 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
           {/* No Booking page link: the booking page is what Availability
               produces, so its preview button lives in that panel instead. */}
           {calendar && (
-            <Link href="/settings#availability" className="side-link">
-              <Icon name="clock" /><span>Availability</span>
+            <Link href="/settings#availability" onClick={() => startNav('/settings#availability')} className="side-link">
+              {pending === '/settings#availability' ? <NavWait /> : <Icon name="clock" />}<span>Availability</span>
             </Link>
           )}
-          <Link href="/settings" data-tour="settings" className={`side-link ${isActive('/settings') ? 'active' : ''}`}>
-            <Icon name="settings" /><span>Settings</span>
+          <Link href="/settings" data-tour="settings" onClick={() => startNav('/settings')} className={`side-link ${isActive('/settings') ? 'active' : ''}`}>
+            {pending === '/settings' ? <NavWait /> : <Icon name="settings" />}<span>Settings</span>
           </Link>
         </nav>
       </div>

@@ -4,25 +4,6 @@ export function Skel({ w, h = 14, r, style }: { w: number | string; h?: number; 
   return <span className={`skel ${r ? 'round' : ''}`} style={{ display: 'inline-block', width: w, height: h, ...style }} />
 }
 
-export function NavSkeleton() {
-  return (
-    <nav>
-      <div className="nav-in">
-        <span style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
-          <Skel w={32} h={32} />
-          <Skel w={110} h={16} />
-        </span>
-        <span style={{ display: 'flex', gap: '.5rem', flex: '1 1 auto' }}>
-          <Skel w={82} h={30} r />
-          <Skel w={74} h={30} r />
-          <Skel w={70} h={30} r />
-        </span>
-        <Skel w={160} h={28} r />
-      </div>
-    </nav>
-  )
-}
-
 export function PageHeadSkeleton() {
   return (
     <div style={{ marginBottom: '1.5rem' }}>

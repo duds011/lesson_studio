@@ -43,8 +43,8 @@ export default function LoginPage() {
   return (
     <div className="k-auth">
       <AuthAside
-        headline="Teach the lesson. We’ll write it up."
-        sub="Lesson Studio turns each hour you teach into a recap, a progress chart and a set of practice your student can use."
+        headline="Every lesson, written up."
+        sub="Lesson Studio turns each hour into a recap, a progress chart and a set of practice — for the teacher who ran it and the student who sat in it."
       />
 
       <main className="k-auth-main">
@@ -90,16 +90,22 @@ export default function LoginPage() {
             <Link href="/forgot-password">Forgot your password?</Link>
           </p>
 
-          {/* A teacher arriving for the first time was offered a sentence in
-              grey 12px under the fold of the form. Signing up is the other half
-              of what this page is for, so it gets a button and a rule of its
-              own — and the student note stops sharing a line with it. */}
+          {/* Two audiences reach this page, and it used to answer only one of
+              them: the student line said “ask your teacher for login details”,
+              which stopped being true the day the invite flow landed. Students
+              set their own password, from a link — so each half now says what
+              that half of the room should actually do next. */}
           <div className="k-auth-alt">
             <span>New here?</span>
           </div>
           <Link href="/signup" className="k-btn-block k-btn-outline">Create a teacher account</Link>
           <p className="k-fine" style={{ marginTop: 12 }}>
-            Free to set up. Students don&rsquo;t sign up — ask your teacher for login details.
+            Free to set up, and you can add your first student straight away.
+          </p>
+
+          <p className="k-fine" style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+            <strong style={{ color: 'var(--ink)' }}>Are you a student?</strong> Your teacher sends you an invite
+            link — open it and you choose your own email and password. After that, you sign in right here.
           </p>
         </div>
       </main>
