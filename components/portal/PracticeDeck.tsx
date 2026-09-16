@@ -94,11 +94,15 @@ export default function PracticeDeck({
   const roundCards = cards.slice(round * step, (round + 1) * step)
 
   const record = useCallback((id: string, knew: boolean) => {
-    // Deliberately not awaited: the next card should not wait on a round trip.
+    // Not awaited: the next card should not wait on a round trip. But
+    // `keepalive` matters — without it the browser cancels the request when the
+    // page navigates, so the last card answered before pressing Back was never
+    // recorded and the counts came back looking like the round had not happened.
     fetch('/api/portal/flashcard', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vocabularyItemId: id, knew }),
+      keepalive: true,
     }).catch(() => {})
   }, [])
 
@@ -108,6 +112,7 @@ export default function PracticeDeck({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cards: n, correct: right, deck: deck ?? null, lessonId: lessonId ?? null }),
+      keepalive: true,
     }).catch(() => {})
   }, [deck, lessonId])
 
@@ -215,8 +220,10 @@ export default function PracticeDeck({
               Practise again
             </button>
           )}
-          <a className={`btn btn-sm ${left > 0 ? 'btn-ghost' : 'btn-primary'}`} href="/student/dashboard">
-            Back to dashboard
+          {/* The Practice tab, not the dashboard's first tab. Somebody who
+              just finished a round is not done with practice. */}
+          <a className={`btn btn-sm ${left > 0 ? 'btn-ghost' : 'btn-primary'}`} href="/student/dashboard#practice">
+            Back to practice
           </a>
         </div>
       </div>

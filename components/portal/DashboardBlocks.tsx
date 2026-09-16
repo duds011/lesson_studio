@@ -481,7 +481,6 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
         <>
           <div className="k-sec-head">
             <h2>Practise your words</h2>
-            <span className="k-link">{nothingDue ? 'all caught up' : `${d.cardDue} due`}</span>
           </div>
 
           {/* Where the collection stands, and how the fortnight has gone. */}
@@ -529,11 +528,15 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
           </div>
 
           <div className="k-card k-decks-card" style={{ marginTop: 12 }}>
-            <p className="k-decks-sub">
-              {nothingDue
-                ? `Nothing is due today — every word is resting. Open a pile anyway to keep one sharp; a round is ${SESSION_SIZE} cards, about two minutes.`
-                : `A round is ${SESSION_SIZE} cards by default, about two minutes — you pick how many before you start. Words you know come back in a few days; ones you miss come back today.`}
-            </p>
+            {/* The round length and the spacing rules used to be explained here,
+                above the piles. Nobody needs the manual before they have picked
+                one — the practice screen says how long a round is at the moment
+                it matters, which is when you are choosing. */}
+            {nothingDue && (
+              <p className="k-decks-sub">
+                Nothing is due today — every word is resting. Open a pile anyway to keep one sharp.
+              </p>
+            )}
 
             <p className="k-prac-ask" style={{ marginTop: 0 }}>By kind of word</p>
             <div className="k-decks">

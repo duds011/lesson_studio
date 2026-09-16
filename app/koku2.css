@@ -2066,8 +2066,14 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 
 /* ── picking a lesson to practise ── */
 .k-prac-ask{margin:18px 0 9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-.k-lesspicks{display:grid;gap:7px}
-.k-lesspick{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:var(--r-md);background:var(--surface-2);transition:.15s ease}
+/* minmax(0,1fr) and min-width:0, or the row is as wide as its longest lesson
+   title. A grid item defaults to min-width:auto, so the track refuses to go
+   below the item's min-content width — and .k-lesspick-t is white-space:nowrap,
+   which makes that the whole untruncated title. The min-width:0 on -b governs
+   the flex axis inside the row; it does nothing for the grid track outside it.
+   Measured at 375px: the row was 387px and the document scrolled to 427. */
+.k-lesspicks{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
+.k-lesspick{display:flex;min-width:0;align-items:center;gap:11px;padding:11px 13px;border-radius:var(--r-md);background:var(--surface-2);transition:.15s ease}
 .k-lesspick:hover{background:var(--brand-soft)}
 .k-lesspick-n{flex:0 0 auto;font-size:11px;font-weight:800;color:var(--muted);min-width:26px}
 .k-lesspick-b{flex:1;min-width:0;display:block}
