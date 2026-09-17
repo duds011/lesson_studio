@@ -2053,6 +2053,7 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-mastery-key{display:flex;flex-wrap:wrap;gap:6px 15px;margin-top:9px;font-size:11.5px;font-weight:700;color:var(--muted)}
 .k-mastery-key span{display:flex;align-items:center;gap:6px}
 .k-mastery-key b{width:8px;height:8px;border-radius:50%;display:block}
+.k-mastery-note{margin:10px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted);max-width:46ch}
 
 /* ── a fortnight of practice ──
    Empty days are drawn as a hairline rather than skipped: the gaps are the

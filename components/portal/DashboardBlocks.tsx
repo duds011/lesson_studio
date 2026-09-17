@@ -486,9 +486,24 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
           {/* Where the collection stands, and how the fortnight has gone. */}
           <div className="k-card">
             <div className="k-mastery">
+              {/*
+                Leads with words STARTED, not words known.
+
+                A word counts as known at box 3, which takes three correct
+                answers on three different days -- the boxes are spaced 1, 3 and
+                7 days apart. So "known" is structurally incapable of moving
+                during a session: a student could practise perfectly for twenty
+                minutes and watch the headline number sit still, which reads as
+                the feature being broken rather than as spacing working.
+
+                Started moves the moment a card is answered, which is the honest
+                answer to "did what I just do count". Known is still on the bar
+                and in the key, where it is a milestone rather than the only
+                score.
+              */}
               <div className="k-mastery-head">
-                <b>{m.known}</b>
-                <span>of {d.cardTotal} words known</span>
+                <b>{m.known + m.learning}</b>
+                <span>of {d.cardTotal} words started</span>
               </div>
               <div className="k-mastery-bar">
                 {bands.map(({ k, tone }) =>
@@ -502,6 +517,13 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
                   <span key={k}><b style={{ background: tone }} />{m[k]} {label}</span>
                 ))}
               </div>
+
+              {/* Said once, here, because a number that does not move needs a
+                  reason or it reads as a fault. */}
+              <p className="k-mastery-note">
+                A word counts as known once you have got it right three times, on three different
+                days. Today&rsquo;s round shows up as &ldquo;learning&rdquo; first.
+              </p>
             </div>
 
             {/* Absent until the first round is logged. An empty fortnight of
