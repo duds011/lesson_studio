@@ -8,6 +8,7 @@ import LessonPageTabs from '@/components/LessonPageTabs'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
 import MemoPlayer from '@/components/portal/MemoPlayer'
+import RecapRating from '@/components/portal/RecapRating'
 import { isMemo } from '@/components/portal/LessonMemo'
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,15 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
   const brand = resolveBrand((teacherProfile as any)?.brand)
   const teacherFirst = ((teacherProfile as any)?.full_name ?? '').split(' ')[0] || 'Your teacher'
   const memos = (files || []).filter(isMemo)
+
+  // What this student already said about this recap, if anything. Their own
+  // row only — RLS sees to that, and the select is scoped anyway.
+  const { data: rating } = await supabase
+    .from('recap_ratings')
+    .select('matched, reasons, note')
+    .eq('lesson_id', l.id)
+    .eq('user_id', user.id)
+    .maybeSingle()
 
   // Two kinds of audio share the table: answers to a speaking exercise, which
   // belong under the exercise they answer, and free-form practice for the
@@ -115,6 +125,23 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         back={{ href: '/student/dashboard', label: 'Dashboard' }}
         speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'student', takes: takes as any }}
         files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={practice} />}
+      />
+
+      {/* Below the tabs, not inside them: LessonPageTabs is shared with the
+          teacher's view of the same lesson, and the teacher must never be
+          shown a box inviting them to rate their own write-up. */}
+      <RecapRating
+        lessonId={l.id}
+        accent={brand.accent}
+        initial={
+          rating
+            ? {
+                matched: (rating as any).matched,
+                reasons: Array.isArray((rating as any).reasons) ? (rating as any).reasons : [],
+                note: (rating as any).note ?? null,
+              }
+            : null
+        }
       />
     </div>
   )
