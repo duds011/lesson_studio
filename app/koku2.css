@@ -2217,3 +2217,19 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
   color:var(--muted);line-height:1.6}
 .k-rate-link{border:0;background:none;padding:0;font:inherit;font-size:12.5px;font-weight:700;
   color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+/* — "my recaps are written in", on the student's dashboard —
+   A quiet row, not a card: it is a preference, and a panel with a heading
+   would compete with the lesson blocks it sits under. */
+.k-langpick{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:14px;padding:16px 18px;background:var(--surface);border-radius:var(--r-xl);
+  box-shadow:var(--shadow-soft);margin-top:16px}
+.k-langpick-q{margin:0;font-size:14px;font-weight:800;letter-spacing:-.015em;color:var(--ink)}
+.k-langpick-sub{margin:4px 0 0;font-size:12.5px;line-height:1.55;color:var(--muted);max-width:56ch}
+.k-langpick-act{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.k-langpick-select{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;
+  padding:9px 15px;font:inherit;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer}
+.k-langpick-select:focus{outline:none;border-color:var(--forest)}
+.k-langpick-select:disabled{opacity:.6;cursor:default}
+.k-langpick-note{font-size:12px;color:var(--muted);font-weight:650}
+.k-langpick-note--bad{color:#a32f2f}

@@ -8,7 +8,17 @@ import { setInstructionLanguage } from '@/app/actions/portal-students'
  * What this student's recaps and tests are EXPLAINED in. Sits beside
  * LearningLanguageEditor, which handles the other per-student language fact.
  */
-export default function InstructionLanguageEditor({ studentId, value }: { studentId: string; value: string | null }) {
+export default function InstructionLanguageEditor({
+  studentId,
+  value,
+  setBy,
+}: {
+  studentId: string
+  value: string | null
+  /** 'student' once they have chosen it themselves, from their own dashboard. */
+  setBy?: string | null
+}) {
+  const chosenByStudent = setBy === 'student'
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
@@ -30,10 +40,19 @@ export default function InstructionLanguageEditor({ studentId, value }: { studen
     return (
       <button
         onClick={() => { setDraft(value ?? ''); setEditing(true) }}
-        title="The language recaps and tests are explained in — click to change"
+        title={
+          chosenByStudent
+            ? 'Your student chose this language themselves. You can change it, but they picked it.'
+            : 'The language recaps and tests are explained in — click to change'
+        }
         style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'rgba(255,255,255,.72)', background: 'rgba(255,255,255,.13)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 999, padding: '7px 13px', cursor: 'pointer', font: 'inherit', lineHeight: 1 }}
       >
         Explained in <strong style={{ color: '#fff', fontWeight: 700 }}>{value?.trim() || 'English'}</strong>
+        {/* Says whose choice it is, so a teacher does not quietly overwrite a
+            preference their student set on purpose. */}
+        {chosenByStudent && (
+          <span style={{ opacity: .72, fontSize: 11.5 }}>· their choice</span>
+        )}
         <span aria-hidden style={{ opacity: .75 }}>✎</span>
       </button>
     )

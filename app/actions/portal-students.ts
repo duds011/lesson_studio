@@ -149,7 +149,10 @@ export async function setInstructionLanguage(studentId: string, language: string
   const value = language.trim().slice(0, 40) || null
   const { error } = await createAdminClient()
     .from('students')
-    .update({ instruction_language: value })
+    // Stamped so the editor can say who chose it. A teacher overriding their
+    // student's choice is still allowed — they may be fixing a mis-tap — but
+    // the label can only warn them first if this is recorded.
+    .update({ instruction_language: value, instruction_language_set_by: 'teacher' })
     .eq('id', studentId)
   if (error) return { success: false, error: error.message }
 

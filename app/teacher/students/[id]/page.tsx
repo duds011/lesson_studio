@@ -104,7 +104,7 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
         actions={
           <>
             <LearningLanguageEditor studentId={student.id} value={student.language ?? null} />
-            <InstructionLanguageEditor studentId={student.id} value={(student as any).instruction_language ?? null} />
+            <InstructionLanguageEditor studentId={student.id} value={(student as any).instruction_language ?? null} setBy={(student as any).instruction_language_set_by ?? null} />
             {/* The third language fact: what the hour is spoken in. The
                 recorder reads it instead of asking before every lesson. */}
             <SpokenLanguageEditor
