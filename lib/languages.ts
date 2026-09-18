@@ -32,19 +32,20 @@ export const TEACHING_LANGUAGES = [
 ]
 
 /**
- * What a lesson can be explained in.
+ * What a lesson can be spoken in.
  *
- * Deliberately much wider than TEACHING_LANGUAGES: that list is narrow because
- * recaps and tests have to be *generated* in those languages. This one is only
- * ever read — it says what the room sounds like — so the only requirement is
- * that lib/whisper can turn it into an ISO code.
+ * The same list. It used to be wider, because it is only ever *read* — it says
+ * what the room sounds like — while TEACHING_LANGUAGES had to be generated
+ * into and was therefore short. Now that both are the twenty-seven, the two
+ * lists being different bought nothing: it left Romanian and Hungarian as
+ * languages you could hold a lesson in and never get a write-up for, which is
+ * a worse answer than "not yet" and a harder one to explain.
+ *
+ * It also had Cantonese missing and Chinese spelled differently from the other
+ * list, which is the kind of drift two hand-maintained copies always produce.
+ * One array, referenced twice.
  */
-export const SPOKEN_LANGUAGES = [
-  'English', 'French', 'Japanese', 'Spanish', 'German', 'Italian', 'Portuguese',
-  'Chinese', 'Korean', 'Russian', 'Arabic', 'Dutch', 'Polish', 'Turkish',
-  'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Greek', 'Hebrew', 'Hindi',
-  'Indonesian', 'Thai', 'Vietnamese', 'Ukrainian', 'Czech', 'Romanian', 'Hungarian',
-]
+export const SPOKEN_LANGUAGES = TEACHING_LANGUAGES
 
 /**
  * Example hesitation words for the "hesitation words" metric tile's caption.
