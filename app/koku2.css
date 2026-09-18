@@ -2233,3 +2233,15 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-langpick-select:disabled{opacity:.6;cursor:default}
 .k-langpick-note{font-size:12px;color:var(--muted);font-weight:650}
 .k-langpick-note--bad{color:#a32f2f}
+
+/* — the three packs, in settings — */
+.k-packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:16px}
+.k-pack{border:1.5px solid var(--line);border-radius:var(--r-xl);padding:18px 18px 16px;
+  background:var(--surface);display:flex;flex-direction:column;gap:2px}
+.k-pack-tag{margin:0 0 8px;font-size:10.5px;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted)}
+.k-pack-n{margin:0;font-size:36px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--ink)}
+.k-pack-unit{margin:2px 0 10px;font-size:12px;color:var(--muted);font-weight:650}
+.k-pack-price{margin:0 0 8px;font-size:15px;font-weight:800;color:var(--ink)}
+.k-pack-price span{font-size:12.5px;font-weight:650;color:var(--muted)}
+.k-pack-blurb{margin:0 0 14px;font-size:12.5px;line-height:1.55;color:var(--muted);flex:1}

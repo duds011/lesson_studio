@@ -7,19 +7,17 @@ import { useState } from 'react'
  *
  * Every billing action is a POST that answers with a URL to visit, so this is
  * the one component all of them share. It keeps the button disabled while the
- * request is in flight — a double click on "Subscribe" would otherwise open two
+ * request is in flight — a double click on "Buy" would otherwise open two
  * Checkout Sessions, and a teacher who paid twice is a refund and an apology.
  */
 export default function BillingButton({
-  planId,
-  topup,
+  packId,
   portal,
   children,
   className = 'btn btn-primary btn-sm',
   style,
 }: {
-  planId?: string
-  topup?: boolean
+  packId?: string
   portal?: boolean
   children: React.ReactNode
   className?: string
@@ -36,7 +34,7 @@ export default function BillingButton({
       const res = await fetch(portal ? '/api/billing/portal' : '/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(portal ? {} : { planId, topup: Boolean(topup) }),
+        body: JSON.stringify(portal ? {} : { packId }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.url) {

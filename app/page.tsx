@@ -16,7 +16,7 @@ import { listPendingRecordings } from '@/app/actions/recordings'
 import PendingRecordings from '@/components/portal/PendingRecordings'
 import RecorderMissing from '@/components/portal/RecorderMissing'
 import { resolveTeachingPlatform, TEACHING_PLATFORM_META } from '@/lib/teaching-platform'
-import { getRecapUsage } from '@/lib/recap-quota'
+import { TRIAL_RECAPS, getRecapUsage } from '@/lib/recap-quota'
 import TrialWelcome from '@/components/TrialWelcome'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
@@ -228,7 +228,7 @@ async function RecordingsHome() {
     <>
       <AppNav email={user?.email} connected={false} calendar={false} />
       <main className="wrap page-fade">
-        {usage?.trial && <TrialWelcome email={user?.email} freeRecaps={usage.limit} />}
+        {usage?.trial && <TrialWelcome email={user?.email} freeRecaps={usage.left} />}
         {!recorderReady && <RecorderMissing />}
         <PendingRecordings recordings={pending} students={studentOptions} />
         <RecordingsOverview
@@ -299,7 +299,7 @@ export default async function Home() {
     <>
       <AppNav email={token.email} connected />
       <main className="wrap page-fade">
-        {usage?.trial && <TrialWelcome email={me?.email ?? token.email} freeRecaps={usage.limit} />}
+        {usage?.trial && <TrialWelcome email={me?.email ?? token.email} freeRecaps={usage.left} />}
         {/* One slim line. The calendar is what this page is for, so the header
             gets a strip and nothing more. */}
         <header className="k-thead slim">
@@ -361,16 +361,16 @@ export default async function Home() {
                 <p className="k-stat-sub">sent to students</p>
               </div>
               {usage && (
-                <Link href="/settings#subscription" className="k-stat green" aria-label="Recaps left — manage your subscription">
-                  <div className="k-stat-head"><span>Recaps left</span></div>
+                <Link href="/settings#lessons" className="k-stat green" aria-label="Write-ups left — buy more">
+                  <div className="k-stat-head"><span>Write-ups left</span></div>
                   <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
-                  <div className="k-stat-bar" aria-hidden>
-                    <i style={{ width: `${usage.limit + usage.extra > 0 ? Math.min(100, Math.round((usage.left / (usage.limit + usage.extra)) * 100)) : 0}%` }} />
-                  </div>
+                  {/* No bar any more: a balance that only goes down has no
+                      denominator to fill. It used to show progress through a
+                      monthly allowance, and there is no month now. */}
                   <p className="k-stat-sub">
                     {usage.trial
-                      ? `${usage.used} used of ${usage.limit} free trial recaps`
-                      : `${usage.used} used of ${usage.limit} this month${usage.extra > 0 ? ` · +${usage.extra} extra` : ''}`}
+                      ? `${usage.used} used of your ${TRIAL_RECAPS} free`
+                      : `${usage.used} built · they don't expire`}
                   </p>
                 </Link>
               )}

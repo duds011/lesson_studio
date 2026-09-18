@@ -2,6 +2,7 @@ import Link from 'next/link'
 import CountUp from '@/components/portal/CountUp'
 import HowLessonsReachYou from '@/components/HowLessonsReachYou'
 import type { RecapUsage } from '@/lib/recap-quota'
+import { TRIAL_RECAPS } from '@/lib/plans'
 
 export type RecentLesson = {
   id: string
@@ -118,16 +119,16 @@ export default function RecordingsOverview({
               <p className="k-stat-sub">sent to students</p>
             </div>
             {usage && (
-              <Link href="/settings#subscription" className="k-stat green" aria-label="Recaps left — manage your subscription">
-                <div className="k-stat-head"><span>Recaps left</span></div>
+              <Link href="/settings#lessons" className="k-stat green" aria-label="Write-ups left — buy more">
+                <div className="k-stat-head"><span>Write-ups left</span></div>
                 <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
-                <div className="k-stat-bar" aria-hidden>
-                  <i style={{ width: `${usage.limit + usage.extra > 0 ? Math.min(100, Math.round((usage.left / (usage.limit + usage.extra)) * 100)) : 0}%` }} />
-                </div>
+                {/* The bar measured progress through a monthly allowance.
+                    There is no month and no denominator now — a balance that
+                    only falls has nothing to fill. */}
                 <p className="k-stat-sub">
                   {usage.trial
-                    ? `${usage.used} used of ${usage.limit} free trial recaps`
-                    : `${usage.used} used of ${usage.limit} this month${usage.extra > 0 ? ` · +${usage.extra} extra` : ''}`}
+                    ? `${usage.used} used of your ${TRIAL_RECAPS} free`
+                    : `${usage.used} built · they don't expire`}
                 </p>
               </Link>
             )}

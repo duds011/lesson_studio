@@ -176,13 +176,9 @@ export default async function SettingsPage() {
             />
           </SettingsPanel>
 
-          {/* ── Subscription: plan, monthly usage, and the other plan ── */}
-          <SettingsPanel id="subscription">
-            <SubscriptionPanel
-              usage={usage}
-              planId={(profile as any)?.plan_id ?? null}
-              hasBilling={Boolean((profile as any)?.stripe_customer_id)}
-            />
+          {/* ── Lessons: the balance, and the packs that top it up ── */}
+          <SettingsPanel id="lessons">
+            <SubscriptionPanel usage={usage} />
           </SettingsPanel>
 
           {/* ── Student portal: what the student's side is allowed to do ── */}

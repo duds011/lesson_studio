@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
-import { planById, planByLookupKey, TOPUP } from '@/lib/plans'
+import { packById } from '@/lib/plans'
 
 export const dynamic = 'force-dynamic'
 
 const clean = (s?: string) => (s ?? '').replace(/^﻿/, '').trim()
 
 /**
- * Platform billing webhook — the teacher's own subscription.
+ * Platform billing webhook — the teacher buying write-ups.
  *
  * Deliberately NOT the same endpoint as /api/stripe/webhook. That one is the
  * Connect endpoint, listening for students paying teachers, and it is verified
@@ -16,9 +16,9 @@ const clean = (s?: string) => (s ?? '').replace(/^﻿/, '').trim()
  * misconfigured one fails closed instead of silently processing the other
  * account's events.
  *
- * This route is the only thing that grants entitlement. recap_monthly_limit is
- * never written from the browser — the teacher can start a checkout, but only
- * Stripe telling us it was paid actually changes what they can do.
+ * This route is the only thing that grants entitlement. recap_credits is never
+ * written from the browser — a teacher can start a checkout, but only Stripe
+ * telling us it was paid adds anything to their balance.
  */
 export async function POST(req: NextRequest) {
   const secret = clean(process.env.STRIPE_BILLING_WEBHOOK_SECRET)
@@ -59,89 +59,49 @@ export async function POST(req: NextRequest) {
         const teacherId = s.metadata?.teacher_id || s.client_reference_id
         if (!teacherId) break
 
-        if (s.metadata?.kind === 'topup') {
-          const add = Number(s.metadata?.topup_recaps || TOPUP.recaps)
-          const { data: p } = await admin
-            .from('profiles').select('recap_topup_credits').eq('id', teacherId).maybeSingle()
-          const current = Number((p as any)?.recap_topup_credits ?? 0)
-          await admin
-            .from('profiles')
-            .update({ recap_topup_credits: current + add })
-            .eq('id', teacherId)
-          console.log(`[billing] +${add} top-up recaps for ${teacherId}`)
-        } else {
-          // The subscription events below carry the authoritative price, so
-          // this only records who and what — the allowance is set there too,
-          // and setting it here as well means the teacher is not left waiting
-          // on event ordering to start using what they just bought.
-          const plan = planById(s.metadata?.plan_id)
-          await admin
-            .from('profiles')
-            .update({
-              plan_id: plan?.id ?? null,
-              recap_monthly_limit: plan?.recaps ?? null,
-              stripe_subscription_id: s.subscription ?? null,
-              subscription_status: 'active',
-            })
-            .eq('id', teacherId)
-          console.log(`[billing] ${teacherId} subscribed to ${plan?.id ?? 'unknown'}`)
+        /**
+         * The count comes from the session, not from today's lib/plans.
+         *
+         * Someone who paid for a 50-pack gets 50, even if the pack has since
+         * been resized. The pack id is only a fallback for a session written
+         * before the count rode along.
+         */
+        const fromSession = Number(s.metadata?.pack_recaps)
+        const pack = packById(s.metadata?.pack_id)
+        const add = Number.isFinite(fromSession) && fromSession > 0 ? fromSession : (pack?.recaps ?? 0)
+        if (add <= 0) {
+          console.error(`[billing] paid session ${s.id} carried no pack size`)
+          break
         }
-        await admin.from('billing_events').update({ teacher_id: teacherId }).eq('event_id', event.id)
-        break
-      }
 
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated': {
-        const sub = event.data.object as any
-        const teacherId = await resolveTeacher(admin, sub)
-        if (!teacherId) break
+        // Added in SQL rather than read-then-write: two purchases seconds
+        // apart would otherwise both read the same balance and one would
+        // vanish. Idempotency is already handled by the billing_events claim
+        // above; this guards concurrency, which is a different problem.
+        const { error } = await admin.rpc('add_recap_credits', { teacher: teacherId, amount: add })
+        if (error) throw new Error(`could not add credits: ${error.message}`)
 
-        // The price actually being billed decides the allowance — not what the
-        // checkout said it would be. A plan switch inside Stripe's portal
-        // arrives here and nowhere else.
-        const lookupKey = sub.items?.data?.[0]?.price?.lookup_key
-        const plan = planByLookupKey(lookupKey) ?? planById(sub.metadata?.plan_id)
-
-        // Only a subscription that is actually paying grants recaps. past_due
-        // keeps the allowance (Stripe is still retrying the card); unpaid and
-        // canceled do not.
-        const status = String(sub.status || '')
-        const entitled = status === 'active' || status === 'trialing' || status === 'past_due'
-
+        // plan_id stops meaning a tier and becomes "the last thing they
+        // bought" — which is also how the quota knows they are no longer on
+        // their opening free balance.
         await admin
           .from('profiles')
-          .update({
-            plan_id: plan?.id ?? null,
-            recap_monthly_limit: entitled && plan ? plan.recaps : null,
-            stripe_subscription_id: sub.id,
-            subscription_status: status,
-          })
+          .update({ plan_id: pack?.id ?? 'pack', subscription_status: null, stripe_subscription_id: null })
           .eq('id', teacherId)
-        console.log(`[billing] ${teacherId} → ${plan?.id ?? 'none'} (${status})`)
+
+        console.log(`[billing] +${add} write-ups for ${teacherId} (${pack?.id ?? 'unknown pack'})`)
         await admin.from('billing_events').update({ teacher_id: teacherId }).eq('event_id', event.id)
         break
       }
 
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object as any
-        const teacherId = await resolveTeacher(admin, sub)
-        if (!teacherId) break
-        // Back to no allowance. Top-up credits are deliberately left alone —
-        // they were paid for separately and never expire.
-        await admin
-          .from('profiles')
-          .update({
-            plan_id: null,
-            recap_monthly_limit: null,
-            stripe_subscription_id: null,
-            subscription_status: 'canceled',
-          })
-          .eq('id', teacherId)
-        console.log(`[billing] ${teacherId} cancelled`)
-        await admin.from('billing_events').update({ teacher_id: teacherId }).eq('event_id', event.id)
-        break
-      }
-
+      /**
+       * Nothing renews any more, so the subscription events are gone.
+       *
+       * They are not merely unused: leaving them in would mean a stray event
+       * from the old subscriptions — or a retry of one — could still write
+       * recap_monthly_limit on a column nothing reads, or clear a balance a
+       * teacher paid for. Unhandled is the safe state.
+       */
       default:
         break
     }
@@ -156,12 +116,3 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ received: true })
 }
 
-/** Who a subscription belongs to: its own metadata first, then the customer. */
-async function resolveTeacher(admin: any, sub: any): Promise<string | null> {
-  if (sub?.metadata?.teacher_id) return String(sub.metadata.teacher_id)
-  const customerId = typeof sub?.customer === 'string' ? sub.customer : sub?.customer?.id
-  if (!customerId) return null
-  const { data } = await admin
-    .from('profiles').select('id').eq('stripe_customer_id', customerId).maybeSingle()
-  return (data as any)?.id ?? null
-}
