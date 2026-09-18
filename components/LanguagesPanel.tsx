@@ -95,7 +95,9 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
           </div>
         </div>
         <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8, fontSize: 13.5, color: 'var(--ink)' }}>
-          <li><strong>Each student&rsquo;s &ldquo;Learning&rdquo; language</strong> decides how their recaps and tests are generated — {TEACHING_LANGUAGES.join(', ')} are supported. Set when you add the student, changeable on their page.</li>
+          {/* A count, not the list. Naming all three read well; naming all
+              twenty-seven is a paragraph of commas inside a bullet. */}
+          <li><strong>Each student&rsquo;s &ldquo;Learning&rdquo; language</strong> decides how their recaps and tests are generated — {TEACHING_LANGUAGES.length} are supported, from Japanese and Korean to Spanish and Arabic. Set when you add the student, changeable on their page.</li>
           <li><strong>Each student&rsquo;s &ldquo;Explained in&rdquo; language</strong> is what their recap text and test instructions are written in — English unless you change it, also on their page.</li>
           <li><strong>Each student&rsquo;s &ldquo;Spoken in lessons&rdquo; language</strong> is what the recorder&rsquo;s transcriber listens for during the hour. It follows your answer above until you change it on their page — the recorder no longer asks, because the answer does not change from one lesson to the next.</li>
         </ul>

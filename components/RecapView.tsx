@@ -8,7 +8,22 @@ import { levelScale } from './portal/VocabLevelBreakdown'
    so we classify line-by-line: vocab bullets, 3-line JP/romaji/EN examples,
    **Pattern:** lines, Natural note:/Important: callouts, and plain paragraphs. */
 function hasJapanese(t: string) { return /[　-ヿ㐀-鿿＀-￯]/.test(t) }
-function isRomajiLine(t: string) {
+/**
+ * A line that is the reading of the Japanese line above it.
+ *
+ * "Above it" is the whole of the test that was missing. This matched any run
+ * of plain Latin letters, spaces and light punctuation — which is also the
+ * description of an ordinary English sentence, so a section opening with
+ * "You practised ordering at a bakery." rendered that sentence in grey italic
+ * as though it were a pronunciation guide. Only prose containing a digit, a
+ * colon or a semicolon escaped.
+ *
+ * A reading never stands alone: it belongs to the sentence before it. So the
+ * caller passes whether we are actually inside an example, and prose at the
+ * top of a section can no longer be mistaken for one.
+ */
+function isRomajiLine(t: string, afterJapanese: boolean) {
+  if (!afterJapanese) return false
   const s = t.replace(/\*\*?.+?\*\*?/g, '').trim()
   return /^[a-z][a-z\s.,\-'!?()ā-žāīūēōãñ]*$/i.test(s) && s.length > 0 && !hasJapanese(t)
 }
@@ -61,6 +76,36 @@ export function FormattedContent({ content }: { content: any }) {
   }
 
   for (const line of lines) {
+    /**
+     * `> sentence — English`, which the generic prompt now asks for on every
+     * example line.
+     *
+     * Needed because most of the languages that can be taught are written in
+     * the Latin alphabet, and there the tests below have nothing to detect:
+     * "Je voudrais une baguette." is a sentence, and so is the line of English
+     * explanation above it. isRomajiLine() catches it by accident and renders
+     * it grey and italic as though it were a pronunciation guide, which is the
+     * wrong answer arrived at by luck.
+     *
+     * Split into its own example so the Japanese, the reading and the meaning
+     * still stack the way a three-line example always has.
+     */
+    const marked = line.match(/^>\s*(.+)$/)
+    if (marked) {
+      flushBullets()
+      const body = marked[1].trim()
+      const dashed = body.match(/^(.+?)\s+[—–]\s+(.+)$/)
+      const head = (dashed ? dashed[1] : body).trim()
+      if (example.length && example[example.length - 1].t === 'en') flushExample()
+      // 'jp' regardless of the language: the class is 15px bold, with no font
+      // family and nothing Japanese about it. It means "the sentence being
+      // taught", and a French one should stand out from its translation in
+      // exactly the same way.
+      example.push({ t: 'jp', v: head })
+      if (dashed) example.push({ t: 'en', v: dashed[2].trim() })
+      continue
+    }
+
     if (/^[-•→]/.test(line)) { flushExample(); bullets.push(line.replace(/^[-•→]\s*/, '')); continue }
     flushBullets()
     // Instruction-language recaps translate the callout keywords (パターン,
@@ -70,7 +115,11 @@ export function FormattedContent({ content }: { content: any }) {
     if (/^(pattern|パターン)\s*[:：]/i.test(probe) || /^\*\*[^*]{1,24}[:：]\s*\*\*/.test(line)) { flushExample(); nodes.push(<p key={key++} className="pattern-line">{inline(line)}</p>); continue }
     if (/^(natural note|teacher note|important word order|important|note|tip|ポイント|注意|ヒント|メモ|自然な英語|自然な表現|大事|大切)\s*[:：]/i.test(probe)) { flushExample(); nodes.push(<p key={key++} className="callout">{inline(line)}</p>); continue }
     if (isPureJapanese(line)) { if (example.length && example[example.length - 1].t === 'en') flushExample(); example.push({ t: 'jp', v: line }); continue }
-    if (isRomajiLine(line)) { example.push({ t: 'rom', v: line }); continue }
+    // Only directly under the sentence it reads out — see isRomajiLine.
+    if (isRomajiLine(line, example.length > 0 && example[example.length - 1].t === 'jp')) {
+      example.push({ t: 'rom', v: line })
+      continue
+    }
     if (example.length) { example.push({ t: 'en', v: line }); continue } // translation of current example
     nodes.push(<p key={key++} style={{ fontSize: '.9rem', margin: '.3rem 0' }}>{inline(line)}</p>)
   }

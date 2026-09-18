@@ -644,7 +644,9 @@ MANDATORY LAYOUT for the "content" string of EVERY section, both kinds. Each ele
 - Start with 1-3 short plain English sentences.
 - Vocab bullets, ONE PER LINE: - **word in {{LANGUAGE}}** — English meaning
 - PRONUNCIATION RULE: {{PRONUNCIATION_RULES}} Never IPA symbols (ʒ, ɛ̃, ʁ…) anywhere.
-- Example sentences as a block, one sentence per line.
+- Example sentences as a block, one per line, and EVERY example line starts with "> ":
+  > sentence in {{LANGUAGE}} — English translation
+  The "> " is not decoration and is never optional: it is the only thing that tells the app a line is an example rather than a sentence of explanation. In a language written in the Latin alphabet there is nothing else to go on, and an unmarked example is rendered as prose.
 - Grammar callouts on their own line: **Pattern:** structure
 - Tips on their own line: Natural note: text OR Important: text
 - NO sub-headers. SHORT sentences only.
@@ -791,17 +793,64 @@ const LANGUAGE_PROFILES: LanguageProfile[] = [
 - Tone-pair corrections whenever the teacher fixed tones — say which tone was wrong.
 - Word order patterns plainly (Subject + Time + Place + Verb).`,
   },
+  {
+    /**
+     * Its own entry, not a synonym of Mandarin. "Cantonese" does not contain
+     * the string "chinese", so it never matched the profile above and fell
+     * through to the default — which told the model Cantonese is written in
+     * the Latin alphabet. Pinyin would be wrong for it anyway: the
+     * romanization is Jyutping and the tones are a different set.
+     */
+    match: /cantonese|粵語|粤语|廣東話|广东话/i,
+    anchors: `A1: 你好, 我要, 買, 麵包, basic 係/有 | A2: 咗 for completed action, measure words, 想/要 | B1: 將 sentences, comparison with 過, verb complements | B2: formal connectors, written style | C1: idiomatic, literary | C2: rare or specialist only. (Label levels on this A1-C2 scale.)`,
+    pronunciation: `Always give Jyutping WITH its tone number after every Cantonese word (多謝 = "do1 ze6") — characters alone are unreadable to a beginner, and the tone number is part of the word, never optional. Jyutping, never pinyin: this is not Mandarin.`,
+    notes: `CANTONESE — a recap of a Cantonese lesson must always capture:
+- Every word in characters WITH Jyutping and tone numbers — all three, every time.
+- Spoken-Cantonese words where they differ from written Chinese (係 not 是, 佢 not 他, 冇 not 沒有), noted as such.
+- Final particles (啦, 喎, 咩, 㗎) as their own points — they carry the attitude of the sentence.
+- Measure words with the nouns they classify.`,
+  },
 ]
 
-/** The neutral fallback for languages without a profile — today's behaviour. */
-const DEFAULT_PROFILE: Omit<LanguageProfile, 'match'> = {
-  anchors: `A1: greetings, numbers, everyday nouns, basic present tense | A2: past tense, simple connectors, routine description | B1: opinions, conditionals, common abstract nouns | B2: complex moods, nuanced connectors, formal register | C1: idiomatic and literary usage | C2: rare, specialist or literary only.`,
-  pronunciation: `None. This language is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "". (If the language uses a non-Latin script, give a romanized reading instead.)`,
+/**
+ * The fallback for languages without a profile of their own.
+ *
+ * Two of them, chosen by script rather than one hedged rule. The single
+ * default used to open with "None. This language is written in the Latin
+ * alphabet... the reading field is ALWAYS the empty string" and then reverse
+ * itself in a parenthesis at the end — fine for Dutch, wrong for Russian,
+ * Greek, Thai, Arabic, Hebrew and Hindi, and a model reading it leads with the
+ * assertion. Those students got back a page of script they cannot yet read
+ * with nothing beside it.
+ *
+ * It mattered less while only three languages could be taught. It matters now
+ * that the picker offers twenty-seven.
+ */
+const CEFR_ANCHORS = `A1: greetings, numbers, everyday nouns, basic present tense | A2: past tense, simple connectors, routine description | B1: opinions, conditionals, common abstract nouns | B2: complex moods, nuanced connectors, formal register | C1: idiomatic and literary usage | C2: rare, specialist or literary only.`
+
+const LATIN_DEFAULT: Omit<LanguageProfile, 'match'> = {
+  anchors: CEFR_ANCHORS,
+  pronunciation: `None. This language is written in the Latin alphabet, which this student already reads — do NOT add phonetic respellings anywhere (no "shar-kew-tuh-REE"). The vocabulary "reading" field is ALWAYS the empty string "".`,
   notes: '',
 }
 
+const NON_LATIN_DEFAULT: Omit<LanguageProfile, 'match'> = {
+  anchors: CEFR_ANCHORS,
+  pronunciation: `This language is NOT written in the Latin alphabet, and this student cannot read its script yet. Give a romanized reading immediately after EVERY word, phrase and example sentence in it — in the standard romanization for the language, lower case. A line of script with no reading beside it is useless to them, and there must not be a single one. The vocabulary "reading" field is the romanization and is NEVER empty.`,
+  notes: '',
+}
+
+/**
+ * The languages written in another script, and so unable to take the Latin
+ * default. One list rather than a flag per profile, because the question it
+ * answers — can this student read what came back — is about the script.
+ */
+const NON_LATIN = /russian|русск|ukrainian|українськ|bulgarian|serbian|greek|ελλην|thai|ไทย|arabic|عرب|hebrew|עבר|persian|farsi|urdu|hindi|हिन्द|bengali|tamil|armenian|georgian/i
+
 function profileFor(language: string): Omit<LanguageProfile, 'match'> {
-  return LANGUAGE_PROFILES.find((p) => p.match.test(language)) ?? DEFAULT_PROFILE
+  const profiled = LANGUAGE_PROFILES.find((p) => p.match.test(language))
+  if (profiled) return profiled
+  return NON_LATIN.test(language) ? NON_LATIN_DEFAULT : LATIN_DEFAULT
 }
 
 /**

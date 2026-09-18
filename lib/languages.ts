@@ -9,10 +9,27 @@
 /**
  * What a student can be learning.
  *
- * The three languages recap/test generation is tuned for. Everything else is
- * off the menu until the prompts are built and tested for it.
+ * This was three — English, French, Japanese — with a comment saying everything
+ * else was off the menu "until the prompts are built and tested for it". The
+ * prompts were built. Japanese has its own, eight more languages have tailored
+ * profiles in lib/openai, and the generic prompt handles the rest on the CEFR
+ * scale; lib/whisper resolves every name here to a language code, which is what
+ * stops transcription guessing and inventing speech.
+ *
+ * The narrow list outlived its reason by some months. Lesson Journal — the same
+ * engine, the same prompts — has been offering all twenty-seven, so a teacher
+ * was being shown a third of what their own students' app could already do.
+ *
+ * Same list, same order, same spellings as lesson-journal/lib/languages.ts. If
+ * one gains a language, so does the other.
  */
-export const TEACHING_LANGUAGES = ['English', 'French', 'Japanese']
+export const TEACHING_LANGUAGES = [
+  'Japanese', 'Korean', 'Mandarin Chinese', 'Cantonese', 'Vietnamese', 'Thai',
+  'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese', 'Dutch',
+  'Russian', 'Polish', 'Czech', 'Ukrainian', 'Greek', 'Turkish',
+  'Arabic', 'Hebrew', 'Hindi', 'Indonesian', 'Swedish', 'Norwegian', 'Danish',
+  'Finnish',
+]
 
 /**
  * What a lesson can be explained in.
