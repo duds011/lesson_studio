@@ -1,14 +1,21 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState, useTransition } from 'react'
 import { saveAvailability } from '@/app/actions/availability'
 import { SettingsPanel } from '@/components/SettingsTabs'
 import type { BookingConfig, Range } from '@/lib/booking'
 
 // Monday-first display order mapped to weekday indices (0=Sun … 6=Sat).
-const WEEK: { idx: number; label: string }[] = [
-  { idx: 1, label: 'Monday' }, { idx: 2, label: 'Tuesday' }, { idx: 3, label: 'Wednesday' },
-  { idx: 4, label: 'Thursday' }, { idx: 5, label: 'Friday' }, { idx: 6, label: 'Saturday' }, { idx: 0, label: 'Sunday' },
+/**
+ * Weekday NUMBERS only — Monday first, Sunday last, matching how the rest of
+ * this editor indexes a week. The names come from t.availability.days by
+ * position, because a module constant is built once at import and a name
+ * baked in here would outlive every language change on the page.
+ */
+const WEEK: { idx: number }[] = [
+  { idx: 1 }, { idx: 2 }, { idx: 3 },
+  { idx: 4 }, { idx: 5 }, { idx: 6 }, { idx: 0 },
 ]
 
 const inputStyle: React.CSSProperties = { border: '1px solid var(--line)', borderRadius: 8, padding: '8px 10px', background: '#fff', width: '100%', font: 'inherit' }
@@ -23,14 +30,15 @@ function RangeEditor({ ranges, onEdit, onRemove, onAdd }: {
   onRemove: (ri: number) => void
   onAdd: () => void
 }) {
+  const t = useT()
   return (
     <div className="k-ranges">
       {ranges.map((r, ri) => (
         <span className="k-time-chip" key={ri}>
-          <input type="time" value={r[0]} step={300} onChange={(e) => onEdit(ri, 0, e.target.value)} aria-label="Start time" />
+          <input type="time" value={r[0]} step={300} onChange={(e) => onEdit(ri, 0, e.target.value)} aria-label={t.availability.startTime} />
           <span style={{ color: 'var(--muted)' }}>–</span>
-          <input type="time" value={r[1]} step={300} onChange={(e) => onEdit(ri, 1, e.target.value)} aria-label="End time" />
-          <button className="k-chip-x" onClick={() => onRemove(ri)} aria-label="Remove range">✕</button>
+          <input type="time" value={r[1]} step={300} onChange={(e) => onEdit(ri, 1, e.target.value)} aria-label={t.availability.endTime} />
+          <button className="k-chip-x" onClick={() => onRemove(ri)} aria-label={t.availability.removeRange}>✕</button>
         </span>
       ))}
       <button className="btn btn-ghost btn-sm" onClick={onAdd}>+ Add</button>
@@ -39,6 +47,7 @@ function RangeEditor({ ranges, onEdit, onRemove, onAdd }: {
 }
 
 export default function AvailabilityEditor({ config }: { config: BookingConfig }) {
+  const t = useT()
   const [pending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
@@ -89,7 +98,7 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
         bufferBeforeMin: +bufferBeforeMin, bufferAfterMin: +bufferAfterMin, maxPerDay: +maxPerDay, daysAhead: +daysAhead,
         weeklyHours: weekly, dateOverrides,
       })
-      if (res.success) setSaved(true); else setError(res.error || 'Could not save')
+      if (res.success) setSaved(true); else setError(res.error || t.availability.couldNotSave)
     })
   }
 
@@ -98,7 +107,7 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
     <div className="k-save-bar">
       {error && <span style={{ color: 'var(--red)', fontSize: 12 }}>{error}</span>}
       {saved && <span style={{ fontSize: 12, color: 'var(--green)' }}>✓ Saved — your booking page is updated</span>}
-      <button className="btn btn-primary btn-sm" disabled={pending} onClick={save}>{pending ? 'Saving…' : 'Save changes'}</button>
+      <button className="btn btn-primary btn-sm" disabled={pending} onClick={save}>{pending ? t.common.saving : t.availability.saveChanges}</button>
     </div>
   )
 
@@ -110,20 +119,20 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
           <div className="k-sec-head">
             <span className="k-sec-icon p" aria-hidden>⚙️</span>
             <div>
-              <h3>Lesson defaults</h3>
-              <p className="desc">How long lessons are and how far ahead students can book you.</p>
+              <h3>{t.availability.defaultsTitle}</h3>
+              <p className="desc">{t.availability.defaultsDesc}</p>
             </div>
           </div>
 
           <div className="k-avail-grid">
-            <div className="field" style={{ gridColumn: '1 / -1' }}><label>Lesson name</label><input value={title} onChange={(e) => { dirty(); setTitle(e.target.value) }} placeholder="Language lesson" style={inputStyle} /></div>
-            <div className="field"><label>Lesson length (min)</label><input type="number" min="5" step="5" value={durationMin} onChange={(e) => { dirty(); setDuration(e.target.value) }} style={inputStyle} /></div>
-            <div className="field"><label>Slot interval (min)</label><input type="number" min="5" step="5" value={incrementMin} onChange={(e) => { dirty(); setIncrement(e.target.value) }} style={inputStyle} /></div>
-            <div className="field"><label>Min notice (hours)</label><input type="number" min="0" step="1" value={minNoticeHours} onChange={(e) => { dirty(); setNotice(e.target.value) }} style={inputStyle} /></div>
-            <div className="field"><label>Buffer before (min)</label><input type="number" min="0" step="5" value={bufferBeforeMin} onChange={(e) => { dirty(); setBufBefore(e.target.value) }} style={inputStyle} /></div>
-            <div className="field"><label>Buffer after (min)</label><input type="number" min="0" step="5" value={bufferAfterMin} onChange={(e) => { dirty(); setBufAfter(e.target.value) }} style={inputStyle} /></div>
-            <div className="field"><label>Max lessons / day</label><input type="number" min="1" step="1" value={maxPerDay} onChange={(e) => { dirty(); setMaxPerDay(e.target.value) }} style={inputStyle} /></div>
-            <div className="field"><label>Booking window (days)</label><input type="number" min="1" step="1" value={daysAhead} onChange={(e) => { dirty(); setDaysAhead(e.target.value) }} style={inputStyle} /></div>
+            <div className="field" style={{ gridColumn: '1 / -1' }}><label>{t.availability.lessonName}</label><input value={title} onChange={(e) => { dirty(); setTitle(e.target.value) }} placeholder={t.availability.lessonNamePlaceholder} style={inputStyle} /></div>
+            <div className="field"><label>{t.availability.lessonLength}</label><input type="number" min="5" step="5" value={durationMin} onChange={(e) => { dirty(); setDuration(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>{t.availability.slotInterval}</label><input type="number" min="5" step="5" value={incrementMin} onChange={(e) => { dirty(); setIncrement(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>{t.availability.minNotice}</label><input type="number" min="0" step="1" value={minNoticeHours} onChange={(e) => { dirty(); setNotice(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>{t.availability.bufferBefore}</label><input type="number" min="0" step="5" value={bufferBeforeMin} onChange={(e) => { dirty(); setBufBefore(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>{t.availability.bufferAfter}</label><input type="number" min="0" step="5" value={bufferAfterMin} onChange={(e) => { dirty(); setBufAfter(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>{t.availability.maxPerDay}</label><input type="number" min="1" step="1" value={maxPerDay} onChange={(e) => { dirty(); setMaxPerDay(e.target.value) }} style={inputStyle} /></div>
+            <div className="field"><label>{t.availability.bookingWindow}</label><input type="number" min="1" step="1" value={daysAhead} onChange={(e) => { dirty(); setDaysAhead(e.target.value) }} style={inputStyle} /></div>
           </div>
 
           {SaveBar}
@@ -136,7 +145,7 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
           <div className="k-sec-head">
             <span className="k-sec-icon p" aria-hidden>🕒</span>
             <div>
-              <h3>Availability</h3>
+              <h3>{t.availability.title}</h3>
               <p className="desc">
                 When students can book you. Times are {config.tz.replace('_', ' ')}. What you set here is exactly
                 what the booking page offers them.
@@ -145,13 +154,13 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
             {/* The booking page is the result of this panel, so its preview
                 belongs here rather than as its own item in the sidebar. */}
             <div style={{ marginLeft: 'auto', flex: '0 0 auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button className="btn btn-ghost btn-sm" onClick={copyMondayToWeekdays} title="Copy Monday's hours to Tue–Fri">Copy Mon → weekdays</button>
-              <a className="btn btn-primary btn-sm" href="/book" target="_blank" rel="noreferrer">Preview booking page ↗</a>
+              <button className="btn btn-ghost btn-sm" onClick={copyMondayToWeekdays} title={t.availability.copyMonTitle}>{t.availability.copyMon}</button>
+              <a className="btn btn-primary btn-sm" href="/book" target="_blank" rel="noreferrer">{t.availability.previewBooking}</a>
             </div>
           </div>
 
           <div className="k-week">
-            {WEEK.map(({ idx, label }) => {
+            {WEEK.map(({ idx }, di) => {
               const ranges = weekly[idx]
               const on = ranges.length > 0
               return (
@@ -161,16 +170,16 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
                       type="button"
                       role="switch"
                       aria-checked={on}
-                      aria-label={`${label} availability`}
+                      aria-label={`${t.availability.days[di]} availability`}
                       className={`k-switch ${on ? 'on' : ''}`}
                       onClick={() => toggleDay(idx, !on)}
                     />
-                    {label}
+                    {t.availability.days[di]}
                   </div>
                   {on ? (
                     <RangeEditor ranges={ranges} onEdit={(ri, w, v) => editRange(idx, ri, w, v)} onRemove={(ri) => removeRange(idx, ri)} onAdd={() => addRange(idx)} />
                   ) : (
-                    <span className="k-unavail">Unavailable</span>
+                    <span className="k-unavail">{t.availability.unavailable}</span>
                   )}
                 </div>
               )
@@ -178,7 +187,7 @@ export default function AvailabilityEditor({ config }: { config: BookingConfig }
           </div>
 
           <div className="k-subhead">
-            <h4>Date overrides</h4>
+            <h4>{t.availability.dateOverrides}</h4>
             <span>Days off or one-off hours that replace the weekly schedule.</span>
             <button className="btn btn-ghost btn-sm" onClick={addOverride}>+ Add date</button>
           </div>

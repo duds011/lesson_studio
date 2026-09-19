@@ -605,6 +605,74 @@ export const en = {
     finish: 'Finish — {pct}%',
     allWords: 'All your words',
   },
+  /** components/AvailabilityEditor.tsx — Settings → Availability. */
+  availability: {
+    /** Indexed to the component's DAYS array, which carries the weekday numbers. */
+    days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    startTime: 'Start time',
+    endTime: 'End time',
+    removeRange: 'Remove range',
+    couldNotSave: 'Could not save',
+    saveChanges: 'Save changes',
+    defaultsTitle: 'Lesson defaults',
+    defaultsDesc: 'How long lessons are and how far ahead students can book you.',
+    lessonName: 'Lesson name',
+    lessonNamePlaceholder: 'Language lesson',
+    lessonLength: 'Lesson length (min)',
+    slotInterval: 'Slot interval (min)',
+    minNotice: 'Min notice (hours)',
+    bufferBefore: 'Buffer before (min)',
+    bufferAfter: 'Buffer after (min)',
+    maxPerDay: 'Max lessons / day',
+    bookingWindow: 'Booking window (days)',
+    title: 'Availability',
+    copyMon: 'Copy Mon → weekdays',
+    copyMonTitle: 'Copy Monday’s hours to Tue–Fri',
+    previewBooking: 'Preview booking page ↗',
+    unavailable: 'Unavailable',
+    dateOverrides: 'Date overrides',
+  },
+
+  /** components/RecordingsOverview.tsx — the home page for a teacher with no calendar. */
+  recordings: {
+    eyebrow: 'Overview',
+    title: 'Lessons & recaps',
+    settings: 'Settings',
+    yourStudents: 'Your students',
+    publishedTitle: 'Published lessons',
+    publishedDesc:
+      'What your students can already see, newest first. Drafts wait in the review queue above.',
+    nothingPublished: 'Nothing published yet',
+    untitled: 'Untitled lesson',
+    published: 'Published',
+    draft: 'Draft',
+    summaryAria: 'Lesson summary',
+    students: 'Students',
+    changedMind: 'Changed your mind?',
+    connectCalendar: 'Connect a calendar',
+  },
+
+  /** components/LessonRow.tsx — one lesson in the calendar, and its recap modal. */
+  lessonRow: {
+    joinCall: 'Join call ↗',
+    viewRecap: 'View recap',
+    reviewRecap: 'Review recap',
+    noLink: 'No link',
+    eyebrow: 'Review before publishing',
+    /** {title} is the lesson's own title. */
+    recapTitle: '{title} · Lesson recap',
+    closeAria: 'Close recap review',
+    draftBanner: 'AI draft — review the content below before it reaches the student.',
+    score: 'Score',
+    studentTalk: 'Student talk',
+    grammar: 'Grammar',
+    confidence: 'Confidence',
+    homework: 'Homework',
+    memoScript: 'Voice memo script',
+    teacherNote: 'Teacher’s note',
+    editLater: 'Edit later',
+    approveSend: 'Approve & send to student',
+  },
 } as const
 
 /**

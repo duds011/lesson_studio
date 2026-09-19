@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState } from 'react'
 import { levelScale } from './portal/VocabLevelBreakdown'
 
@@ -42,6 +44,7 @@ export default function LessonRow({
   lesson: LessonView
   initialRecapStatus: 'draft' | 'published' | null
 }) {
+  const t = useT()
   const [recap, setRecap] = useState<any>(null)
   const [recapStatus, setRecapStatus] = useState<'draft' | 'published' | null>(initialRecapStatus)
   const [open, setOpen] = useState(false)
@@ -84,14 +87,14 @@ export default function LessonRow({
         </div>
         <div className="lesson-actions">
           {lesson.meetingUrl && (
-            <a className="btn btn-primary btn-sm" href={lesson.meetingUrl} target="_blank" rel="noreferrer">Join call ↗</a>
+            <a className="btn btn-primary btn-sm" href={lesson.meetingUrl} target="_blank" rel="noreferrer">{t.lessonRow.joinCall}</a>
           )}
           {recapStatus === 'published' ? (
-            <button className="btn btn-ghost btn-sm" onClick={openRecap}>View recap</button>
+            <button className="btn btn-ghost btn-sm" onClick={openRecap}>{t.lessonRow.viewRecap}</button>
           ) : recapStatus === 'draft' ? (
-            <button className="btn btn-primary btn-sm" onClick={openRecap}>Review recap</button>
+            <button className="btn btn-primary btn-sm" onClick={openRecap}>{t.lessonRow.reviewRecap}</button>
           ) : !lesson.meetingUrl ? (
-            <span className="pill amber"><span className="dot" />No link</span>
+            <span className="pill amber"><span className="dot" />{t.lessonRow.noLink}</span>
           ) : null}
         </div>
       </div>
@@ -160,23 +163,24 @@ function FormattedContent({ content }: { content: any }) {
 function RecapDrawer({ title, recap, status, onClose, onPublish }: {
   title: string; recap: any; status: 'draft' | 'published' | null; onClose: () => void; onPublish: () => void
 }) {
+  const t = useT()
   const dist: Record<string, number> = recap.vocab_level_distribution || {}
   return (
     <>
       <div className="drawer-scrim" onClick={onClose} />
       <aside className="drawer" role="dialog" aria-modal="true" aria-label={`${title} lesson recap review`}>
         <div className="drawer-head">
-          <div><span className="eyebrow">Review before publishing</span><h3>{title} · Lesson recap</h3></div>
-          <button className="close-btn" onClick={onClose} aria-label="Close recap review">×</button>
+          <div><span className="eyebrow">{t.lessonRow.eyebrow}</span><h3>{fill(t.lessonRow.recapTitle, { title })}</h3></div>
+          <button className="close-btn" onClick={onClose} aria-label={t.lessonRow.closeAria}>×</button>
         </div>
         <div className="drawer-body">
-          {status === 'draft' && <div className="review-banner">AI draft — review the content below before it reaches the student.</div>}
+          {status === 'draft' && <div className="review-banner">{t.lessonRow.draftBanner}</div>}
 
           <div className="mini-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
-            <div className="mini"><div className="k">Score</div><div className="v">{recap.score}</div></div>
-            <div className="mini"><div className="k">Student talk</div><div className="v">{recap.talk_percentage}%</div></div>
-            <div className="mini"><div className="k">Grammar</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.grammar_density}</div></div>
-            <div className="mini"><div className="k">Confidence</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.confidence_label}</div></div>
+            <div className="mini"><div className="k">{t.lessonRow.score}</div><div className="v">{recap.score}</div></div>
+            <div className="mini"><div className="k">{t.lessonRow.studentTalk}</div><div className="v">{recap.talk_percentage}%</div></div>
+            <div className="mini"><div className="k">{t.lessonRow.grammar}</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.grammar_density}</div></div>
+            <div className="mini"><div className="k">{t.lessonRow.confidence}</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.confidence_label}</div></div>
           </div>
 
           {/* full formatted recap */}
@@ -213,7 +217,7 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
               then throws on .map. Same fix as LessonPageTabs. */}
           {Array.isArray(recap.homework) && recap.homework.length > 0 && (
             <div className="block">
-              <h4>Homework</h4>
+              <h4>{t.lessonRow.homework}</h4>
               <ul className="fc-list">{recap.homework.map((h: any, i: number) => <li key={i}>{h?.description ?? String(h)}</li>)}</ul>
             </div>
           )}
@@ -233,13 +237,13 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
           {/* audio script */}
           {recap.audio_script && (
             <div className="block">
-              <h4>Voice memo script</h4>
+              <h4>{t.lessonRow.memoScript}</h4>
               <p style={{ whiteSpace: 'pre-wrap', fontSize: '.88rem' }}>{recap.audio_script}</p>
             </div>
           )}
 
           {recap.teacher_note && (
-            <div className="block"><h4>Teacher’s note</h4><p>{recap.teacher_note}</p></div>
+            <div className="block"><h4>{t.lessonRow.teacherNote}</h4><p>{recap.teacher_note}</p></div>
           )}
           <div style={{ fontSize: '.76rem', color: 'var(--muted)', textAlign: 'center', padding: '.5rem' }}>
             Source: extension recording → Whisper transcript → OpenAI (gpt-4.1) recap
@@ -248,11 +252,11 @@ function RecapDrawer({ title, recap, status, onClose, onPublish }: {
         <div className="drawer-foot">
           {status === 'draft' ? (
             <>
-              <button className="btn btn-ghost" onClick={onClose}>Edit later</button>
-              <button className="btn btn-green" onClick={onPublish}>Approve &amp; send to student</button>
+              <button className="btn btn-ghost" onClick={onClose}>{t.lessonRow.editLater}</button>
+              <button className="btn btn-green" onClick={onPublish}>{t.lessonRow.approveSend}</button>
             </>
           ) : (
-            <button className="btn btn-ghost" onClick={onClose}>Close</button>
+            <button className="btn btn-ghost" onClick={onClose}>{t.common.close}</button>
           )}
         </div>
       </aside>

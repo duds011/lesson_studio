@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Messages } from '@/lib/i18n'
 import CountUp from '@/components/portal/CountUp'
 import HowLessonsReachYou from '@/components/HowLessonsReachYou'
 import type { RecapUsage } from '@/lib/recap-quota'
@@ -39,9 +40,13 @@ const fmtDate = (d: string | null) =>
  * what actually moves for them — recordings turning into recaps — and never
  * mentions a connection they've already declined.
  */
+/**
+ * A server component, so the copy arrives as a prop. It renders inside the
+ * provider but cannot read it — that hook only exists on the client.
+ */
 export default function RecordingsOverview({
-  studentCount, draftCount, publishedCount, usage, recent, platformLabel, review,
-}: Props) {
+  studentCount, draftCount, publishedCount, usage, recent, platformLabel, review, t,
+}: Props & { t: Messages }) {
   return (
     <>
       <header className="k-thead slim">
@@ -51,12 +56,12 @@ export default function RecordingsOverview({
           <span className="k-ring" style={{ width: 26, height: 26, right: 104, top: 54, borderWidth: 7 }} />
         </div>
         <div className="k-thead-title">
-          <span className="k-phead-eyebrow">Overview</span>
-          <h1>Lessons &amp; recaps</h1>
+          <span className="k-phead-eyebrow">{t.recordings.eyebrow}</span>
+          <h1>{t.recordings.title}</h1>
         </div>
         <div className="k-thead-actions">
-          <Link className="btn btn-ghost" href="/settings">Settings</Link>
-          <Link className="btn btn-primary" href="/teacher/dashboard">Your students</Link>
+          <Link className="btn btn-ghost" href="/settings">{t.recordings.settings}</Link>
+          <Link className="btn btn-primary" href="/teacher/dashboard">{t.recordings.yourStudents}</Link>
         </div>
       </header>
 
@@ -71,14 +76,14 @@ export default function RecordingsOverview({
             <div className="k-sec-head">
               <span className="k-sec-icon b" aria-hidden>📄</span>
               <div>
-                <h3>Published lessons</h3>
-                <p className="desc">What your students can already see, newest first. Drafts wait in the review queue above.</p>
+                <h3>{t.recordings.publishedTitle}</h3>
+                <p className="desc">{t.recordings.publishedDesc}</p>
               </div>
             </div>
 
             {recent.length === 0 ? (
               <div className="empty">
-                <strong>Nothing published yet</strong><br />
+                <strong>{t.recordings.nothingPublished}</strong><br />
                 Record a lesson, review the recap it becomes, and send it — it lands here.
               </div>
             ) : (
@@ -87,11 +92,11 @@ export default function RecordingsOverview({
                   <Link key={l.id} href={`/teacher/students/${l.studentId}/lessons/${l.id}`} className="lesson-card">
                     <span className="lc-num">{l.lessonNumber ? `#${l.lessonNumber}` : '—'}</span>
                     <div>
-                      <div className="lc-title">{l.title || 'Untitled lesson'}</div>
+                      <div className="lc-title">{l.title || t.recordings.untitled}</div>
                       <div className="lc-meta">{l.studentName} · {fmtDate(l.date)}</div>
                     </div>
                     <span className={`pill ${l.status === 'published' ? 'green' : 'amber'}`}>
-                      {l.status === 'published' ? 'Published' : 'Draft'}
+                      {l.status === 'published' ? t.recordings.published : t.recordings.draft}
                     </span>
                     <span className="lc-arrow">→</span>
                   </Link>
@@ -101,26 +106,26 @@ export default function RecordingsOverview({
           </section>
         </div>
 
-        <aside className="k-overview-rail" aria-label="Lesson summary">
+        <aside className="k-overview-rail" aria-label={t.recordings.summaryAria}>
           <div className="k-tstats">
             <div className="k-stat yellow">
-              <div className="k-stat-head"><span>Students</span></div>
+              <div className="k-stat-head"><span>{t.recordings.students}</span></div>
               <div className="k-stat-val"><b><CountUp value={studentCount} /></b></div>
               <p className="k-stat-sub">with a portal of their own</p>
             </div>
             <div className="k-stat blue">
-              <div className="k-stat-head"><span>Drafts to review</span></div>
+              <div className="k-stat-head"><span>{t.overview.drafts}</span></div>
               <div className="k-stat-val"><b><CountUp value={draftCount} /></b></div>
               <p className="k-stat-sub">recaps waiting on you</p>
             </div>
             <div className="k-stat purple">
-              <div className="k-stat-head"><span>Published recaps</span></div>
+              <div className="k-stat-head"><span>{t.overview.published}</span></div>
               <div className="k-stat-val"><b><CountUp value={publishedCount} /></b></div>
               <p className="k-stat-sub">sent to students</p>
             </div>
             {usage && (
-              <Link href="/settings#lessons" className="k-stat green" aria-label="Write-ups left — buy more">
-                <div className="k-stat-head"><span>Write-ups left</span></div>
+              <Link href="/settings#lessons" className="k-stat green" aria-label={t.overview.writeUpsAria}>
+                <div className="k-stat-head"><span>{t.overview.writeUpsLeft}</span></div>
                 <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
                 {/* The bar measured progress through a monthly allowance.
                     There is no month and no denominator now — a balance that
@@ -136,11 +141,11 @@ export default function RecordingsOverview({
 
           {/* The door back, offered once and quietly — not a wall. */}
           <div className="k-sec k-rail-card">
-            <p className="analytics-label">Changed your mind?</p>
+            <p className="analytics-label">{t.recordings.changedMind}</p>
             <p className="desc" style={{ marginBottom: 10 }}>
               Connect Google Calendar and you get a booking page, free-slot scheduling and automatic recording.
             </p>
-            <Link className="btn btn-ghost" href="/settings#connections">Connect a calendar</Link>
+            <Link className="btn btn-ghost" href="/settings#connections">{t.recordings.connectCalendar}</Link>
           </div>
         </aside>
       </div>

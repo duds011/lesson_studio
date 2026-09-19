@@ -240,7 +240,7 @@ async function RecordingsHome() {
         {usage?.trial && <TrialWelcome email={user?.email} freeRecaps={usage.left} />}
         {!recorderReady && <RecorderMissing />}
         <PendingRecordings recordings={pending} students={studentOptions} />
-        <RecordingsOverview
+        <RecordingsOverview t={t}
           studentCount={(students ?? []).length}
           draftCount={draftRecaps.length}
           publishedCount={publishedCount}
