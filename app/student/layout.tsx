@@ -33,7 +33,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
     <I18nProvider locale={locale}>
       <div className={`k-shell solo ${backgroundClass(brand)}`} style={brandVars(brand)}>
         <main className="k-main page-fade">
-          <StudentTopBar mark={brand.logoText} name={brand.portalName} />
+          <StudentTopBar mark={brand.logoText} name={brand.portalName} t={getDict(locale)} />
           {children}
         </main>
       </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -10,6 +11,7 @@ const ICON: Record<string, string> = { video: '▶', article: '📄', link: '�
 
 /** The library itself: paste a link, get a card. */
 export default function MaterialsManager({ initial }: { initial: Material[] }) {
+  const t = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [url, setUrl] = useState('')
@@ -32,7 +34,7 @@ export default function MaterialsManager({ initial }: { initial: Material[] }) {
     setError(''); setMsg('')
     startTransition(async () => {
       const res = await addMaterial(url)
-      if (!res.success) { setError(res.error || 'Could not save that link'); return }
+      if (!res.success) { setError(res.error || t.misc.matLinkFailed); return }
       setUrl(''); setMsg('Saved')
       router.refresh()
     })
@@ -43,7 +45,7 @@ export default function MaterialsManager({ initial }: { initial: Material[] }) {
     setError(''); setMsg('')
     startTransition(async () => {
       const res = await addMaterialsBulk(bulk)
-      if (!res.success) { setError(res.error || 'Could not save those links'); return }
+      if (!res.success) { setError(res.error || t.misc.matLinksFailed); return }
       setBulk(''); setBulkOpen(false)
       setMsg(`Added ${res.added}${res.failed ? ` · ${res.failed} could not be read` : ''}`)
       router.refresh()
@@ -72,7 +74,7 @@ export default function MaterialsManager({ initial }: { initial: Material[] }) {
         <div className="k-sec-head">
           <span className="k-sec-icon" aria-hidden>🔗</span>
           <div>
-            <h3>Add a link</h3>
+            <h3>{t.misc.matAddLink}</h3>
             <p className="desc">
               A YouTube video, an article, a worksheet on another site. Paste the address — the
               title and picture are filled in for you.

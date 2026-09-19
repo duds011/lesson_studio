@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadTestAudio } from '@/lib/portal-upload'
@@ -27,6 +28,7 @@ export default function TestSpeakingRecorder({ testId, promptIndex, existing }: 
   /** A previously submitted take, playable via the signed download route. */
   existing?: { id: string; createdAt?: string | null } | null
 }) {
+  const t = useT()
   const router = useRouter()
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -71,7 +73,7 @@ export default function TestSpeakingRecorder({ testId, promptIndex, existing }: 
       recorderRef.current = rec
       setRecording(true)
     } catch {
-      setError('Microphone blocked — allow mic access in the address bar and try again.')
+      setError(t.misc.micBlockedBar)
     }
   }
 
@@ -90,7 +92,7 @@ export default function TestSpeakingRecorder({ testId, promptIndex, existing }: 
       setPending(null)
       router.refresh()
     } catch (e: any) {
-      setError(e?.message || 'Upload failed')
+      setError(e?.message || t.misc.uploadFailed)
     } finally {
       setBusy(false)
     }
@@ -112,7 +114,7 @@ export default function TestSpeakingRecorder({ testId, promptIndex, existing }: 
           <AudioPlayer src={pending.url} title="Your take" meta="not sent yet" />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button type="button" className="btn btn-primary btn-sm" onClick={send} disabled={busy}>
-              {busy ? 'Sending…' : 'Send this answer'}
+              {busy ? t.speaking.sending : t.misc.sendThisAnswer}
             </button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={start} disabled={busy}>↻ Re-record</button>
           </div>

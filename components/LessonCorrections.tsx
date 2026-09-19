@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import type { Correction, Strength } from '@/lib/openai'
 
@@ -65,6 +66,7 @@ function Marked({ tokens, keep, kind }: { tokens: string[]; keep: boolean[]; kin
 }
 
 function CorrectionCard({ c, who }: { c: Correction; who: string }) {
+  const t = useT()
   const said = tokenize(c.said)
   const fix = tokenize(c.correction)
   const { aKeep, bKeep } = diffFlags(said, fix)
@@ -74,7 +76,7 @@ function CorrectionCard({ c, who }: { c: Correction; who: string }) {
       <span className="cx-label">{who} said</span>
       <p className="cx-line">…<Marked tokens={said} keep={aKeep} kind="said" /></p>
 
-      <span className="cx-label">Correction</span>
+      <span className="cx-label">{t.misc.correction}</span>
       <p className="cx-line cx-fix"><Marked tokens={fix} keep={bKeep} kind="fix" /></p>
 
       {(c.categories.length > 0 || c.explanation) && (
@@ -95,6 +97,7 @@ export default function LessonCorrections({
   /** Whose sentences these are — "You" for the student, their name for the teacher. */
   who: string
 }) {
+  const t = useT()
   const [tab, setTab] = useState<'improve' | 'well'>('improve')
   if (corrections.length === 0 && didWell.length === 0) return null
 
@@ -105,7 +108,7 @@ export default function LessonCorrections({
   return (
     <div>
       {both && (
-        <div className="cx-tabs" role="tablist" aria-label="Corrections">
+        <div className="cx-tabs" role="tablist" aria-label={t.misc.correctionsAria}>
           <button
             type="button" role="tab" aria-selected={showing === 'improve'}
             className={`cx-tab ${showing === 'improve' ? 'sel' : ''}`}

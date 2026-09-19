@@ -1,11 +1,13 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { resetStudentPassword, deleteStudent, studentInviteCode } from '@/app/actions/portal-students'
 import InviteLink from '@/components/portal/InviteLink'
 
 export default function StudentAdminActions({ studentId, hasLogin }: { studentId: string; hasLogin: boolean }) {
+  const t = useT()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
@@ -29,7 +31,7 @@ export default function StudentAdminActions({ studentId, hasLogin }: { studentId
   }
 
   async function remove() {
-    if (!confirm('Delete this student and all their lessons? This cannot be undone.')) return
+    if (!confirm(t.misc.confirmDeleteStudent)) return
     setBusy(true)
     const res = await deleteStudent(studentId)
     setBusy(false)
@@ -41,14 +43,14 @@ export default function StudentAdminActions({ studentId, hasLogin }: { studentId
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
       <div style={{ display: 'flex', gap: 6 }}>
         {hasLogin ? (
-          <button className="btn btn-ghost btn-sm" onClick={resetPw} disabled={busy}>Reset password</button>
+          <button className="btn btn-ghost btn-sm" onClick={resetPw} disabled={busy}>{t.misc.resetPassword}</button>
         ) : (
           // One way in for a student who has not joined: their own link. The
           // "Set up login" button needed an email the teacher usually does not
           // have, and made them read a password out loud when they did.
-          <button className="btn btn-ghost btn-sm" onClick={showInvite} disabled={busy}>Invite link</button>
+          <button className="btn btn-ghost btn-sm" onClick={showInvite} disabled={busy}>{t.misc.inviteLink}</button>
         )}
-        <button className="btn btn-danger-ghost btn-sm" onClick={remove} disabled={busy}>Delete</button>
+        <button className="btn btn-danger-ghost btn-sm" onClick={remove} disabled={busy}>{t.common.delete}</button>
       </div>
       {invite && <div style={{ width: 320, maxWidth: '100%' }}><InviteLink code={invite} compact /></div>}
       {notice && <span style={{ fontSize: 10, color: 'var(--muted)' }}>{notice}</span>}

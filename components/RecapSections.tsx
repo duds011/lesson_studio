@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useRef, useState } from 'react'
 import { FormattedContent } from './RecapView'
 
@@ -53,6 +54,7 @@ function parse(content: string): Parsed | null {
 const stripNumber = (t: string) => String(t ?? '').replace(/^\s*\d+\.\s*/, '').trim()
 
 function Body({ section }: { section: Section }) {
+  const t = useT()
   const p = parse(section.content)
   if (!p) return <div className="kr-sec-in"><FormattedContent content={section.content} /></div>
 
@@ -63,7 +65,7 @@ function Body({ section }: { section: Section }) {
 
       {p.terms.length > 0 && (
         <>
-          <p className="kr-sublab">Words introduced</p>
+          <p className="kr-sublab">{t.misc.wordsIntroduced}</p>
           <div className="kr-terms">
             {p.terms.map(([term, gloss], i) => (
               <div className="kr-term" key={i}><b>{term}</b><span>{gloss}</span></div>
@@ -74,7 +76,7 @@ function Body({ section }: { section: Section }) {
 
       {p.examples.length > 0 && (
         <>
-          <p className="kr-sublab">From the lesson</p>
+          <p className="kr-sublab">{t.misc.fromTheLesson}</p>
           {p.examples.map((e, i) => <p className="kr-eg" key={i}>{e}</p>)}
         </>
       )}
@@ -87,6 +89,7 @@ function Body({ section }: { section: Section }) {
 }
 
 export default function RecapSections({ sections }: { sections: Section[] }) {
+  const t = useT()
   // Accordion, not multi-open: fourteen bodies open at once is the wall this
   // replaced. On the wide layout it is also what keeps column two to one panel.
   const [open, setOpen] = useState(0)

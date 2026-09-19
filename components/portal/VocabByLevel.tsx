@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState } from 'react'
 import { levelColor, levelScale } from './VocabLevelBreakdown'
 
@@ -22,6 +24,7 @@ export type VocabWord = {
  * answer the second.
  */
 export default function VocabByLevel({ words }: { words: VocabWord[] }) {
+  const t = useT()
   const [open, setOpen] = useState<string | null>(null)
 
   const distribution: Record<string, number> = {}
@@ -41,7 +44,7 @@ export default function VocabByLevel({ words }: { words: VocabWord[] }) {
 
   return (
     <div>
-      <div className="k-vlv-bar" role="group" aria-label="Vocabulary by level">
+      <div className="k-vlv-bar" role="group" aria-label={t.misc.vocabByLevelAria}>
         {levels.map((l) => (
           <button
             key={l.level}
@@ -72,7 +75,7 @@ export default function VocabByLevel({ words }: { words: VocabWord[] }) {
       </div>
 
       {!open && (
-        <p className="k-vlv-hint">Tap a level to see those words and where you met them.</p>
+        <p className="k-vlv-hint">{t.misc.vocabTapHint}</p>
       )}
 
       {open && (
@@ -85,7 +88,7 @@ export default function VocabByLevel({ words }: { words: VocabWord[] }) {
               </div>
               {v.definition && <p className="k-vocab-def">{v.definition}</p>}
               <p className="k-vocab-when">
-                {v.firstLessonNumber != null ? `First seen in lesson ${v.firstLessonNumber}` : 'First seen'}
+                {v.firstLessonNumber != null ? fill(t.misc.firstSeenIn, { n: v.firstLessonNumber }) : t.misc.firstSeen}
                 {v.firstDate ? ` · ${v.firstDate}` : ''}
                 {v.lessonCount > 1 ? ` · came back in ${v.lessonCount - 1} more lesson${v.lessonCount - 1 === 1 ? '' : 's'}` : ''}
               </p>

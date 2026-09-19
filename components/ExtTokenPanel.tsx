@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import Link from 'next/link'
 import { useState, useTransition } from 'react'
 import { rotateExtToken } from '@/app/actions/ext-token'
@@ -20,6 +21,7 @@ export default function ExtTokenPanel({ token, lastUsedAt }: {
   token: string | null
   lastUsedAt: string | null
 }) {
+  const t = useT()
   const [pending, start] = useTransition()
   const [resetDone, setResetDone] = useState(false)
   const [error, setError] = useState('')
@@ -27,11 +29,11 @@ export default function ExtTokenPanel({ token, lastUsedAt }: {
   const connected = Boolean(token)
 
   const reset = () => {
-    if (!confirm('Sign the recorder out on every computer? Recording stops until you sign in again inside the extension.')) return
+    if (!confirm(t.misc.extConfirmReset)) return
     start(async () => {
       setError('')
       const res = await rotateExtToken()
-      if (!res.success) { setError(res.error || 'Could not reset the recorder connection.'); return }
+      if (!res.success) { setError(res.error || t.misc.extResetFailed); return }
       setResetDone(true)
     })
   }
@@ -80,7 +82,7 @@ export default function ExtTokenPanel({ token, lastUsedAt }: {
             disabled={pending}
             style={{ border: 0, background: 'none', padding: 0, font: 'inherit', color: 'var(--red)', fontWeight: 700, cursor: 'pointer' }}
           >
-            {pending ? 'Signing out…' : 'Sign the recorder out everywhere'}
+            {pending ? t.misc.extSigningOut : t.misc.extSignOutEverywhere}
           </button>
         </p>
       )}

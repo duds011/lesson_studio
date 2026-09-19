@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadPortalFile } from '@/lib/portal-upload'
@@ -7,6 +8,7 @@ import { useRecorder } from '@/lib/use-recorder'
 import AudioPlayer from '@/components/portal/AudioPlayer'
 
 export default function StudentAudioUpload({ lessonId }: { lessonId: string }) {
+  const t = useT()
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const rec = useRecorder()
@@ -29,7 +31,7 @@ export default function StudentAudioUpload({ lessonId }: { lessonId: string }) {
       rec.clear()
       router.refresh()
     } catch (err: any) {
-      rec.setError(err.message || 'Upload failed')
+      rec.setError(err.message || t.misc.uploadFailed)
     } finally {
       setBusy(false)
     }
@@ -46,7 +48,7 @@ export default function StudentAudioUpload({ lessonId }: { lessonId: string }) {
           ) : (
             <button className="btn btn-primary btn-sm" onClick={rec.start}>● Record audio</button>
           )}
-          <button className="btn btn-ghost btn-sm" disabled={rec.recording} onClick={() => inputRef.current?.click()}>Upload a file</button>
+          <button className="btn btn-ghost btn-sm" disabled={rec.recording} onClick={() => inputRef.current?.click()}>{t.misc.uploadAFile}</button>
           {rec.recording && <span style={{ fontSize: 11, color: 'var(--red)' }}>● Recording… tap stop when done</span>}
         </div>
       )}
@@ -56,8 +58,8 @@ export default function StudentAudioUpload({ lessonId }: { lessonId: string }) {
           <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>Preview — {rec.pending.name}</div>
           <AudioPlayer src={rec.pending.url} title={rec.pending.name} />
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary btn-sm" disabled={busy} onClick={submit}>{busy ? 'Sending…' : 'Submit to teacher'}</button>
-            <button className="btn btn-ghost btn-sm" disabled={busy} onClick={rec.discard}>Discard &amp; redo</button>
+            <button className="btn btn-primary btn-sm" disabled={busy} onClick={submit}>{busy ? t.speaking.sending : t.misc.submitToTeacher}</button>
+            <button className="btn btn-ghost btn-sm" disabled={busy} onClick={rec.discard}>{t.misc.discardRedo}</button>
           </div>
         </div>
       )}

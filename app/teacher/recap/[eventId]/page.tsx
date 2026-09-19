@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { getDict } from '@/lib/i18n'
+import { teacherLocale } from '@/lib/i18n/server'
 import { getRecaps } from '@/lib/store'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -9,14 +11,18 @@ export const dynamic = 'force-dynamic'
 
 export default async function Page({ params }: { params: { eventId: string } }) {
   const eventId = decodeURIComponent(params.eventId)
+  // Resolved before the early return below, which also needs words.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const t = getDict(user ? await teacherLocale(supabase, user.id) : null)
   const all = await getRecaps()
   const rec = all[eventId]
 
   if (!rec) {
     return (
       <div className="empty">
-        This recap isn’t available anymore.{' '}
-        <Link href="/" style={{ color: 'var(--brand)', fontWeight: 700 }}>Back to overview</Link>
+        {t.misc.recapGone}{' '}
+        <Link href="/" style={{ color: 'var(--brand)', fontWeight: 700 }}>{t.misc.backToOverview}</Link>
       </div>
     )
   }
@@ -35,8 +41,6 @@ export default async function Page({ params }: { params: { eventId: string } }) 
   // neutral caption — but the row is still checked against the signed-in
   // teacher before it is used.
   let language: string | null = null
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
   if (user) {
     const { data: link } = await createAdminClient()
       .from('lesson_event_links')

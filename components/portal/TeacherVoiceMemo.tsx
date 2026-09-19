@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadPortalFile } from '@/lib/portal-upload'
@@ -26,6 +27,7 @@ export type HeldMemo = { blob: Blob; name: string }
  *    lesson.
  */
 export default function TeacherVoiceMemo({ lessonId, onHold }: { lessonId?: string; onHold?: (memo: HeldMemo | null) => void }) {
+  const t = useT()
   const router = useRouter()
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -62,7 +64,7 @@ export default function TeacherVoiceMemo({ lessonId, onHold }: { lessonId?: stri
       recorderRef.current = rec
       setRecording(true)
     } catch {
-      setError('Microphone blocked — allow mic access in the browser.')
+      setError(t.misc.micBlocked)
     }
   }
 
@@ -88,7 +90,7 @@ export default function TeacherVoiceMemo({ lessonId, onHold }: { lessonId?: stri
       setSent(true)
       router.refresh()
     } catch (e: any) {
-      setError(e?.message || 'Upload failed')
+      setError(e?.message || t.misc.uploadFailed)
     } finally {
       setBusy(false)
     }
@@ -104,7 +106,7 @@ export default function TeacherVoiceMemo({ lessonId, onHold }: { lessonId?: stri
             <button type="button" className="btn btn-primary btn-sm" onClick={start}>🎙️ Record voice memo</button>
           )}
           {recording && <span style={{ fontSize: 11, color: 'var(--red)' }}>● Recording… tap stop when done</span>}
-          {sent && !recording && <span style={{ fontSize: 11, color: 'var(--green)' }}>Sent ✓</span>}
+          {sent && !recording && <span style={{ fontSize: 11, color: 'var(--green)' }}>{t.misc.sentTick}</span>}
         </div>
       )}
 
@@ -114,7 +116,7 @@ export default function TeacherVoiceMemo({ lessonId, onHold }: { lessonId?: stri
           <AudioPlayer src={pending.url} title={pending.name} />
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             {lessonId ? (
-              <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={send}>{busy ? 'Sending…' : 'Send to student'}</button>
+              <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={send}>{busy ? t.speaking.sending : t.misc.sendToStudent}</button>
             ) : (
               <span style={{ fontSize: 11, color: 'var(--muted)' }}>Will be sent with the recap when you approve.</span>
             )}

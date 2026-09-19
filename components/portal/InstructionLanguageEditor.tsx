@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { setInstructionLanguage } from '@/app/actions/portal-students'
@@ -18,6 +19,7 @@ export default function InstructionLanguageEditor({
   /** 'student' once they have chosen it themselves, from their own dashboard. */
   setBy?: string | null
 }) {
+  const t = useT()
   const chosenByStudent = setBy === 'student'
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -29,7 +31,7 @@ export default function InstructionLanguageEditor({
     setBusy(true); setError('')
     const res = await setInstructionLanguage(studentId, draft)
     setBusy(false)
-    if (!res.success) { setError(res.error || 'Could not save'); return }
+    if (!res.success) { setError(res.error || t.availability.couldNotSave); return }
     setEditing(false)
     router.refresh()
   }
@@ -42,8 +44,8 @@ export default function InstructionLanguageEditor({
         onClick={() => { setDraft(value ?? ''); setEditing(true) }}
         title={
           chosenByStudent
-            ? 'Your student chose this language themselves. You can change it, but they picked it.'
-            : 'The language recaps and tests are explained in — click to change'
+            ? t.misc.instrStudentChose
+            : t.misc.instrHint
         }
         style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: 'rgba(255,255,255,.72)', background: 'rgba(255,255,255,.13)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 999, padding: '7px 13px', cursor: 'pointer', font: 'inherit', lineHeight: 1 }}
       >

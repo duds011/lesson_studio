@@ -1,4 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
+import { getDict } from '@/lib/i18n'
+import { teacherLocale } from '@/lib/i18n/server'
 import { createClient } from '@/lib/supabase/server'
 import { brandVars, resolveBrand } from '@/lib/brand'
 import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
@@ -14,6 +16,7 @@ export const dynamic = 'force-dynamic'
 export default async function TeacherLessonPage({ params }: { params: { id: string; lessonId: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const t = getDict(user ? await teacherLocale(supabase, user.id) : null)
   if (!user) redirect('/login')
 
   const { data: lesson } = await supabase
@@ -75,7 +78,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
             <div className="k-pscore">
               <div>
                 <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
-                <small>OUT OF 10</small>
+                <small>{t.misc.outOfTen}</small>
               </div>
             </div>
           )}

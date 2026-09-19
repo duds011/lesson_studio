@@ -1083,6 +1083,76 @@ export const en = {
     lessons: 'Lessons',
     overview: 'Overview',
   },
+  /** The last of the teacher tooling and the odd corner. */
+  misc: {
+    outOfTen: 'OUT OF 10',
+    dashboardBack: 'Dashboard',
+    backToOverview: 'Back to overview',
+    recapGone: 'This recap isn’t available anymore.',
+    timesShared: 'Times shared',
+    languageGroup: 'Language',
+
+    /** components/ExtTokenPanel.tsx */
+    extConfirmReset: 'Sign the recorder out on every computer? Recording stops until you sign in again inside the extension.',
+    extResetFailed: 'Could not reset the recorder connection.',
+    extSigningOut: 'Signing out…',
+    extSignOutEverywhere: 'Sign the recorder out everywhere',
+
+    /** components/HowLessonsReachYou.tsx */
+    howTitle: 'How lessons reach you',
+    howSteps: [
+      { title: 'Record the lesson', body: 'Use the browser recorder, or upload the file your platform gives you.' },
+      { title: 'We build the recap', body: 'Summary, vocabulary, corrections and practice, drafted from the transcript.' },
+      { title: 'You review and publish', body: 'Edit anything, then send it — the student sees it in their portal.' },
+    ],
+
+    /** components/portal/InstructionLanguageEditor.tsx */
+    instrStudentChose: 'Your student chose this language themselves. You can change it, but they picked it.',
+    instrHint: 'The language recaps and tests are explained in — click to change',
+
+    /** components/portal/MaterialsManager.tsx */
+    matLinkFailed: 'Could not save that link',
+    matLinksFailed: 'Could not save those links',
+    matAddLink: 'Add a link',
+
+    /** components/portal/StudentAdminActions.tsx */
+    confirmDeleteStudent: 'Delete this student and all their lessons? This cannot be undone.',
+    resetPassword: 'Reset password',
+    inviteLink: 'Invite link',
+
+    /** Recording and upload, shared by three components. */
+    uploadFailed: 'Upload failed',
+    micBlocked: 'Microphone blocked — allow mic access in the browser.',
+    micBlockedBar: 'Microphone blocked — allow mic access in the address bar and try again.',
+    uploadAFile: 'Upload a file',
+    submitToTeacher: 'Submit to teacher',
+    discardRedo: 'Discard & redo',
+    sendToStudent: 'Send to student',
+    sendThisAnswer: 'Send this answer',
+    sentTick: 'Sent ✓',
+
+    /** components/portal/VocabByLevel.tsx */
+    vocabByLevelAria: 'Vocabulary by level',
+    vocabTapHint: 'Tap a level to see those words and where you met them.',
+    firstSeenIn: 'First seen in lesson {n}',
+    firstSeen: 'First seen',
+
+    /** components/RecapSections.tsx */
+    wordsIntroduced: 'Words introduced',
+    fromTheLesson: 'From the lesson',
+
+    /** components/Flashcards.tsx */
+    goAgain: 'Go again',
+    showWord: 'Show the word',
+    showMeaning: 'Show the meaning',
+
+    /** components/LessonCorrections.tsx */
+    correction: 'Correction',
+    correctionsAria: 'Corrections',
+
+    /** app/teacher/students/[id] and the dashboard share these. */
+    noLessonsYet: 'No lessons yet',
+  },
 } as const
 
 /**

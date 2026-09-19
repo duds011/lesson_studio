@@ -1,4 +1,6 @@
 import { redirect } from 'next/navigation'
+import { getDict } from '@/lib/i18n'
+import { teacherLocale } from '@/lib/i18n/server'
 import { createClient } from '@/lib/supabase/server'
 import { listMaterials } from '@/app/actions/materials'
 import MaterialsManager from '@/components/portal/MaterialsManager'
@@ -9,6 +11,7 @@ export const dynamic = 'force-dynamic'
 export default async function MaterialsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const t = getDict(user ? await teacherLocale(supabase, user.id) : null)
   if (!user) redirect('/login')
 
   const materials = await listMaterials()
@@ -21,7 +24,7 @@ export default async function MaterialsPage() {
         meta="Videos, articles and links you reuse — attach them to a recap in two clicks."
         figures={[
           { label: 'Saved', value: materials.length },
-          { label: 'Times shared', value: used },
+          { label: t.misc.timesShared, value: used },
         ]}
       />
       <MaterialsManager initial={materials} />

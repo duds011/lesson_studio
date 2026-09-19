@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { getDict, fill } from '@/lib/i18n'
+import { teacherLocale } from '@/lib/i18n/server'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
@@ -18,6 +20,7 @@ export const dynamic = 'force-dynamic'
 export default async function TeacherStudentPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const t = getDict(user ? await teacherLocale(supabase, user.id) : null)
   if (!user) redirect('/login')
 
   const { data: student } = await supabase
@@ -93,12 +96,12 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
       <PageHeader
         lead={<div className="avatar lg">{student.full_name.split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</div>}
         title={student.full_name}
-        meta={`${student.profile_id ? (student.email || '—') : 'Invited — not joined yet'} · ${student.level} · ${student.language}`}
+        meta={`${student.profile_id ? (student.email || '—') : t.student.notJoined} · ${student.level} · ${student.language}`}
         figures={[
           { label: 'Lessons', value: lessonCount },
-          { label: 'Avg score', value: <>{avgScore != null ? avgScore.toFixed(1) : '—'}<i>/10</i></> },
-          { label: 'Latest talk', value: <>{latestTalk ?? '—'}<i>%</i></> },
-          { label: 'Vocab items', value: totalVocab },
+          { label: t.student.avgScore, value: <>{avgScore != null ? avgScore.toFixed(1) : '—'}<i>/10</i></> },
+          { label: t.student.latestTalk, value: <>{latestTalk ?? '—'}<i>%</i></> },
+          { label: t.student.vocabItems, value: totalVocab },
         ]}
         wideActions
         actions={
@@ -121,9 +124,13 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
                 the one figure that changes what a teacher does next. */}
             <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
               <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : 'var(--brand-soft)', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
-                {credits.purchased > 0 || credits.used > 0 ? `${credits.remaining} lesson${credits.remaining === 1 ? '' : 's'} left / ${credits.purchased} bought` : 'No lessons purchased yet'}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
+                {credits.purchased > 0 || credits.used > 0
+                  ? (credits.remaining === 1
+                      ? fill(t.student.creditsOneLeft, { bought: credits.purchased })
+                      : fill(t.student.creditsLeft, { left: credits.remaining, bought: credits.purchased }))
+                  : t.student.noCredits}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
               </span>
-              <Link href="/teacher/payments" className="btn btn-ghost btn-sm">Manage payments →</Link>
+              <Link href="/teacher/payments" className="btn btn-ghost btn-sm">{t.student.managePayments}</Link>
             </span>
           </>
         }
@@ -161,10 +168,10 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
         {/* Same header shape as the tests column (which carries a button), so
             the two lists start on the same line. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 44, margin: '0 0 11px' }}>
-          <h2 className="section-heading" style={{ margin: 0 }}>Lessons & recaps</h2>
+          <h2 className="section-heading" style={{ margin: 0 }}>{t.student.lessonsTitle}</h2>
         </div>
         {rows.length === 0 ? (
-          <div className="empty"><strong style={{ color: 'var(--ink)' }}>No lessons yet</strong><br />Recorded lessons for this student will appear here.</div>
+          <div className="empty"><strong style={{ color: 'var(--ink)' }}>{t.student.noLessons}</strong><br />{t.student.noLessonsSub}</div>
         ) : (
           <div>
             {rows.map((lesson) => {
@@ -190,12 +197,12 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
 
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, minHeight: 44, margin: '0 0 11px' }}>
-          <h2 className="section-heading" style={{ margin: 0 }}>Practice tests</h2>
+          <h2 className="section-heading" style={{ margin: 0 }}>{t.student.testsTitle}</h2>
           <GenerateTestButton studentId={student.id} lessons={testableLessons} language={teachingLanguage} instructionLanguage={(student as any).instruction_language ?? ''} />
         </div>
         {(tests ?? []).length === 0 ? (
           <div className="empty" style={{ padding: 26 }}>
-            <strong style={{ color: 'var(--ink)' }}>No tests yet</strong>
+            <strong style={{ color: 'var(--ink)' }}>{t.student.noTests}</strong>
             <br />
             Generate an exam-style practice test from any lesson recap. You review it before the student sees it.
           </div>

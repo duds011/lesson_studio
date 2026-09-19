@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useMemo, useState } from 'react'
 
 type Card = { word: string; reading?: string; definition?: string; jlpt_level?: string }
@@ -14,6 +15,7 @@ type Card = { word: string; reading?: string; definition?: string; jlpt_level?: 
  * nothing needs a server to flip a card.
  */
 export default function Flashcards({ vocabulary }: { vocabulary: Card[] }) {
+  const t = useT()
   const deck = useMemo(
     () => (Array.isArray(vocabulary) ? vocabulary.filter((v) => v?.word) : []),
     [vocabulary],
@@ -36,7 +38,7 @@ export default function Flashcards({ vocabulary }: { vocabulary: Card[] }) {
       <div className="fc-done">
         <span aria-hidden>🎉</span>
         <strong>All {deck.length} words done{round > 1 ? ` — round ${round}` : ''}.</strong>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={restart}>Go again</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={restart}>{t.misc.goAgain}</button>
       </div>
     )
   }
@@ -57,7 +59,7 @@ export default function Flashcards({ vocabulary }: { vocabulary: Card[] }) {
         type="button"
         className={`fc-card ${flipped ? 'is-flipped' : ''}`}
         onClick={() => setFlipped((f) => !f)}
-        aria-label={flipped ? 'Show the word' : 'Show the meaning'}
+        aria-label={flipped ? t.misc.showWord : t.misc.showMeaning}
       >
         {!flipped ? (
           <span className="fc-front jp">{card.word}</span>

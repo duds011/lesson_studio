@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation'
+import { getDict } from '@/lib/i18n'
+import { studentLocale } from '@/lib/i18n/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -16,6 +18,8 @@ export const dynamic = 'force-dynamic'
 export default async function StudentLessonPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
   const user = await requireUser(supabase, `/student/lessons/${params.id}`)
+  const locale = await studentLocale(createAdminClient(), user.id)
+  const t = getDict(locale)
 
   const { data: lesson } = await supabase
     .from('lessons')
@@ -45,7 +49,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
       : Promise.resolve({ data: null }),
   ])
   const brand = resolveBrand((teacherProfile as any)?.brand)
-  const teacherFirst = ((teacherProfile as any)?.full_name ?? '').split(' ')[0] || 'Your teacher'
+  const teacherFirst = ((teacherProfile as any)?.full_name ?? '').split(' ')[0] || getDict(locale).lesson.yourTeacher
   const memos = (files || []).filter(isMemo)
 
   // What this student already said about this recap, if anything. Their own
@@ -84,7 +88,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
             <div className="k-pscore">
               <div>
                 <b><CountUp value={Number(recap.score)} decimals={Number.isInteger(Number(recap.score)) ? 0 : 1} /></b>
-                <small>OUT OF 10</small>
+                <small>{t.misc.outOfTen}</small>
               </div>
             </div>
           )}
@@ -122,7 +126,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         teacherFirst={teacherFirst}
         brand={brand}
         language={student?.language ?? null}
-        back={{ href: '/student/dashboard', label: 'Dashboard' }}
+        back={{ href: '/student/dashboard', label: t.misc.dashboardBack }}
         speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'student', takes: takes as any }}
         files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={practice} />}
       />

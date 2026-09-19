@@ -1,3 +1,4 @@
+import type { Messages } from '@/lib/i18n'
 /**
  * The student portal's header, replacing the icon rail.
  *
@@ -6,7 +7,7 @@
  * The two things it genuinely carried, whose space this is and the way out,
  * fit on one line.
  */
-export default function StudentTopBar({ mark, name }: { mark?: string; name?: string }) {
+export default function StudentTopBar({ mark, name, t }: { mark?: string; name?: string; t: Messages }) {
   return (
     <header className="k-bar">
       <div className="k-bar-brand">
@@ -28,7 +29,7 @@ export default function StudentTopBar({ mark, name }: { mark?: string; name?: st
         <svg className="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 17l5-5-5-5M20 12H9M12 4H5v16h7" />
         </svg>
-        <span>Sign out</span>
+        <span>{t.common.signOut}</span>
       </a>
     </header>
   )
