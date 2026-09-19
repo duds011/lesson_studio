@@ -2251,3 +2251,14 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
   color:var(--forest)}
 /* The objection prepaid credit always raises, answered on the card itself. */
 .k-pack-never{margin:0 0 14px;font-size:12px;font-weight:650;color:var(--muted);flex:1}
+
+/* Settings → Language. Buttons, not a select: someone stuck in a language
+   they cannot read has to find their own on sight, and a select shows them
+   only the one they are stuck in. */
+.k-lang-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:14px}
+.k-lang{padding:11px 12px;border-radius:var(--r-lg);border:1.5px solid var(--line);
+  background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;font-weight:700;
+  cursor:pointer;transition:.15s ease}
+.k-lang:hover:not(:disabled){border-color:var(--forest);background:var(--brand-soft)}
+.k-lang.is-on{border-color:var(--forest);background:var(--brand-soft);color:var(--forest)}
+.k-lang:disabled{opacity:.6;cursor:default}

@@ -14,6 +14,9 @@ import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
 import LanguagesPanel from '@/components/LanguagesPanel'
 import ExtTokenPanel from '@/components/ExtTokenPanel'
 import ReplayTourButton from '@/components/ReplayTourButton'
+import LanguagePicker from '@/components/LanguagePicker'
+import { teacherLocale } from '@/lib/i18n/server'
+import { DEFAULT_LOCALE } from '@/lib/i18n/config'
 import SubscriptionPanel from '@/components/SubscriptionPanel'
 import { getRecapUsage } from '@/lib/recap-quota'
 
@@ -42,6 +45,10 @@ export default async function SettingsPage() {
   const { data: profile } = user
     ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode, plan_id, stripe_customer_id, teaching_language, speaking_language, speaking_submissions').eq('id', user.id).single()
     : { data: null }
+  // Through the resolver rather than reading profile.ui_language inline, so
+  // the picker highlights what the layout actually rendered in — including
+  // the Accept-Language guess for a teacher who has never chosen.
+  const uiLocale = user ? await teacherLocale(supabase, user.id) : DEFAULT_LOCALE
   const calendarMode = resolveCalendarMode((profile as any)?.calendar_mode)
   // Unset is on: every recap already writes the exercises, and a teacher who
   // would rather not be sent audio says so here.
@@ -94,6 +101,24 @@ export default async function SettingsPage() {
                 <ReplayTourButton />
                 <span className="desc" style={{ fontSize: 12 }}>Forgot what a page is for? The walkthrough runs again from here.</span>
               </div>
+            </section>
+
+            {/* Above Connections on purpose: someone who has landed in a
+                language they cannot read needs this before anything else on
+                the page, and the endonyms make it findable without reading
+                the heading. */}
+            <section className="k-sec" style={{ marginBottom: 18 }}>
+              <div className="k-sec-head">
+                <span className="k-sec-icon" aria-hidden>🌍</span>
+                <div>
+                  <h3>Language</h3>
+                  <p className="desc">
+                    What this workspace says to you. It does not change the language your
+                    recaps are written in — each student chooses that for themselves.
+                  </p>
+                </div>
+              </div>
+              <LanguagePicker current={uiLocale} />
             </section>
 
             <section className="k-sec">

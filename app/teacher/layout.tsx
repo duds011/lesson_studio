@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getToken } from '@/lib/store'
 import { resolveCalendarMode } from '@/lib/calendar-mode'
 import AppNav from '@/components/AppNav'
+import I18nProvider from '@/components/I18nProvider'
+import { teacherLocale } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,10 +22,15 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const token = await getToken()
   const calendar = resolveCalendarMode((profile as any).calendar_mode) !== 'none'
 
+  // Resolved once per request here rather than in each page: every teacher
+  // page renders inside this layout, so one lookup covers all of them and
+  // the client tree below gets it without a prop.
+  const locale = await teacherLocale(supabase, user.id)
+
   return (
-    <>
+    <I18nProvider locale={locale}>
       <AppNav email={user.email} connected={Boolean(token)} calendar={calendar} />
       <main className="wrap page-fade">{children}</main>
-    </>
+    </I18nProvider>
   )
 }

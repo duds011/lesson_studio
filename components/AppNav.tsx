@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import GuidedTour from '@/components/GuidedTour'
+import { useT } from '@/components/I18nProvider'
 import Thinking from '@/components/portal/Thinking'
 
 type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note' | 'menu' | 'close'
@@ -46,15 +47,21 @@ export function LogoMark() {
   return <span className="mark" aria-hidden="true"><Icon name="book" /></span>
 }
 
-// `tour` is the anchor the guided walkthrough spotlights — see GuidedTour.
+/**
+ * `tour` is the anchor the guided walkthrough spotlights — see GuidedTour.
+ *
+ * `key` names the label in the dictionary rather than holding it. A module
+ * constant is evaluated once at import, so an English label baked in here
+ * would survive every language change on the page.
+ */
 const LINKS = [
-  { href: '/', label: 'Overview', icon: 'home' as IconName, tour: 'overview' },
-  { href: '/teacher/dashboard', label: 'Students', icon: 'users' as IconName, tour: 'students' },
-  { href: '/teacher/notes', label: 'Notes', icon: 'note' as IconName, tour: 'notes' },
-  { href: '/teacher/materials', label: 'Materials', icon: 'book' as IconName, tour: 'materials' },
-  { href: '/teacher/branding', label: 'Student view', icon: 'eye' as IconName, tour: 'student-view' },
-  { href: '/teacher/payments', label: 'Payments', icon: 'wallet' as IconName, tour: 'payments' },
-]
+  { href: '/', key: 'overview', icon: 'home' as IconName, tour: 'overview' },
+  { href: '/teacher/dashboard', key: 'students', icon: 'users' as IconName, tour: 'students' },
+  { href: '/teacher/notes', key: 'notes', icon: 'note' as IconName, tour: 'notes' },
+  { href: '/teacher/materials', key: 'materials', icon: 'book' as IconName, tour: 'materials' },
+  { href: '/teacher/branding', key: 'studentView', icon: 'eye' as IconName, tour: 'student-view' },
+  { href: '/teacher/payments', key: 'payments', icon: 'wallet' as IconName, tour: 'payments' },
+] as const
 
 /** Remembered per browser, and read straight off the root element so the
  *  --sidebar width the whole layout is built on collapses with it. */
@@ -67,9 +74,10 @@ const NAV_KEY = 'nav-collapsed'
  * nav rather than sitting there broken.
  */
 export default function AppNav({ email, connected, calendar = true }: { email?: string | null; connected?: boolean; calendar?: boolean }) {
+  const t = useT()
   const pathname = usePathname()
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
-  const accountLabel = email?.split('@')[0] || 'Teacher workspace'
+  const accountLabel = email?.split('@')[0] || t.nav.workspace
   const [collapsed, setCollapsed] = useState(false)
   // The phone drawer. Closed is the resting state; opening is always a tap on
   // the top-bar button, and navigating anywhere closes it again.
@@ -112,9 +120,9 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         never lives up here — it slides in from the side, the same rail as on
         desktop, so the app has one navigation and two ways to summon it. */}
     <header className="mobile-topbar">
-      <Link className="logo" href="/" aria-label="Lesson Studio overview">
+      <Link className="logo" href="/" aria-label={t.nav.overviewAria}>
         <LogoMark />
-        <span className="brand-word">Lesson Studio</span>
+        <span className="brand-word">{t.nav.appName}</span>
       </Link>
       <button
         type="button"
@@ -122,52 +130,52 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         onClick={() => setMobileOpen((v) => !v)}
         aria-expanded={mobileOpen}
         aria-controls="teacher-nav"
-        aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+        aria-label={mobileOpen ? t.common.close : t.nav.openMenu}
       >
         <Icon name={mobileOpen ? 'close' : 'menu'} />
       </button>
     </header>
     {mobileOpen && <div className="mobile-nav-scrim" onClick={() => setMobileOpen(false)} aria-hidden />}
 
-    <aside id="teacher-nav" className={`app-sidebar ${mobileOpen ? 'mobile-open' : ''}`} aria-label="Teacher workspace navigation">
+    <aside id="teacher-nav" className={`app-sidebar ${mobileOpen ? 'mobile-open' : ''}`} aria-label={t.nav.navAria}>
       <div className="sidebar-top">
-        <Link className="logo" href="/" aria-label="Lesson Studio overview">
+        <Link className="logo" href="/" aria-label={t.nav.overviewAria}>
           <LogoMark />
-          <span><span className="brand-word">Lesson Studio</span><small>Teacher workspace</small></span>
+          <span><span className="brand-word">{t.nav.appName}</span><small>{t.nav.workspace}</small></span>
         </Link>
         <button
           type="button"
           className="nav-toggle"
           onClick={toggleNav}
           aria-expanded={!collapsed}
-          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-          title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          aria-label={collapsed ? t.nav.expand : t.nav.collapse}
+          title={collapsed ? t.nav.expand : t.nav.collapse}
         >
           <Icon name="collapse" />
         </button>
       </div>
 
       <div className="sidebar-scroll">
-        <div className="nav-section-label">Workspace</div>
+        <div className="nav-section-label">{t.nav.sectionWorkspace}</div>
         <nav className="side-nav">
           {LINKS.map((link) => (
             <Link key={link.href} href={link.href} data-tour={link.tour} onClick={() => startNav(link.href)} className={`side-link ${isActive(link.href) ? 'active' : ''}`}>
-              {pending === link.href ? <NavWait /> : <Icon name={link.icon} />}<span>{link.label}</span>
+              {pending === link.href ? <NavWait /> : <Icon name={link.icon} />}<span>{t.nav[link.key]}</span>
             </Link>
           ))}
         </nav>
 
-        <div className="nav-section-label">Manage</div>
+        <div className="nav-section-label">{t.nav.sectionManage}</div>
         <nav className="side-nav">
           {/* No Booking page link: the booking page is what Availability
               produces, so its preview button lives in that panel instead. */}
           {calendar && (
             <Link href="/settings#availability" onClick={() => startNav('/settings#availability')} className="side-link">
-              {pending === '/settings#availability' ? <NavWait /> : <Icon name="clock" />}<span>Availability</span>
+              {pending === '/settings#availability' ? <NavWait /> : <Icon name="clock" />}<span>{t.nav.availability}</span>
             </Link>
           )}
           <Link href="/settings" data-tour="settings" onClick={() => startNav('/settings')} className={`side-link ${isActive('/settings') ? 'active' : ''}`}>
-            {pending === '/settings' ? <NavWait /> : <Icon name="settings" />}<span>Settings</span>
+            {pending === '/settings' ? <NavWait /> : <Icon name="settings" />}<span>{t.nav.settings}</span>
           </Link>
         </nav>
       </div>
@@ -178,11 +186,11 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
           <strong>{accountLabel}</strong>
           <small>
             <span className={`status-dot ${connected || !calendar ? 'online' : ''}`} />
-            {connected ? 'Calendar connected' : calendar ? 'Setup needed' : 'Recordings only'}
+            {connected ? t.nav.calendarConnected : calendar ? t.nav.setupNeeded : t.nav.recordingsOnly}
           </small>
         </span>
-        <a href="/logout" className="btn btn-danger-ghost btn-sm" title="Sign out" aria-label="Sign out" style={{ padding: '6px 8px' }}>
-          Sign out
+        <a href="/logout" className="btn btn-danger-ghost btn-sm" title={t.common.signOut} aria-label={t.common.signOut} style={{ padding: '6px 8px' }}>
+          {t.common.signOut}
         </a>
       </div>
     </aside>
@@ -191,11 +199,12 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
 }
 
 export function PublicNav({ backHref, backLabel }: { backHref?: string; backLabel?: string }) {
+  const t = useT()
   return (
     <header className="portal-header">
       <div className="portal-header-inner">
-        <Link className="logo" href={backHref ?? '/'}><LogoMark /><span className="brand-word">Lesson Studio</span></Link>
-        {backHref ? <Link className="btn btn-ghost btn-sm" href={backHref}>← {backLabel ?? 'Back'}</Link> : <span className="portal-label">Student portal</span>}
+        <Link className="logo" href={backHref ?? '/'}><LogoMark /><span className="brand-word">{t.nav.appName}</span></Link>
+        {backHref ? <Link className="btn btn-ghost btn-sm" href={backHref}>← {backLabel ?? t.common.back}</Link> : <span className="portal-label">{t.nav.studentPortal}</span>}
       </div>
     </header>
   )

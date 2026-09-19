@@ -3,6 +3,8 @@ import { requireUser } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { backgroundClass, brandVars, resolveBrand } from '@/lib/brand'
 import StudentTopBar from '@/components/koku/StudentTopBar'
+import I18nProvider from '@/components/I18nProvider'
+import { studentLocale } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,12 +22,18 @@ export default async function StudentLayout({ children }: { children: React.Reac
 
   const brand = resolveBrand((teacher as any)?.brand)
 
+  // Follows students.instruction_language — the language they already told us
+  // they read most comfortably. See lib/i18n/server.
+  const locale = await studentLocale(admin, user.id)
+
   return (
-    <div className={`k-shell solo ${backgroundClass(brand)}`} style={brandVars(brand)}>
-      <main className="k-main page-fade">
-        <StudentTopBar mark={brand.logoText} name={brand.portalName} />
-        {children}
-      </main>
-    </div>
+    <I18nProvider locale={locale}>
+      <div className={`k-shell solo ${backgroundClass(brand)}`} style={brandVars(brand)}>
+        <main className="k-main page-fade">
+          <StudentTopBar mark={brand.logoText} name={brand.portalName} />
+          {children}
+        </main>
+      </div>
+    </I18nProvider>
   )
 }
