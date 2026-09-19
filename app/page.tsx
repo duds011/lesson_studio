@@ -5,6 +5,7 @@ import { calendarFailure, CALENDAR_FAILURE_TEXT, isFixable, type CalendarFailure
 import AppNav from '@/components/AppNav'
 import I18nProvider from '@/components/I18nProvider'
 import { teacherLocale, publicLocale } from '@/lib/i18n/server'
+import { getDict, fill, type Locale } from '@/lib/i18n'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
 import CountUp from '@/components/portal/CountUp'
@@ -23,7 +24,8 @@ import TrialWelcome from '@/components/TrialWelcome'
 
 export const dynamic = 'force-dynamic' // always read fresh token + calendar
 
-function ConnectScreen({ configured }: { configured: boolean }) {
+function ConnectScreen({ configured, locale }: { configured: boolean; locale: Locale }) {
+  const t = getDict(locale)
   return (
     <main className="wrap page-fade">
       <div className="connect-card">
@@ -35,18 +37,18 @@ function ConnectScreen({ configured }: { configured: boolean }) {
             <path fill="#EA4335" d="M24 11.1c3.2 0 6 1.1 8.2 3.2l6.1-6.1C34.6 4.8 29.8 3 24 3 15.6 3 8.3 7.4 4.7 14.9l7.2 5.4C13.6 14.9 18.4 11.1 24 11.1z" />
           </svg>
         </div>
-        <h1>Connect your Google Calendar</h1>
-        <p>Link your calendar so Lesson Studio can see your upcoming lessons, take bookings, and record each class.</p>
+        <h1>{t.connect.title}</h1>
+        <p>{t.connect.body}</p>
         {!configured && (
           <div className="warn-box">
-            Google OAuth isn&rsquo;t configured yet. Add <strong>GOOGLE_CLIENT_ID</strong> and{' '}
-            <strong>GOOGLE_CLIENT_SECRET</strong> to the environment, then restart.
+            {t.connect.notConfiguredPre}<strong>GOOGLE_CLIENT_ID</strong>{t.connect.notConfiguredMid}
+            <strong>GOOGLE_CLIENT_SECRET</strong>{t.connect.notConfiguredPost}
           </div>
         )}
         <ul className="scopes">
-          <li><strong>Read your calendar</strong> — find lessons and their meeting links</li>
-          <li><strong>Record lessons</strong> — capture classes with the Lesson Studio extension</li>
-          <li><strong>Build recaps</strong> — AI lesson summaries for you to review and share</li>
+          <li><strong>{t.connect.scopeReadBold}</strong>{t.connect.scopeRead}</li>
+          <li><strong>{t.connect.scopeRecordBold}</strong>{t.connect.scopeRecord}</li>
+          <li><strong>{t.connect.scopeRecapBold}</strong>{t.connect.scopeRecap}</li>
         </ul>
         <a
           className="btn btn-primary"
@@ -54,9 +56,9 @@ function ConnectScreen({ configured }: { configured: boolean }) {
           aria-disabled={!configured}
           style={{ width: '100%', justifyContent: 'center', ...(configured ? {} : { opacity: 0.55, pointerEvents: 'none' }) }}
         >
-          Continue with Google
+          {t.connect.continueGoogle}
         </a>
-        <p className="fineprint">You&rsquo;ll be sent to Google&rsquo;s consent screen. Manage this later in Settings.</p>
+        <p className="fineprint">{t.connect.fine}</p>
       </div>
     </main>
   )
@@ -229,6 +231,7 @@ async function RecordingsHome() {
   // layout's provider — without this the sidebar here would be the only one
   // in the app still in English.
   const locale = user ? await teacherLocale(supabase, user.id) : await publicLocale()
+  const t = getDict(locale)
 
   return (
     <I18nProvider locale={locale}>
@@ -258,10 +261,11 @@ export default async function Home() {
   if (!token) {
     // A teacher who said "no calendar" should never meet the connect wall.
     if ((await currentCalendarMode()) === 'none') return <RecordingsHome />
+    const locale = await publicLocale()
     return (
-      <I18nProvider locale={await publicLocale()}>
+      <I18nProvider locale={locale}>
         <AppNav connected={false} />
-        <ConnectScreen configured={configured} />
+        <ConnectScreen configured={configured} locale={locale} />
       </I18nProvider>
     )
   }
@@ -301,6 +305,7 @@ export default async function Home() {
   const recorderReady = await hasRecorder(me?.id ?? '')
   const usage = me ? await getRecapUsage(me.id) : null
   const locale = me ? await teacherLocale(supabaseForStudents, me.id) : await publicLocale()
+  const t = getDict(locale)
 
   return (
     <I18nProvider locale={locale}>
@@ -318,15 +323,15 @@ export default async function Home() {
           </div>
 
           <div className="k-thead-title">
-            <span className="k-phead-eyebrow">Overview</span>
-            <h1>Your teaching calendar</h1>
+            <span className="k-phead-eyebrow">{t.overview.eyebrow}</span>
+            <h1>{t.overview.title}</h1>
           </div>
           {/* No booking-page link. These teachers get their students from
               Preply, italki or their own calendar — none of them is going to
               send a booking link — so it was a door nobody opened. /book still
               exists for anyone who wants the URL. */}
           <div className="k-thead-actions">
-            <Link className="btn btn-ghost" href="/settings">Manage connections</Link>
+            <Link className="btn btn-ghost" href="/settings">{t.overview.manageConnections}</Link>
           </div>
         </header>
 
@@ -340,7 +345,7 @@ export default async function Home() {
               <div className="empty">
                 {CALENDAR_FAILURE_TEXT[failure]}{' '}
                 {isFixable(failure) && (
-                  <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>
+                  <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>{t.overview.fixInSettings}</Link>
                 )}
               </div>
             ) : (
@@ -350,34 +355,34 @@ export default async function Home() {
             {draftRecaps.length > 0 && <RecapsToReview drafts={draftRecaps} students={studentOptions} />}
           </div>
 
-          <aside className="k-overview-rail" aria-label="Lesson summary">
+          <aside className="k-overview-rail" aria-label={t.overview.summaryAria}>
             <div className="k-tstats">
               <div className="k-stat yellow">
-                <div className="k-stat-head"><span>Upcoming lessons</span></div>
+                <div className="k-stat-head"><span>{t.overview.upcoming}</span></div>
                 <div className="k-stat-val"><b><CountUp value={lessons.length} /></b></div>
                 <p className="k-stat-sub">on {token.calendarName || 'your calendar'}</p>
               </div>
               <div className="k-stat blue">
-                <div className="k-stat-head"><span>Drafts to review</span></div>
+                <div className="k-stat-head"><span>{t.overview.drafts}</span></div>
                 <div className="k-stat-val"><b><CountUp value={Object.values(recapRecs).filter((r) => r.status === 'draft').length} /></b></div>
-                <p className="k-stat-sub">recaps waiting on you</p>
+                <p className="k-stat-sub">{t.overview.draftsSub}</p>
               </div>
               <div className="k-stat purple">
-                <div className="k-stat-head"><span>Published recaps</span></div>
+                <div className="k-stat-head"><span>{t.overview.published}</span></div>
                 <div className="k-stat-val"><b><CountUp value={publishedCount} /></b></div>
-                <p className="k-stat-sub">sent to students</p>
+                <p className="k-stat-sub">{t.overview.publishedSub}</p>
               </div>
               {usage && (
-                <Link href="/settings#lessons" className="k-stat green" aria-label="Write-ups left — buy more">
-                  <div className="k-stat-head"><span>Write-ups left</span></div>
+                <Link href="/settings#lessons" className="k-stat green" aria-label={t.overview.writeUpsAria}>
+                  <div className="k-stat-head"><span>{t.overview.writeUpsLeft}</span></div>
                   <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
                   {/* No bar any more: a balance that only goes down has no
                       denominator to fill. It used to show progress through a
                       monthly allowance, and there is no month now. */}
                   <p className="k-stat-sub">
                     {usage.trial
-                      ? `${usage.used} used of your ${TRIAL_RECAPS} free`
-                      : `${usage.used} built · they don't expire`}
+                      ? fill(t.overview.usageTrial, { used: usage.used, total: TRIAL_RECAPS })
+                      : fill(t.overview.usageBought, { used: usage.used })}
                   </p>
                 </Link>
               )}
@@ -385,7 +390,7 @@ export default async function Home() {
 
             {calendars.length > 1 && (
               <div className="analytics-card k-rail-card">
-                <p className="analytics-label">📅 Lesson calendar</p>
+                <p className="analytics-label">📅 {t.overview.lessonCalendar}</p>
                 <div className="cal-picker">
                   {calendars.map((c) => {
                     const sel = c.id === selectedCalId || (c.primary && selectedCalId === 'primary')
@@ -393,7 +398,7 @@ export default async function Home() {
                       <form key={c.id} action="/api/google/select-calendar" method="post" style={{ display: 'inline' }}>
                         <input type="hidden" name="calendarId" value={c.id} />
                         <input type="hidden" name="calendarName" value={c.name} />
-                        <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>{sel ? '✓ ' : ''}{c.name}{c.primary ? ' (primary)' : ''}</button>
+                        <button type="submit" className={`cal-opt ${sel ? 'sel' : ''}`}>{sel ? '✓ ' : ''}{c.name}{c.primary ? ` ${t.overview.primaryCalendar}` : ''}</button>
                       </form>
                     )
                   })}

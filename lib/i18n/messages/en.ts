@@ -217,6 +217,44 @@ export const en = {
     recorderFineBold: 'Settings → Lesson recorder',
     recorderFinePost: ' whenever you’re ready.',
   },
+  /** app/page.tsx — the Overview page and the Google connect wall. */
+  overview: {
+    eyebrow: 'Overview',
+    title: 'Your teaching calendar',
+    manageConnections: 'Manage connections',
+    fixInSettings: 'Fix it in Settings',
+    summaryAria: 'Lesson summary',
+    upcoming: 'Upcoming lessons',
+    drafts: 'Drafts to review',
+    draftsSub: 'recaps waiting on you',
+    published: 'Published recaps',
+    publishedSub: 'sent to students',
+    writeUpsLeft: 'Write-ups left',
+    writeUpsAria: 'Write-ups left — buy more',
+    /** {used} of {total} free, while they are still on the trial balance. */
+    usageTrial: '{used} used of your {total} free',
+    usageBought: '{used} built · they don’t expire',
+    lessonCalendar: 'Lesson calendar',
+    primaryCalendar: '(primary)',
+  },
+
+  /** app/page.tsx — shown when Google Calendar is not connected yet. */
+  connect: {
+    title: 'Connect your Google Calendar',
+    body:
+      'Link your calendar so Lesson Studio can see your upcoming lessons, take bookings, and record each class.',
+    notConfiguredPre: 'Google OAuth isn’t configured yet. Add ',
+    notConfiguredMid: ' and ',
+    notConfiguredPost: ' to the environment, then restart.',
+    scopeReadBold: 'Read your calendar',
+    scopeRead: ' — find lessons and their meeting links',
+    scopeRecordBold: 'Record lessons',
+    scopeRecord: ' — capture classes with the Lesson Studio extension',
+    scopeRecapBold: 'Build recaps',
+    scopeRecap: ' — AI lesson summaries for you to review and share',
+    continueGoogle: 'Continue with Google',
+    fine: 'You’ll be sent to Google’s consent screen. Manage this later in Settings.',
+  },
 } as const
 
 /**
