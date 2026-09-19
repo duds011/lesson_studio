@@ -375,7 +375,7 @@ export default async function Home() {
                 <p className="k-stat-sub">{t.overview.publishedSub}</p>
               </div>
               {usage && (
-                <Link href="/settings#lessons" className="k-stat green" aria-label={t.overview.writeUpsAria}>
+                <Link href="/teacher/recaps" className="k-stat green" aria-label={t.overview.writeUpsAria}>
                   <div className="k-stat-head"><span>{t.overview.writeUpsLeft}</span></div>
                   <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
                   {/* No bar any more: a balance that only goes down has no

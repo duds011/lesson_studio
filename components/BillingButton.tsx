@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { detectPackCurrency } from '@/lib/pack-currency'
+import { useT } from '@/components/I18nProvider'
 
 /**
  * A button that starts something on Stripe and hands the teacher over to it.
@@ -24,6 +25,7 @@ export default function BillingButton({
   className?: string
   style?: React.CSSProperties
 }) {
+  const t = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -46,7 +48,7 @@ export default function BillingButton({
         setError(
           json?.error && typeof json.error === 'string'
             ? json.error
-            : 'Could not reach Stripe just now. Try again in a moment.',
+            : t.billing.stripeUnreachable,
         )
         setBusy(false)
         return
@@ -54,7 +56,7 @@ export default function BillingButton({
       window.location.href = json.url
     } catch (e) {
       console.error('[billing]', e)
-      setError('Could not reach Stripe just now. Try again in a moment.')
+      setError(t.billing.stripeUnreachable)
       setBusy(false)
     }
   }
@@ -62,7 +64,7 @@ export default function BillingButton({
   return (
     <>
       <button type="button" className={className} style={style} onClick={go} disabled={busy}>
-        {busy ? 'Opening Stripe…' : children}
+        {busy ? t.billing.openingStripe : children}
       </button>
       {error && (
         <p className="desc" style={{ color: 'var(--red)', marginTop: 8 }}>

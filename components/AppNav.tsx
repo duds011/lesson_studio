@@ -172,6 +172,21 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
             {pending === '/settings' ? <NavWait /> : <Icon name="settings" />}<span>{t.nav.settings}</span>
           </Link>
         </nav>
+
+        {/* A button, not a sixth nav link.
+            Buying write-ups used to be a tab inside Settings — three clicks
+            from anywhere, behind a gear, which is not where anyone looks for
+            a shop. It is the one action the business depends on, so it gets
+            the only filled control in the sidebar and says plainly what it
+            does. */}
+        <Link
+          href="/teacher/recaps"
+          onClick={() => startNav('/teacher/recaps')}
+          className={`side-buy${isActive('/teacher/recaps') ? ' active' : ''}`}
+        >
+          {pending === '/teacher/recaps' ? <NavWait /> : <Icon name="wallet" />}
+          <span>{t.billing.buyMore}</span>
+        </Link>
       </div>
 
       <div className="sidebar-account">

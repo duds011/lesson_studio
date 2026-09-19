@@ -74,6 +74,36 @@ export function packMinorUnits(amount: number, code: PackCurrency): number {
   return PACK_CURRENCIES[code].decimals === 0 ? Math.round(amount) : Math.round(amount * 100)
 }
 
+/**
+ * What pack `i` saves against buying the same number at the small pack's rate,
+ * IN THE CURRENCY BEING QUOTED.
+ *
+ * lib/plans.ts has a savingPct too, and it reads the dollar prices. That was
+ * fine while the badge only ever appeared on a dollar page, and wrong the
+ * moment the same card is drawn in euros or yen: the three price lists are
+ * rounded independently, so the saving is not the same number in each and the
+ * badge would have quoted the American one at a Japanese teacher.
+ *
+ * Same rule as the marketing site's (app/i18n/currency.ts): null for the
+ * smallest pack, which IS the rate, and null below MIN_SAVING_PCT — a 5% badge
+ * is not a reason to do anything, it only invites the reader to notice how
+ * small it is.
+ */
+export function packSavingPct(
+  code: PackCurrency,
+  i: number,
+  sizes: readonly number[],
+  minPct = 8,
+): number | null {
+  if (i === 0) return null
+  const prices = PACK_CURRENCIES[code].packs
+  const base = prices[0] / sizes[0]
+  const full = sizes[i] * base
+  if (full <= prices[i]) return null
+  const pct = Math.round(((full - prices[i]) / full) * 100)
+  return pct >= minPct ? pct : null
+}
+
 export function formatPackMoney(n: number, code: PackCurrency = DEFAULT_PACK_CURRENCY): string {
   const c = PACK_CURRENCIES[code]
   const body =

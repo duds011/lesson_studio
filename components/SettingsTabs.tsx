@@ -1,22 +1,29 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useT } from '@/components/I18nProvider'
 
 /**
- * Booking preference and Availability are gone.
+ * Booking preference and Availability are gone, and now so is Lessons.
  *
- * They configured a booking page almost nobody reached, and on a phone the
- * tab strip scrolls — so they were two swipes away from every teacher rather
- * than hidden behind a calendar setting. The `calendarOnly` flag they were
- * the only users of went with them; if a calendar-only tab ever returns, the
- * filter is three lines.
+ * The first two configured a booking page almost nobody reached, and on a
+ * phone the tab strip scrolls — so they were two swipes away from every
+ * teacher rather than hidden behind a calendar setting. The `calendarOnly`
+ * flag they were the only users of went with them.
+ *
+ * Lessons went for a different reason: it held the write-up balance and the
+ * packs, and buying is not a setting. Both are a page of their own now, at
+ * /teacher/recaps, reached from the sidebar.
+ *
+ * The labels are indexes into the dictionary rather than strings. A module
+ * constant is evaluated once at import, so an English label written here would
+ * survive every language change on the page — the same trap the nav links hit.
  */
 const ALL_TABS = [
-  { id: 'connections', label: 'Connections' },
-  { id: 'languages', label: 'Languages' },
-  { id: 'lessons', label: 'Lessons' },
-  { id: 'portal', label: 'Student portal' },
-]
+  { id: 'connections', label: 0 },
+  { id: 'languages', label: 1 },
+  { id: 'portal', label: 2 },
+] as const
 
 const TabCtx = createContext('connections')
 
@@ -28,6 +35,7 @@ const TabCtx = createContext('connections')
  * teacher who keeps no calendar isn't shown two views that can do nothing.
  */
 export default function SettingsTabs({ children }: { children: React.ReactNode }) {
+  const t = useT()
   const [active, setActive] = useState('connections')
   const TABS = ALL_TABS
 
@@ -49,16 +57,16 @@ export default function SettingsTabs({ children }: { children: React.ReactNode }
 
   return (
     <div className="settings-layout">
-      <nav className="settings-index" aria-label="Settings sections">
-        {TABS.map((t) => (
+      <nav className="settings-index" aria-label={t.settings.sectionsAria}>
+        {TABS.map((tab) => (
           <button
-            key={t.id}
+            key={tab.id}
             type="button"
-            className={active === t.id ? 'active' : ''}
-            aria-current={active === t.id ? 'page' : undefined}
-            onClick={() => go(t.id)}
+            className={active === tab.id ? 'active' : ''}
+            aria-current={active === tab.id ? 'page' : undefined}
+            onClick={() => go(tab.id)}
           >
-            {t.label}
+            {t.settings.tabs[tab.label]}
           </button>
         ))}
       </nav>

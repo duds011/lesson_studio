@@ -887,13 +887,27 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
   html[data-nav="collapsed"] .side-link span,
   html[data-nav="collapsed"] .sidebar-account .account-copy,
   html[data-nav="collapsed"] .sidebar-account .btn,
+  html[data-nav="collapsed"] .side-buy span,
   html[data-nav="collapsed"] .side-link>.ui-icon:last-child:not(:first-child){display:none}
   html[data-nav="collapsed"] .side-link{justify-content:center;padding:11px}
+  html[data-nav="collapsed"] .side-buy{justify-content:center;padding:11px;margin:14px 0 0}
   html[data-nav="collapsed"] .sidebar-account{justify-content:center;padding:15px}
 }
 /* Below 900px the sidebar is already a rail, and under 680px it becomes a top
    bar — the toggle has nothing to collapse there. */
 @media(max-width:900px){.nav-toggle{display:none}}
+
+/* The only filled control in the sidebar — buying write-ups, which used to be
+   a tab inside Settings. It is deliberately not a .side-link: a sixth grey row
+   would have been exactly as easy to walk past as the tab was. */
+.side-buy{display:flex;align-items:center;gap:10px;margin:18px 0 4px;padding:11px 12px;
+  border-radius:11px;background-color:var(--forest);background-image:var(--brand-grad);
+  color:#fff;font-weight:700;font-size:13.5px;transition:.16s ease}
+.side-buy:hover{background-image:var(--brand-grad-hover);transform:translateY(-1px);color:#fff}
+.side-buy.active{box-shadow:0 0 0 2px var(--brand-soft)}
+.side-buy .ui-icon{width:17px;height:17px;flex:0 0 auto}
+.side-buy span{flex:1}
+@media(max-width:900px){.side-buy span{display:none}.side-buy{justify-content:center;padding:11px;margin:14px 0 0}}
 
 /* 861–900px was a mismatch between the two stylesheets: globals.css strips the
    sidebar down to an icon rail there, but this file's `.app-sidebar` carries a
@@ -2235,23 +2249,66 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-langpick-note{font-size:12px;color:var(--muted);font-weight:650}
 .k-langpick-note--bad{color:#a32f2f}
 
-/* — the three packs, in settings — */
-.k-packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:16px}
-.k-pack{border:1.5px solid var(--line);border-radius:var(--r-xl);padding:18px 18px 16px;
-  background:var(--surface);display:flex;flex-direction:column;gap:2px}
-.k-pack-tag{margin:0 0 8px;font-size:10.5px;font-weight:800;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--muted)}
-.k-pack-n{margin:0;font-size:36px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--ink)}
-.k-pack-unit{margin:2px 0 10px;font-size:12px;color:var(--muted);font-weight:650}
-.k-pack-price{margin:0 0 8px;font-size:15px;font-weight:800;color:var(--ink)}
-.k-pack-price span{font-size:12.5px;font-weight:650;color:var(--muted)}
-/* The saving used to be muted text trailing the price, at the same weight as
-   everything around it. It is the only reason to pick a bigger pack, so it
-   gets the accent and a line of its own. */
-.k-pack-save{margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:-.01em;
-  color:var(--forest)}
-/* The objection prepaid credit always raises, answered on the card itself. */
-.k-pack-never{margin:0 0 14px;font-size:12px;font-weight:650;color:var(--muted);flex:1}
+/* — the three packs, on /teacher/recaps —
+   Built to match kokulabs.net's pricing cards rather than to match the
+   settings panels around them. A teacher arrives here having decided on the
+   website, and the place they actually pay should not look plainer than the
+   advert did. `--pack` and `--pack-soft` are set per card in RecapPacks. */
+.k-packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:16px;margin-top:18px}
+.k-pack{border:1px solid var(--line);border-radius:20px;padding:26px;
+  background:var(--surface);display:flex;flex-direction:column}
+.k-pack-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:20px}
+.k-pack-head h3{margin:0;font-size:16px;font-weight:700;letter-spacing:-.025em;color:var(--pack)}
+.k-pack-tag{font-size:11px;font-weight:700;letter-spacing:-.01em;border-radius:999px;
+  padding:4px 11px;background:var(--pack-soft);color:var(--pack);white-space:nowrap}
+.k-pack-price{margin:0 0 6px;font-size:44px;font-weight:650;letter-spacing:-.045em;
+  line-height:1;color:var(--pack)}
+.k-pack-price span{margin-left:6px;font-size:13px;font-weight:600;letter-spacing:0;color:var(--muted)}
+/* The objection prepaid credit always raises, answered on the card itself —
+   the strip under the grid is read after the decision, not during it. */
+.k-pack-never{display:flex;align-items:center;gap:6px;margin:0 0 20px;
+  font-size:13px;font-weight:700;color:var(--pack)}
+.k-pack-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border-radius:12px;padding:12px 16px;margin-bottom:20px;
+  background:var(--pack-soft);color:var(--pack);font-size:13px;font-weight:700}
+/* A saving, never a price per write-up: a unit price invites the reader to
+   divide somebody else's and compare, a saving is a fact about this offer
+   alone. Loud enough to read on its own, because it is the only reason to
+   pick a bigger pack. */
+.k-pack-save{background:var(--pack);color:#fff;border-radius:8px;padding:4px 10px;
+  margin:-4px 0;font-size:13.5px;font-weight:800;letter-spacing:-.015em;white-space:nowrap}
+.k-pack-buy{margin-top:auto;width:100%;border:0;border-radius:14px;padding:13px;
+  background:var(--pack);color:#fff;font:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;transition:.16s ease}
+.k-pack-buy:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
+.k-pack-buy:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+/* The recommended card wears a ring rather than a fill.
+   A conic gradient painted into the BORDER box while a flat surface fills the
+   padding box, so the gradient is only ever visible as the 2px frame. Turning
+   the gradient's own angle runs the highlight round the rectangle; nothing
+   moves and no element repaints. @property is load-bearing: a plain custom
+   property is a string to CSS and cannot be interpolated, so the keyframe
+   would snap from 0 to 360. Where @property is missing the declaration still
+   resolves to 0deg and the card keeps a static frame — degraded, not broken. */
+@property --koku-ring-angle{syntax:"<angle>";inherits:false;initial-value:0deg}
+.k-pack-ring{--koku-ring-angle:0deg;border:2px solid transparent;
+  background:linear-gradient(var(--surface),var(--surface)) padding-box,
+    conic-gradient(from var(--koku-ring-angle),
+      rgba(122,63,209,.38) 0deg,rgba(122,63,209,.38) 36deg,
+      #7a3fd1 92deg,#e0900a 132deg,#7a3fd1 172deg,
+      rgba(122,63,209,.38) 228deg,rgba(122,63,209,.38) 360deg) border-box;
+  animation:koku-ring-spin 5s linear infinite}
+@keyframes koku-ring-spin{to{--koku-ring-angle:360deg}}
+@media (prefers-reduced-motion:reduce){.k-pack-ring{animation:none}}
+
+/* The pair of sentences that close the website's pricing section, and close
+   this page for the same reason: the subscription fear is what stops someone
+   paying up front. */
+.k-never{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin-top:18px;
+  border:1px solid var(--line);border-radius:20px;padding:18px 22px;background:var(--surface)}
+.k-never strong{font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--brand);white-space:nowrap}
+.k-never span{font-size:13px;font-weight:500;color:var(--muted)}
 
 /* Settings → Language. Buttons, not a select: someone stuck in a language
    they cannot read has to find their own on sight, and a select shows them

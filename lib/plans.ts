@@ -126,17 +126,15 @@ export function isPurchasable(id?: string | null): boolean {
 export const MIN_SAVING_PCT = 8
 
 /**
- * What this pack saves against buying the same number at the smallest pack's
- * rate, as a whole percent. Null for the smallest pack, which IS the rate,
- * and null for anything under MIN_SAVING_PCT.
+ * The saving itself is computed in lib/pack-currency.ts, not here.
  *
- * Computed rather than written down, so it cannot drift from the prices above
- * the way a hand-typed "save 8%" would the first time one of them moves.
+ * There used to be a savingPct in this file that read `price` — the dollar
+ * amount above. That was fine while the badge only ever appeared on a dollar
+ * page, and wrong the moment the same card is drawn in euros or yen: the three
+ * price lists are rounded independently, so the saving is a different number
+ * in each and this one would have quoted the American figure at a Japanese
+ * teacher. packSavingPct takes the currency being shown.
+ *
+ * Either way it is computed rather than written down, so it cannot drift from
+ * the prices the way a hand-typed "save 8%" would the first time one moves.
  */
-export function savingPct(pack: Pack): number | null {
-  const base = PACKS[0].price / PACKS[0].recaps
-  const full = pack.recaps * base
-  if (full <= pack.price) return null
-  const pct = Math.round(((full - pack.price) / full) * 100)
-  return pct >= MIN_SAVING_PCT ? pct : null
-}

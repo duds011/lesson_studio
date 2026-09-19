@@ -6,6 +6,8 @@ import { resolveBrand } from '@/lib/brand'
 import { resolveTeachingPlatform } from '@/lib/teaching-platform'
 import { isCalendarMode } from '@/lib/calendar-mode'
 import OnboardingFlow from '@/components/OnboardingFlow'
+import I18nProvider from '@/components/I18nProvider'
+import { teacherLocale } from '@/lib/i18n/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +30,17 @@ export default async function OnboardingPage() {
   let zoomConnected = false
   try { zoomConnected = Boolean((await zoomConnection())?.connected) } catch { /* optional */ }
 
+  /**
+   * Onboarding sits outside app/teacher, so it had no I18nProvider — which
+   * meant useT() found no context and every step rendered in English no matter
+   * who was reading. It is also the flow that now CHOOSES the workspace
+   * language, at step one, so it is the last page in the app that should have
+   * been stuck in one.
+   */
+  const locale = await teacherLocale(supabase, user.id)
+
   return (
+    <I18nProvider locale={locale}>
     <OnboardingFlow
       initial={{
         fullName: profile.full_name ?? '',
@@ -48,5 +60,6 @@ export default async function OnboardingPage() {
       googleConnected={Boolean(token)}
       zoomConnected={zoomConnected}
     />
+    </I18nProvider>
   )
 }

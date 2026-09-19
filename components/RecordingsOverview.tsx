@@ -124,7 +124,7 @@ export default function RecordingsOverview({
               <p className="k-stat-sub">sent to students</p>
             </div>
             {usage && (
-              <Link href="/settings#lessons" className="k-stat green" aria-label={t.overview.writeUpsAria}>
+              <Link href="/teacher/recaps" className="k-stat green" aria-label={t.overview.writeUpsAria}>
                 <div className="k-stat-head"><span>{t.overview.writeUpsLeft}</span></div>
                 <div className="k-stat-val"><b><CountUp value={usage.left} /></b></div>
                 {/* The bar measured progress through a monthly allowance.

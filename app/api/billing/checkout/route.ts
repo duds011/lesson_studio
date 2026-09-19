@@ -116,8 +116,8 @@ export async function POST(req: NextRequest) {
         pack_id: pack.id,
         pack_recaps: String(pack.recaps),
       },
-      success_url: `${base}/settings?billing=success#lessons`,
-      cancel_url: `${base}/settings?billing=cancelled#lessons`,
+      success_url: `${base}/teacher/recaps?billing=success`,
+      cancel_url: `${base}/teacher/recaps?billing=cancelled`,
     })
 
     return NextResponse.json({ ok: true, url: session.url })

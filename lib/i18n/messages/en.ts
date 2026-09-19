@@ -158,6 +158,14 @@ export const en = {
     iTeach: 'I teach',
     teachHint:
       'Recaps and practice tests are built for this language. It’s the default for every student you add — each student can be switched individually later.',
+    /**
+     * Said on the step itself, because the answer above also sets the language
+     * of the workspace. English, French and Japanese are the three interfaces
+     * that exist; everything else gets English. Settings → Language changes it
+     * afterwards and wins from then on.
+     */
+    uiFollows:
+      'Your workspace will be in this language too, if we have it — English, French or Japanese, and English for anything else. You can change that in Settings whenever you like.',
     spokenAria: 'The language your lessons are spoken in',
     spokenIn: 'my lessons are mostly spoken in',
     spokenHint:
@@ -248,6 +256,9 @@ export const en = {
   settings: {
     eyebrow: 'Workspace',
     title: 'Settings',
+    sectionsAria: 'Settings sections',
+    /** Order matters: SettingsTabs indexes these by position. */
+    tabs: ['Connections', 'Languages', 'Student portal'],
 
     recorderTitle: 'Lesson recorder',
     recorderDesc: 'The Chrome extension that records a lesson and turns it into a recap. {guide}',
@@ -293,8 +304,20 @@ export const en = {
     ownLinkLabel: 'I share my own link',
     ownLinkHint: 'Preply, italki, or a room of your own',
   },
-  /** components/SubscriptionPanel.tsx — Settings → Lessons. */
+  /** app/teacher/recaps — the balance, and the packs that top it up. */
   billing: {
+    eyebrow: 'Write-ups',
+    title: 'Buy lessons. Use them whenever.',
+    /** The sidebar button and the empty-balance prompts all say this. */
+    buyMore: 'Buy more write-ups',
+    once: 'once',
+    /** On the coloured strip of each pack card. */
+    nWriteUps: '{n} write-ups',
+    packNames: ['10 lessons', '40 lessons', '100 lessons'],
+    neverTitle: 'Nothing renews',
+    neverBody:
+      'Take August off and they are still there in September. No deadline, no renewal, no card kept on file.',
+
     leftTitle: 'Write-ups left',
     leftDesc: 'One is spent each time a lesson is written up. They do not expire and nothing renews.',
     /** {total} free, and {used} of them gone. */
@@ -309,10 +332,12 @@ export const en = {
     addTitle: 'Add write-ups',
     addDesc:
       'One payment, no renewal. Bigger packs cost less — but the small one is not a penalty, and whatever you buy is yours until you use it.',
-    lessonsWrittenUp: 'lessons written up',
     save: 'save {pct}%',
     neverExpires: 'Never expires',
     buy: 'Buy {n}',
+    /** components/BillingButton.tsx — the wait, and the one thing that fails. */
+    openingStripe: 'Opening Stripe…',
+    stripeUnreachable: 'Could not reach Stripe just now. Try again in a moment.',
     paidOnce: 'Paid once, by card, through Stripe. No card is kept here and nothing charges you again.',
     /**
      * Pack tags, indexed to PACKS in lib/plans.ts. They live here rather than

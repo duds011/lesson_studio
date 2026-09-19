@@ -17,8 +17,6 @@ import LanguagePicker from '@/components/LanguagePicker'
 import { teacherLocale } from '@/lib/i18n/server'
 import { DEFAULT_LOCALE } from '@/lib/i18n/config'
 import { getDict, rich } from '@/lib/i18n'
-import SubscriptionPanel from '@/components/SubscriptionPanel'
-import { getRecapUsage } from '@/lib/recap-quota'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,7 +58,6 @@ export default async function SettingsPage() {
   const { data: extToken } = user
     ? await supabase.from('teacher_ext_tokens').select('token, last_used_at').eq('teacher_id', user.id).maybeSingle()
     : { data: null }
-  const usage = user ? await getRecapUsage(user.id) : { used: 0, limit: 0, left: 0, trial: false, extra: 0 }
 
   return (
     <>
@@ -197,10 +194,11 @@ export default async function SettingsPage() {
             />
           </SettingsPanel>
 
-          {/* ── Lessons: the balance, and the packs that top it up ── */}
-          <SettingsPanel id="lessons">
-            <SubscriptionPanel usage={usage} />
-          </SettingsPanel>
+          {/* The Lessons tab is gone. It held the write-up balance and the
+              three packs, which are not settings — you do not come to Settings
+              to buy something, and a teacher who has run out will not look for
+              the shop behind a gear. Both live at /teacher/recaps now, with a
+              permanent button in the sidebar. */}
 
           {/* ── Student portal: what the student's side is allowed to do ── */}
           <SettingsPanel id="portal">
