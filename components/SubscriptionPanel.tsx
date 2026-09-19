@@ -97,14 +97,15 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
               <p className="k-pack-tag">{pack.tag}</p>
               <p className="k-pack-n">{pack.recaps}</p>
               <p className="k-pack-unit">lessons written up</p>
-              <p className="k-pack-price">
-                {formatPackMoney(prices[i], code)}
-                {/* A saving, never a price per write-up. The unit price is an
-                    invitation to compare against somebody else's unit price;
-                    a saving is a fact about this offer alone. */}
-                {savingPct(pack) !== null && <span> · save {savingPct(pack)}%</span>}
-              </p>
-              <p className="k-pack-blurb">{pack.blurb}</p>
+              <p className="k-pack-price">{formatPackMoney(prices[i], code)}</p>
+              {/* Never a price per write-up. A unit price invites the teacher
+                  to compare against somebody else's unit price; a saving is a
+                  fact about this offer alone — so it is the one number here
+                  loud enough to read on its own. */}
+              {savingPct(pack) !== null && (
+                <p className="k-pack-save">save {savingPct(pack)}%</p>
+              )}
+              <p className="k-pack-never">Never expires</p>
               <BillingButton packId={pack.id} className="k-btn-block">
                 Buy {pack.recaps}
               </BillingButton>

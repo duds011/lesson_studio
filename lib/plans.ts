@@ -26,7 +26,6 @@ export type Pack = {
   /** USD, one payment. Display only — Stripe holds what is actually charged. */
   price: number
   tag: string
-  blurb: string
   lookupKey: string
 }
 
@@ -70,7 +69,6 @@ export const PACKS: Pack[] = [
     recaps: 10,
     price: 14,
     tag: 'Starting out',
-    blurb: 'Enough to see what it does with your own students.',
     lookupKey: 'koku_pack_10_v1',
   },
   {
@@ -79,7 +77,6 @@ export const PACKS: Pack[] = [
     recaps: 40,
     price: 53,
     tag: 'A steady schedule',
-    blurb: 'Ten lessons a week, every one written up.',
     lookupKey: 'koku_pack_40_v1',
   },
   {
@@ -87,8 +84,7 @@ export const PACKS: Pack[] = [
     name: '100 lessons',
     recaps: 100,
     price: 124,
-    tag: 'Full-time',
-    blurb: 'Twenty-odd lessons a week, and a month in hand.',
+    tag: 'Most popular',
     // _v4: $130, then $129, then $119, now $124. A Price's amount cannot be
     // edited in Stripe, so every new amount is a new key and the old ones are
     // left alone for anyone mid-checkout.

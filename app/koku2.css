@@ -2244,4 +2244,10 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-pack-unit{margin:2px 0 10px;font-size:12px;color:var(--muted);font-weight:650}
 .k-pack-price{margin:0 0 8px;font-size:15px;font-weight:800;color:var(--ink)}
 .k-pack-price span{font-size:12.5px;font-weight:650;color:var(--muted)}
-.k-pack-blurb{margin:0 0 14px;font-size:12.5px;line-height:1.55;color:var(--muted);flex:1}
+/* The saving used to be muted text trailing the price, at the same weight as
+   everything around it. It is the only reason to pick a bigger pack, so it
+   gets the accent and a line of its own. */
+.k-pack-save{margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:-.01em;
+  color:var(--forest)}
+/* The objection prepaid credit always raises, answered on the card itself. */
+.k-pack-never{margin:0 0 14px;font-size:12px;font-weight:650;color:var(--muted);flex:1}
