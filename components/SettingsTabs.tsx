@@ -2,13 +2,20 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
+/**
+ * Booking preference and Availability are gone.
+ *
+ * They configured a booking page almost nobody reached, and on a phone the
+ * tab strip scrolls — so they were two swipes away from every teacher rather
+ * than hidden behind a calendar setting. The `calendarOnly` flag they were
+ * the only users of went with them; if a calendar-only tab ever returns, the
+ * filter is three lines.
+ */
 const ALL_TABS = [
-  { id: 'connections', label: 'Connections', calendarOnly: false },
-  { id: 'languages', label: 'Languages', calendarOnly: false },
-  { id: 'lessons', label: 'Lessons', calendarOnly: false },
-  { id: 'portal', label: 'Student portal', calendarOnly: false },
-  { id: 'booking', label: 'Booking preference', calendarOnly: true },
-  { id: 'availability', label: 'Availability', calendarOnly: true },
+  { id: 'connections', label: 'Connections' },
+  { id: 'languages', label: 'Languages' },
+  { id: 'lessons', label: 'Lessons' },
+  { id: 'portal', label: 'Student portal' },
 ]
 
 const TabCtx = createContext('connections')
@@ -20,20 +27,20 @@ const TabCtx = createContext('connections')
  * Booking and availability are both computed from Google free/busy, so a
  * teacher who keeps no calendar isn't shown two views that can do nothing.
  */
-export default function SettingsTabs({ children, calendar = true }: { children: React.ReactNode; calendar?: boolean }) {
+export default function SettingsTabs({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState('connections')
-  const TABS = ALL_TABS.filter((t) => calendar || !t.calendarOnly)
+  const TABS = ALL_TABS
 
   // Deep links (/settings#availability) and back/forward pick the view.
   useEffect(() => {
     const fromHash = () => {
       const id = window.location.hash.slice(1)
-      if (ALL_TABS.some((t) => t.id === id && (calendar || !t.calendarOnly))) setActive(id)
+      if (ALL_TABS.some((t) => t.id === id)) setActive(id)
     }
     fromHash()
     window.addEventListener('hashchange', fromHash)
     return () => window.removeEventListener('hashchange', fromHash)
-  }, [calendar])
+  }, [])
 
   const go = (id: string) => {
     setActive(id)

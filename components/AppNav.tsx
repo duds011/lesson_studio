@@ -60,7 +60,6 @@ const LINKS = [
   { href: '/teacher/notes', key: 'notes', icon: 'note' as IconName, tour: 'notes' },
   { href: '/teacher/materials', key: 'materials', icon: 'book' as IconName, tour: 'materials' },
   { href: '/teacher/branding', key: 'studentView', icon: 'eye' as IconName, tour: 'student-view' },
-  { href: '/teacher/payments', key: 'payments', icon: 'wallet' as IconName, tour: 'payments' },
 ] as const
 
 /** Remembered per browser, and read straight off the root element so the
@@ -68,10 +67,10 @@ const LINKS = [
 const NAV_KEY = 'nav-collapsed'
 
 /**
- * `calendar={false}` is a teacher who told onboarding their lessons live
- * somewhere else. Availability and the booking page are both computed from
- * Google free/busy, so for them those links lead nowhere — they come out of the
- * nav rather than sitting there broken.
+ * `calendar` used to drop the Availability link for a teacher who keeps no
+ * calendar. That link is gone for everyone now — Settings has no
+ * Availability tab to point at — but the prop stays because the sidebar
+ * account line still reports whether a calendar is connected.
  */
 export default function AppNav({ email, connected, calendar = true }: { email?: string | null; connected?: boolean; calendar?: boolean }) {
   const t = useT()
@@ -169,11 +168,6 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         <nav className="side-nav">
           {/* No Booking page link: the booking page is what Availability
               produces, so its preview button lives in that panel instead. */}
-          {calendar && (
-            <Link href="/settings#availability" onClick={() => startNav('/settings#availability')} className="side-link">
-              {pending === '/settings#availability' ? <NavWait /> : <Icon name="clock" />}<span>{t.nav.availability}</span>
-            </Link>
-          )}
           <Link href="/settings" data-tour="settings" onClick={() => startNav('/settings')} className={`side-link ${isActive('/settings') ? 'active' : ''}`}>
             {pending === '/settings' ? <NavWait /> : <Icon name="settings" />}<span>{t.nav.settings}</span>
           </Link>

@@ -53,7 +53,6 @@ export const en = {
     notes: 'Notes',
     materials: 'Materials',
     studentView: 'Student view',
-    payments: 'Payments',
     availability: 'Availability',
     settings: 'Settings',
     /** Under the account name: what the calendar connection is actually doing. */
@@ -269,6 +268,14 @@ export const en = {
     calendarTitle: 'Lesson calendar',
     calendarDesc: 'Which of your calendars holds the lessons Lesson Studio should read?',
     primaryCalendar: 'Primary calendar',
+
+    autoSendTitle: 'Sending recaps',
+    autoSendDesc:
+      'Every recap waits in your review queue until you send it. If you would rather not review them, they can go straight to the student the moment they are written — you can still edit one afterwards, but the student will have seen the first version.',
+    autoSendReview: 'I review them first',
+    autoSendReviewHint: 'They wait in Recaps to review',
+    autoSendAuto: 'Send them automatically',
+    autoSendAutoHint: 'The student gets it as soon as it is written',
 
     speakingTitle: 'Speaking exercises',
     speakingDesc:
@@ -705,7 +712,6 @@ export const en = {
       { title: 'Students', body: 'Add each student here. Their lessons, tests and progress all hang off this list — and each gets a portal of their own.' },
       { title: 'Notes', body: 'One click per lesson taught: a month grid that doubles as your teaching diary.' },
       { title: 'Student view', body: 'Exactly what your students see, restyled to your taste — colours, names, sections. Not a mock-up: the real thing.' },
-      { title: 'Payments', body: 'Log what each student paid and how many lessons it covers. The balance counts down as recaps publish.' },
       { title: 'Settings', body: 'Your calendar, the lesson recorder, and your account. This tour lives here too, if you ever want it again.' },
     ],
     skip: 'Skip tour',

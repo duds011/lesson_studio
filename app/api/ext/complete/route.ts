@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { deliverRecapToStudent } from '@/lib/recap-delivery'
 import { authenticateExtension } from '@/lib/ext-auth'
 import { transcribeTracksDetailed, assembleTracks, toWhisperLanguage } from '@/lib/whisper'
 import { normalizeSegments } from '@/lib/transcript'
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
    */
   const admin0 = createAdminClient()
   const { data: callerProfile } = await admin0
-    .from('profiles').select('role, speaking_language').eq('id', caller.teacherId).maybeSingle()
+    .from('profiles').select('role, speaking_language, auto_publish_recaps').eq('id', caller.teacherId).maybeSingle()
   const micIs = (callerProfile as any)?.role === 'student' ? 'student' : 'teacher'
 
   // The upload-init check already turned this away once, but that one guards
@@ -181,7 +182,7 @@ export async function POST(req: Request) {
   waitUntil(
     // The resolved answer, not the posted one — the build must transcribe with
     // the same hint the link just recorded.
-    buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage: spokenResolved, cutMaps })
+    buildRecap({ admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage: spokenResolved, cutMaps, autoPublish: (callerProfile as any)?.auto_publish_recaps === true })
       .catch(async (e) => {
         const error = String(e?.message ?? e)
         console.error(`[ext/complete] recap build failed for ${eventId}: ${error}`)
@@ -198,7 +199,7 @@ export async function POST(req: Request) {
 
 /** Everything the extension no longer waits for. */
 async function buildRecap({
-  admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage, cutMaps,
+  admin, caller, student, recordingId, eventId, micIs, lessonDate, heard, language, spokenLanguage, cutMaps, autoPublish,
 }: any) {
   {
     // Whoever holds the mic decides which track is the host. Recording your own
@@ -297,19 +298,52 @@ async function buildRecap({
     // Recaps are runtime docs namespaced per teacher, and a bearer-token
     // request carries no session for the store to resolve one from — so say
     // explicitly whose data this is.
+    /**
+     * Reviewing is the default; a teacher can opt out of it.
+     *
+     * Off, this writes a draft and waits — which is right, because a
+     * generated recap can be wrong and the teacher's name is on it. On, the
+     * recap is published and delivered here, because a teacher who never
+     * opens the queue leaves their student with nothing, and nothing is
+     * worse than imperfect when the lesson was recorded and paid for either
+     * way.
+     */
+    const record = {
+      eventId,
+      studentName: student.full_name,
+      recap,
+      talk: t.talk,
+      studentTalkPct: t.studentTalkPct,
+      status: (autoPublish ? 'published' : 'draft') as 'published' | 'draft',
+      createdAt: Date.now(),
+      lessonDate: lessonDate || new Date().toISOString().slice(0, 10),
+      lessonTitle: recap.lesson_title || recap.title || 'Recorded lesson',
+    }
     await runAsTeacher(caller.teacherId, async () => {
-      await saveRecap({
-        eventId,
-        studentName: student.full_name,
-        recap,
-        talk: t.talk,
-        studentTalkPct: t.studentTalkPct,
-        status: 'draft',
-        createdAt: Date.now(),
-        lessonDate: lessonDate || new Date().toISOString().slice(0, 10),
-        lessonTitle: recap.lesson_title || recap.title || 'Recorded lesson',
-      })
+      await saveRecap(record)
     })
+
+    if (autoPublish) {
+      /**
+       * Delivery is what actually puts it in front of the student; the
+       * status above only decides whether it appears in the review queue.
+       *
+       * Best-effort on purpose. A delivery that fails leaves a recap marked
+       * published that the student cannot see — bad, but recoverable from
+       * the lesson page — whereas throwing here would lose the recap
+       * entirely after the expensive half has already been paid for.
+       */
+      try {
+        const res = await deliverRecapToStudent(eventId, record)
+        console.log(
+          res.delivered
+            ? `[ext/complete] auto-sent ${eventId} to ${student.full_name}`
+            : `[ext/complete] auto-send skipped for ${eventId}: ${res.reason}`,
+        )
+      } catch (e) {
+        console.error(`[ext/complete] auto-send failed for ${eventId}:`, e)
+      }
+    }
 
     console.log(`[ext/complete] built ${eventId} for ${student.full_name} — ${t.talk.map((s: any) => s.name).join(' + ')}`)
   }

@@ -43,9 +43,6 @@ const STEPS: Step[] = [
     target: 'student-view',
   },
   {
-    target: 'payments',
-  },
-  {
     target: 'settings',
   },
 ]

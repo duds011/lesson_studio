@@ -4,7 +4,6 @@ import { teacherLocale } from '@/lib/i18n/server'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateShort, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
-import { getStudentCredits } from '@/lib/credits'
 import ProgressCharts from '@/components/portal/ProgressCharts'
 import VocabLevelBreakdown from '@/components/portal/VocabLevelBreakdown'
 import StudentAdminActions from '@/components/portal/StudentAdminActions'
@@ -71,7 +70,6 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
     }
   }
   const totalVocab = Object.values(vocabDistribution).reduce((sum, n) => sum + n, 0)
-  const credits = await getStudentCredits(supabase, student.id)
 
   const { data: tests } = await supabase
     .from('tests')
@@ -120,18 +118,6 @@ export default async function TeacherStudentPage({ params }: { params: { id: str
             {/japanese|日本語/i.test(teachingLanguage) && (
               <JpScriptEditor studentId={student.id} value={(student as any).jp_script ?? null} />
             )}
-            {/* Credits keep their own red/amber/blue inside the band — this is
-                the one figure that changes what a teacher does next. */}
-            <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
-              <span className="pill" style={{ background: credits.remaining <= 0 ? 'var(--red-soft)' : credits.low ? 'var(--amber-soft)' : 'var(--brand-soft)', color: credits.remaining <= 0 ? 'var(--red)' : credits.low ? 'var(--amber)' : 'var(--brand)' }}>
-                {credits.purchased > 0 || credits.used > 0
-                  ? (credits.remaining === 1
-                      ? fill(t.student.creditsOneLeft, { bought: credits.purchased })
-                      : fill(t.student.creditsLeft, { left: credits.remaining, bought: credits.purchased }))
-                  : t.student.noCredits}{credits.low && (credits.purchased > 0 || credits.used > 0) ? ' ⚠️' : ''}
-              </span>
-              <Link href="/teacher/payments" className="btn btn-ghost btn-sm">{t.student.managePayments}</Link>
-            </span>
           </>
         }
       />

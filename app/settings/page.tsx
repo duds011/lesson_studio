@@ -2,13 +2,12 @@ import { getToken } from '@/lib/store'
 import { listCalendars, type CalendarInfo } from '@/lib/google'
 import { getSettings } from '@/lib/settings'
 import { getBookingConfig } from '@/lib/booking'
-import { zoomConnection, isZoomConfigured } from '@/lib/zoom'
 import { createClient } from '@/lib/supabase/server'
 import { CALENDAR_MODES, CALENDAR_MODE_META, resolveCalendarMode } from '@/lib/calendar-mode'
 import { chooseCalendarMode } from '@/app/actions/calendar'
 import { chooseSpeakingSubmissions } from '@/app/actions/portal-settings'
+import { chooseAutoPublish } from '@/app/actions/auto-publish'
 import AppNav from '@/components/AppNav'
-import AvailabilityEditor from '@/components/AvailabilityEditor'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
 import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
 import LanguagesPanel from '@/components/LanguagesPanel'
@@ -40,11 +39,10 @@ export default async function SettingsPage() {
   const selectedId = token?.calendarId || 'primary'
 
   // Connector statuses for the gallery.
-  const zoom = { configured: isZoomConfigured(), ...(await zoomConnection()) }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = user
-    ? await supabase.from('profiles').select('stripe_account_id, stripe_charges_enabled, calendar_mode, plan_id, stripe_customer_id, teaching_language, speaking_language, speaking_submissions').eq('id', user.id).single()
+    ? await supabase.from('profiles').select('auto_publish_recaps, calendar_mode, plan_id, stripe_customer_id, teaching_language, speaking_language, speaking_submissions').eq('id', user.id).single()
     : { data: null }
   // Through the resolver rather than reading profile.ui_language inline, so
   // the picker highlights what the layout actually rendered in — including
@@ -55,15 +53,13 @@ export default async function SettingsPage() {
   // Unset is on: every recap already writes the exercises, and a teacher who
   // would rather not be sent audio says so here.
   const speakingOn = (profile as any)?.speaking_submissions !== false
+  // Reviewing is the default: anything other than an explicit true reviews.
+  const autoPublish = (profile as any)?.auto_publish_recaps === true
   // The teacher's own recorder token, read with their own client so RLS
   // confirms it is theirs rather than the page taking the id on trust.
   const { data: extToken } = user
     ? await supabase.from('teacher_ext_tokens').select('token, last_used_at').eq('teacher_id', user.id).maybeSingle()
     : { data: null }
-  const stripe = {
-    connected: Boolean((profile as any)?.stripe_account_id),
-    chargesEnabled: Boolean((profile as any)?.stripe_charges_enabled),
-  }
   const usage = user ? await getRecapUsage(user.id) : { used: 0, limit: 0, left: 0, trial: false, extra: 0 }
 
   return (
@@ -81,7 +77,7 @@ export default async function SettingsPage() {
           </div>
         </header>
 
-        <SettingsTabs calendar={calendarMode !== 'none'}>
+        <SettingsTabs>
           {/* ── Connections ─────────────────────────────────────────── */}
           <SettingsPanel id="connections">
             <section className="k-sec" style={{ marginBottom: 18 }}>
@@ -136,8 +132,6 @@ export default async function SettingsPage() {
               <ConnectorsGallery
                 t={t}
                 google={{ connected: Boolean(token), needsReconnect, email: token?.email }}
-                zoom={zoom}
-                stripe={stripe}
               />
             </section>
 
@@ -210,6 +204,32 @@ export default async function SettingsPage() {
 
           {/* ── Student portal: what the student's side is allowed to do ── */}
           <SettingsPanel id="portal">
+            <section className="k-sec" style={{ marginBottom: 18 }}>
+              <div className="k-sec-head">
+                <span className="k-sec-icon" aria-hidden>📨</span>
+                <div>
+                  <h3>{t.settings.autoSendTitle}</h3>
+                  <p className="desc">{t.settings.autoSendDesc}</p>
+                </div>
+              </div>
+              <div className="k-choices">
+                <form action={chooseAutoPublish}>
+                  <input type="hidden" name="on" value="no" />
+                  <button type="submit" className={`k-choice ${!autoPublish ? 'sel' : ''}`}>
+                    <span className="k-choice-tick" aria-hidden>✓</span>
+                    <span>{t.settings.autoSendReview}<small>{t.settings.autoSendReviewHint}</small></span>
+                  </button>
+                </form>
+                <form action={chooseAutoPublish}>
+                  <input type="hidden" name="on" value="yes" />
+                  <button type="submit" className={`k-choice ${autoPublish ? 'sel' : ''}`}>
+                    <span className="k-choice-tick" aria-hidden>✓</span>
+                    <span>{t.settings.autoSendAuto}<small>{t.settings.autoSendAutoHint}</small></span>
+                  </button>
+                </form>
+              </div>
+            </section>
+
             <section className="k-sec">
               <div className="k-sec-head">
                 <span className="k-sec-icon" aria-hidden>🎙️</span>
@@ -237,53 +257,6 @@ export default async function SettingsPage() {
             </section>
           </SettingsPanel>
 
-          {/* ── Booking preference: meeting platform + lesson defaults ── */}
-          {calendarMode !== 'none' && (
-          <SettingsPanel id="booking">
-            <section className="k-sec">
-              <div className="k-sec-head">
-                <span className="k-sec-icon b" aria-hidden>🎥</span>
-                <div>
-                  <h3>{t.settings.platformTitle}</h3>
-                  <p className="desc">{t.settings.platformDesc}</p>
-                </div>
-              </div>
-              <div className="k-choices">
-                <form action="/api/settings" method="post">
-                  <input type="hidden" name="platform" value="google_meet" />
-                  <button type="submit" className={`k-choice ${settings.platform === 'google_meet' ? 'sel' : ''}`}>
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{t.settings.meetLabel}<small>{t.settings.meetHint}</small></span>
-                  </button>
-                </form>
-                {/* Offerable only to a teacher who already has Zoom connected —
-                    the connector is coming soon, and a platform you cannot
-                    connect is a booking that silently makes no room. */}
-                <form action="/api/settings" method="post">
-                  <input type="hidden" name="platform" value="zoom" />
-                  <button
-                    type="submit"
-                    className={`k-choice ${settings.platform === 'zoom' ? 'sel' : ''}`}
-                    disabled={!zoom.connected && settings.platform !== 'zoom'}
-                  >
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>Zoom<small>{zoom.connected ? 'Created on your Zoom account' : 'Coming soon'}</small></span>
-                  </button>
-                </form>
-                <form action="/api/settings" method="post">
-                  <input type="hidden" name="platform" value="none" />
-                  <button type="submit" className={`k-choice ${settings.platform === 'none' ? 'sel' : ''}`}>
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{t.settings.ownLinkLabel}<small>{t.settings.ownLinkHint}</small></span>
-                  </button>
-                </form>
-              </div>
-            </section>
-          </SettingsPanel>
-          )}
-
-          {/* Lesson defaults (booking) + working hours (availability) */}
-          {calendarMode !== 'none' && <AvailabilityEditor config={bookingConfig} />}
         </SettingsTabs>
       </main>
     </>
