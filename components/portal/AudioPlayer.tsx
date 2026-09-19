@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useEffect, useRef, useState } from 'react'
 
 const mmss = (s: number) => {
@@ -22,6 +23,7 @@ const mmss = (s: number) => {
  * the duration is known and we jump back to the start.
  */
 export default function AudioPlayer({ src, title, meta }: { src: string; title?: string; meta?: string }) {
+  const t = useT()
   const ref = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   const [now, setNow] = useState(0)
@@ -113,7 +115,7 @@ export default function AudioPlayer({ src, title, meta }: { src: string; title?:
           className="k-audio-track"
           onClick={seek}
           role="slider"
-          aria-label="Seek"
+          aria-label={t.memo.seek}
           aria-valuemin={0}
           aria-valuemax={Math.round(total)}
           aria-valuenow={Math.round(now)}

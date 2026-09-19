@@ -2,6 +2,16 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import './koku2.css'
 
+/**
+ * Not translated, unlike the rest of the app.
+ *
+ * This is the ROOT layout: it renders for signed-out pages too and has no
+ * idea whose request this is. Localising the tab title would mean a database
+ * read on every single page load to fill one attribute nobody reads twice —
+ * and "Lesson Studio" is a product name that would not change anyway.
+ *
+ * <html lang> IS kept honest; I18nProvider sets it after mount.
+ */
 export const metadata: Metadata = {
   title: 'Lesson Studio',
   description: 'Bookings, recorded lessons, and AI recaps for language teachers.',
