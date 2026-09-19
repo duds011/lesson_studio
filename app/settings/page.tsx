@@ -17,6 +17,7 @@ import ReplayTourButton from '@/components/ReplayTourButton'
 import LanguagePicker from '@/components/LanguagePicker'
 import { teacherLocale } from '@/lib/i18n/server'
 import { DEFAULT_LOCALE } from '@/lib/i18n/config'
+import { getDict } from '@/lib/i18n'
 import SubscriptionPanel from '@/components/SubscriptionPanel'
 import { getRecapUsage } from '@/lib/recap-quota'
 
@@ -49,6 +50,7 @@ export default async function SettingsPage() {
   // the picker highlights what the layout actually rendered in — including
   // the Accept-Language guess for a teacher who has never chosen.
   const uiLocale = user ? await teacherLocale(supabase, user.id) : DEFAULT_LOCALE
+  const t = getDict(uiLocale)
   const calendarMode = resolveCalendarMode((profile as any)?.calendar_mode)
   // Unset is on: every recap already writes the exercises, and a teacher who
   // would rather not be sent audio says so here.
@@ -70,8 +72,8 @@ export default async function SettingsPage() {
       <main className="wrap settings-wrap page-fade">
         <header className="k-thead slim">
           <div className="k-thead-title">
-            <span className="k-phead-eyebrow">Workspace</span>
-            <h1>Settings</h1>
+            <span className="k-phead-eyebrow">{t.settings.eyebrow}</span>
+            <h1>{t.settings.title}</h1>
           </div>
           <div className="k-hero-art" style={{ right: -20, opacity: .4 }} aria-hidden>
             <span className="k-orb" style={{ width: 64, height: 64, right: 14, top: -6 }} />
@@ -86,10 +88,10 @@ export default async function SettingsPage() {
               <div className="k-sec-head">
                 <span className="k-sec-icon" aria-hidden>🎙️</span>
                 <div>
-                  <h3>Lesson recorder</h3>
+                  <h3>{t.settings.recorderTitle}</h3>
                   <p className="desc">
-                    The Chrome extension that records a lesson and turns it into a recap.{' '}
-                    <a href="/recorder" style={{ color: 'var(--brand)', fontWeight: 700 }}>Step-by-step guide →</a>
+                    {t.settings.recorderDesc}
+                    <a href="/recorder" style={{ color: 'var(--brand)', fontWeight: 700 }}>{t.settings.recorderGuide}</a>
                   </p>
                 </div>
               </div>
@@ -99,7 +101,7 @@ export default async function SettingsPage() {
               />
               <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <ReplayTourButton />
-                <span className="desc" style={{ fontSize: 12 }}>Forgot what a page is for? The walkthrough runs again from here.</span>
+                <span className="desc" style={{ fontSize: 12 }}>{t.settings.replayTourHint}</span>
               </div>
             </section>
 
@@ -111,11 +113,8 @@ export default async function SettingsPage() {
               <div className="k-sec-head">
                 <span className="k-sec-icon" aria-hidden>🌍</span>
                 <div>
-                  <h3>Language</h3>
-                  <p className="desc">
-                    What this workspace says to you. It does not change the language your
-                    recaps are written in — each student chooses that for themselves.
-                  </p>
+                  <h3>{t.settings.languageTitle}</h3>
+                  <p className="desc">{t.settings.languageDesc}</p>
                 </div>
               </div>
               <LanguagePicker current={uiLocale} />
@@ -125,8 +124,8 @@ export default async function SettingsPage() {
               <div className="k-sec-head">
                 <span className="k-sec-icon" aria-hidden>🔗</span>
                 <div>
-                  <h3>Connections</h3>
-                  <p className="desc">Connect the tools that power scheduling, meetings, and payments.</p>
+                  <h3>{t.settings.connectionsTitle}</h3>
+                  <p className="desc">{t.settings.connectionsDesc}</p>
                 </div>
               </div>
               <ConnectorsGallery
@@ -141,11 +140,8 @@ export default async function SettingsPage() {
               <div className="k-sec-head">
                 <span className="k-sec-icon y" aria-hidden>🗓️</span>
                 <div>
-                  <h3>Where your lessons live</h3>
-                  <p className="desc">
-                    Keep them on Google Calendar and you get a booking page, free-slot scheduling and automatic
-                    recording. Schedule elsewhere and the workspace drops all of that and works from recordings.
-                  </p>
+                  <h3>{t.settings.livesTitle}</h3>
+                  <p className="desc">{t.settings.livesDesc}</p>
                 </div>
               </div>
               <div className="k-choices">
@@ -167,8 +163,8 @@ export default async function SettingsPage() {
                 <div className="k-sec-head">
                   <span className="k-sec-icon y" aria-hidden>📅</span>
                   <div>
-                    <h3>Lesson calendar</h3>
-                    <p className="desc">Which of your calendars holds the lessons Lesson Studio should read?</p>
+                    <h3>{t.settings.calendarTitle}</h3>
+                    <p className="desc">{t.settings.calendarDesc}</p>
                   </div>
                 </div>
                 <div className="k-choices">
@@ -182,7 +178,7 @@ export default async function SettingsPage() {
                           <span className="k-choice-tick" aria-hidden>✓</span>
                           <span>
                             {c.name}
-                            {c.primary && <small>Primary calendar</small>}
+                            {c.primary && <small>{t.settings.primaryCalendar}</small>}
                           </span>
                         </button>
                       </form>
@@ -212,12 +208,8 @@ export default async function SettingsPage() {
               <div className="k-sec-head">
                 <span className="k-sec-icon" aria-hidden>🎙️</span>
                 <div>
-                  <h3>Speaking exercises</h3>
-                  <p className="desc">
-                    Every recap ends with three speaking exercises. Let your students record their answers and the
-                    takes land on the lesson page, under the sentence they were answering — and you get an email
-                    when they do. Turn it off and those three exercises come off the recap entirely.
-                  </p>
+                  <h3>{t.settings.speakingTitle}</h3>
+                  <p className="desc">{t.settings.speakingDesc}</p>
                 </div>
               </div>
               <div className="k-choices">
@@ -225,14 +217,14 @@ export default async function SettingsPage() {
                   <input type="hidden" name="on" value="yes" />
                   <button type="submit" className={`k-choice ${speakingOn ? 'sel' : ''}`}>
                     <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>Let students record them<small>You listen back on the lesson page</small></span>
+                    <span>{t.settings.speakingOn}<small>{t.settings.speakingOnHint}</small></span>
                   </button>
                 </form>
                 <form action={chooseSpeakingSubmissions}>
                   <input type="hidden" name="on" value="no" />
                   <button type="submit" className={`k-choice ${!speakingOn ? 'sel' : ''}`}>
                     <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>Leave them out<small>The recap keeps its seven written exercises</small></span>
+                    <span>{t.settings.speakingOff}<small>{t.settings.speakingOffHint}</small></span>
                   </button>
                 </form>
               </div>
@@ -246,8 +238,8 @@ export default async function SettingsPage() {
               <div className="k-sec-head">
                 <span className="k-sec-icon b" aria-hidden>🎥</span>
                 <div>
-                  <h3>Default meeting platform</h3>
-                  <p className="desc">What a new booking creates. Pick the last one if your lessons live on a marketplace and the link is already theirs.</p>
+                  <h3>{t.settings.platformTitle}</h3>
+                  <p className="desc">{t.settings.platformDesc}</p>
                 </div>
               </div>
               <div className="k-choices">
@@ -255,7 +247,7 @@ export default async function SettingsPage() {
                   <input type="hidden" name="platform" value="google_meet" />
                   <button type="submit" className={`k-choice ${settings.platform === 'google_meet' ? 'sel' : ''}`}>
                     <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>Google Meet<small>Created on your calendar</small></span>
+                    <span>{t.settings.meetLabel}<small>{t.settings.meetHint}</small></span>
                   </button>
                 </form>
                 {/* Offerable only to a teacher who already has Zoom connected —
@@ -276,7 +268,7 @@ export default async function SettingsPage() {
                   <input type="hidden" name="platform" value="none" />
                   <button type="submit" className={`k-choice ${settings.platform === 'none' ? 'sel' : ''}`}>
                     <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>I share my own link<small>Preply, italki, or a room of your own</small></span>
+                    <span>{t.settings.ownLinkLabel}<small>{t.settings.ownLinkHint}</small></span>
                   </button>
                 </form>
               </div>

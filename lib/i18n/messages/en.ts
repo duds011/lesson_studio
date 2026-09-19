@@ -255,6 +255,77 @@ export const en = {
     continueGoogle: 'Continue with Google',
     fine: 'You’ll be sent to Google’s consent screen. Manage this later in Settings.',
   },
+  /** app/settings/page.tsx */
+  settings: {
+    eyebrow: 'Workspace',
+    title: 'Settings',
+
+    recorderTitle: 'Lesson recorder',
+    recorderDesc: 'The Chrome extension that records a lesson and turns it into a recap. ',
+    recorderGuide: 'Step-by-step guide →',
+    replayTourHint: 'Forgot what a page is for? The walkthrough runs again from here.',
+
+    languageTitle: 'Language',
+    languageDesc:
+      'What this workspace says to you. It does not change the language your recaps are written in — each student chooses that for themselves.',
+
+    connectionsTitle: 'Connections',
+    connectionsDesc: 'Connect the tools that power scheduling, meetings, and payments.',
+
+    livesTitle: 'Where your lessons live',
+    livesDesc:
+      'Keep them on Google Calendar and you get a booking page, free-slot scheduling and automatic recording. Schedule elsewhere and the workspace drops all of that and works from recordings.',
+
+    calendarTitle: 'Lesson calendar',
+    calendarDesc: 'Which of your calendars holds the lessons Lesson Studio should read?',
+    primaryCalendar: 'Primary calendar',
+
+    speakingTitle: 'Speaking exercises',
+    speakingDesc:
+      'Every recap ends with three speaking exercises. Let your students record their answers and the takes land on the lesson page, under the sentence they were answering — and you get an email when they do. Turn it off and those three exercises come off the recap entirely.',
+    speakingOn: 'Let students record them',
+    speakingOnHint: 'You listen back on the lesson page',
+    speakingOff: 'Leave them out',
+    speakingOffHint: 'The recap keeps its seven written exercises',
+
+    platformTitle: 'Default meeting platform',
+    platformDesc:
+      'What a new booking creates. Pick the last one if your lessons live on a marketplace and the link is already theirs.',
+    meetLabel: 'Google Meet',
+    meetHint: 'Created on your calendar',
+    ownLinkLabel: 'I share my own link',
+    ownLinkHint: 'Preply, italki, or a room of your own',
+  },
+  /** components/SubscriptionPanel.tsx — Settings → Lessons. */
+  billing: {
+    leftTitle: 'Write-ups left',
+    leftDesc: 'One is spent each time a lesson is written up. They do not expire and nothing renews.',
+    /** {total} free, and {used} of them gone. */
+    ofFree: 'of your {total} free write-ups',
+    usedSuffix: ' · {used} used',
+    builtSoFar: '{used} built so far',
+    emptyTrial:
+      'That is the free ones used. A pack below keeps your lessons being written up — there is no subscription and no renewal date.',
+    emptyPaid:
+      'Your balance is empty. A pack below tops it back up, and whatever you do not use stays there.',
+
+    addTitle: 'Add write-ups',
+    addDesc:
+      'One payment, no renewal. Bigger packs cost less — but the small one is not a penalty, and whatever you buy is yours until you use it.',
+    lessonsWrittenUp: 'lessons written up',
+    save: 'save {pct}%',
+    neverExpires: 'Never expires',
+    buy: 'Buy {n}',
+    paidOnce: 'Paid once, by card, through Stripe. No card is kept here and nothing charges you again.',
+    /**
+     * Pack tags, indexed to PACKS in lib/plans.ts. They live here rather than
+     * in plans.ts because that module is imported by the Stripe script and by
+     * API routes, where a dictionary lookup makes no sense — and because a
+     * module constant is evaluated once at import, so a tag baked in there
+     * would survive every language change on the page.
+     */
+    packTags: ['Starting out', 'A steady schedule', 'Most popular'],
+  },
 } as const
 
 /**

@@ -11,6 +11,8 @@ import {
   type PackCurrency,
 } from '@/lib/pack-currency'
 import BillingButton from '@/components/BillingButton'
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 
 /**
  * Settings → Lessons: how many write-ups are left, and how to buy more.
@@ -25,6 +27,7 @@ import BillingButton from '@/components/BillingButton'
  * no card that has to stay valid.
  */
 export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
+  const t = useT()
   const empty = usage.left === 0
 
   /**
@@ -45,10 +48,8 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
         <div className="k-sec-head">
           <span className="k-sec-icon" aria-hidden>📝</span>
           <div>
-            <h3>Write-ups left</h3>
-            <p className="desc">
-              One is spent each time a lesson is written up. They do not expire and nothing renews.
-            </p>
+            <h3>{t.billing.leftTitle}</h3>
+            <p className="desc">{t.billing.leftDesc}</p>
           </div>
         </div>
 
@@ -65,16 +66,15 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
           </strong>
           <span style={{ color: 'var(--muted)', fontWeight: 650 }}>
             {usage.trial
-              ? `of your ${TRIAL_RECAPS} free write-ups${usage.used ? ` · ${usage.used} used` : ''}`
-              : `${usage.used} built so far`}
+              ? fill(t.billing.ofFree, { total: TRIAL_RECAPS }) +
+                (usage.used ? fill(t.billing.usedSuffix, { used: usage.used }) : '')
+              : fill(t.billing.builtSoFar, { used: usage.used })}
           </span>
         </div>
 
         {empty && (
           <p className="desc" style={{ marginTop: 10, maxWidth: '58ch' }}>
-            {usage.trial
-              ? 'That is the free ones used. A pack below keeps your lessons being written up — there is no subscription and no renewal date.'
-              : 'Your balance is empty. A pack below tops it back up, and whatever you do not use stays there.'}
+            {usage.trial ? t.billing.emptyTrial : t.billing.emptyPaid}
           </p>
         )}
       </section>
@@ -83,38 +83,35 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
         <div className="k-sec-head">
           <span className="k-sec-icon" aria-hidden>🎟️</span>
           <div>
-            <h3>Add write-ups</h3>
-            <p className="desc">
-              One payment, no renewal. Bigger packs cost less — but the small one is not a
-              penalty, and whatever you buy is yours until you use it.
-            </p>
+            <h3>{t.billing.addTitle}</h3>
+            <p className="desc">{t.billing.addDesc}</p>
           </div>
         </div>
 
         <div className="k-packs">
           {PACKS.map((pack, i) => (
             <div key={pack.id} className="k-pack">
-              <p className="k-pack-tag">{pack.tag}</p>
+              <p className="k-pack-tag">{t.billing.packTags[i]}</p>
               <p className="k-pack-n">{pack.recaps}</p>
-              <p className="k-pack-unit">lessons written up</p>
+              <p className="k-pack-unit">{t.billing.lessonsWrittenUp}</p>
               <p className="k-pack-price">{formatPackMoney(prices[i], code)}</p>
               {/* Never a price per write-up. A unit price invites the teacher
                   to compare against somebody else's unit price; a saving is a
                   fact about this offer alone — so it is the one number here
                   loud enough to read on its own. */}
               {savingPct(pack) !== null && (
-                <p className="k-pack-save">save {savingPct(pack)}%</p>
+                <p className="k-pack-save">{fill(t.billing.save, { pct: savingPct(pack)! })}</p>
               )}
-              <p className="k-pack-never">Never expires</p>
+              <p className="k-pack-never">{t.billing.neverExpires}</p>
               <BillingButton packId={pack.id} className="k-btn-block">
-                Buy {pack.recaps}
+                {fill(t.billing.buy, { n: pack.recaps })}
               </BillingButton>
             </div>
           ))}
         </div>
 
         <p className="desc" style={{ marginTop: 14, maxWidth: '62ch' }}>
-          Paid once, by card, through Stripe. No card is kept here and nothing charges you again.
+          {t.billing.paidOnce}
         </p>
       </section>
     </>
