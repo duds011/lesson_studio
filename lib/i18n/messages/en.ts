@@ -954,6 +954,58 @@ export const en = {
     speakingAnswer: 'Speaking answer',
     unplayable: 'Recording exists but could not be signed for playback.',
   },
+  /** components/TrialWelcome.tsx — the one-time hello on a new account. */
+  trial: {
+    aria: 'Welcome to Lesson Studio',
+    kicker: 'Welcome to Lesson Studio',
+    /** {n} is the free write-up balance a new account opens with. */
+    title: 'Your first {n} recaps are on us.',
+    sub: 'Install the recorder, teach a lesson, and watch it come back written up — no card, no catch. When you’re convinced, pick a plan.',
+    showMe: 'Show me around',
+    exploreMyself: 'I’ll explore myself',
+    setUpFirst: 'Or set up the recorder first →',
+  },
+
+  /** components/RecapsToReview.tsx — the draft queue on the overview. */
+  reviewQueue: {
+    title: 'Recaps to review',
+    desc: 'Built from your recordings. Nothing reaches a student until you review and send it.',
+    moveFailed: 'Could not move this recap',
+    serverUnreachable: 'Could not reach the server',
+    rebuildFailed: 'Could not rebuild this recap',
+    deleteFailed: 'Could not delete recap',
+  },
+
+  /** components/portal/RecorderMissing.tsx */
+  recorderMissing: {
+    title: 'Add the recorder to start',
+    body: 'Lesson Studio writes recaps from your lessons, and the Chrome extension is what records them. Until it is installed and signed in, nothing will reach this page — there is no other way to get a lesson in.',
+  },
+
+  /** components/portal/PendingRecordings.tsx — a recording with no student yet. */
+  pending: {
+    chooseStudent: 'Choose who the lesson was with first.',
+    fileFailed: 'Could not file this recording.',
+    confirmDelete: 'Delete this recording? The audio goes with it.',
+    studentAria: 'Student',
+    choosePlaceholder: 'Choose a student',
+    filing: 'Filing…',
+    buildRecap: 'Build recap',
+  },
+
+  /** components/portal/GenerateTestButton.tsx */
+  generateTest: {
+    /** Indexed to the component's SCRIPTS; the `value` is stored, so it stays. */
+    scripts: [
+      { label: 'Beginner', sub: 'Hiragana + romaji' },
+      { label: 'Hiragana', sub: 'Kana, no romaji' },
+      { label: 'Kanji + kana', sub: 'Kanji with readings' },
+    ],
+    failed: 'Generation failed',
+    needLesson: 'Publish a lesson recap first',
+    title: 'Generate a practice test',
+    explanationLanguage: 'Explanation language',
+  },
 } as const
 
 /**

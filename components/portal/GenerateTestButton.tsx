@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Thinking from './Thinking'
@@ -19,6 +20,7 @@ const SCRIPT_OPTIONS = [
 // a clear progress state. `language` is the teacher's teaching language; the
 // script picker only exists for Japanese.
 export default function GenerateTestButton({ studentId, lessons, language = '', instructionLanguage = '' }: { studentId: string; lessons: TestLessonOption[]; language?: string; instructionLanguage?: string }) {
+  const t = useT()
   // Unknown language means NO script picker — defaulting to Japanese showed
   // hiragana options to teachers of every other language.
   const isJapanese = /japanese|日本語/i.test(language)
@@ -52,17 +54,17 @@ export default function GenerateTestButton({ studentId, lessons, language = '', 
         body: JSON.stringify({ studentId, lessonIds: picked, script, explainIn: nativeOption ? explainIn : undefined, directions: directions.trim() || undefined }),
       })
       const json = await res.json()
-      if (!json.ok) throw new Error(json.error || 'Generation failed')
+      if (!json.ok) throw new Error(json.error || t.generateTest.failed)
       router.push(`/teacher/students/${studentId}/tests/${json.testId}`)
     } catch (e: any) {
-      setError(e?.message || 'Generation failed')
+      setError(e?.message || t.generateTest.failed)
       setBusy(false)
     }
   }
 
   return (
     <>
-      <button className="btn btn-ghost btn-sm" onClick={() => { setError(''); setOpen(true) }} disabled={lessons.length === 0} title={lessons.length === 0 ? 'Publish a lesson recap first' : undefined}>
+      <button className="btn btn-ghost btn-sm" onClick={() => { setError(''); setOpen(true) }} disabled={lessons.length === 0} title={lessons.length === 0 ? t.generateTest.needLesson : undefined}>
         📝 Generate test
       </button>
 
@@ -70,7 +72,7 @@ export default function GenerateTestButton({ studentId, lessons, language = '', 
         <div className="modal-scrim" onClick={() => { if (!busy) setOpen(false) }}>
           <div className="modal-card" style={{ maxWidth: 440, padding: 22 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <h3 style={{ margin: 0 }}>Generate a practice test</h3>
+              <h3 style={{ margin: 0 }}>{t.generateTest.title}</h3>
               {!busy && <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>✕</button>}
             </div>
             <p className="sub" style={{ marginTop: 0, marginBottom: 14, fontSize: 12 }}>
@@ -94,7 +96,7 @@ export default function GenerateTestButton({ studentId, lessons, language = '', 
                 <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                   Explanations in
                 </span>
-                <div className="script-picker" role="radiogroup" aria-label="Explanation language" style={{ marginBottom: 14 }}>
+                <div className="script-picker" role="radiogroup" aria-label={t.generateTest.explanationLanguage} style={{ marginBottom: 14 }}>
                   {[
                     { value: nativeOption, sub: 'Questions & explanations' },
                     { value: 'English', sub: 'Immersion-style' },

@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { TOUR_EVENT, tourDoneKey } from '@/components/GuidedTour'
@@ -26,6 +28,7 @@ const SPARKS = [
 ]
 
 export default function TrialWelcome({ email, freeRecaps }: { email?: string | null; freeRecaps: number }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export default function TrialWelcome({ email, freeRecaps }: { email?: string | n
   if (!open) return null
 
   return (
-    <div className="tw-layer" role="dialog" aria-modal="true" aria-label="Welcome to Lesson Studio">
+    <div className="tw-layer" role="dialog" aria-modal="true" aria-label={t.trial.aria}>
       <div className="tw-card">
         {SPARKS.map((s, i) => (
           <span
@@ -62,23 +65,22 @@ export default function TrialWelcome({ email, freeRecaps }: { email?: string | n
         ))}
 
         <div className="tw-ring"><span className="tw-num">{freeRecaps}</span></div>
-        <p className="tw-kicker">Welcome to Lesson Studio</p>
-        <h2 className="tw-title">Your first {freeRecaps} recaps are on us.</h2>
+        <p className="tw-kicker">{t.trial.kicker}</p>
+        <h2 className="tw-title">{fill(t.trial.title, { n: freeRecaps })}</h2>
         <p className="tw-sub">
-          Install the recorder, teach a lesson, and watch it come back written up —
-          no card, no catch. When you&rsquo;re convinced, pick a plan.
+          {t.trial.sub}
         </p>
         <div className="tw-actions">
           <button type="button" className="btn btn-primary" onClick={() => close(true)}>
-            Show me around
+            {t.trial.showMe}
           </button>
           <button type="button" className="btn btn-ghost" onClick={() => close(false)}>
-            I&rsquo;ll explore myself
+            {t.trial.exploreMyself}
           </button>
         </div>
         <p style={{ margin: '14px 0 0', fontSize: 12 }}>
           <Link href="/recorder" style={{ color: 'var(--muted)', fontWeight: 600 }} onClick={() => close(false)}>
-            Or set up the recorder first →
+            {t.trial.setUpFirst}
           </Link>
         </p>
       </div>

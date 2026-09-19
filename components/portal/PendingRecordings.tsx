@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { assignRecording, discardRecording, type PendingRecording } from '@/app/actions/recordings'
@@ -19,6 +20,7 @@ export default function PendingRecordings({
   recordings: PendingRecording[]
   students: { id: string; name: string }[]
 }) {
+  const t = useT()
   const router = useRouter()
   const [busy, setBusy] = useState<string | null>(null)
   const [picked, setPicked] = useState<Record<string, string>>({})
@@ -43,14 +45,14 @@ export default function PendingRecordings({
 
   async function file(recordingId: string) {
     const studentId = picked[recordingId]
-    if (!studentId) { setError('Choose who the lesson was with first.'); return }
+    if (!studentId) { setError(t.pending.chooseStudent); return }
     setBusy(recordingId)
     setError('')
 
     const res = await assignRecording(recordingId, studentId)
     if (!res.success || !res.eventId) {
       setBusy(null)
-      setError(res.error || 'Could not file this recording.')
+      setError(res.error || t.pending.fileFailed)
       return
     }
 
@@ -67,7 +69,7 @@ export default function PendingRecordings({
   }
 
   async function discard(recordingId: string) {
-    if (!confirm('Delete this recording? The audio goes with it.')) return
+    if (!confirm(t.pending.confirmDelete)) return
     setBusy(recordingId)
     await discardRecording(recordingId)
     setBusy(null)
@@ -117,18 +119,18 @@ export default function PendingRecordings({
             value={picked[r.recordingId] ?? ''}
             onChange={(e) => setPicked((p) => ({ ...p, [r.recordingId]: e.target.value }))}
             disabled={busy === r.recordingId}
-            aria-label="Student"
+            aria-label={t.pending.studentAria}
             style={{
               flex: '0 1 190px', border: '1px solid var(--line)', borderRadius: 10,
               padding: '10px 11px', font: 'inherit', fontSize: 13, background: '#fff',
             }}
           >
-            <option value="">Choose a student</option>
+            <option value="">{t.pending.choosePlaceholder}</option>
             {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
 
           <button className="btn btn-primary btn-sm" onClick={() => file(r.recordingId)} disabled={busy === r.recordingId}>
-            {busy === r.recordingId ? 'Filing…' : 'Build recap'}
+            {busy === r.recordingId ? t.pending.filing : t.pending.buildRecap}
           </button>
           <button className="btn btn-danger-ghost btn-sm" onClick={() => discard(r.recordingId)} disabled={busy === r.recordingId}>
             Delete

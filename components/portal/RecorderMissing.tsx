@@ -1,3 +1,4 @@
+import type { Messages } from '@/lib/i18n'
 import Link from 'next/link'
 import { RECORDER_STORE_URL } from '@/lib/recorder'
 
@@ -14,7 +15,7 @@ import { RECORDER_STORE_URL } from '@/lib/recorder'
  * extension signs in, so it means the recorder is installed AND connected to
  * this account, which is what actually matters.
  */
-export default function RecorderMissing() {
+export default function RecorderMissing({ t }: { t: Messages }) {
   return (
     <section
       className="analytics-card"
@@ -23,10 +24,9 @@ export default function RecorderMissing() {
       <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 22, lineHeight: 1 }} aria-hidden>🎙️</span>
         <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-          <h2 className="section-heading" style={{ margin: 0 }}>Add the recorder to start</h2>
+          <h2 className="section-heading" style={{ margin: 0 }}>{t.recorderMissing.title}</h2>
           <p style={{ fontSize: 12.5, color: 'var(--muted)', margin: '6px 0 0', lineHeight: 1.6 }}>
-            Lesson Studio writes recaps from your lessons, and the Chrome extension is what records them. Until it is
-            installed and signed in, nothing will reach this page — there is no other way to get a lesson in.
+            {t.recorderMissing.body}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>

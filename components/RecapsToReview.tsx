@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -25,6 +27,7 @@ export default function RecapsToReview({
   /** For moving a recap that came in under the wrong name. */
   students?: { id: string; name: string }[]
 }) {
+  const t = useT()
   const router = useRouter()
   const [deleting, setDeleting] = useState('')
   const [retrying, setRetrying] = useState('')
@@ -64,7 +67,7 @@ export default function RecapsToReview({
     const res = await reassignRecapStudent(d.eventId, studentId)
     if (!res.success) {
       setMoving('')
-      alert(res.error || 'Could not move this recap')
+      alert(res.error || t.reviewQueue.moveFailed)
       return
     }
     await fetch('/api/recap/build', {
@@ -88,10 +91,10 @@ export default function RecapsToReview({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: d.eventId }),
-    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Could not reach the server' }))
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: t.reviewQueue.serverUnreachable }))
     setRetrying('')
     if (!res.ok) {
-      alert(res.error || 'Could not rebuild this recap')
+      alert(res.error || t.reviewQueue.rebuildFailed)
       return
     }
     router.refresh()
@@ -114,16 +117,16 @@ export default function RecapsToReview({
     return new Date(d).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   }
   async function deleteDraft(d: DraftRecap) {
-    if (!confirm(`Delete ${d.studentName}'s draft recap? This removes it from Recaps to review and cannot be undone.`)) return
+    if (!confirm(fill(t.recap.confirmDelete, { name: d.studentName }))) return
     setDeleting(d.eventId)
     const res = await fetch('/api/recap', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: d.eventId }),
-    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Could not delete recap' }))
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: t.reviewQueue.deleteFailed }))
     setDeleting('')
     if (!res.ok) {
-      alert(res.error || 'Could not delete recap')
+      alert(res.error || t.reviewQueue.deleteFailed)
       return
     }
     router.refresh()
@@ -135,7 +138,7 @@ export default function RecapsToReview({
         <span className="k-sec-icon" aria-hidden>📝</span>
         <div>
           <h3>
-            Recaps to review{' '}
+            {t.reviewQueue.title}{' '}
             {waiting > 0 && (
               <span className="pill" style={{ background: 'var(--amber-soft)', color: 'var(--amber)', verticalAlign: 'middle' }}>
                 {waiting} waiting
@@ -152,7 +155,7 @@ export default function RecapsToReview({
               </span>
             )}
           </h3>
-          <p className="desc">Built from your recordings. Nothing reaches a student until you review and send it.</p>
+          <p className="desc">{t.reviewQueue.desc}</p>
         </div>
       </div>
 

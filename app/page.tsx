@@ -240,7 +240,7 @@ async function RecordingsHome() {
       <AppNav email={user?.email} connected={false} calendar={false} />
       <main className="wrap page-fade">
         {usage?.trial && <TrialWelcome email={user?.email} freeRecaps={usage.left} />}
-        {!recorderReady && <RecorderMissing />}
+        {!recorderReady && <RecorderMissing t={t} />}
         <PendingRecordings recordings={pending} students={studentOptions} />
         <RecordingsOverview t={t}
           studentCount={(students ?? []).length}
@@ -337,7 +337,7 @@ export default async function Home() {
           </div>
         </header>
 
-        {!recorderReady && <RecorderMissing />}
+        {!recorderReady && <RecorderMissing t={t} />}
         <PendingRecordings recordings={pending} students={studentOptions} />
 
         <div className="k-overview">
