@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadPortalFile } from '@/lib/portal-upload'
@@ -19,7 +20,7 @@ export default function SpeakingRecorder({
   lessonId,
   promptIndex,
   existing,
-  cta = 'Record your answer',
+  cta,
 }: {
   lessonId: string
   promptIndex: number
@@ -28,6 +29,9 @@ export default function SpeakingRecorder({
   /** A read-aloud is several sentences in one take, not a question. */
   cta?: string
 }) {
+  const t = useT()
+  // A default parameter cannot read the hook, so the fallback lives here.
+  const label = cta || t.speaking.cta
   const router = useRouter()
   const rec = useRecorder()
   const [busy, setBusy] = useState(false)
@@ -44,7 +48,7 @@ export default function SpeakingRecorder({
       setRedo(false)
       router.refresh()
     } catch (err: any) {
-      rec.setError(err.message || 'Could not send that recording. Try again.')
+      rec.setError(err.message || t.speaking.sendFailed)
     } finally {
       setBusy(false)
     }
@@ -57,7 +61,7 @@ export default function SpeakingRecorder({
       <div className="ex-speak">
         <div className="ex-speak-done">✓ Sent to your teacher</div>
         <AudioPlayer src={`/api/portal/download?kind=audio&id=${existing.id}`} title="Your recording" />
-        <button className="btn btn-ghost btn-sm" onClick={() => setRedo(true)}>Record it again</button>
+        <button className="btn btn-ghost btn-sm" onClick={() => setRedo(true)}>{t.speaking.recordAgain}</button>
       </div>
     )
   }
@@ -69,9 +73,9 @@ export default function SpeakingRecorder({
           <AudioPlayer src={rec.pending.url} title="Listen back" />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-primary btn-sm" disabled={busy} onClick={submit}>
-              {busy ? 'Sending…' : 'Send to teacher'}
+              {busy ? t.speaking.sending : t.speaking.sendToTeacher}
             </button>
-            <button className="btn btn-ghost btn-sm" disabled={busy} onClick={rec.discard}>Try again</button>
+            <button className="btn btn-ghost btn-sm" disabled={busy} onClick={rec.discard}>{t.speaking.tryAgain}</button>
           </div>
         </>
       ) : (
@@ -83,8 +87,8 @@ export default function SpeakingRecorder({
             </>
           ) : (
             <>
-              <button className="btn btn-primary btn-sm" onClick={rec.start}>● {cta}</button>
-              {existing && <button className="btn btn-ghost btn-sm" onClick={() => setRedo(false)}>Keep the one I sent</button>}
+              <button className="btn btn-primary btn-sm" onClick={rec.start}>● {label}</button>
+              {existing && <button className="btn btn-ghost btn-sm" onClick={() => setRedo(false)}>{t.speaking.keepSent}</button>}
             </>
           )}
         </div>

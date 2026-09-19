@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import CountUp from './CountUp'
@@ -33,13 +35,18 @@ type Metric = {
 /**
  * Five accents from the app's own set. No green: the palette moved to blue and
  * green now only ever means "published".
+ *
+ * The words are NOT here. A module constant is built once at import, so a
+ * label baked in would outlive every language change on the page; the
+ * component merges t.charts.metrics in by index instead. `key` stays because
+ * it names a field on the lesson data, not something a reader sees.
  */
-const METRICS: Metric[] = [
-  { key: 'score', label: 'Score', color: '#0a61c9', suffix: '/10', domain: [0, 10], decimals: 1, note: 'What each lesson was marked out of ten.' },
-  { key: 'talkPct', label: 'You talk', color: '#a24ee0', suffix: '%', domain: [0, 100], format: Math.round, note: 'Your share of the talking. More of it is yours as you get more confident.' },
-  { key: 'wpm', label: 'Pace', color: '#749dc8', suffix: ' wpm', format: Math.round, note: 'Words a minute while you were speaking.' },
-  { key: 'responseSec', label: 'Thinking', color: '#f2b705', suffix: 's', lowerIsBetter: true, decimals: 1, note: 'How long before you answer. Shorter means the words are coming faster.' },
-  { key: 'cumVocab', label: 'Vocabulary', color: '#ec4899', suffix: ' words', format: Math.round, note: 'Every word from every lesson, added up.' },
+const METRIC_STYLE: Omit<Metric, 'label' | 'note'>[] = [
+  { key: 'score', color: '#0a61c9', suffix: '/10', domain: [0, 10], decimals: 1 },
+  { key: 'talkPct', color: '#a24ee0', suffix: '%', domain: [0, 100], format: Math.round },
+  { key: 'wpm', color: '#749dc8', suffix: ' wpm', format: Math.round },
+  { key: 'responseSec', color: '#f2b705', suffix: 's', lowerIsBetter: true, decimals: 1 },
+  { key: 'cumVocab', color: '#ec4899', suffix: ' words', format: Math.round },
 ]
 
 function SparkTooltip({ active, payload, label, suffix = '' }: any) {
@@ -71,6 +78,7 @@ function useReducedMotion() {
  * entrance — the point of swiping is to watch each metric arrive.
  */
 function Slide({ metric, data, nonce, animate }: { metric: Metric; data: any[]; nonce: number; animate: boolean }) {
+  const t = useT()
   const vals = data.map((d) => d[metric.key]).filter((v) => v != null) as number[]
   const gid = `spark-${metric.key}`
 
@@ -78,7 +86,7 @@ function Slide({ metric, data, nonce, animate }: { metric: Metric; data: any[]; 
     return (
       <section className="k-swipe-slide" aria-label={metric.label}>
         <p className="k-swipe-label">{metric.label}</p>
-        <div className="k-swipe-empty">Nothing recorded for this yet.</div>
+        <div className="k-swipe-empty">{t.charts.nothingYet}</div>
       </section>
     )
   }
@@ -116,13 +124,13 @@ function Slide({ metric, data, nonce, animate }: { metric: Metric; data: any[]; 
         </p>
         {delta !== 0 && (
           <span className={`k-swipe-delta ${improved ? 'up' : 'down'}`}>
-            {delta > 0 ? '▲' : '▼'} {fmt(Math.abs(delta))}{metric.suffix} since lesson {data[0].lessonNumber}
+            {delta > 0 ? '▲' : '▼'} {fmt(Math.abs(delta))}{metric.suffix} {fill(t.charts.sinceLesson, { n: data[0].lessonNumber })}
           </span>
         )}
       </div>
 
       {vals.length < 2 ? (
-        <div className="k-swipe-empty">The trend appears after your next lesson.</div>
+        <div className="k-swipe-empty">{t.charts.trendLater}</div>
       ) : (
         <div className="k-swipe-chart" key={`chart-${nonce}`}>
           <ResponsiveContainer width="100%" height="100%">
@@ -165,10 +173,13 @@ function Slide({ metric, data, nonce, animate }: { metric: Metric; data: any[]; 
  * swiping, so there is no drag maths here and momentum feels like the OS.
  */
 export default function ProgressCharts({ lessons }: Props) {
+  const t = useT()
   const trackRef = useRef<HTMLDivElement | null>(null)
   const [active, setActive] = useState(0)
   /** Bumped each time a slide becomes live, to replay its entrance. */
-  const [nonces, setNonces] = useState<number[]>(() => METRICS.map(() => 0))
+  // Style from the constant, words from the dictionary, paired by position.
+  const METRICS: Metric[] = METRIC_STYLE.map((m, i) => ({ ...m, ...t.charts.metrics[i] }))
+  const [nonces, setNonces] = useState<number[]>(() => METRIC_STYLE.map(() => 0))
   const reduced = useReducedMotion()
 
   // Which slide is under the viewport, derived from scroll position rather
@@ -177,7 +188,7 @@ export default function ProgressCharts({ lessons }: Props) {
     const el = trackRef.current
     if (!el) return
     const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
-    setActive((prev) => (prev === i ? prev : Math.max(0, Math.min(METRICS.length - 1, i))))
+    setActive((prev) => (prev === i ? prev : Math.max(0, Math.min(METRIC_STYLE.length - 1, i))))
   }, [])
 
   useEffect(() => {
@@ -195,7 +206,7 @@ export default function ProgressCharts({ lessons }: Props) {
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowRight') { e.preventDefault(); goTo(Math.min(METRICS.length - 1, active + 1)) }
+    if (e.key === 'ArrowRight') { e.preventDefault(); goTo(Math.min(METRIC_STYLE.length - 1, active + 1)) }
     if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(Math.max(0, active - 1)) }
   }
 

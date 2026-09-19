@@ -1,4 +1,5 @@
 import { formatDateShort } from '@/lib/portal-utils'
+import { useT } from '@/components/I18nProvider'
 import TeacherFileUpload from '@/components/portal/TeacherFileUpload'
 import StudentAudioUpload from '@/components/portal/StudentAudioUpload'
 import { isMemo } from '@/components/portal/LessonMemo'
@@ -37,6 +38,7 @@ export default function LessonExchange({
   files: Row[]
   audios: Row[]
 }) {
+  const t = useT()
   const docs = files.filter((f) => !isMemo(f))
 
   const audioList = audios.length > 0 && (
@@ -45,7 +47,7 @@ export default function LessonExchange({
         <AudioPlayer
           key={a.id}
           src={`/api/portal/download?kind=audio&id=${a.id}`}
-          title={a.file_name || 'Recording'}
+          title={a.file_name || t.exchange.recording}
           meta={formatDateShort(a.created_at)}
         />
       ))}
@@ -81,7 +83,7 @@ export default function LessonExchange({
         return (
           <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--surface-2)' }}>
             <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.file_name || 'file'}</span>
-            <a className="btn btn-ghost btn-sm" href={`/api/portal/download?kind=file&id=${f.id}`} target="_blank" rel="noopener">Download</a>
+            <a className="btn btn-ghost btn-sm" href={`/api/portal/download?kind=file&id=${f.id}`} target="_blank" rel="noopener">{t.exchange.download}</a>
           </div>
         )
       })}
@@ -95,7 +97,7 @@ export default function LessonExchange({
         <div className="lesson-block">
           <h3 style={{ margin: '0 0 12px' }}>📎 Files from your teacher</h3>
           {docs.length === 0
-            ? <p className="analytics-note" style={{ margin: 0 }}>Nothing shared for this lesson yet.</p>
+            ? <p className="analytics-note" style={{ margin: 0 }}>{t.exchange.nothingShared}</p>
             : fileList}
         </div>
 
@@ -117,14 +119,14 @@ export default function LessonExchange({
           <TeacherFileUpload lessonId={lessonId} />
         </div>
         {docs.length === 0 ? (
-          <p className="analytics-note" style={{ margin: 0 }}>No files shared yet. Upload a presentation or PDF for this lesson.</p>
+          <p className="analytics-note" style={{ margin: 0 }}>{t.exchange.noFiles}</p>
         ) : fileList}
       </div>
 
       <div className="lesson-block">
         <h3 style={{ margin: '0 0 4px' }}>🎙️ Student audio submissions</h3>
-        <p className="analytics-note" style={{ margin: '0 0 14px' }}>Free practice this student recorded for the lesson. Their answers to the speaking exercises are on the Practice tab.</p>
-        {audios.length === 0 ? <p className="analytics-note" style={{ margin: 0 }}>No audio submitted yet.</p> : audioList}
+        <p className="analytics-note" style={{ margin: '0 0 14px' }}>{t.exchange.audioIntro}</p>
+        {audios.length === 0 ? <p className="analytics-note" style={{ margin: 0 }}>{t.exchange.noAudio}</p> : audioList}
       </div>
     </div>
   )

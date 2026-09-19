@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { claimInvite, claimInviteAsCurrentUser, type InvitePreview } from '@/app/actions/join'
@@ -24,6 +26,7 @@ export default function JoinCard({
   invite: InvitePreview
   signedInAs: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [stage, setStage] = useState<'intro' | 'form'>('intro')
   const [email, setEmail] = useState('')
@@ -38,7 +41,7 @@ export default function JoinCard({
 
     const res = await claimInvite(code, email, password)
     if (!res.success) {
-      setError(res.error || 'Could not set up your account.')
+      setError(res.error || t.join.setupFailed)
       setBusy(false)
       return
     }
@@ -62,7 +65,7 @@ export default function JoinCard({
     setError('')
     const res = await claimInviteAsCurrentUser(code)
     if (!res.success) {
-      setError(res.error || 'Could not accept the invite.')
+      setError(res.error || t.join.acceptFailed)
       setBusy(false)
       return
     }
@@ -111,11 +114,11 @@ export default function JoinCard({
                   onClick={claimAsCurrent}
                   disabled={busy}
                 >
-                  {busy ? 'Joining…' : `Join as ${signedInAs}`}
+                  {busy ? t.join.joining : fill(t.join.joinAs, { name: signedInAs })}
                 </button>
                 {error && <p className="k-join-error">{error}</p>}
                 <p className="k-join-fine k-join-step" style={{ animationDelay: '400ms' }}>
-                  Not you? <a href="/logout">Sign out</a> and open this link again.
+                  {t.join.notYouPre}<a href="/logout">{t.join.notYouLink}</a>{t.join.notYouPost}
                 </p>
               </>
             ) : (
@@ -144,11 +147,11 @@ export default function JoinCard({
 
             <form onSubmit={submit}>
               <label className="k-join-field k-join-step" style={{ animationDelay: '150ms' }} htmlFor="email">
-                <span>Your email address</span>
+                <span>{t.join.emailLabel}</span>
                 <input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder={t.auth.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -158,11 +161,11 @@ export default function JoinCard({
               </label>
 
               <label className="k-join-field k-join-step" style={{ animationDelay: '210ms' }} htmlFor="password">
-                <span>Choose a password</span>
+                <span>{t.join.passwordLabel}</span>
                 <input
                   id="password"
                   type="password"
-                  placeholder="At least 8 characters"
+                  placeholder={t.join.passwordHint}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -179,7 +182,7 @@ export default function JoinCard({
                 style={{ animationDelay: '270ms' }}
                 disabled={busy}
               >
-                {busy ? 'Setting up…' : 'Create my account'}
+                {busy ? t.join.settingUp : t.join.createAccount}
               </button>
             </form>
 

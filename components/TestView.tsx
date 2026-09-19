@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useMemo, useState, useTransition } from 'react'
 import { submitTestAttempt } from '@/app/actions/tests'
 import TestSpeakingRecorder from '@/components/TestSpeakingRecorder'
@@ -99,6 +101,7 @@ export default function TestView({
   /** Prompt index → the student's stored recording, for the speaking part. */
   speakingTakes?: Record<number, { id: string; createdAt?: string | null }>
 }) {
+  const t = useT()
   const [answers, setAnswers] = useState<Answers>({})
   const onAnswer = (id: string, v: number | string) => setAnswers((a) => ({ ...a, [id]: v }))
   const [saved, setSaved] = useState<number | null>(savedScore ?? null)
@@ -121,7 +124,7 @@ export default function TestView({
     startSaving(async () => {
       const res = await submitTestAttempt(testId, answers)
       if (res.success) setSaved(res.score ?? null)
-      else setSaveError(res.error ?? 'Could not save your score.')
+      else setSaveError(res.error ?? t.tests.saveScoreFailed)
     })
   }
 
@@ -147,7 +150,7 @@ export default function TestView({
               onClick={finish}
               disabled={saving}
             >
-              {saving ? 'Saving…' : `Finish — ${Math.round((correct.length / gradeable.length) * 100)}%`}
+              {saving ? t.common.saving : fill(t.tests.finish, { pct: Math.round((correct.length / gradeable.length) * 100) })}
             </button>
           ) : null}
         </div>

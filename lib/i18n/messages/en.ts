@@ -540,6 +540,71 @@ export const en = {
     speakingMeasured: 'Your speaking, measured',
     yourTeacher: 'Your teacher',
   },
+  /** components/portal/JoinCard.tsx — the invite link a student opens. */
+  join: {
+    setupFailed: 'Could not set up your account.',
+    acceptFailed: 'Could not accept the invite.',
+    joining: 'Joining…',
+    /** {name} is the email they are already signed in as. */
+    joinAs: 'Join as {name}',
+    notYouPre: 'Not you? ',
+    notYouLink: 'Sign out',
+    notYouPost: ' and open this link again.',
+    emailLabel: 'Your email address',
+    passwordLabel: 'Choose a password',
+    passwordHint: 'At least 8 characters',
+    settingUp: 'Setting up…',
+    createAccount: 'Create my account',
+  },
+
+  /** components/portal/SpeakingRecorder.tsx — the student answering out loud. */
+  speaking: {
+    cta: 'Record your answer',
+    sendFailed: 'Could not send that recording. Try again.',
+    recordAgain: 'Record it again',
+    sendToTeacher: 'Send to teacher',
+    sending: 'Sending…',
+    tryAgain: 'Try again',
+    keepSent: 'Keep the one I sent',
+  },
+
+  /** components/portal/LessonExchange.tsx — files and audio on a lesson. */
+  exchange: {
+    recording: 'Recording',
+    download: 'Download',
+    nothingShared: 'Nothing shared for this lesson yet.',
+    noFiles: 'No files shared yet. Upload a presentation or PDF for this lesson.',
+    audioIntro:
+      'Free practice this student recorded for the lesson. Their answers to the speaking exercises are on the Practice tab.',
+    noAudio: 'No audio submitted yet.',
+  },
+
+  /**
+   * components/portal/ProgressCharts.tsx — the swipeable metrics.
+   * Indexed to METRICS; the `key` values stay in the component because they
+   * name fields on the data.
+   */
+  charts: {
+    metrics: [
+      { label: 'Score', note: 'What each lesson was marked out of ten.' },
+      { label: 'You talk', note: 'Your share of the talking. More of it is yours as you get more confident.' },
+      { label: 'Pace', note: 'Words a minute while you were speaking.' },
+      { label: 'Thinking', note: 'How long before you answer. Shorter means the words are coming faster.' },
+      { label: 'Vocabulary', note: 'Every word from every lesson, added up.' },
+    ],
+    nothingYet: 'Nothing recorded for this yet.',
+    /** {n} is the lesson number the comparison starts from. */
+    sinceLesson: 'since lesson {n}',
+    trendLater: 'The trend appears after your next lesson.',
+  },
+
+  /** components/TestView.tsx and app/student/practice */
+  tests: {
+    saveScoreFailed: 'Could not save your score.',
+    /** {pct} is the score as a whole percent. */
+    finish: 'Finish — {pct}%',
+    allWords: 'All your words',
+  },
 } as const
 
 /**
