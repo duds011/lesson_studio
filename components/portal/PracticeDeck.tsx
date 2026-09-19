@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useCallback, useState } from 'react'
 import { MASTERY_META, SESSION_SIZES, sessionLabel, type Mastery } from '@/lib/flashcards'
 
@@ -82,6 +84,7 @@ export default function PracticeDeck({
   deck?: string | null
   lessonId?: string | null
 }) {
+  const t = useT()
   /** null until they choose a length — the start screen. */
   const [size, setSize] = useState<number | null>(null)
   const [round, setRound] = useState(0)
@@ -127,10 +130,8 @@ export default function PracticeDeck({
   if (cards.length === 0) {
     return (
       <div className="k-card k-prac-empty">
-        <h2>Nothing to practise yet</h2>
-        <p className="analytics-note">
-          Words appear here once your teacher publishes a lesson recap.
-        </p>
+        <h2>{t.practice.emptyTitle}</h2>
+        <p className="analytics-note">{t.practice.emptyBody}</p>
       </div>
     )
   }
@@ -154,7 +155,7 @@ export default function PracticeDeck({
         <div className="k-card" style={{ marginTop: 14 }}>
           <MasteryBar mastery={mastery} total={cards.length} />
 
-          <p className="k-prac-ask">How many today?</p>
+          <p className="k-prac-ask">{t.practice.howMany}</p>
           <div className="k-prac-sizes">
             {choices.map((n) => (
               <button
@@ -195,35 +196,35 @@ export default function PracticeDeck({
     return (
       <div className="k-card k-prac-empty">
         <span className="k-prac-tick" aria-hidden>✓</span>
-        <h2>Done — {size_} card{size_ === 1 ? '' : 's'}.</h2>
+        <h2>{size_ === 1 ? t.practice.doneOneTitle : fill(t.practice.doneTitle, { n: size_ })}</h2>
         <p className="analytics-note">
           {missed === 0
-            ? 'Every one first time. They will come back in a few days.'
-            : `${size_ - missed} first time, ${missed} to see again sooner.`}
+            ? t.practice.allFirstTime
+            : fill(t.practice.someMissed, { right: size_ - missed, missed })}
         </p>
 
         {/* Stopping here is the expected thing, so this reads as finished
             whether or not there is more left. The next round is an offer. */}
         <p className="k-prac-left">
           {left > 0
-            ? `${left} more word${left === 1 ? '' : 's'} in this pile, whenever you like.`
-            : 'That is the whole pile.'}
+            ? (left === 1 ? t.practice.oneLeft : fill(t.practice.moreLeft, { n: left }))
+            : t.practice.wholePile}
         </p>
 
         <div className="k-prac-acts">
           {left > 0 ? (
             <button type="button" className="btn btn-primary btn-sm" onClick={() => startRound(round + 1)}>
-              {nextSize} more
+              {fill(t.practice.nextRound, { n: nextSize })}
             </button>
           ) : (
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSize(null); setRound(0) }}>
-              Practise again
+              {t.practice.practiseAgain}
             </button>
           )}
           {/* The Practice tab, not the dashboard's first tab. Somebody who
               just finished a round is not done with practice. */}
           <a className={`btn btn-sm ${left > 0 ? 'btn-ghost' : 'btn-primary'}`} href="/student/dashboard#practice">
-            Back to practice
+            {t.practice.backToPractice}
           </a>
         </div>
       </div>
@@ -293,17 +294,17 @@ export default function PracticeDeck({
             {card.lesson != null && <span className="k-prac-from">Lesson {card.lesson}</span>}
           </>
         ) : (
-          <span className="k-prac-tap">Tap to see the meaning</span>
+          <span className="k-prac-tap">{t.practice.tapToSee}</span>
         )}
       </button>
 
       {flipped ? (
         <div className="k-prac-acts">
-          <button type="button" className="k-prac-act again" onClick={() => answer(false)}>Again</button>
-          <button type="button" className="k-prac-act knew" onClick={() => answer(true)}>Knew it</button>
+          <button type="button" className="k-prac-act again" onClick={() => answer(false)}>{t.practice.again}</button>
+          <button type="button" className="k-prac-act knew" onClick={() => answer(true)}>{t.practice.knewIt}</button>
         </div>
       ) : (
-        <p className="k-prac-hint">Say it out loud before you flip it.</p>
+        <p className="k-prac-hint">{t.practice.sayOutLoud}</p>
       )}
     </div>
   )

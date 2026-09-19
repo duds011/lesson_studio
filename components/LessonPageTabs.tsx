@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FormattedContent } from './RecapView'
 import RecapSections from './RecapSections'
@@ -24,7 +25,7 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 }
 
 export default function LessonPageTabs({
-  lesson, studentFirst, teacherFirst = 'Your teacher', brand = DEFAULT_BRAND, files, preview,
+  lesson, studentFirst, teacherFirst, brand = DEFAULT_BRAND, files, preview,
   language, speaking, back, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
@@ -66,6 +67,8 @@ export default function LessonPageTabs({
   /** Studio only, one level finer: takes a single measured-speaking tile off. */
   onRemoveMetric?: (id: RecapMetricId) => void
 }) {
+  const t = useT()
+  const teacher = teacherFirst || t.lesson.yourTeacher
   const r = lesson.recap
   const m = r.metrics as any
   const [ownTab, setOwnTab] = useState<LessonTab>('Progress')
@@ -101,11 +104,11 @@ export default function LessonPageTabs({
       case 'balance':
         return (
           <div className="stat-card" style={{ ['--accent' as any]: 'var(--brand)' }}>
-            <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">Speaking balance</span></div>
+            <div className="stat-card-head"><span className="stat-icon">🗣️</span><span className="stat-card-label">{t.lesson.speakingBalance}</span></div>
             <div className="stat-card-value"><CountUp value={studentTalk} /><span className="stat-unit">%</span> <span className="stat-sep">/</span> <CountUp value={teacherTalk} /><span className="stat-unit">%</span></div>
             <div className="balance-bars" style={{ marginTop: 'auto' }}>
               <div className="balance-row"><span>{studentFirst}</span><div className="balance-track"><div className="balance-fill student" style={{ width: `${studentTalk}%` }} /></div><span>{studentTalk}%</span></div>
-              <div className="balance-row"><span>{teacherFirst}</span><div className="balance-track"><div className="balance-fill" style={{ width: `${teacherTalk}%` }} /></div><span>{teacherTalk}%</span></div>
+              <div className="balance-row"><span>{teacher}</span><div className="balance-track"><div className="balance-fill" style={{ width: `${teacherTalk}%` }} /></div><span>{teacherTalk}%</span></div>
             </div>
           </div>
         )
@@ -113,7 +116,7 @@ export default function LessonPageTabs({
         if (r.score == null) return null
         return (
           <div className="stat-card" style={{ ['--accent' as any]: 'var(--green)' }}>
-            <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">Score</span></div>
+            <div className="stat-card-head"><span className="stat-icon">⭐</span><span className="stat-card-label">{t.lesson.score}</span></div>
             <div className="stat-card-value" style={{ color: 'var(--green)' }}>
               <CountUp value={Number(r.score)} decimals={Number.isInteger(Number(r.score)) ? 0 : 1} />
               <span className="stat-unit">/10</span>
@@ -125,7 +128,7 @@ export default function LessonPageTabs({
         if (!r.grammar_density) return null
         return (
           <div className="stat-card" style={{ ['--accent' as any]: '#a36210' }}>
-            <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">Grammar density</span></div>
+            <div className="stat-card-head"><span className="stat-icon">📚</span><span className="stat-card-label">{t.lesson.grammarDensity}</span></div>
             <div className="stat-card-value" style={{ fontSize: '1.6rem' }}>{r.grammar_density}</div>
             <p className="stat-card-note" style={{ marginTop: 'auto' }}>{r.vocab_total_count ? `${r.vocab_total_count} vocabulary items practiced` : ''}</p>
           </div>
@@ -178,7 +181,7 @@ export default function LessonPageTabs({
         if (corrections.length > 0 || didWell.length > 0) {
           return (
             <div className="corrections-card">
-              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">Corrections</span></div>
+              <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{t.lesson.corrections}</span></div>
               <LessonCorrections corrections={corrections} didWell={didWell} who={studentFirst} />
             </div>
           )
@@ -223,8 +226,8 @@ export default function LessonPageTabs({
       case 'homework':
         return (
           <div className="lesson-block">
-            <h3>Homework</h3>
-            {homework.length === 0 ? <p className="analytics-note">No homework for this lesson.</p> : (
+            <h3>{t.lesson.homework}</h3>
+            {homework.length === 0 ? <p className="analytics-note">{t.lesson.noHomework}</p> : (
               <ul>{homework.map((hw: any, i: number) => <li key={i}>{hw.description ?? String(hw)}</li>)}</ul>
             )}
           </div>
@@ -232,7 +235,7 @@ export default function LessonPageTabs({
       case 'exercises':
         return (
           <div className="lesson-block">
-            <h3>Practice exercises</h3>
+            <h3>{t.lesson.practiceExercises}</h3>
             {/* Flashcards first: a warm-up over the lesson's own words before
                 the graded questions that use them. */}
             <Flashcards vocabulary={r.vocabulary || []} />
@@ -243,7 +246,7 @@ export default function LessonPageTabs({
         if ((r.vocabulary || []).length === 0) return null
         return (
           <div className="lesson-block">
-            <h3>Words from this lesson</h3>
+            <h3>{t.lesson.wordsFromLesson}</h3>
             {(r.vocabulary || []).map((v: any, i: number) => (
               <div className="example" key={i}>
                 <span className="jp">{v.word}</span> <span className="romaji">{v.reading}</span>
@@ -305,7 +308,7 @@ export default function LessonPageTabs({
 
   const moves: { id: MovementId; label: string; count: string; node: React.ReactNode }[] = []
   const push = (id: MovementId, count: string, node: React.ReactNode) => {
-    if (node) moves.push({ id, label: LESSON_MOVEMENTS.find((x) => x.id === id)!.label, count, node })
+    if (node) moves.push({ id, label: t.lesson.movements[LESSON_MOVEMENTS.findIndex((x) => x.id === id)], count, node })
   }
 
   const shownMetrics = RECAP_METRICS.filter(({ id }) => !(brand.hiddenMetrics ?? []).includes(id))
@@ -329,7 +332,7 @@ export default function LessonPageTabs({
       <div className="kr-spoke">
         {(hasBalance || (hasScore && r.confidence_label)) && (
           <div className="kr-spoke-head">
-            {hasBalance && <p className="kr-sublab">Who did the talking</p>}
+            {hasBalance && <p className="kr-sublab">{t.lesson.whoTalked}</p>}
             {/* The number is in the header already; the word for it is not. */}
             {hasScore && r.confidence_label && <span className="kr-verdict">{r.confidence_label}</span>}
           </div>
@@ -342,19 +345,19 @@ export default function LessonPageTabs({
             </div>
             <div className="kr-talk-key">
               <span><b />{studentFirst} {studentTalk}%</span>
-              <span><b />{teacherFirst} {teacherTalk}%</span>
+              <span><b />{teacher} {teacherTalk}%</span>
             </div>
           </>
         )}
         {metricGrid && (
           <>
-            <p className="kr-sublab">Your speaking, measured</p>
+            <p className="kr-sublab">{t.lesson.speakingMeasured}</p>
             {metricGrid}
           </>
         )}
         {hasGrammar && r.grammar_density && (
           <p className="kr-grammar">
-            <b>Grammar density</b>{r.grammar_density}
+            <b>{t.lesson.grammarDensity}</b>{r.grammar_density}
             {r.vocab_total_count ? ` · ${r.vocab_total_count} vocabulary items` : ''}
           </p>
         )}
@@ -491,7 +494,7 @@ export default function LessonPageTabs({
     <div className="kr">
       <div className="kr-body">
         {/* Wide: the same thing unrolled, so all of it is visible at once. */}
-        <nav className="kr-rail" aria-label="Lesson sections" ref={railRef}>
+        <nav className="kr-rail" aria-label={t.lesson.railAria} ref={railRef}>
           {back && (
             <a className="kr-rail-back" href={back.href}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
@@ -501,7 +504,7 @@ export default function LessonPageTabs({
               {back.label}
             </a>
           )}
-          <p className="kr-rail-h">This lesson</p>
+          <p className="kr-rail-h">{t.lesson.thisLesson}</p>
           <span className="kr-rail-track" ref={trackRef}><span className="kr-rail-fill" ref={fillRef} /></span>
           {moves.map((mv, i) => (
             <button

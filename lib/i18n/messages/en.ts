@@ -453,6 +453,93 @@ export const en = {
     vocabNew: 'not started',
     download: 'Download',
   },
+  /** components/portal/PracticeDeck.tsx — flashcards, in the student's hands. */
+  practice: {
+    emptyTitle: 'Nothing to practise yet',
+    emptyBody: 'Words appear here once your teacher publishes a lesson recap.',
+    howMany: 'How many today?',
+    /** {n} cards finished this round. */
+    doneTitle: 'Done — {n} cards.',
+    doneOneTitle: 'Done — 1 card.',
+    allFirstTime: 'Every one first time. They will come back in a few days.',
+    /** {right} first time, {missed} to see again sooner. */
+    someMissed: '{right} first time, {missed} to see again sooner.',
+    /** {n} words still in the pile. */
+    moreLeft: '{n} more words in this pile, whenever you like.',
+    oneLeft: '1 more word in this pile, whenever you like.',
+    wholePile: 'That is the whole pile.',
+    nextRound: '{n} more',
+    practiseAgain: 'Practise again',
+    backToPractice: 'Back to practice',
+    tapToSee: 'Tap to see the meaning',
+    again: 'Again',
+    knewIt: 'Knew it',
+    sayOutLoud: 'Say it out loud before you flip it.',
+  },
+
+  /** components/portal/RecapRating.tsx — the one question under every recap. */
+  rating: {
+    question: 'Did this match your lesson?',
+    yes: 'Yes, that was my lesson',
+    no: 'Not quite',
+    thanksYes: 'You said this one matched your lesson. Thank you — it is read.',
+    thanksNo: 'You said this one was off. Thank you — that is the useful kind.',
+    whatWasOff: 'What was off? Pick any that fit.',
+    notePlaceholder: 'If you can, say which part — a sentence is plenty.',
+    send: 'Send',
+    sending: 'Sending…',
+    didNotSave: 'That did not save.',
+    /**
+     * Indexed to RATING_REASONS in lib/ratings.ts. The KEYS stay there — they
+     * are written to the database and must never move with a translation.
+     */
+    reasons: [
+      'Words I never said',
+      'Mixed up who said what',
+      'Wrong script or language',
+      'Too easy or too hard for me',
+      'Something else',
+    ],
+  },
+
+  /** components/portal/RecapLanguagePicker.tsx */
+  recapLanguage: {
+    question: 'My recaps are written in',
+    hint: 'The language you are learning stays as it is — this is the language everything around it is explained in.',
+    aria: 'The language my recaps are explained in',
+    saved: 'Saved — from your next recap on.',
+    didNotSave: 'That did not save.',
+  },
+  /** components/LessonPageTabs.tsx — the page a published recap lands on. */
+  lesson: {
+    railAria: 'Lesson sections',
+    thisLesson: 'This lesson',
+    /**
+     * Indexed to LESSON_MOVEMENTS in lib/brand.ts. The ids stay there — they
+     * are stored in a teacher's saved layout, so they must never move with a
+     * translation.
+     */
+    movements: [
+      'How you spoke',
+      'What you nailed',
+      'What to fix',
+      'What we covered',
+      'Words from today',
+      'Practice',
+      'Files & audio',
+    ],
+    speakingBalance: 'Speaking balance',
+    score: 'Score',
+    grammarDensity: 'Grammar density',
+    corrections: 'Corrections',
+    homework: 'Homework',
+    noHomework: 'No homework for this lesson.',
+    practiceExercises: 'Practice exercises',
+    wordsFromLesson: 'Words from this lesson',
+    whoTalked: 'Who did the talking',
+    speakingMeasured: 'Your speaking, measured',
+    yourTeacher: 'Your teacher',
+  },
 } as const
 
 /**

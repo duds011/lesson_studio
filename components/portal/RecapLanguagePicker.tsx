@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { setMyRecapLanguage } from '@/app/actions/student-prefs'
@@ -22,6 +24,7 @@ export default function RecapLanguagePicker({
   value: string | null
   learning: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const current = value?.trim() || 'English'
   const [busy, setBusy] = useState(false)
@@ -35,7 +38,7 @@ export default function RecapLanguagePicker({
     const res = await setMyRecapLanguage(next)
     setBusy(false)
     if (!res.success) {
-      setError(res.error || 'That did not save.')
+      setError(res.error || t.recapLanguage.didNotSave)
       return
     }
     setSaved(next)
@@ -47,11 +50,11 @@ export default function RecapLanguagePicker({
   return (
     <div className="k-langpick">
       <div>
-        <p className="k-langpick-q">My recaps are written in</p>
+        <p className="k-langpick-q">{t.recapLanguage.question}</p>
         <p className="k-langpick-sub">
           {target
             ? `The ${target} you are learning stays ${target} — this is the language everything around it is explained in.`
-            : 'The language you are learning stays as it is — this is the language everything around it is explained in.'}
+            : t.recapLanguage.hint}
         </p>
       </div>
 
@@ -61,7 +64,7 @@ export default function RecapLanguagePicker({
           value={current}
           disabled={busy}
           onChange={(e) => change(e.target.value)}
-          aria-label="The language my recaps are explained in"
+          aria-label={t.recapLanguage.aria}
         >
           {/* A language the teacher typed that is not on the list would vanish
               from a plain select and silently reset on the next change. */}
@@ -73,9 +76,9 @@ export default function RecapLanguagePicker({
           ))}
         </select>
 
-        {busy && <span className="k-langpick-note">Saving…</span>}
+        {busy && <span className="k-langpick-note">{t.common.saving}</span>}
         {!busy && saved && (
-          <span className="k-langpick-note">Saved — from your next recap on.</span>
+          <span className="k-langpick-note">{t.recapLanguage.saved}</span>
         )}
         {error && <span className="k-langpick-note k-langpick-note--bad">{error}</span>}
       </div>

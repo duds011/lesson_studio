@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState } from 'react'
 import { rateRecap } from '@/app/actions/rate-recap'
 import { RATING_REASONS } from '@/lib/ratings'
@@ -26,6 +28,7 @@ export default function RecapRating({
   initial: { matched: boolean; reasons: string[]; note: string | null } | null
   accent?: string
 }) {
+  const t = useT()
   const [saved, setSaved] = useState(initial)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -45,7 +48,7 @@ export default function RecapRating({
     const res = await rateRecap({ lessonId, matched, reasons, note })
     setBusy(false)
     if (!res.ok) {
-      setError(res.error ?? 'That did not save.')
+      setError(res.error ?? t.rating.didNotSave)
       return
     }
     setSaved({ matched, reasons: matched ? [] : reasons, note: matched ? null : note || null })
@@ -62,8 +65,8 @@ export default function RecapRating({
       <div className="k-rate k-rate--done">
         <span>
           {saved.matched
-            ? 'You said this one matched your lesson. Thank you — it is read.'
-            : 'You said this one was off. Thank you — that is the useful kind.'}
+            ? t.rating.thanksYes
+            : t.rating.thanksNo}
         </span>
         <button
           type="button"
@@ -81,7 +84,7 @@ export default function RecapRating({
 
   return (
     <div className="k-rate">
-      <p className="k-rate-q">Did this match your lesson?</p>
+      <p className="k-rate-q">{t.rating.question}</p>
       <p className="k-rate-sub">
         The write-up is put together by a model from a recording of the hour, so it can
         get things wrong — and you are the only one who was there to notice.
@@ -96,22 +99,22 @@ export default function RecapRating({
             disabled={busy}
             onClick={() => send(true)}
           >
-            {busy ? 'Saving…' : 'Yes, that was my lesson'}
+            {busy ? t.common.saving : t.rating.yes}
           </button>
           <button type="button" className="k-btn-pill k-btn-outline" disabled={busy} onClick={() => setOpen(true)}>
-            Not quite
+            {t.rating.no}
           </button>
         </div>
       ) : (
         <>
           <p className="k-rate-sub" style={{ marginTop: 14, fontWeight: 650, color: 'var(--ink)' }}>
-            What was off? Pick any that fit.
+            {t.rating.whatWasOff}
           </p>
           <div className="k-rate-reasons">
-            {RATING_REASONS.map((r) => (
+            {RATING_REASONS.map((r, i) => (
               <label key={r.key} className={`k-rate-reason${reasons.includes(r.key) ? ' on' : ''}`}>
                 <input type="checkbox" checked={reasons.includes(r.key)} onChange={() => toggle(r.key)} />
-                <span>{r.label}</span>
+                <span>{t.rating.reasons[i]}</span>
               </label>
             ))}
           </div>
@@ -120,7 +123,7 @@ export default function RecapRating({
             className="k-rate-note"
             rows={3}
             maxLength={600}
-            placeholder="If you can, say which part — a sentence is plenty."
+            placeholder={t.rating.notePlaceholder}
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
@@ -135,7 +138,7 @@ export default function RecapRating({
               disabled={busy}
               onClick={() => send(false)}
             >
-              {busy ? 'Sending…' : 'Send'}
+              {busy ? t.rating.sending : t.rating.send}
             </button>
             <button
               type="button"
