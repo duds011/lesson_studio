@@ -9,9 +9,15 @@ import { setCalendarMode } from '@/lib/calendar-mode.server'
  * and later moves their week onto Google shouldn't have to reinstall anything
  * to get the calendar surfaces back — and the reverse should be as easy.
  */
-export async function chooseCalendarMode(formData: FormData) {
+export async function chooseCalendarMode(formData: FormData): Promise<{ ok: boolean }> {
   const mode = formData.get('mode')
-  if (!isCalendarMode(mode)) return
-  await setCalendarMode(mode)
+  if (!isCalendarMode(mode)) return { ok: false }
+  try {
+    await setCalendarMode(mode)
+  } catch (e: any) {
+    console.error('[calendar] chooseCalendarMode:', e?.message ?? e)
+    return { ok: false }
+  }
   revalidatePath('/', 'layout')
+  return { ok: true }
 }

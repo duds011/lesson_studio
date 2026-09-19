@@ -10,6 +10,7 @@ import { chooseAutoPublish } from '@/app/actions/auto-publish'
 import AppNav from '@/components/AppNav'
 import ConnectorsGallery from '@/components/ConnectorsGallery'
 import SettingsTabs, { SettingsPanel } from '@/components/SettingsTabs'
+import ChoiceGroup from '@/components/ChoiceGroup'
 import LanguagesPanel from '@/components/LanguagesPanel'
 import ExtTokenPanel from '@/components/ExtTokenPanel'
 import ReplayTourButton from '@/components/ReplayTourButton'
@@ -141,17 +142,16 @@ export default async function SettingsPage() {
                   <p className="desc">{t.settings.livesDesc}</p>
                 </div>
               </div>
-              <div className="k-choices">
-                {CALENDAR_MODES.map((m) => (
-                  <form key={m} action={chooseCalendarMode}>
-                    <input type="hidden" name="mode" value={m} />
-                    <button type="submit" className={`k-choice ${calendarMode === m ? 'sel' : ''}`}>
-                      <span className="k-choice-tick" aria-hidden>✓</span>
-                      <span>{CALENDAR_MODE_META[m].label}<small>{CALENDAR_MODE_META[m].hint}</small></span>
-                    </button>
-                  </form>
-                ))}
-              </div>
+              <ChoiceGroup
+                name="mode"
+                value={calendarMode}
+                action={chooseCalendarMode}
+                options={CALENDAR_MODES.map((m) => ({
+                  value: m,
+                  label: CALENDAR_MODE_META[m].label,
+                  hint: CALENDAR_MODE_META[m].hint,
+                }))}
+              />
             </section>
 
             {/* Which calendar holds lessons (only when Google is connected) */}
@@ -210,22 +210,15 @@ export default async function SettingsPage() {
                   <p className="desc">{t.settings.autoSendDesc}</p>
                 </div>
               </div>
-              <div className="k-choices">
-                <form action={chooseAutoPublish}>
-                  <input type="hidden" name="on" value="no" />
-                  <button type="submit" className={`k-choice ${!autoPublish ? 'sel' : ''}`}>
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{t.settings.autoSendReview}<small>{t.settings.autoSendReviewHint}</small></span>
-                  </button>
-                </form>
-                <form action={chooseAutoPublish}>
-                  <input type="hidden" name="on" value="yes" />
-                  <button type="submit" className={`k-choice ${autoPublish ? 'sel' : ''}`}>
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{t.settings.autoSendAuto}<small>{t.settings.autoSendAutoHint}</small></span>
-                  </button>
-                </form>
-              </div>
+              <ChoiceGroup
+                name="on"
+                value={autoPublish ? 'yes' : 'no'}
+                action={chooseAutoPublish}
+                options={[
+                  { value: 'no', label: t.settings.autoSendReview, hint: t.settings.autoSendReviewHint },
+                  { value: 'yes', label: t.settings.autoSendAuto, hint: t.settings.autoSendAutoHint },
+                ]}
+              />
             </section>
 
             <section className="k-sec">
@@ -236,22 +229,15 @@ export default async function SettingsPage() {
                   <p className="desc">{t.settings.speakingDesc}</p>
                 </div>
               </div>
-              <div className="k-choices">
-                <form action={chooseSpeakingSubmissions}>
-                  <input type="hidden" name="on" value="yes" />
-                  <button type="submit" className={`k-choice ${speakingOn ? 'sel' : ''}`}>
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{t.settings.speakingOn}<small>{t.settings.speakingOnHint}</small></span>
-                  </button>
-                </form>
-                <form action={chooseSpeakingSubmissions}>
-                  <input type="hidden" name="on" value="no" />
-                  <button type="submit" className={`k-choice ${!speakingOn ? 'sel' : ''}`}>
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{t.settings.speakingOff}<small>{t.settings.speakingOffHint}</small></span>
-                  </button>
-                </form>
-              </div>
+              <ChoiceGroup
+                name="on"
+                value={speakingOn ? 'yes' : 'no'}
+                action={chooseSpeakingSubmissions}
+                options={[
+                  { value: 'yes', label: t.settings.speakingOn, hint: t.settings.speakingOnHint },
+                  { value: 'no', label: t.settings.speakingOff, hint: t.settings.speakingOffHint },
+                ]}
+              />
             </section>
           </SettingsPanel>
 
