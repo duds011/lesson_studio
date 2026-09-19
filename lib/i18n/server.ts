@@ -11,6 +11,29 @@ import {
 } from './config'
 
 /**
+ * A whole server pinned to one language, for looking at it.
+ *
+ * Exists because the locale belongs to the PERSON, which is the right design
+ * and makes the app impossible to survey: you would have to keep editing a
+ * profile row, or a cookie that every port on localhost shares, to see the
+ * same page in three languages.
+ *
+ * Refuses to work on Vercel. A forced locale would override every teacher's
+ * own setting at once, which is the one thing this feature exists to
+ * prevent. The guard is VERCEL rather than NODE_ENV on purpose: `next start`
+ * runs with NODE_ENV=production locally, so a NODE_ENV guard would switch
+ * this off in exactly the place it is meant to work and stay off nowhere
+ * that matters.
+ *
+ *   KOKU_LOCALE=ja npx next start -p 3403
+ */
+function forcedLocale(): Locale | null {
+  if (process.env.VERCEL) return null
+  const v = process.env.KOKU_LOCALE
+  return isLocale(v) ? v : null
+}
+
+/**
  * Which language to render this request in.
  *
  * The app is signed in and server-rendered per request, so the locale does
@@ -33,6 +56,9 @@ export async function teacherLocale(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Locale> {
+  const forced = forcedLocale()
+  if (forced) return forced
+
   const { data } = await supabase
     .from('profiles')
     .select('ui_language')
@@ -61,6 +87,9 @@ export async function studentLocale(
   admin: SupabaseClient,
   userId: string,
 ): Promise<Locale> {
+  const forced = forcedLocale()
+  if (forced) return forced
+
   const { data } = await admin
     .from('students')
     .select('instruction_language')
@@ -95,6 +124,9 @@ export async function acceptLanguageLocale(): Promise<Locale | null> {
  * their Accept-Language header did not.
  */
 export async function publicLocale(): Promise<Locale> {
+  const forced = forcedLocale()
+  if (forced) return forced
+
   try {
     const jar = await cookies()
     const picked = jar.get(LOCALE_COOKIE)?.value
