@@ -20,10 +20,20 @@ import { readFileSync } from 'node:fs'
 // edited in Stripe — a new amount is always a new key, and the old one is left
 // alone so anyone mid-checkout still pays what they were quoted.
 const PACKS = [
-  { id: 'pack-20', name: '20 lesson write-ups', recaps: 20, price: 2800, lookupKey: 'koku_pack_20_v2' },
-  { id: 'pack-75', name: '75 lesson write-ups', recaps: 75, price: 9900, lookupKey: 'koku_pack_75_v1' },
-  { id: 'pack-100', name: '100 lesson write-ups', recaps: 100, price: 12900, lookupKey: 'koku_pack_100_v2' },
+  { id: 'pack-10', name: '10 lesson write-ups', recaps: 10, price: 1400, eur: 1300, jpy: 2200, lookupKey: 'koku_pack_10_v1' },
+  { id: 'pack-40', name: '40 lesson write-ups', recaps: 40, price: 5300, eur: 4900, jpy: 8300, lookupKey: 'koku_pack_40_v1' },
+  { id: 'pack-100', name: '100 lesson write-ups', recaps: 100, price: 12400, eur: 11500, jpy: 19500, lookupKey: 'koku_pack_100_v4' },
 ]
+
+/**
+ * Euro and yen are not conversions done at checkout — they are amounts we set,
+ * carried on the same Price as currency_options, so a teacher quoted €115 on
+ * the website is charged exactly €115. They mirror lib/pack-currency.ts and
+ * app/i18n/currency.ts on the site; all three have to move together.
+ *
+ * Yen takes no decimal places, so its amount is already in its smallest unit:
+ * 19500 here is ¥19,500, not ¥195.
+ */
 
 function env() {
   if (process.env.STRIPE_SECRET_KEY) return process.env.STRIPE_SECRET_KEY.trim()
@@ -65,14 +75,30 @@ const existingProducts = await stripe('products?limit=100&active=true')
 const productByName = new Map(existingProducts.data.map((p) => [p.name, p.id]))
 
 for (const pack of PACKS) {
-  const found = await stripe(`prices?lookup_keys[]=${encodeURIComponent(pack.lookupKey)}&active=true&limit=1`)
+  const found = await stripe(
+    `prices?lookup_keys[]=${encodeURIComponent(pack.lookupKey)}&active=true&limit=1` +
+      `&expand[]=data.currency_options`,
+  )
   if (found.data.length) {
     const p = found.data[0]
+    const opts = p.currency_options ?? {}
+    const eurOk = opts.eur?.unit_amount === pack.eur
+    const jpyOk = opts.jpy?.unit_amount === pack.jpy
     const matches = p.unit_amount === pack.price && p.type === 'one_time'
     console.log(
       `${pack.lookupKey.padEnd(20)} exists  $${(p.unit_amount / 100).toFixed(2)} ${p.type}` +
+        `  eur ${eurOk ? 'ok' : '✗'}  jpy ${jpyOk ? 'ok' : '✗'}` +
         (matches ? '' : `  ⚠️  expected $${(pack.price / 100).toFixed(2)} one_time`)
     )
+    if (matches && (!eurOk || !jpyOk)) {
+      // currency_options CAN be updated on an existing Price — only the base
+      // unit_amount is frozen — so this is a fix rather than a new key.
+      await stripe(`prices/${p.id}`, {
+        'currency_options[eur][unit_amount]': String(pack.eur),
+        'currency_options[jpy][unit_amount]': String(pack.jpy),
+      })
+      console.log(`   → set eur ${pack.eur} and jpy ${pack.jpy} on the existing price`)
+    }
     if (!matches) {
       console.log(
         `   A Price's amount cannot be edited in Stripe. To change it, give the pack a\n` +
@@ -100,6 +126,8 @@ for (const pack of PACKS) {
     product: productId,
     unit_amount: String(pack.price),
     currency: 'usd',
+    'currency_options[eur][unit_amount]': String(pack.eur),
+    'currency_options[jpy][unit_amount]': String(pack.jpy),
     lookup_key: pack.lookupKey,
     transfer_lookup_key: 'true',
     'metadata[pack_id]': pack.id,

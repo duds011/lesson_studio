@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe, isStripeConfigured } from '@/lib/stripe'
 import { publicBase } from '@/lib/url'
 import { PACKS, packById, isPurchasable } from '@/lib/plans'
+import { asPackCurrency } from '@/lib/pack-currency'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Only a teacher account can buy write-ups.' }, { status: 403 })
   }
 
-  const { packId } = await req.json().catch(() => ({}))
+  const { packId, currency: wanted } = await req.json().catch(() => ({}))
   if (!isPurchasable(packId)) {
     return NextResponse.json({ ok: false, error: 'Unknown pack.' }, { status: 400 })
   }
@@ -78,9 +79,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    /**
+     * The currency the teacher was quoted, not one Stripe guesses.
+     *
+     * The Price carries all three amounts as currency_options, so naming the
+     * currency here picks the one we published rather than converting the
+     * dollar figure. It comes from the browser's time zone, which is also what
+     * the website used to print the price — so the number on the card and the
+     * number on Stripe's page are the same number.
+     *
+     * Unrecognised input falls back to dollars rather than failing: a teacher
+     * in the middle of paying should not be stopped by a currency we do not
+     * recognise.
+     */
+    const currency = asPackCurrency(wanted).toLowerCase()
+
     const session = await stripe.checkout.sessions.create({
       // A payment, never a subscription. Nothing here renews.
       mode: 'payment',
+      currency,
       customer: customerId,
       line_items: [{ price: price.id, quantity: 1 }],
       allow_promotion_codes: true,

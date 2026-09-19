@@ -31,50 +31,68 @@ export type Pack = {
 }
 
 /**
- * Three sizes. The unit price falls from $1.40 to $1.32 to $1.29, but that
- * number is deliberately never shown to a buyer — the pages say "save 6%"
- * and "save 8%" instead, because a price per recap invites arithmetic against
- * a competitor's price per recap, and a saving is about this offer alone.
+ * Three sizes, priced like batches of anything else.
  *
- * The ladder stays shallow on purpose: the bigger pack should win on not
- * having to think about it again, not by making the small one look like a
- * penalty for teaching part-time.
+ * Two earlier ladders failed for opposite reasons. The first ran
+ * $1.40/$1.32/$1.29 — a ladder in name only: because credits never expire, so
+ * buying the SMALLEST pack repeatedly was cheaper cash than the "discount"
+ * until you needed exactly a hundred. The second fixed that by dropping to
+ * two packs, which worked but left nothing between "trying it" and
+ * "full-time".
  *
- * Prices end in 8 and 9 rather than on a round ten, and the middle pack sits
- * at $99 rather than the $101 its size implies — under the hundred is worth
- * more than two per cent of margin.
+ * What makes three work is that the small pack is honestly small-batch
+ * priced. Its job is to turn the free write-ups into a first payment, not to
+ * carry volume, so it is the dearest per lesson and by far the cheapest to
+ * say yes to — $14 is a decision a teacher makes in a second.
+ *
+ * The gradient is deliberately shallow: $1.40 / $1.33 / $1.24, 11% end to
+ * end. Shallow has an exact cost, worth writing down because it is the thing
+ * that will tempt someone to flatten it further one day. The big pack becomes
+ * the cheaper CASH basket at 100 x (its unit / the small unit) lessons — so
+ * the spread and the big pack's useful range are literally the same number.
+ * At 11% the 100-pack wins from 89 lessons up. Flatten it to 5% and it only
+ * wins from 96, which is how the very first ladder died: nobody had a reason
+ * to buy the big one unless they needed exactly a hundred.
+ *
+ * "Why would anyone not buy the biggest?" — many will, and that is the best
+ * outcome: one payment, no card to expire, nothing to churn. The small pack
+ * is not a defence against that. It is there so the teacher who is not ready
+ * still pays something instead of leaving, and for the one who teaches eighty
+ * lessons but only writes up the fifteen that matter.
+ *
+ * The unit price is never shown. A price per recap invites arithmetic against
+ * somebody else's price per recap; a saving is a fact about this offer alone.
  */
 export const PACKS: Pack[] = [
   {
-    id: 'pack-20',
-    name: '20 lessons',
-    recaps: 20,
-    price: 28,
-    tag: 'Teaching on the side',
-    blurb: 'About five weeks of a light schedule.',
-    // _v2: this key was $30. A Price's amount cannot be edited in Stripe, so
-    // a new amount is a new key — reusing _v1 would leave Stripe charging the
-    // old price while this file advertised the new one.
-    lookupKey: 'koku_pack_20_v2',
+    id: 'pack-10',
+    name: '10 lessons',
+    recaps: 10,
+    price: 14,
+    tag: 'Starting out',
+    blurb: 'Enough to see what it does with your own students.',
+    lookupKey: 'koku_pack_10_v1',
   },
   {
-    id: 'pack-75',
-    name: '75 lessons',
-    recaps: 75,
-    price: 99,
-    tag: 'Most teachers',
-    blurb: 'A steady weekly timetable, with room to spare.',
-    lookupKey: 'koku_pack_75_v1',
+    id: 'pack-40',
+    name: '40 lessons',
+    recaps: 40,
+    price: 53,
+    tag: 'A steady schedule',
+    blurb: 'Ten lessons a week, every one written up.',
+    lookupKey: 'koku_pack_40_v1',
   },
   {
     id: 'pack-100',
     name: '100 lessons',
     recaps: 100,
-    price: 129,
+    price: 124,
     tag: 'Full-time',
-    blurb: 'Twenty-odd lessons a week, every one written up.',
-    // _v2: was $130.
-    lookupKey: 'koku_pack_100_v2',
+    blurb: 'Twenty-odd lessons a week, and a month in hand.',
+    // _v4: $130, then $129, then $119, now $124. A Price's amount cannot be
+    // edited in Stripe, so every new amount is a new key and the old ones are
+    // left alone for anyone mid-checkout.
+    lookupKey: 'koku_pack_100_v4',
   },
 ]
 
@@ -103,8 +121,18 @@ export function isPurchasable(id?: string | null): boolean {
 }
 
 /**
+ * The smallest saving worth printing, as a whole percent.
+ *
+ * With the shallow ladder the middle pack saves 5%, and a 5% badge is not a
+ * reason to do anything — it just invites the reader to notice how little it
+ * is. Below this the card shows nothing and lets the size and the price speak.
+ */
+export const MIN_SAVING_PCT = 8
+
+/**
  * What this pack saves against buying the same number at the smallest pack's
- * rate, as a whole percent. Null for the smallest pack, which IS the rate.
+ * rate, as a whole percent. Null for the smallest pack, which IS the rate,
+ * and null for anything under MIN_SAVING_PCT.
  *
  * Computed rather than written down, so it cannot drift from the prices above
  * the way a hand-typed "save 8%" would the first time one of them moves.
@@ -113,5 +141,6 @@ export function savingPct(pack: Pack): number | null {
   const base = PACKS[0].price / PACKS[0].recaps
   const full = pack.recaps * base
   if (full <= pack.price) return null
-  return Math.round(((full - pack.price) / full) * 100)
+  const pct = Math.round(((full - pack.price) / full) * 100)
+  return pct >= MIN_SAVING_PCT ? pct : null
 }

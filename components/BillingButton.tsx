@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { detectPackCurrency } from '@/lib/pack-currency'
 
 /**
  * A button that starts something on Stripe and hands the teacher over to it.
@@ -34,7 +35,9 @@ export default function BillingButton({
       const res = await fetch(portal ? '/api/billing/portal' : '/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(portal ? {} : { packId }),
+        // The currency goes with the click, from the same time-zone rule that
+        // decided which price the teacher was just looking at.
+        body: JSON.stringify(portal ? {} : { packId, currency: detectPackCurrency() }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json?.url) {

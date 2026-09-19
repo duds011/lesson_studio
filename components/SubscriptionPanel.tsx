@@ -1,5 +1,15 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import type { RecapUsage } from '@/lib/recap-quota'
 import { PACKS, TRIAL_RECAPS, savingPct } from '@/lib/plans'
+import {
+  PACK_CURRENCIES,
+  DEFAULT_PACK_CURRENCY,
+  detectPackCurrency,
+  formatPackMoney,
+  type PackCurrency,
+} from '@/lib/pack-currency'
 import BillingButton from '@/components/BillingButton'
 
 /**
@@ -16,6 +26,18 @@ import BillingButton from '@/components/BillingButton'
  */
 export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
   const empty = usage.left === 0
+
+  /**
+   * Quote the same currency the website did, and the same one checkout will
+   * charge — all three read the browser's time zone.
+   *
+   * Dollars render first, on the server and on the first client pass, so the
+   * markup React builds matches the markup it hydrates. Detecting during
+   * render instead throws the subtree away and the prices flash.
+   */
+  const [code, setCode] = useState<PackCurrency>(DEFAULT_PACK_CURRENCY)
+  useEffect(() => setCode(detectPackCurrency()), [])
+  const prices = PACK_CURRENCIES[code].packs
 
   return (
     <>
@@ -70,13 +92,13 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
         </div>
 
         <div className="k-packs">
-          {PACKS.map((pack) => (
+          {PACKS.map((pack, i) => (
             <div key={pack.id} className="k-pack">
               <p className="k-pack-tag">{pack.tag}</p>
               <p className="k-pack-n">{pack.recaps}</p>
               <p className="k-pack-unit">lessons written up</p>
               <p className="k-pack-price">
-                ${pack.price}
+                {formatPackMoney(prices[i], code)}
                 {/* A saving, never a price per write-up. The unit price is an
                     invitation to compare against somebody else's unit price;
                     a saving is a fact about this offer alone. */}
