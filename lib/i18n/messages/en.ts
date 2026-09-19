@@ -135,6 +135,88 @@ export const en = {
       },
     ],
   },
+
+  /** components/OnboardingFlow.tsx — the five steps after a teacher signs up. */
+  onboarding: {
+    /** Order matters: the component indexes these by step number. */
+    steps: ['Your lessons', 'Where you meet', 'Your calendar', 'Your student view', 'Your recorder'],
+    sideTitle: 'Let’s set up your studio.',
+    sideBody: 'Four quick steps and your students get a portal of their own.',
+    stepCount: 'Step {n} of {total}',
+    choose: 'choose…',
+    continueAction: 'Continue',
+    finish: 'Finish setup',
+    finishing: 'Finishing…',
+
+    couldNotSave: 'Could not save',
+    couldNotFinish: 'Could not finish',
+    pickTeaching: 'Pick the language you teach.',
+    pickSpoken: 'Pick the language your lessons are spoken in.',
+    pickCalendar: 'Tell us whether your lessons live on a calendar.',
+    pickPortalName: 'Give the portal a name — your students will see it.',
+
+    teachAria: 'The language you teach',
+    iTeach: 'I teach',
+    teachHint:
+      'Recaps and practice tests are built for this language. It’s the default for every student you add — each student can be switched individually later.',
+    spokenAria: 'The language your lessons are spoken in',
+    spokenIn: 'my lessons are mostly spoken in',
+    spokenHint:
+      'Often not the language being learned — a beginner’s hour runs mostly in the language you share. It’s what the recorder listens for.',
+    timezone: 'Your timezone',
+
+    platformTitle: 'Where do you meet students?',
+    platformLead:
+      'On Meet or Zoom we create the link when a student books. On a marketplace the lesson already has a room, so we leave the link alone and take it from there.',
+    zoomLater: 'Connect Zoom later in Settings',
+    stayOutTitle: 'We’ll stay out of the lesson itself',
+    stayOutBody:
+      'No links created, no bot sent. You record the lesson yourself and the recap, vocabulary and practice are built from that — everything your students see works the same.',
+
+    calendarTitle: 'Where do your lessons live?',
+    /** {platform} is a marketplace name — Preply, italki — never translated. */
+    calendarLeadExternal:
+      'Some {platform} teachers still keep their week on Google Calendar, and some never leave the platform. Your answer decides what the workspace shows you.',
+    calendarLead:
+      'If your students are on your Google Calendar we can read the week, take bookings and send the recorder. If you schedule elsewhere, we stay out of it.',
+    googleConnected: 'Google Calendar connected',
+    googleConnectedSub: 'You can pick which calendar holds your lessons in Settings.',
+    connectGoogle: 'Connect Google Calendar',
+    connectGoogleFine:
+      'You’ll be sent to Google’s consent screen and returned here. You can carry on without it, but bookings and automatic recording stay off until you connect.',
+    recordTitle: 'Record the lesson',
+    recordBody: 'Whatever room you teach in, capture it and hand the recording to Lesson Studio.',
+    reviewTitle: 'Review the recap',
+    reviewBody: 'It joins your review queue like any other lesson. Publish it and the student has it.',
+    noCalendarFine:
+      'No calendar, no booking page, no nagging — your workspace opens on lessons and recaps instead. Change your mind any time in Settings.',
+
+    brandTitle: 'Make it yours',
+    brandLead:
+      'Pick a colour and a name for the portal your students sign in to. You can fine-tune everything later.',
+    portalNameLabel: 'Student portal name',
+    portalNamePlaceholder: 'e.g. Sakura Japanese',
+    portalNameFine:
+      'This is the name across the top of every student’s portal, and on the invite they open. Your own studio name, not ours.',
+    accent: 'Accent colour',
+    previewTagline: 'Learn today, succeed tomorrow!',
+
+    recorderTitle: 'Install the recorder',
+    recorderLead:
+      'This is the part that does the work: a Chrome extension that records your lesson and writes the recap. No bot joins the call, and nothing is installed on your student’s side.',
+    recorderStep1Bold: 'Add it from the Chrome Web Store',
+    recorderStep1: ' — one click, then pin it to your toolbar.',
+    recorderStep2Bold: 'Sign in inside the extension',
+    recorderStep2: ' with this same email and password. There is nothing to copy across.',
+    recorderStep3Bold: 'Record a lesson',
+    recorderStep3: ': pick the student, hit start, hit stop at the end.',
+    addToChrome: 'Add to Chrome — it’s free ↗',
+    recorderFinePre: 'Prefer the full walkthrough (mic permission, what gets recorded)? It’s on the ',
+    recorderFineLink: 'setup guide',
+    recorderFineMid: ' — also at ',
+    recorderFineBold: 'Settings → Lesson recorder',
+    recorderFinePost: ' whenever you’re ready.',
+  },
 } as const
 
 /**

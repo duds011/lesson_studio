@@ -3,6 +3,8 @@ import { getToken, getRecaps } from '@/lib/store'
 import { isConfigured, listUpcomingLessons, listCalendars, type Lesson, type CalendarInfo } from '@/lib/google'
 import { calendarFailure, CALENDAR_FAILURE_TEXT, isFixable, type CalendarFailure } from '@/lib/calendar-error'
 import AppNav from '@/components/AppNav'
+import I18nProvider from '@/components/I18nProvider'
+import { teacherLocale, publicLocale } from '@/lib/i18n/server'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
 import CountUp from '@/components/portal/CountUp'
@@ -223,9 +225,13 @@ async function RecordingsHome() {
   const publishedCount = await publishedLessonCount(supabase, user?.id ?? '')
   const recorderReady = await hasRecorder(user?.id ?? '')
   const usage = user ? await getRecapUsage(user.id) : null
+  // `/` sits OUTSIDE app/teacher/layout.tsx, so it does not inherit that
+  // layout's provider — without this the sidebar here would be the only one
+  // in the app still in English.
+  const locale = user ? await teacherLocale(supabase, user.id) : await publicLocale()
 
   return (
-    <>
+    <I18nProvider locale={locale}>
       <AppNav email={user?.email} connected={false} calendar={false} />
       <main className="wrap page-fade">
         {usage?.trial && <TrialWelcome email={user?.email} freeRecaps={usage.left} />}
@@ -241,7 +247,7 @@ async function RecordingsHome() {
           review={<RecapsToReview drafts={draftRecaps} students={studentOptions} />}
         />
       </main>
-    </>
+    </I18nProvider>
   )
 }
 
@@ -253,10 +259,10 @@ export default async function Home() {
     // A teacher who said "no calendar" should never meet the connect wall.
     if ((await currentCalendarMode()) === 'none') return <RecordingsHome />
     return (
-      <>
+      <I18nProvider locale={await publicLocale()}>
         <AppNav connected={false} />
         <ConnectScreen configured={configured} />
-      </>
+      </I18nProvider>
     )
   }
 
@@ -294,9 +300,10 @@ export default async function Home() {
   const publishedCount = await publishedLessonCount(supabaseForStudents, me?.id ?? '')
   const recorderReady = await hasRecorder(me?.id ?? '')
   const usage = me ? await getRecapUsage(me.id) : null
+  const locale = me ? await teacherLocale(supabaseForStudents, me.id) : await publicLocale()
 
   return (
-    <>
+    <I18nProvider locale={locale}>
       <AppNav email={token.email} connected />
       <main className="wrap page-fade">
         {usage?.trial && <TrialWelcome email={me?.email ?? token.email} freeRecaps={usage.left} />}
@@ -396,6 +403,6 @@ export default async function Home() {
           </aside>
         </div>
       </main>
-    </>
+    </I18nProvider>
   )
 }

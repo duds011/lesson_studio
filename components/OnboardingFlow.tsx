@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveOnboarding, completeOnboarding } from '@/app/actions/onboarding'
@@ -41,15 +43,21 @@ const ZONES = [
   'Australia/Sydney',
 ]
 
-const STEPS = ['Your lessons', 'Where you meet', 'Your calendar', 'Your student view', 'Your recorder'] as const
+/**
+ * Only the COUNT and the order live here now; the words come from the
+ * dictionary. The step machine indexes by number, so the two arrays have to
+ * stay the same length — the shape check on the translations enforces that.
+ */
+const STEP_COUNT = 5
 
 export default function OnboardingFlow({ initial, googleConnected, zoomConnected }: Props) {
+  const t = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
 
   // Resume where they left off, but never past the last step.
-  const [step, setStep] = useState(Math.min(initial.step, STEPS.length - 1))
+  const [step, setStep] = useState(Math.min(initial.step, STEP_COUNT - 1))
   const [teachingLanguage, setTeachingLanguage] = useState(initial.teachingLanguage ?? '')
   const [spokenLanguage, setSpokenLanguage] = useState(initial.speakingLanguage ?? '')
   const [timezone, setTimezone] = useState(initial.timezone)
@@ -72,22 +80,22 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     startTransition(async () => {
       setError('')
       const res = await saveOnboarding(patch)
-      if (!res.success) { setError(res.error || 'Could not save'); return }
+      if (!res.success) { setError(res.error || t.onboarding.couldNotSave); return }
       then?.()
     })
 
   const next = () => {
     if (step === 0) {
-      if (!teachingLanguage) { setError('Pick the language you teach.'); return }
-      if (!spokenLanguage) { setError('Pick the language your lessons are spoken in.'); return }
+      if (!teachingLanguage) { setError(t.onboarding.pickTeaching); return }
+      if (!spokenLanguage) { setError(t.onboarding.pickSpoken); return }
       persist({ teachingLanguage, speakingLanguage: spokenLanguage, timezone, step: 1 }, () => setStep(1))
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
-      if (!calendarMode) { setError('Tell us whether your lessons live on a calendar.'); return }
+      if (!calendarMode) { setError(t.onboarding.pickCalendar); return }
       persist({ calendarMode, step: 3 }, () => setStep(3))
     } else if (step === 3) {
-      if (!portalName.trim()) { setError('Give the portal a name — your students will see it.'); return }
+      if (!portalName.trim()) { setError(t.onboarding.pickPortalName); return }
       // The look is saved on the way past, so the recorder step is the only
       // thing between here and finishing.
       persist({ brand: { accent, portalName: portalName.trim() }, step: 4 }, () => setStep(4))
@@ -98,9 +106,9 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     startTransition(async () => {
       setError('')
       const saved = await saveOnboarding({ brand: { accent, portalName: portalName.trim() } })
-      if (!saved.success) { setError(saved.error || 'Could not save'); return }
+      if (!saved.success) { setError(saved.error || t.onboarding.couldNotSave); return }
       const done = await completeOnboarding()
-      if (!done.success) { setError(done.error || 'Could not finish'); return }
+      if (!done.success) { setError(done.error || t.onboarding.couldNotFinish); return }
       router.push('/')
       router.refresh()
     })
@@ -112,14 +120,14 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
       <div className="k-onb-side">
         <div className="k-onb-brandline">
           <span className="k-auth-mark" style={{ background: 'rgba(255,255,255,.16)', color: '#fff', marginBottom: 0 }} aria-hidden>📚</span>
-          <strong>Lesson Studio</strong>
+          <strong>{t.nav.appName}</strong>
         </div>
 
-        <h2>Let&rsquo;s set up your studio.</h2>
-        <p>Four quick steps and your students get a portal of their own.</p>
+        <h2>{t.onboarding.sideTitle}</h2>
+        <p>{t.onboarding.sideBody}</p>
 
         <ol className="k-onb-steps">
-          {STEPS.map((label, i) => (
+          {t.onboarding.steps.map((label, i) => (
             <li key={label} className={i === step ? 'now' : i < step ? 'done' : ''}>
               <span className="k-onb-dot">{i < step ? '✓' : i + 1}</span>
               {label}
@@ -135,7 +143,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
 
       <div className="k-onb-main">
         <div className="k-onb-card">
-          <span className="k-onb-count">Step {step + 1} of {STEPS.length}</span>
+          <span className="k-onb-count">{fill(t.onboarding.stepCount, { n: step + 1, total: STEP_COUNT })}</span>
 
           {/* ── 1. Language ── */}
           {step === 0 && (
@@ -144,8 +152,8 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   LEARNING is asked when that student is added, where it
                   belongs — these keep only the per-teacher facts, worn as
                   plain words. */}
-              <div className="k-onb-sentence" aria-label="The language you teach">
-                <span>I teach</span>
+              <div className="k-onb-sentence" aria-label={t.onboarding.teachAria}>
+                <span>{t.onboarding.iTeach}</span>
                 <select
                   value={teachingLanguage}
                   onChange={(e) => setTeachingLanguage(e.target.value)}
@@ -159,8 +167,8 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 each student can be switched individually later.
               </p>
 
-              <div className="k-onb-sentence" aria-label="The language your lessons are spoken in">
-                <span>my lessons are mostly spoken in</span>
+              <div className="k-onb-sentence" aria-label={t.onboarding.spokenAria}>
+                <span>{t.onboarding.spokenIn}</span>
                 <select
                   value={spokenLanguage}
                   onChange={(e) => setSpokenLanguage(e.target.value)}
@@ -175,7 +183,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               </p>
 
               <label className="k-field">
-                <span>Your timezone</span>
+                <span>{t.onboarding.timezone}</span>
                 <select className="k-input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
                   {ZONES.map((z) => <option key={z} value={z}>{z.replace('_', ' ')}</option>)}
                 </select>
@@ -186,7 +194,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {/* ── 2. Platform ── */}
           {step === 1 && (
             <>
-              <h1>Where do you meet students?</h1>
+              <h1>{t.onboarding.platformTitle}</h1>
               <p className="k-onb-lead">
                 On Meet or Zoom we create the link when a student books. On a marketplace the lesson already has a
                 room, so we leave the link alone and take it from there.
@@ -195,7 +203,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               <div className="k-choices">
                 {TEACHING_PLATFORMS.map((id) => {
                   const meta = TEACHING_PLATFORM_META[id]
-                  const hint = id === 'zoom' && !zoomConnected ? 'Connect Zoom later in Settings' : meta.hint
+                  const hint = id === 'zoom' && !zoomConnected ? t.onboarding.zoomLater : meta.hint
                   return (
                     <button key={id} type="button" className={`k-choice ${platform === id ? 'sel' : ''}`} onClick={() => setPlatform(id)}>
                       <span className="k-choice-tick" aria-hidden>✓</span>
@@ -209,7 +217,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 <div className="k-onb-ok" style={{ marginTop: 16, background: 'var(--amber-soft)' }}>
                   <span aria-hidden style={{ background: 'var(--amber)' }}>i</span>
                   <div>
-                    <strong>We&rsquo;ll stay out of the lesson itself</strong>
+                    <strong>{t.onboarding.stayOutTitle}</strong>
                     <small>
                       No links created, no bot sent. You record the lesson yourself and the recap, vocabulary and
                       practice are built from that — everything your students see works the same.
@@ -223,7 +231,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {/* ── 3. Calendar — the fork the whole workspace follows ── */}
           {step === 2 && (
             <>
-              <h1>Where do your lessons live?</h1>
+              <h1>{t.onboarding.calendarTitle}</h1>
               <p className="k-onb-lead">
                 {external
                   ? `Some ${TEACHING_PLATFORM_META[platform].label} teachers still keep their week on Google Calendar, and some never leave the platform. Your answer decides what the workspace shows you.`
@@ -250,14 +258,14 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 <div className="k-onb-ok" style={{ marginTop: 16 }}>
                   <span aria-hidden>✓</span>
                   <div>
-                    <strong>Google Calendar connected</strong>
-                    <small>You can pick which calendar holds your lessons in Settings.</small>
+                    <strong>{t.onboarding.googleConnected}</strong>
+                    <small>{t.onboarding.googleConnectedSub}</small>
                   </div>
                 </div>
               ) : (
                 <div style={{ marginTop: 16 }}>
                   <a className="k-btn-block" href="/api/google/auth" style={{ textDecoration: 'none' }}>
-                    Connect Google Calendar
+                    {t.onboarding.connectGoogle}
                   </a>
                   <p className="k-fine" style={{ textAlign: 'left', marginTop: 12 }}>
                     You&rsquo;ll be sent to Google&rsquo;s consent screen and returned here. You can carry on without it,
@@ -271,15 +279,15 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   <div className="k-onb-ok">
                     <span aria-hidden>1</span>
                     <div>
-                      <strong>Record the lesson</strong>
-                      <small>Whatever room you teach in, capture it and hand the recording to Lesson Studio.</small>
+                      <strong>{t.onboarding.recordTitle}</strong>
+                      <small>{t.onboarding.recordBody}</small>
                     </div>
                   </div>
                   <div className="k-onb-ok" style={{ marginTop: 10 }}>
                     <span aria-hidden>2</span>
                     <div>
-                      <strong>Review the recap</strong>
-                      <small>It joins your review queue like any other lesson. Publish it and the student has it.</small>
+                      <strong>{t.onboarding.reviewTitle}</strong>
+                      <small>{t.onboarding.reviewBody}</small>
                     </div>
                   </div>
                   <p className="k-fine" style={{ textAlign: 'left', marginTop: 14 }}>
@@ -294,15 +302,15 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {/* ── 4. Brand ── */}
           {step === 3 && (
             <>
-              <h1>Make it yours</h1>
-              <p className="k-onb-lead">Pick a colour and a name for the portal your students sign in to. You can fine-tune everything later.</p>
+              <h1>{t.onboarding.brandTitle}</h1>
+              <p className="k-onb-lead">{t.onboarding.brandLead}</p>
 
               <label className="k-field">
-                <span>Student portal name</span>
+                <span>{t.onboarding.portalNameLabel}</span>
                 <input
                   value={portalName}
                   onChange={(e) => setPortalName(e.target.value)}
-                  placeholder="e.g. Sakura Japanese"
+                  placeholder={t.onboarding.portalNamePlaceholder}
                   maxLength={40}
                   autoFocus
                 />
@@ -312,7 +320,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 </small>
               </label>
 
-              <span className="k-field-label">Accent colour</span>
+              <span className="k-field-label">{t.onboarding.accent}</span>
               <div className="k-swatches">
                 {ACCENT_PRESETS.map((p) => (
                   <button
@@ -328,8 +336,8 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               </div>
 
               <div className="k-onb-preview" style={{ background: accent }}>
-                <span>{portalName || 'Lesson Studio'}</span>
-                <strong>Learn today, succeed tomorrow!</strong>
+                <span>{portalName || t.nav.appName}</span>
+                <strong>{t.onboarding.previewTagline}</strong>
               </div>
             </>
           )}
@@ -337,7 +345,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {/* ── 5. The recorder ── */}
           {step === 4 && (
             <>
-              <h1>Install the recorder</h1>
+              <h1>{t.onboarding.recorderTitle}</h1>
               <p className="k-onb-lead">
                 This is the part that does the work: a Chrome extension that records your lesson
                 and writes the recap. No bot joins the call, and nothing is installed on your
@@ -356,7 +364,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                 rel="noopener noreferrer"
                 className="k-onb-cta"
               >
-                Add to Chrome — it&rsquo;s free ↗
+                {t.onboarding.addToChrome}
               </a>
 
               <p className="k-onb-fine">
@@ -370,14 +378,14 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {error && <p className="k-error">{error}</p>}
 
           <div className="k-onb-actions">
-            {step > 0 && <button type="button" className="btn btn-ghost" onClick={back} disabled={pending}>Back</button>}
-            {step < STEPS.length - 1 ? (
+            {step > 0 && <button type="button" className="btn btn-ghost" onClick={back} disabled={pending}>{t.common.back}</button>}
+            {step < STEP_COUNT - 1 ? (
               <button type="button" className="k-btn-block" style={{ width: 'auto', marginLeft: 'auto' }} onClick={next} disabled={pending}>
-                {pending ? 'Saving…' : 'Continue'}
+                {pending ? t.common.saving : t.onboarding.continueAction}
               </button>
             ) : (
               <button type="button" className="k-btn-block" style={{ width: 'auto', marginLeft: 'auto' }} onClick={finish} disabled={pending}>
-                {pending ? 'Finishing…' : 'Finish setup'}
+                {pending ? t.onboarding.finishing : t.onboarding.finish}
               </button>
             )}
           </div>
