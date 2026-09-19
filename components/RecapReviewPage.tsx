@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -67,6 +69,7 @@ function PublishOverlay({ pct, label }: { pct: number; label: string }) {
 }
 
 export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; language?: string | null }) {
+  const t = useT()
   const router = useRouter()
   const r = rec.recap || {}
   const [tab, setTab] = useState<Tab>('Progress')
@@ -138,11 +141,11 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
   async function save() {
     setBusy('save'); setMsg('')
     await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
-    setBusy(''); setMsg('Saved ✓')
+    setBusy(''); setMsg(t.recap.savedTick)
   }
   async function approve() {
     setBusy('publish'); setMsg('')
-    setPct(0); step(20, 'Saving your edits…')
+    setPct(0); step(20, t.recap.savingEdits)
 
     await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
 
@@ -163,21 +166,21 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
         for (const item of queue) {
           step(
             72 + Math.round((done / queue.length) * 22),
-            done === 0 && memoRef.current ? 'Uploading your voice memo…' : `Uploading ${item.name}…`,
+            done === 0 && memoRef.current ? t.recap.uploadingMemo : fill(t.recap.uploadingFile, { name: item.name }),
           )
           await uploadPortalFile('teacher-file', res.lessonId, item.blob, item.name)
           done++
         }
       } catch {
         setBusy('')
-        setMsg('Recap sent, but an attachment failed to upload — add it from the lesson page.')
+        setMsg(t.recap.attachmentFailed)
         return
       }
 
       // Links are rows, not uploads, so they are quick — and a material that
       // fails to attach must not cost the teacher a recap that is already sent.
       if (materialsRef.current.length) {
-        step(96, 'Attaching your materials…')
+        step(96, t.recap.attachingMaterials)
         for (const m of materialsRef.current) {
           await attachMaterial(m.id, res.lessonId).catch(() => {})
         }
@@ -192,13 +195,13 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
   }
 
   async function rebuild() {
-    if (!confirm('Rebuild this recap from the recording? This regenerates the summary, sections, homework and fluency metrics, and discards any manual edits.')) return
+    if (!confirm(t.recap.confirmRebuild)) return
     setRebuilding(true); setMsg('')
     const res = await fetch('/api/recap/build', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: rec.eventId, studentName: rec.studentName, lessonDate: rec.lessonDate, lessonTitle: rec.lessonTitle }),
-    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Rebuild failed' }))
-    if (!res.ok) { setRebuilding(false); setMsg(res.error || 'Rebuild failed'); return }
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: t.recap.rebuildFailed }))
+    if (!res.ok) { setRebuilding(false); setMsg(res.error || t.recap.rebuildFailed); return }
     window.location.reload() // pull the freshly generated recap
   }
 
@@ -207,32 +210,32 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
   // taught-language material and every measured number. Unsaved edits would be
   // overwritten by the reload, so they are saved first.
   async function translate(language?: string) {
-    if (!language && !confirm('Translate the explanations in this recap into the language this student is taught through? Example sentences, quotes and scores stay as they are.')) return
+    if (!language && !confirm(t.recap.confirmTranslate)) return
     setRebuilding(true); setMsg('')
     await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
     const res = await fetch('/api/recap/translate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: rec.eventId, language }),
-    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Translation failed' }))
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: t.recap.translationFailed }))
     if (res.needLanguage) {
       setRebuilding(false)
-      const typed = prompt('This student has no explanation language set yet (you can set one on their student page). Translate the explanations into which language?', '')
+      const typed = prompt(t.recap.promptLanguage, '')
       if (typed?.trim()) return translate(typed.trim())
       return
     }
-    if (!res.ok) { setRebuilding(false); setMsg(res.error || 'Translation failed'); return }
+    if (!res.ok) { setRebuilding(false); setMsg(res.error || t.recap.translationFailed); return }
     window.location.reload() // pull the translated recap
   }
 
   async function deleteDraft() {
-    if (!confirm(`Delete ${rec.studentName}'s draft recap? This removes it from Recaps to review and cannot be undone.`)) return
+    if (!confirm(fill(t.recap.confirmDelete, { name: rec.studentName }))) return
     setBusy('delete'); setMsg('')
     const res = await fetch('/api/recap', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: rec.eventId }),
-    }).then((x) => x.json()).catch(() => ({ ok: false, error: 'Could not delete recap' }))
-    if (!res.ok) { setBusy(''); setMsg(res.error || 'Could not delete recap'); return }
+    }).then((x) => x.json()).catch(() => ({ ok: false, error: t.recap.deleteFailed }))
+    if (!res.ok) { setBusy(''); setMsg(res.error || t.recap.deleteFailed); return }
     router.push('/'); router.refresh()
   }
 
@@ -240,7 +243,6 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
   const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : ''
   const m = r.metrics as any
   const vocab: any[] = r.vocabulary || []
-  const label = (t: Tab) => t === 'Lesson' ? 'Recap' : t
 
   return (
     <div className="review-page" style={{ maxWidth: 860 }}>
@@ -248,23 +250,23 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
 
         <div className="page-head" style={{ marginBottom: 16 }}>
           <div>
-            <span className="eyebrow">Review before sending</span>
-            <h2 className="title">{rec.studentName} · Lesson recap</h2>
-            <p className="sub">{rec.lessonTitle || 'Lesson'}{rec.lessonDate ? ` · ${fmtDate(rec.lessonDate)}` : ''} — review each tab, then send it to {first}.</p>
+            <span className="eyebrow">{t.recap.eyebrow}</span>
+            <h2 className="title">{fill(t.recap.title, { name: rec.studentName })}</h2>
+            <p className="sub">{rec.lessonTitle || t.recap.lessonFallback}{rec.lessonDate ? ` · ${fmtDate(rec.lessonDate)}` : ''} — {fill(t.recap.sub, { first })}</p>
           </div>
           <div className="page-actions">
-            <button className="btn btn-ghost btn-sm" disabled={rebuilding} onClick={() => translate()} title="Rewrite the explanations in the student's language — lesson material and scores stay untouched">
-              {rebuilding ? 'Working…' : '🌐 Translate explanations'}
+            <button className="btn btn-ghost btn-sm" disabled={rebuilding} onClick={() => translate()} title={t.recap.translateTitle}>
+              {rebuilding ? t.recap.working : `🌐 ${t.recap.translate}`}
             </button>
-            <button className="btn btn-ghost btn-sm" disabled={rebuilding} onClick={rebuild} title="Regenerate from the recording with the latest AI + metrics">
-              {rebuilding ? 'Rebuilding…' : '↻ Rebuild from recording'}
+            <button className="btn btn-ghost btn-sm" disabled={rebuilding} onClick={rebuild} title={t.recap.rebuildTitle}>
+              {rebuilding ? t.recap.rebuilding : `↻ ${t.recap.rebuild}`}
             </button>
           </div>
         </div>
 
-        <div className="tabs" role="tablist" aria-label="Recap sections">
-          {TABS.map((t) => (
-            <button key={t} role="tab" aria-selected={tab === t} className={`tab ${tab === t ? 'sel' : ''}`} onClick={() => setTab(t)}>{label(t)}</button>
+        <div className="tabs" role="tablist" aria-label={t.recap.tabsAria}>
+          {TABS.map((id, i) => (
+            <button key={id} role="tab" aria-selected={tab === id} className={`tab ${tab === id ? 'sel' : ''}`} onClick={() => setTab(id)}>{t.recap.tabs[i]}</button>
           ))}
         </div>
 
@@ -288,7 +290,7 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
                     between her and the record button. */}
                 {r.audio_script && (
                   <details className="k-askmemo-script">
-                    <summary>Suggested script</summary>
+                    <summary>{t.recap.suggestedScript}</summary>
                     <p>{r.audio_script}</p>
                   </details>
                 )}
@@ -463,10 +465,10 @@ export default function RecapReviewPage({ rec, language }: { rec: DraftRecap; la
 
         <div className="review-actions">
           <span style={{ fontSize: 13, color: 'var(--green)', marginRight: 'auto' }}>{msg}</span>
-          <button className="btn btn-danger-ghost" disabled={busy !== ''} onClick={deleteDraft}>{busy === 'delete' ? 'Deleting...' : 'Delete draft'}</button>
-          <Link href="/" className="btn btn-ghost">Cancel</Link>
-          <button className="btn btn-ghost" disabled={busy !== ''} onClick={save}>{busy === 'save' ? 'Saving…' : 'Save draft'}</button>
-          <button className="btn btn-green" disabled={busy !== ''} onClick={approve}>{busy === 'publish' ? 'Sending…' : 'Approve & send'}</button>
+          <button className="btn btn-danger-ghost" disabled={busy !== ''} onClick={deleteDraft}>{busy === 'delete' ? t.recap.deleting : t.recap.deleteDraft}</button>
+          <Link href="/" className="btn btn-ghost">{t.common.cancel}</Link>
+          <button className="btn btn-ghost" disabled={busy !== ''} onClick={save}>{busy === 'save' ? t.common.saving : t.recap.saveDraft}</button>
+          <button className="btn btn-green" disabled={busy !== ''} onClick={approve}>{busy === 'publish' ? t.recap.sending : t.recap.approve}</button>
         </div>
     </div>
   )

@@ -326,6 +326,60 @@ export const en = {
      */
     packTags: ['Starting out', 'A steady schedule', 'Most popular'],
   },
+  /** components/RecapReviewPage.tsx — the draft a teacher checks before sending. */
+  recap: {
+    /**
+     * DISPLAY labels, indexed to the component's TABS ids. The second reads
+     * "Recap" while its id is 'Lesson' — that mapping used to be a label()
+     * helper in the component, which would have needed a translation path of
+     * its own.
+     */
+    tabs: ['Progress', 'Recap', 'Homework', 'Vocabulary'],
+    tabsAria: 'Recap sections',
+    eyebrow: 'Review before sending',
+    /** {name} is the student's own name and is never translated. */
+    title: '{name} · Lesson recap',
+    lessonFallback: 'Lesson',
+    /** {first} is the student's first name. */
+    sub: 'review each tab, then send it to {first}.',
+
+    translate: 'Translate explanations',
+    translateTitle:
+      'Rewrite the explanations in the student’s language — lesson material and scores stay untouched',
+    working: 'Working…',
+    rebuild: 'Rebuild from recording',
+    rebuildTitle: 'Regenerate from the recording with the latest AI + metrics',
+    rebuilding: 'Rebuilding…',
+
+    deleteDraft: 'Delete draft',
+    deleting: 'Deleting…',
+    saveDraft: 'Save draft',
+    approve: 'Approve & send',
+    sending: 'Sending…',
+    savedTick: 'Saved ✓',
+
+    confirmRebuild:
+      'Rebuild this recap from the recording? This regenerates the summary, sections, homework and fluency metrics, and discards any manual edits.',
+    confirmTranslate:
+      'Translate the explanations in this recap into the language this student is taught through? Example sentences, quotes and scores stay as they are.',
+    /** {name} is the student's own name. */
+    confirmDelete:
+      'Delete {name}’s draft recap? This removes it from Recaps to review and cannot be undone.',
+    promptLanguage:
+      'This student has no explanation language set yet (you can set one on their student page). Translate the explanations into which language?',
+
+    rebuildFailed: 'Rebuild failed',
+    translationFailed: 'Translation failed',
+    deleteFailed: 'Could not delete recap',
+    savingEdits: 'Saving your edits…',
+    uploadingMemo: 'Uploading your voice memo…',
+    /** {name} is the file's own name. */
+    uploadingFile: 'Uploading {name}…',
+    attachingMaterials: 'Attaching your materials…',
+    attachmentFailed:
+      'Recap sent, but an attachment failed to upload — add it from the lesson page.',
+    suggestedScript: 'Suggested script',
+  },
 } as const
 
 /**
