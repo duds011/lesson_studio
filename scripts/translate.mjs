@@ -1,5 +1,5 @@
 /**
- * Translate lib/i18n/messages/en.ts into the other six languages.
+ * Translate lib/i18n/messages/en.ts into French and Japanese.
  *
  * Ported from the marketing site's copy of this script, which is the only
  * duplication here that earns itself: the two apps have separate dictionaries
@@ -26,13 +26,13 @@ import { en } from "../lib/i18n/messages/en"
 
 const MODEL = "gpt-4.1"
 
+/**
+ * Fewer than the marketing site's six, on purpose — see lib/i18n/config.ts.
+ * Adding one is a line here plus a line in LOCALES and index.ts.
+ */
 const LANGS = {
-  es: "Spanish (Spain — neutral enough for Latin America)",
-  pt: "Portuguese (European Portuguese, understandable in Brazil)",
   fr: "French (France)",
   ja: "Japanese",
-  de: "German (Germany)",
-  it: "Italian (Italy)",
 }
 
 /** Names that must survive untranslated, and the reason is search results. */

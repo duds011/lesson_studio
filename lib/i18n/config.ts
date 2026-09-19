@@ -1,17 +1,25 @@
 /**
  * The languages the app's interface is written in.
  *
- * The same seven as kokulabs.net, and that is the point: a teacher who read
- * the site in French and then signs up should not arrive in English. Matching
- * the site also means one translation pipeline and one list to extend.
+ * Three, deliberately fewer than the marketing site's seven, and the
+ * asymmetry is the point rather than an oversight. A sales page is written
+ * once and changes a few times a year; app chrome changes every time a button
+ * gets a better label, and each of those edits is a re-translation of every
+ * language before it can ship. Seven files of that is a tax on every future
+ * copy change, paid before anyone has asked for Spanish.
  *
- * Seven is NOT the same number as the twenty-seven in lib/languages.ts. That
- * list is what a lesson can be taught and written up in — content the model
- * generates. This list is chrome somebody has to keep true by hand every time
- * a button changes its label. Conflating the two would promise a Thai student
- * a Thai interface because their recaps are in Thai.
+ * English, French and Japanese because those are the ones with a real reader
+ * today. Adding a language is: put it in this list and LOCALE_NAMES, map any
+ * teaching language onto it below, run scripts/translate.mjs, import it in
+ * index.ts. Four small edits and no migration — the column takes a wider set
+ * than this list on purpose.
+ *
+ * Three is NOT the twenty-seven in lib/languages.ts. That list is what a
+ * lesson can be taught and written up in — content the model generates. This
+ * is chrome somebody keeps true by hand. Conflating the two would promise a
+ * Thai student a Thai interface because their recaps are in Thai.
  */
-export const LOCALES = ['en', 'es', 'pt', 'fr', 'ja', 'de', 'it'] as const
+export const LOCALES = ['en', 'fr', 'ja'] as const
 
 export type Locale = (typeof LOCALES)[number]
 
@@ -26,12 +34,8 @@ export const DEFAULT_LOCALE: Locale = 'en'
  */
 export const LOCALE_NAMES: Record<Locale, string> = {
   en: 'English',
-  es: 'Español',
-  pt: 'Português',
   fr: 'Français',
   ja: '日本語',
-  de: 'Deutsch',
-  it: 'Italiano',
 }
 
 export function isLocale(v: unknown): v is Locale {
@@ -46,18 +50,15 @@ export function isLocale(v: unknown): v is Locale {
  * in — the language they read most comfortably — so the chrome around the
  * recap should follow it rather than ask the same question twice.
  *
- * Only the seven we have an interface for appear here. A student who reads
- * Thai gets Thai recaps and an English portal, which is the honest state of
- * affairs; adding Thai here without a messages/th.ts would just crash.
+ * Only the three we have an interface for appear here. A student who reads
+ * Spanish gets Spanish recaps and an English portal, which is the honest
+ * state of affairs today; adding a name here without a matching messages
+ * file would just hand getDict a locale it cannot serve.
  */
 const TEACHING_LANGUAGE_LOCALE: Record<string, Locale> = {
   English: 'en',
-  Spanish: 'es',
-  Portuguese: 'pt',
   French: 'fr',
   Japanese: 'ja',
-  German: 'de',
-  Italian: 'it',
 }
 
 export function localeForTeachingLanguage(name?: string | null): Locale | null {

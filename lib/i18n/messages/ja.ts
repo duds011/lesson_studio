@@ -11,7 +11,7 @@ export const ja: Messages = {
   "common": {
     "save": "保存",
     "saving": "保存中…",
-    "saved": "保存しました",
+    "saved": "保存済み",
     "cancel": "キャンセル",
     "close": "閉じる",
     "delete": "削除",
@@ -20,15 +20,15 @@ export const ja: Messages = {
     "next": "次へ",
     "done": "完了",
     "loading": "読み込み中…",
-    "retry": "再試行",
+    "retry": "もう一度試す",
     "signOut": "サインアウト",
-    "somethingWrong": "問題が発生しました。しばらくしてから再試行してください。"
+    "somethingWrong": "問題が発生しました。少し待ってからもう一度お試しください。"
   },
   "nav": {
     "appName": "Lesson Studio",
-    "workspace": "教師用ワークスペース",
-    "overviewAria": "Lesson Studio 概要",
-    "navAria": "教師用ワークスペースのナビゲーション",
+    "workspace": "講師ワークスペース",
+    "overviewAria": "Lesson Studio概要",
+    "navAria": "講師ワークスペースのナビゲーション",
     "openMenu": "メニューを開く",
     "closeMenu": "メニューを閉じる",
     "expand": "ナビゲーションを展開",
@@ -39,12 +39,12 @@ export const ja: Messages = {
     "students": "生徒",
     "notes": "ノート",
     "materials": "教材",
-    "studentView": "生徒ビュー",
+    "studentView": "生徒用画面",
     "payments": "支払い",
-    "availability": "空き状況",
+    "availability": "スケジュール",
     "settings": "設定",
     "calendarConnected": "カレンダー接続済み",
-    "setupNeeded": "セットアップが必要です",
+    "setupNeeded": "設定が必要です",
     "recordingsOnly": "録音のみ",
     "studentPortal": "生徒用ポータル"
   }

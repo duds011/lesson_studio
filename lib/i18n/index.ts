@@ -1,11 +1,7 @@
 import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from './config'
 import { en, type Messages } from './messages/en'
-import { es } from './messages/es'
-import { pt } from './messages/pt'
 import { fr } from './messages/fr'
 import { ja } from './messages/ja'
-import { de } from './messages/de'
-import { it } from './messages/it'
 
 /**
  * The interface copy for one language.
@@ -21,7 +17,7 @@ import { it } from './messages/it'
  * still standing in, instead of that being something you find out from a
  * screenshot.
  */
-const DICTS: Partial<Record<Locale, Messages>> = { en, es, pt, fr, ja, de, it }
+const DICTS: Partial<Record<Locale, Messages>> = { en, fr, ja }
 
 export function getDict(locale?: string | null): Messages {
   if (!isLocale(locale)) return DICTS[DEFAULT_LOCALE]!

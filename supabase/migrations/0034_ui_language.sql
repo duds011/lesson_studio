@@ -15,11 +15,17 @@ alter table public.profiles
   add column if not exists ui_language text;
 
 comment on column public.profiles.ui_language is
-  'Interface locale (en/es/pt/fr/ja/de/it). Null = follow the browser. Not the recap language — that is students.instruction_language.';
+  'Interface locale. Shipping en/fr/ja; the check allows more so adding one needs no migration. Null = follow the browser. Not the recap language — that is students.instruction_language.';
 
--- Only a language the interface is actually built in. Free text here would
--- reach getDict and silently fall back to English, which looks like a bug
--- rather than an unsupported language.
+-- A guard against garbage, NOT a copy of the product decision.
+--
+-- The app ships three interfaces today (en/fr/ja) and the server action
+-- validates against that list, so nothing else can get in through the UI.
+-- This constraint stays wider so that adding a language later is four edits
+-- in TypeScript and a translate run, with no schema change and no deploy
+-- ordering to think about. A value in here that the app cannot render falls
+-- back to English rather than breaking — see the Partial DICTS in
+-- lib/i18n/index.ts.
 alter table public.profiles
   drop constraint if exists profiles_ui_language_check;
 
