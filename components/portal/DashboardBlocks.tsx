@@ -167,7 +167,7 @@ export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): bo
  * only works in one of them and getDict needs a locale nobody here has, so
  * the caller — which knows whose screen this is — hands the words in.
  */
-export function DashboardBlock({ id, brand, data: d, copy, preview, onRemoveStat, onRemoveSpeak }: { id: BlockId; brand: Brand; data: DashboardData; copy: Messages['portal'] } & Mode) {
+export function DashboardBlock({ id, brand, data: d, copy, dict, preview, onRemoveStat, onRemoveSpeak }: { id: BlockId; brand: Brand; data: DashboardData; copy: Messages['portal']; dict: Messages } & Mode) {
   const L = brand.labels
   const milestone = levelProgress(brand.levels, d.lessonCount)
 
@@ -312,7 +312,7 @@ export function DashboardBlock({ id, brand, data: d, copy, preview, onRemoveStat
       return (
         <>
           <div className="k-sec-head"><h2>{L.lessonsTitle}</h2><span className="k-link">{fill(copy.inAll, { n: d.pillarLessons.length })}</span></div>
-          <LessonPillar lessons={d.pillarLessons} preview={preview} />
+          <LessonPillar lessons={d.pillarLessons} preview={preview} t={dict} />
         </>
       )
 

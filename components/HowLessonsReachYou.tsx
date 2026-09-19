@@ -1,14 +1,10 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useEffect, useState } from 'react'
 
 const KEY = 'ls.howLessonsReachYou.dismissed'
-
-const STEPS: [string, string][] = [
-  ['Record the lesson', 'Use the browser recorder, or upload the file your platform gives you.'],
-  ['We build the recap', 'Summary, vocabulary, corrections and practice, drafted from the transcript.'],
-  ['You review and publish', 'Edit anything, then send it — the student sees it in their portal.'],
-]
 
 /**
  * The three-step explainer at the top of the overview, with a way out.
@@ -23,6 +19,7 @@ const STEPS: [string, string][] = [
  * dismissed it every single time they load the page.
  */
 export default function HowLessonsReachYou({ platformLabel }: { platformLabel: string }) {
+  const t = useT()
   const [state, setState] = useState<'unknown' | 'show' | 'hidden'>('unknown')
 
   useEffect(() => {
@@ -47,15 +44,12 @@ export default function HowLessonsReachYou({ platformLabel }: { platformLabel: s
       <div className="k-sec-head">
         <span className="k-sec-icon" aria-hidden>🎙️</span>
         <div>
-          <h3>How lessons reach you</h3>
-          <p className="desc">
-            You teach in {platformLabel}, so nothing is scheduled here. A lesson enters Lesson Studio
-            the moment its recording does.
-          </p>
+          <h3>{t.misc.howTitle}</h3>
+          <p className="desc">{fill(t.misc.howLead, { platform: platformLabel })}</p>
         </div>
       </div>
 
-      {STEPS.map(([title, note], i) => (
+      {t.misc.howSteps.map(({ title, body: note }, i) => (
         <div key={title} className="k-onb-ok" style={i > 0 ? { marginTop: 10 } : undefined}>
           <span aria-hidden>{i + 1}</span>
           <div><strong>{title}</strong><small>{note}</small></div>

@@ -1,3 +1,4 @@
+import type { Messages } from '@/lib/i18n'
 import Link from 'next/link'
 
 export type PillarLesson = {
@@ -13,11 +14,11 @@ export type PillarLesson = {
 
 /** The student's lessons, stacked earliest first. `preview` is the branding
  *  studio's canvas, where nothing should navigate. */
-export default function LessonPillar({ lessons, preview }: { lessons: PillarLesson[]; preview?: boolean }) {
+export default function LessonPillar({ lessons, preview, t }: { lessons: PillarLesson[]; preview?: boolean; t: Messages }) {
   if (lessons.length === 0) {
     return (
       <div className="k-empty">
-        <strong style={{ color: 'var(--ink)' }}>No lessons yet</strong>
+        <strong style={{ color: 'var(--ink)' }}>{t.misc.noLessonsYet}</strong>
         <br />
         Your lessons will appear here once your teacher publishes them.
       </div>

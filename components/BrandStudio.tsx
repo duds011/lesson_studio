@@ -927,7 +927,7 @@ export default function BrandStudio({ initial, teacherName, teachingLanguage }: 
                             >✕</button>
                           </>
                         )}
-                        <DashboardBlock id={id} brand={brand} data={sample.data} copy={t.portal} preview onRemoveStat={removeStat} onRemoveSpeak={removeSpeak} />
+                        <DashboardBlock id={id} brand={brand} data={sample.data} copy={t.portal} dict={t} preview onRemoveStat={removeStat} onRemoveSpeak={removeSpeak} />
                       </div>
                     )
                   })}

@@ -1100,6 +1100,8 @@ export const en = {
 
     /** components/HowLessonsReachYou.tsx */
     howTitle: 'How lessons reach you',
+    /** {platform} is a marketplace name — Preply, italki — never translated. */
+    howLead: 'You teach in {platform}, so nothing is scheduled here. A lesson enters Lesson Studio the moment its recording does.',
     howSteps: [
       { title: 'Record the lesson', body: 'Use the browser recorder, or upload the file your platform gives you.' },
       { title: 'We build the recap', body: 'Summary, vocabulary, corrections and practice, drafted from the transcript.' },

@@ -1,7 +1,7 @@
 'use client'
 
 import { LOCALES, LOCALE_COOKIE, LOCALE_NAMES, type Locale } from '@/lib/i18n/config'
-import { useLocale } from '@/components/I18nProvider'
+import { useLocale, useT } from '@/components/I18nProvider'
 
 /**
  * The language control for pages nobody is signed in to.
@@ -22,6 +22,7 @@ import { useLocale } from '@/components/I18nProvider'
  */
 export default function LocaleSwitch() {
   const current = useLocale()
+  const t = useT()
 
   function pick(l: Locale) {
     if (l === current) return
@@ -32,7 +33,7 @@ export default function LocaleSwitch() {
   }
 
   return (
-    <div className="k-auth-lang" role="group" aria-label="Language">
+    <div className="k-auth-lang" role="group" aria-label={t.misc.languageGroup}>
       {LOCALES.map((l) => (
         <button
           key={l}

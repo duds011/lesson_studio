@@ -432,7 +432,7 @@ export default async function StudentDashboard() {
           label,
           content: placements.map(({ id: blockId, w }) => (
             <div key={blockId} style={{ ['--w' as any]: w }}>
-              <DashboardBlock id={blockId} brand={brand} data={data} copy={copy} />
+              <DashboardBlock id={blockId} brand={brand} data={data} copy={copy} dict={getDict(locale)} />
             </div>
           )),
         }))}
