@@ -705,6 +705,64 @@ export const en = {
     ],
     skip: 'Skip tour',
   },
+  /** components/LanguagesPanel.tsx — Settings → Languages. */
+  languages: {
+    couldNotSave: 'Could not save',
+    title: 'Your languages',
+    desc: 'What you teach, and what your lessons are spoken in. New students start from these.',
+    youTeach: 'Language you teach',
+    spokenIn: 'Language your lessons are spoken in',
+    fitTitle: 'How languages fit together',
+    fitDesc: 'Three settings, three different jobs.',
+    /** {n} is how many teaching languages lib/languages.ts supports. */
+    fitLearning:
+      '**Each student’s “Learning” language** decides how their recaps and tests are generated — {n} are supported, from Japanese and Korean to Spanish and Arabic. Set when you add the student, changeable on their page.',
+    fitExplained:
+      '**Each student’s “Explained in” language** is what their recap text and test instructions are written in — English unless you change it, also on their page.',
+    fitSpoken:
+      '**Each student’s “Spoken in lessons” language** is what the recorder’s transcriber listens for during the hour. It follows your answer above until you change it on their page — the recorder no longer asks, because the answer does not change from one lesson to the next.',
+  },
+
+  /** components/NotesManager.tsx — the teaching diary grid. */
+  notes: {
+    pickStudent: 'Pick a student',
+    empty: 'The note is empty',
+    couldNotSave: 'Could not save the note',
+    confirmDelete: 'Delete this note?',
+    hoursTaught: 'Hours taught',
+    recapsPublished: 'Recaps published',
+    prevMonth: 'Previous month',
+    nextMonth: 'Next month',
+    today: 'Today',
+    noStudents: 'No students yet',
+    student: 'Student',
+    addNote: 'Add note',
+    newNote: 'New note',
+    editNote: 'Edit note',
+  },
+
+  /** components/ExerciseEditor.tsx — the teacher editing a recap's practice. */
+  exercises: {
+    none: 'No exercises yet — add your own below.',
+    instruction: 'Instruction',
+    instructionPlaceholder: 'What the student is asked to do',
+    focus: 'Focus',
+    focusPlaceholder: 'What the sentences drill',
+    sentence: 'Sentence',
+    meaning: 'Meaning',
+    removeSentence: 'Remove sentence',
+    removeOption: 'Remove option',
+    questionTarget: 'Question (target language)',
+    question: 'Question',
+    /*
+     * The default prompts for a new exercise ("Read these sentences aloud")
+     * are deliberately NOT here. They are seeded into the recap and end up on
+     * the student's page, so they are content and follow the student's recap
+     * language — not chrome, which follows whoever is looking at the screen.
+     * Translating them here would make a recap's wording depend on which
+     * language the teacher happened to have the app in.
+     */
+  },
 } as const
 
 /**

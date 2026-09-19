@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -54,6 +55,7 @@ export default function NotesManager({
   /** Published lessons per YYYY-MM, from the lessons table — the recorded count. */
   lessonsThisMonthByPrefix: Record<string, number>
 }) {
+  const t = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -134,21 +136,21 @@ export default function NotesManager({
   }
 
   function handleSubmit() {
-    if (mode === 'add' && !studentId) { setError('Pick a student'); return }
-    if (!content.trim()) { setError('The note is empty'); return }
+    if (mode === 'add' && !studentId) { setError(t.notes.pickStudent); return }
+    if (!content.trim()) { setError(t.notes.empty); return }
     startTransition(async () => {
       const res = editing
         ? await updateStudentNote(editing.id, editing.studentId, content, noteDate)
         : await addStudentNote(studentId, content, noteDate)
       if (res.success) { closeModal(); router.refresh() }
-      else setError(res.error || 'Could not save the note')
+      else setError(res.error || t.notes.couldNotSave)
     })
   }
   function handleTogglePin(n: ManagedNote) {
     startTransition(async () => { await toggleNotePin(n.id, n.studentId, !n.pinned); router.refresh() })
   }
   function handleDelete(n: ManagedNote) {
-    if (!confirm('Delete this note?')) return
+    if (!confirm(t.notes.confirmDelete)) return
     startTransition(async () => { await deleteStudentNote(n.id, n.studentId); closeModal(); setDayCell(null); router.refresh() })
   }
 
@@ -164,12 +166,12 @@ export default function NotesManager({
           <p className="stat-card-note">one note = one lesson</p>
         </div>
         <div className="stat-card" style={{ minHeight: 0, gap: 7 }}>
-          <span className="stat-card-label">Hours taught</span>
+          <span className="stat-card-label">{t.notes.hoursTaught}</span>
           <span className="stat-card-value">{formatHours((monthNotes * LESSON_MINUTES) / 60)}</span>
           <p className="stat-card-note">{LESSON_MINUTES} min per lesson</p>
         </div>
         <div className="stat-card" style={{ minHeight: 0, gap: 7 }}>
-          <span className="stat-card-label">Recaps published</span>
+          <span className="stat-card-label">{t.notes.recapsPublished}</span>
           <span className="stat-card-value">{recordedLessons}</span>
           <p className="stat-card-note">recorded lessons this month</p>
         </div>
@@ -178,11 +180,11 @@ export default function NotesManager({
       {/* Toolbar: month nav + add */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <button onClick={prevMonth} className="btn btn-ghost btn-sm" aria-label="Previous month">←</button>
+          <button onClick={prevMonth} className="btn btn-ghost btn-sm" aria-label={t.notes.prevMonth}>←</button>
           <span style={{ fontWeight: 800, minWidth: 150, textAlign: 'center' }}>{monthLabel}</span>
-          <button onClick={nextMonth} className="btn btn-ghost btn-sm" aria-label="Next month">→</button>
+          <button onClick={nextMonth} className="btn btn-ghost btn-sm" aria-label={t.notes.nextMonth}>→</button>
         </div>
-        <button onClick={() => { setViewYear(now.getFullYear()); setViewMonth(now.getMonth()) }} className="btn btn-ghost btn-sm">Today</button>
+        <button onClick={() => { setViewYear(now.getFullYear()); setViewMonth(now.getMonth()) }} className="btn btn-ghost btn-sm">{t.notes.today}</button>
         <span style={{ fontSize: 12, color: 'var(--muted)' }}>{monthNotes} note{monthNotes === 1 ? '' : 's'} this month</span>
         <button onClick={() => openAdd()} className="btn btn-primary btn-sm" style={{ marginLeft: 'auto' }}>+ Add note</button>
       </div>
@@ -190,7 +192,7 @@ export default function NotesManager({
       {/* The grid: students down, days across */}
       {students.length === 0 ? (
         <div className="empty">
-          <strong style={{ color: 'var(--ink)' }}>No students yet</strong>
+          <strong style={{ color: 'var(--ink)' }}>{t.notes.noStudents}</strong>
           <br />
           Add students first to start taking notes.
         </div>
@@ -199,7 +201,7 @@ export default function NotesManager({
           <table className="notes-grid">
             <thead>
               <tr>
-                <th className="notes-name-col">Student</th>
+                <th className="notes-name-col">{t.notes.student}</th>
                 {days.map((d) => (
                   <th key={d.iso} className={`${d.iso === today ? 'is-today' : ''} ${d.weekend ? 'is-weekend' : ''}`}>
                     <div className="notes-day">{d.day}</div>
@@ -222,7 +224,7 @@ export default function NotesManager({
                       <td key={d.iso} className={d.weekend && !has ? 'is-weekend' : ''}>
                         <button
                           onClick={() => handleCellClick(s.id, s.fullName, d.iso)}
-                          title={has ? cellNotes[0].content : 'Add note'}
+                          title={has ? cellNotes[0].content : t.notes.addNote}
                           className={`notes-cell ${has ? (pinned ? 'has-pin' : 'has-note') : ''}`}
                         >
                           {has
@@ -253,7 +255,7 @@ export default function NotesManager({
                 <h3 style={{ margin: 0 }}>{dayCell.name}</h3>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--muted)' }}>{fmtFullDate(dayCell.date)}</p>
               </div>
-              <button className="close-btn" onClick={() => setDayCell(null)} aria-label="Close">✕</button>
+              <button className="close-btn" onClick={() => setDayCell(null)} aria-label={t.common.close}>✕</button>
             </div>
 
             <div style={{ display: 'grid', gap: 10 }}>
@@ -263,7 +265,7 @@ export default function NotesManager({
                   <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(n)}>Edit</button>
                     <button className="btn btn-ghost btn-sm" disabled={pending} onClick={() => handleTogglePin(n)}>{n.pinned ? 'Unpin' : 'Pin'}</button>
-                    <button className="btn btn-danger-ghost btn-sm" disabled={pending} onClick={() => handleDelete(n)}>Delete</button>
+                    <button className="btn btn-danger-ghost btn-sm" disabled={pending} onClick={() => handleDelete(n)}>{t.common.delete}</button>
                   </div>
                 </div>
               ))}
@@ -281,8 +283,8 @@ export default function NotesManager({
         <div className="modal-scrim" onClick={closeModal}>
           <div className="modal-card" style={{ maxWidth: 460, padding: 22 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ margin: 0 }}>{mode === 'add' ? 'New note' : 'Edit note'}</h3>
-              <button className="close-btn" onClick={closeModal} aria-label="Close">✕</button>
+              <h3 style={{ margin: 0 }}>{mode === 'add' ? t.notes.newNote : t.notes.editNote}</h3>
+              <button className="close-btn" onClick={closeModal} aria-label={t.common.close}>✕</button>
             </div>
 
             <div style={{ display: 'grid', gap: 12 }}>

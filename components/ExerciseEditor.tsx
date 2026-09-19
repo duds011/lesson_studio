@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+
 /**
  * Editing the generated exercises during recap review.
  *
@@ -42,6 +44,7 @@ export default function ExerciseEditor({ exercises, onChange }: {
   exercises: Exercise[]
   onChange: (next: Exercise[]) => void
 }) {
+  const t = useT()
   const patch = (i: number, next: Partial<Exercise>) =>
     onChange(exercises.map((e, j) => (j === i ? { ...e, ...next } : e)))
   const patchData = (i: number, data: any) => patch(i, { data: { ...exercises[i].data, ...data } })
@@ -50,7 +53,7 @@ export default function ExerciseEditor({ exercises, onChange }: {
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
-      {exercises.length === 0 && <p className="analytics-note">No exercises yet — add your own below.</p>}
+      {exercises.length === 0 && <p className="analytics-note">{t.exercises.none}</p>}
       {exercises.map((ex, i) => (
         <div key={i} className="ex-card" style={{ position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -69,25 +72,25 @@ export default function ExerciseEditor({ exercises, onChange }: {
           {/* Speaking exercises show their instruction line to the student;
               the graded types already edit it as the question. */}
           {(ex.type === 'read_aloud' || ex.type === 'speak') && (
-            <div style={{ marginBottom: 8 }}><span style={label}>Instruction</span>
-              <input style={input} value={ex.prompt ?? ''} onChange={(e) => patch(i, { prompt: e.target.value })} placeholder="What the student is asked to do" /></div>
+            <div style={{ marginBottom: 8 }}><span style={label}>{t.exercises.instruction}</span>
+              <input style={input} value={ex.prompt ?? ''} onChange={(e) => patch(i, { prompt: e.target.value })} placeholder={t.exercises.instructionPlaceholder} /></div>
           )}
 
           {ex.type === 'read_aloud' && (
             <div style={{ display: 'grid', gap: 8 }}>
-              <div><span style={label}>Focus</span>
-                <input style={input} value={ex.data?.focus ?? ''} onChange={(e) => patchData(i, { focus: e.target.value })} placeholder="What the sentences drill" /></div>
+              <div><span style={label}>{t.exercises.focus}</span>
+                <input style={input} value={ex.data?.focus ?? ''} onChange={(e) => patchData(i, { focus: e.target.value })} placeholder={t.exercises.focusPlaceholder} /></div>
               {(ex.data?.sentences ?? []).map((s: any, si: number) => (
                 <div key={si} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 6 }}>
                   <input style={input} value={s.jp ?? ''} onChange={(e) => {
                     const sentences = [...ex.data.sentences]; sentences[si] = { ...s, jp: e.target.value }; patchData(i, { sentences })
-                  }} placeholder="Sentence" />
+                  }} placeholder={t.exercises.sentence} />
                   <input style={input} value={s.en ?? ''} onChange={(e) => {
                     const sentences = [...ex.data.sentences]; sentences[si] = { ...s, en: e.target.value }; patchData(i, { sentences })
-                  }} placeholder="Meaning" />
+                  }} placeholder={t.exercises.meaning} />
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => {
                     patchData(i, { sentences: ex.data.sentences.filter((_: any, sj: number) => sj !== si) })
-                  }} aria-label="Remove sentence">✕</button>
+                  }} aria-label={t.exercises.removeSentence}>✕</button>
                 </div>
               ))}
               <button type="button" className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }}
@@ -99,9 +102,9 @@ export default function ExerciseEditor({ exercises, onChange }: {
 
           {ex.type === 'speak' && (
             <div style={{ display: 'grid', gap: 8 }}>
-              <div><span style={label}>Question (target language)</span>
+              <div><span style={label}>{t.exercises.questionTarget}</span>
                 <input style={input} value={ex.data?.prompt_jp ?? ''} onChange={(e) => patchData(i, { prompt_jp: e.target.value })} /></div>
-              <div><span style={label}>Meaning</span>
+              <div><span style={label}>{t.exercises.meaning}</span>
                 <input style={input} value={ex.data?.prompt_en ?? ''} onChange={(e) => patchData(i, { prompt_en: e.target.value })} /></div>
               <div><span style={label}>Hint</span>
                 <input style={input} value={ex.data?.hint ?? ''} onChange={(e) => patchData(i, { hint: e.target.value })} /></div>
@@ -110,7 +113,7 @@ export default function ExerciseEditor({ exercises, onChange }: {
 
           {ex.type === 'multiple_choice' && (
             <div style={{ display: 'grid', gap: 8 }}>
-              <div><span style={label}>Question</span>
+              <div><span style={label}>{t.exercises.question}</span>
                 <input style={input} value={ex.data?.question ?? ex.prompt ?? ''} onChange={(e) => patchData(i, { question: e.target.value })} /></div>
               {(ex.data?.options ?? []).map((o: string, oi: number) => (
                 <div key={oi} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -129,7 +132,7 @@ export default function ExerciseEditor({ exercises, onChange }: {
                     const answer = ex.data?.answer ?? 0
                     // Deleting the correct option leaves the first as correct.
                     patchData(i, { options, answer: answer === oi ? 0 : answer > oi ? answer - 1 : answer })
-                  }} aria-label="Remove option">✕</button>
+                  }} aria-label={t.exercises.removeOption}>✕</button>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -147,7 +150,7 @@ export default function ExerciseEditor({ exercises, onChange }: {
                 <div><span style={label}>After the gap</span>
                   <input style={input} value={ex.data?.after ?? ''} onChange={(e) => patchData(i, { after: e.target.value })} /></div>
               </div>
-              <div><span style={label}>Meaning</span>
+              <div><span style={label}>{t.exercises.meaning}</span>
                 <input style={input} value={ex.data?.en ?? ''} onChange={(e) => patchData(i, { en: e.target.value })} /></div>
               {(ex.data?.options ?? []).map((o: string, oi: number) => (
                 <div key={oi} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -169,7 +172,7 @@ export default function ExerciseEditor({ exercises, onChange }: {
                     const options = ex.data.options.filter((_: string, oj: number) => oj !== oi)
                     // Deleting the correct option leaves no answer picked yet.
                     patchData(i, { options, answer: (ex.data?.answer ?? '') === o ? '' : ex.data?.answer })
-                  }} aria-label="Remove option">✕</button>
+                  }} aria-label={t.exercises.removeOption}>✕</button>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

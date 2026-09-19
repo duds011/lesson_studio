@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill, rich } from '@/lib/i18n'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveOnboarding } from '@/app/actions/onboarding'
@@ -15,6 +17,7 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
   teachingLanguage: string | null
   speakingLanguage: string | null
 }) {
+  const t = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [teach, setTeach] = useState(teachingLanguage ?? '')
@@ -26,7 +29,7 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
     startTransition(async () => {
       setError(''); setSaved(false)
       const res = await saveOnboarding(patch)
-      if (!res.success) { setError(res.error || 'Could not save'); return }
+      if (!res.success) { setError(res.error || t.languages.couldNotSave); return }
       setSaved(true)
       router.refresh()
     })
@@ -37,14 +40,14 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
         <div className="k-sec-head">
           <span className="k-sec-icon" aria-hidden>🌍</span>
           <div>
-            <h3>Your languages</h3>
-            <p className="desc">What you teach, and what your lessons are spoken in. New students start from these.</p>
+            <h3>{t.languages.title}</h3>
+            <p className="desc">{t.languages.desc}</p>
           </div>
         </div>
 
         <div style={{ display: 'grid', gap: 14, maxWidth: 460 }}>
           <label className="k-field">
-            <span>Language you teach</span>
+            <span>{t.languages.youTeach}</span>
             <select
               className="k-input"
               value={teach}
@@ -61,7 +64,7 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
           </p>
 
           <label className="k-field">
-            <span>Language your lessons are spoken in</span>
+            <span>{t.languages.spokenIn}</span>
             <select
               className="k-input"
               value={speak}
@@ -90,16 +93,16 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
         <div className="k-sec-head">
           <span className="k-sec-icon b" aria-hidden>🧭</span>
           <div>
-            <h3>How languages fit together</h3>
-            <p className="desc">Three settings, three different jobs.</p>
+            <h3>{t.languages.fitTitle}</h3>
+            <p className="desc">{t.languages.fitDesc}</p>
           </div>
         </div>
         <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8, fontSize: 13.5, color: 'var(--ink)' }}>
           {/* A count, not the list. Naming all three read well; naming all
               twenty-seven is a paragraph of commas inside a bullet. */}
-          <li><strong>Each student&rsquo;s &ldquo;Learning&rdquo; language</strong> decides how their recaps and tests are generated — {TEACHING_LANGUAGES.length} are supported, from Japanese and Korean to Spanish and Arabic. Set when you add the student, changeable on their page.</li>
-          <li><strong>Each student&rsquo;s &ldquo;Explained in&rdquo; language</strong> is what their recap text and test instructions are written in — English unless you change it, also on their page.</li>
-          <li><strong>Each student&rsquo;s &ldquo;Spoken in lessons&rdquo; language</strong> is what the recorder&rsquo;s transcriber listens for during the hour. It follows your answer above until you change it on their page — the recorder no longer asks, because the answer does not change from one lesson to the next.</li>
+          <li>{rich(fill(t.languages.fitLearning, { n: TEACHING_LANGUAGES.length }))}</li>
+          <li>{rich(t.languages.fitExplained)}</li>
+          <li>{rich(t.languages.fitSpoken)}</li>
         </ul>
       </section>
     </>
