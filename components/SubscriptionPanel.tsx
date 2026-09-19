@@ -1,5 +1,5 @@
 import type { RecapUsage } from '@/lib/recap-quota'
-import { PACKS, TRIAL_RECAPS, perRecap } from '@/lib/plans'
+import { PACKS, TRIAL_RECAPS, savingPct } from '@/lib/plans'
 import BillingButton from '@/components/BillingButton'
 
 /**
@@ -63,8 +63,8 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
           <div>
             <h3>Add write-ups</h3>
             <p className="desc">
-              One payment, no renewal. A bigger pack costs a little less each — but the small one is
-              not a penalty, and whatever you buy is yours until you use it.
+              One payment, no renewal. Bigger packs cost less — but the small one is not a
+              penalty, and whatever you buy is yours until you use it.
             </p>
           </div>
         </div>
@@ -77,7 +77,10 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
               <p className="k-pack-unit">lessons written up</p>
               <p className="k-pack-price">
                 ${pack.price}
-                <span> · {perRecap(pack)} each</span>
+                {/* A saving, never a price per write-up. The unit price is an
+                    invitation to compare against somebody else's unit price;
+                    a saving is a fact about this offer alone. */}
+                {savingPct(pack) !== null && <span> · save {savingPct(pack)}%</span>}
               </p>
               <p className="k-pack-blurb">{pack.blurb}</p>
               <BillingButton packId={pack.id} className="k-btn-block">

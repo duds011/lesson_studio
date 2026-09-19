@@ -16,10 +16,13 @@
  */
 import { readFileSync } from 'node:fs'
 
+// Mirrors lib/plans.ts. The _v2 keys exist because a Price's amount cannot be
+// edited in Stripe — a new amount is always a new key, and the old one is left
+// alone so anyone mid-checkout still pays what they were quoted.
 const PACKS = [
-  { id: 'pack-20', name: '20 lesson write-ups', recaps: 20, price: 3000, lookupKey: 'koku_pack_20_v1' },
-  { id: 'pack-50', name: '50 lesson write-ups', recaps: 50, price: 7000, lookupKey: 'koku_pack_50_v1' },
-  { id: 'pack-100', name: '100 lesson write-ups', recaps: 100, price: 13000, lookupKey: 'koku_pack_100_v1' },
+  { id: 'pack-20', name: '20 lesson write-ups', recaps: 20, price: 2800, lookupKey: 'koku_pack_20_v2' },
+  { id: 'pack-75', name: '75 lesson write-ups', recaps: 75, price: 9900, lookupKey: 'koku_pack_75_v1' },
+  { id: 'pack-100', name: '100 lesson write-ups', recaps: 100, price: 12900, lookupKey: 'koku_pack_100_v2' },
 ]
 
 function env() {

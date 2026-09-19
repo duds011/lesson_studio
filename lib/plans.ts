@@ -31,43 +31,50 @@ export type Pack = {
 }
 
 /**
- * Three sizes, priced $1.50 / $1.40 / $1.30 a write-up.
+ * Three sizes. The unit price falls from $1.40 to $1.32 to $1.29, but that
+ * number is deliberately never shown to a buyer — the pages say "save 6%"
+ * and "save 8%" instead, because a price per recap invites arithmetic against
+ * a competitor's price per recap, and a saving is about this offer alone.
  *
- * The ladder is deliberately shallow — 13% between the ends, not the 40% a
- * volume discount usually carries. The bigger pack should win on not having to
- * think about it again, rather than on being a bargain that makes the small
- * one look like a penalty for teaching part-time.
+ * The ladder stays shallow on purpose: the bigger pack should win on not
+ * having to think about it again, not by making the small one look like a
+ * penalty for teaching part-time.
  *
- * For scale: a teacher charging around $35 an hour spends roughly 4% of the
- * lesson on having it written up.
+ * Prices end in 8 and 9 rather than on a round ten, and the middle pack sits
+ * at $99 rather than the $101 its size implies — under the hundred is worth
+ * more than two per cent of margin.
  */
 export const PACKS: Pack[] = [
   {
     id: 'pack-20',
     name: '20 lessons',
     recaps: 20,
-    price: 30,
+    price: 28,
     tag: 'Teaching on the side',
     blurb: 'About five weeks of a light schedule.',
-    lookupKey: 'koku_pack_20_v1',
+    // _v2: this key was $30. A Price's amount cannot be edited in Stripe, so
+    // a new amount is a new key — reusing _v1 would leave Stripe charging the
+    // old price while this file advertised the new one.
+    lookupKey: 'koku_pack_20_v2',
   },
   {
-    id: 'pack-50',
-    name: '50 lessons',
-    recaps: 50,
-    price: 70,
+    id: 'pack-75',
+    name: '75 lessons',
+    recaps: 75,
+    price: 99,
     tag: 'Most teachers',
     blurb: 'A steady weekly timetable, with room to spare.',
-    lookupKey: 'koku_pack_50_v1',
+    lookupKey: 'koku_pack_75_v1',
   },
   {
     id: 'pack-100',
     name: '100 lessons',
     recaps: 100,
-    price: 130,
+    price: 129,
     tag: 'Full-time',
     blurb: 'Twenty-odd lessons a week, every one written up.',
-    lookupKey: 'koku_pack_100_v1',
+    // _v2: was $130.
+    lookupKey: 'koku_pack_100_v2',
   },
 ]
 
@@ -95,7 +102,16 @@ export function isPurchasable(id?: string | null): boolean {
   return PACKS.some((p) => p.id === id)
 }
 
-/** What one write-up costs in this pack, for the "$1.30 each" line. */
-export function perRecap(pack: Pack): string {
-  return `$${(pack.price / pack.recaps).toFixed(2)}`
+/**
+ * What this pack saves against buying the same number at the smallest pack's
+ * rate, as a whole percent. Null for the smallest pack, which IS the rate.
+ *
+ * Computed rather than written down, so it cannot drift from the prices above
+ * the way a hand-typed "save 8%" would the first time one of them moves.
+ */
+export function savingPct(pack: Pack): number | null {
+  const base = PACKS[0].price / PACKS[0].recaps
+  const full = pack.recaps * base
+  if (full <= pack.price) return null
+  return Math.round(((full - pack.price) / full) * 100)
 }
