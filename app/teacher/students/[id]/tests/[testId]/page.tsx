@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { getDict, fill } from '@/lib/i18n'
+import { teacherLocale } from '@/lib/i18n/server'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateShort } from '@/lib/portal-utils'
@@ -13,6 +15,8 @@ export default async function TeacherTestReviewPage({ params }: { params: { id: 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  // `t` is the TEST on this page, so the dictionary is `copy`.
+  const copy = getDict(await teacherLocale(supabase, user.id))
 
   const { data: test } = await supabase
     .from('tests')
@@ -54,15 +58,15 @@ export default async function TeacherTestReviewPage({ params }: { params: { id: 
 
       <div className="lesson-hero">
         <div>
-          <div className="eyebrow">{t.level} Practice Test · {t.status === 'published' ? 'Published' : 'Draft — only you can see this'}</div>
+          <div className="eyebrow">{fill(copy.test.heading, { level: t.level })} · {t.status === 'published' ? copy.test.published : copy.test.draftOnlyYou}</div>
           <h1>{t.title}</h1>
           <div className="lesson-meta">
-            {lesson && <div className="meta-box"><div className="meta-label">Based on</div><div className="meta-value">Lesson {lesson.lesson_number}</div></div>}
+            {lesson && <div className="meta-box"><div className="meta-label">{copy.test.basedOn}</div><div className="meta-value">{fill(copy.test.lessonN, { n: lesson.lesson_number })}</div></div>}
             {t.test_json?.script && (
-              <div className="meta-box"><div className="meta-label">Script</div><div className="meta-value">{{ beginner: 'Hiragana + romaji', hiragana: 'Hiragana', kanji: 'Kanji + kana' }[t.test_json.script as string] ?? t.test_json.script}</div></div>
+              <div className="meta-box"><div className="meta-label">{copy.test.script}</div><div className="meta-value">{{ beginner: copy.test.scriptBeginner, hiragana: copy.test.scriptHiragana, kanji: copy.test.scriptKanji }[t.test_json.script as string] ?? t.test_json.script}</div></div>
             )}
-            <div className="meta-box"><div className="meta-label">Created</div><div className="meta-value">{formatDateShort(t.created_at)}</div></div>
-            <div className="meta-box"><div className="meta-label">Status</div><div className="meta-value"><span className={`status-pill ${t.status === 'published' ? 'published' : 'draft'}`}>{t.status}</span></div></div>
+            <div className="meta-box"><div className="meta-label">{copy.test.created}</div><div className="meta-value">{formatDateShort(t.created_at)}</div></div>
+            <div className="meta-box"><div className="meta-label">{copy.test.status}</div><div className="meta-value"><span className={`status-pill ${t.status === 'published' ? 'published' : 'draft'}`}>{t.status}</span></div></div>
           </div>
         </div>
       </div>
@@ -82,12 +86,12 @@ export default async function TeacherTestReviewPage({ params }: { params: { id: 
               <div key={a.id}>
                 <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700 }}>
                   {a.promptIndex != null ? `${a.promptIndex + 1}. ` : ''}
-                  {a.prompt?.prompt_jp ?? 'Speaking answer'}
+                  {a.prompt?.prompt_jp ?? copy.test.speakingAnswer}
                 </p>
                 {a.prompt?.prompt_en && <p className="analytics-note" style={{ margin: '0 0 6px', fontSize: 12 }}>{a.prompt.prompt_en}</p>}
                 {a.url
                   ? <AudioPlayer src={a.url} title="Student's answer" meta={a.date} />
-                  : <p className="analytics-note">Recording exists but could not be signed for playback.</p>}
+                  : <p className="analytics-note">{copy.test.unplayable}</p>}
               </div>
             ))}
           </div>

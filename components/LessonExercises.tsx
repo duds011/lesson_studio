@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import { formatDateShort } from '@/lib/portal-utils'
 import { speakingExercises, type Exercise } from '@/lib/speaking'
@@ -26,14 +27,15 @@ export type SpeakingConfig = {
 // self-contained — the graded answers are checked locally, and only the spoken
 // ones reach the server).
 export default function LessonExercises({ exercises, speaking }: { exercises: Exercise[]; speaking?: SpeakingConfig }) {
-  if (!exercises?.length) return <p className="analytics-note">No practice exercises for this lesson.</p>
+  const t = useT()
+  if (!exercises?.length) return <p className="analytics-note">{t.lessonExercises.none}</p>
 
   // Switched off, the speaking exercises are not shown as homework nobody can
   // hand in — they are not shown at all.
   const spoken = speaking && !speaking.enabled ? [] : speakingExercises(exercises)
   const graded = exercises.filter((e) => e.type === 'multiple_choice' || e.type === 'fill_blank')
 
-  if (!spoken.length && !graded.length) return <p className="analytics-note">No practice exercises for this lesson.</p>
+  if (!spoken.length && !graded.length) return <p className="analytics-note">{t.lessonExercises.none}</p>
 
   const takeFor = (index: number) => speaking?.takes.find((t) => t.prompt_index === index) ?? null
 
@@ -56,6 +58,7 @@ function SpeakingExercise({
 }: {
   ex: Exercise; index: number; speaking?: SpeakingConfig; take: SpeakingTake | null
 }) {
+  const t = useT()
   return (
     <div className="ex-card">
       <div className="ex-head"><Tag>🎙️ Speaking</Tag><span className="ex-prompt">{ex.prompt}</span></div>
@@ -85,7 +88,7 @@ function SpeakingExercise({
           lessonId={speaking.lessonId}
           promptIndex={index}
           existing={take}
-          cta={ex.type === 'read_aloud' ? 'Record yourself reading these' : 'Record your answer'}
+          cta={ex.type === 'read_aloud' ? t.lessonExercises.recordReading : t.speaking.cta}
         />
       )}
       {speaking?.enabled && speaking.role === 'teacher' && (
@@ -99,7 +102,7 @@ function SpeakingExercise({
           </div>
         ) : (
           <div className="ex-speak">
-            <p className="analytics-note" style={{ margin: 0 }}>Not recorded yet.</p>
+            <p className="analytics-note" style={{ margin: 0 }}>{t.lessonExercises.notRecorded}</p>
           </div>
         )
       )}
@@ -108,6 +111,7 @@ function SpeakingExercise({
 }
 
 function GradedExercise({ ex }: { ex: Exercise }) {
+  const t = useT()
   const [picked, setPicked] = useState<number | string | null>(null)
 
   if (ex.type === 'multiple_choice') {

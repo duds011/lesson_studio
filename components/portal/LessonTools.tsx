@@ -1,10 +1,12 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useEffect, useState } from 'react'
 
 type Student = { id: string; name: string; hasLogin: boolean }
 
 export default function LessonTools({ eventId, attendees }: { eventId: string; attendees: string[] }) {
+  const t = useT()
   const [students, setStudents] = useState<Student[]>([])
   const [selected, setSelected] = useState<string>('')
   const [autoId, setAutoId] = useState<string | null>(null)
@@ -38,22 +40,22 @@ export default function LessonTools({ eventId, attendees }: { eventId: string; a
   return (
     <div style={{ display: 'grid', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line)', marginTop: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>This lesson is with</label>
-        {loading ? <span style={{ fontSize: 12, color: 'var(--muted)' }}>Loading…</span> : (
+        <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>{t.lessonTools.lessonIsWith}</label>
+        {loading ? <span style={{ fontSize: 12, color: 'var(--muted)' }}>{t.common.loading}</span> : (
           <select value={selected} onChange={(e) => change(e.target.value)} style={inputStyle} disabled={saving}>
-            <option value="">Not linked (test / no student)</option>
+            <option value="">{t.lessonTools.notLinked}</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>{s.name}{s.id === autoId ? ' — auto-matched' : ''}{s.hasLogin ? '' : ' (no login)'}</option>
             ))}
           </select>
         )}
-        {saving && <span style={{ fontSize: 11, color: 'var(--muted)' }}>Saving…</span>}
+        {saving && <span style={{ fontSize: 11, color: 'var(--muted)' }}>{t.common.saving}</span>}
       </div>
       {chosen && !chosen.hasLogin && (
         <span style={{ fontSize: 11, color: 'var(--amber)' }}>⚠️ {chosen.name} has no student login yet — they’ll see the recap once you create their login (Students → the student → Create login).</span>
       )}
       {!selected && !loading && (
-        <span style={{ fontSize: 11, color: 'var(--muted)' }}>Link a student so this lesson’s recap is delivered to them. Leave unlinked for a test call.</span>
+        <span style={{ fontSize: 11, color: 'var(--muted)' }}>{t.lessonTools.hint}</span>
       )}
     </div>
   )

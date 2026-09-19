@@ -1045,6 +1045,44 @@ export const en = {
     dataBody: 'The recorder captures both voices. Nothing is uploaded until you press **Send to Lesson Studio**, audio is transcribed to write the recap, and the files are deleted 30 days later. The full detail is in our {policy}.',
     privacyLink: 'privacy policy',
   },
+  /** components/LessonExercises.tsx — the practice block on a lesson page. */
+  lessonExercises: {
+    none: 'No practice exercises for this lesson.',
+    recordReading: 'Record yourself reading these',
+    notRecorded: 'Not recorded yet.',
+  },
+
+  /** components/portal/LessonTools.tsx — linking a recording to a student. */
+  lessonTools: {
+    lessonIsWith: 'This lesson is with',
+    notLinked: 'Not linked (test / no student)',
+    hint: 'Link a student so this lesson’s recap is delivered to them. Leave unlinked for a test call.',
+  },
+
+  /** components/portal/MemoPlayer.tsx */
+  memo: {
+    back15: 'Back 15 seconds',
+    forward15: 'Forward 15 seconds',
+    seek: 'Seek',
+  },
+
+  /** app/join/[code] — a dead or reused invite link. */
+  joinInvalid: {
+    title: 'This link isn’t valid',
+    body: 'It may have already been used, or your teacher may have replaced it. Ask them for a fresh one.',
+    goSignIn: 'Go to sign in',
+  },
+
+  /** app/teacher/dashboard — the student list. */
+  dashboard: {
+    students: 'Students',
+    withLogin: 'With login',
+    lessonsRecorded: 'Lessons recorded',
+    noStudents: 'No students yet',
+    notJoined: 'Invited — not joined yet',
+    lessons: 'Lessons',
+    overview: 'Overview',
+  },
 } as const
 
 /**

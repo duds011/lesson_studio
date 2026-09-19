@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 const mmss = (s: number) => {
@@ -50,6 +51,7 @@ function makeBars(seed: string): number[] {
  * to scan for the real end.
  */
 export default function MemoPlayer({ src, title, meta }: { src: string; title: string; meta?: string }) {
+  const t = useT()
   const ref = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)
   const [now, setNow] = useState(0)
@@ -152,7 +154,7 @@ export default function MemoPlayer({ src, title, meta }: { src: string; title: s
       {/* One row, so the wave takes every pixel the header has left over —
           transport on the left, elapsed on the right, nothing boxed. */}
       <div className="k-memo-row">
-        <button type="button" className="k-memo-skip" onClick={() => skip(-15)} aria-label="Back 15 seconds">
+        <button type="button" className="k-memo-skip" onClick={() => skip(-15)} aria-label={t.memo.back15}>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M11.5 6.5 6 12l5.5 5.5v-3.9c3 0 5.3 1 6.9 3-0.6-4.4-3.3-6.9-6.9-7.1z" /></svg>
           <em>15</em>
         </button>
@@ -163,7 +165,7 @@ export default function MemoPlayer({ src, title, meta }: { src: string; title: s
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5.6c0-.8.9-1.3 1.6-.9l8.1 5.4c.6.4.6 1.4 0 1.8l-8.1 5.4c-.7.4-1.6-.1-1.6-.9z" /></svg>
           )}
         </button>
-        <button type="button" className="k-memo-skip" onClick={() => skip(15)} aria-label="Forward 15 seconds">
+        <button type="button" className="k-memo-skip" onClick={() => skip(15)} aria-label={t.memo.forward15}>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12.5 6.5 18 12l-5.5 5.5v-3.9c-3 0-5.3 1-6.9 3 .6-4.4 3.3-6.9 6.9-7.1z" /></svg>
           <em>15</em>
         </button>
@@ -172,7 +174,7 @@ export default function MemoPlayer({ src, title, meta }: { src: string; title: s
           className="k-memo-wave"
           onClick={seek}
           role="slider"
-          aria-label="Seek"
+          aria-label={t.memo.seek}
           aria-valuemin={0}
           aria-valuemax={Math.round(total)}
           aria-valuenow={Math.round(now)}

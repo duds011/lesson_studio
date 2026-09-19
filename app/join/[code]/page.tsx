@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { getDict } from '@/lib/i18n'
+import { publicLocale } from '@/lib/i18n/server'
 import { invitePreview } from '@/app/actions/join'
 import { createClient } from '@/lib/supabase/server'
 import JoinCard from '@/components/portal/JoinCard'
@@ -9,6 +11,8 @@ export const dynamic = 'force-dynamic'
 
 export default async function JoinPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params
+  // An invite link is opened by someone with no account yet.
+  const t = getDict(await publicLocale())
   const invite = await invitePreview(code)
 
   // A spent, revoked or mistyped link are all the same answer — a page that
@@ -18,9 +22,9 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
       <main className="k-join">
         <div className="k-join-card k-join-in">
           <div className="k-join-mark" aria-hidden>✉️</div>
-          <h1>This link isn’t valid</h1>
-          <p>It may have already been used, or your teacher may have replaced it. Ask them for a fresh one.</p>
-          <Link href="/login" className="k-join-btn k-join-btn-quiet">Go to sign in</Link>
+          <h1>{t.joinInvalid.title}</h1>
+          <p>{t.joinInvalid.body}</p>
+          <Link href="/login" className="k-join-btn k-join-btn-quiet">{t.joinInvalid.goSignIn}</Link>
         </div>
       </main>
     )

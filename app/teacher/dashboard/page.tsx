@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { getDict } from '@/lib/i18n'
+import { teacherLocale, publicLocale } from '@/lib/i18n/server'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCreditsByStudent } from '@/lib/credits'
@@ -13,6 +15,7 @@ export const dynamic = 'force-dynamic'
 export default async function TeacherDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const t = getDict(user ? await teacherLocale(supabase, user.id) : await publicLocale())
   if (!user) redirect('/login')
 
   const { data: students } = await supabase
@@ -91,9 +94,9 @@ export default async function TeacherDashboard() {
         eyebrow="Teacher"
         title="Your students"
         figures={[
-          { label: 'Students', value: rows.length },
-          { label: 'With login', value: rows.filter((r) => r.profile_id).length },
-          { label: 'Lessons recorded', value: totalLessons },
+          { label: t.dashboard.students, value: rows.length },
+          { label: t.dashboard.withLogin, value: rows.filter((r) => r.profile_id).length },
+          { label: t.dashboard.lessonsRecorded, value: totalLessons },
         ]}
         actions={<AddStudentForm currency={currency} teachingLanguage={teachingLanguage} speakingLanguage={speakingLanguage} />}
       />
@@ -114,7 +117,7 @@ export default async function TeacherDashboard() {
 
       {rows.length === 0 ? (
         <div className="empty">
-          <strong style={{ color: 'var(--ink)' }}>No students yet</strong>
+          <strong style={{ color: 'var(--ink)' }}>{t.dashboard.noStudents}</strong>
           <br />
           Use “Add student” to create the first account.
         </div>
@@ -137,11 +140,11 @@ export default async function TeacherDashboard() {
                     {/* Keyed on the login, not the address: a student who
                         joined always has one, whether or not the email made it
                         back onto this row. */}
-                    <div className="sc-email">{s.profile_id ? (s.email || '—') : 'Invited — not joined yet'}</div>
+                    <div className="sc-email">{s.profile_id ? (s.email || '—') : t.dashboard.notJoined}</div>
                   </div>
                 </Link>
                 <div>
-                  <div className="analytics-label">Lessons</div>
+                  <div className="analytics-label">{t.dashboard.lessons}</div>
                   <strong>{st.count}</strong>
                 </div>
                 <div>
@@ -165,7 +168,7 @@ export default async function TeacherDashboard() {
 
       <p style={{ fontSize: 11, color: 'var(--muted)' }}>
         Your calendar, recordings, and recap tools are under{' '}
-        <Link href="/" style={{ color: 'var(--brand)', fontWeight: 700 }}>Overview</Link> in the sidebar.
+        <Link href="/" style={{ color: 'var(--brand)', fontWeight: 700 }}>{t.dashboard.overview}</Link> in the sidebar.
       </p>
     </div>
   )

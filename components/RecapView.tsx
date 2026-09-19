@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import React from 'react'
 import { levelScale } from './portal/VocabLevelBreakdown'
 
@@ -129,14 +130,15 @@ export function FormattedContent({ content }: { content: any }) {
 
 /* ── Full recap body (stats + recap + sections + vocab + homework + exercises) ── */
 export function RecapBody({ recap }: { recap: any }) {
+  const t = useT()
   const dist: Record<string, number> = recap.vocab_level_distribution || {}
   return (
     <div>
       <div className="mini-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
-        <div className="mini"><div className="k">Score</div><div className="v">{recap.score}</div></div>
-        <div className="mini"><div className="k">Student talk</div><div className="v">{recap.talk_percentage}%</div></div>
-        <div className="mini"><div className="k">Grammar</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.grammar_density}</div></div>
-        <div className="mini"><div className="k">Confidence</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.confidence_label}</div></div>
+        <div className="mini"><div className="k">{t.lessonRow.score}</div><div className="v">{recap.score}</div></div>
+        <div className="mini"><div className="k">{t.lessonRow.studentTalk}</div><div className="v">{recap.talk_percentage}%</div></div>
+        <div className="mini"><div className="k">{t.lessonRow.grammar}</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.grammar_density}</div></div>
+        <div className="mini"><div className="k">{t.lessonRow.confidence}</div><div className="v" style={{ fontSize: '.85rem', paddingTop: '.4rem' }}>{recap.confidence_label}</div></div>
       </div>
 
       <div className="block"><FormattedContent content={recap.recap} /></div>
@@ -171,7 +173,7 @@ export function RecapBody({ recap }: { recap: any }) {
           .map. Same fix as LessonPageTabs. */}
       {Array.isArray(recap.homework) && recap.homework.length > 0 && (
         <div className="block">
-          <h4>Homework</h4>
+          <h4>{t.lessonRow.homework}</h4>
           <ul className="fc-list">{recap.homework.map((h: any, i: number) => <li key={i}>{h?.description ?? String(h)}</li>)}</ul>
         </div>
       )}
@@ -185,13 +187,13 @@ export function RecapBody({ recap }: { recap: any }) {
 
       {recap.audio_script && (
         <div className="block">
-          <h4>Voice memo script</h4>
+          <h4>{t.lessonRow.memoScript}</h4>
           <p style={{ whiteSpace: 'pre-wrap', fontSize: '.88rem' }}>{recap.audio_script}</p>
         </div>
       )}
 
       {recap.teacher_note && (
-        <div className="block"><h4>Teacher’s note</h4><p>{recap.teacher_note}</p></div>
+        <div className="block"><h4>{t.lessonRow.teacherNote}</h4><p>{recap.teacher_note}</p></div>
       )}
     </div>
   )
