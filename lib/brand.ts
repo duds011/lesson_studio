@@ -534,7 +534,11 @@ const SHAPE_RADII: Record<ShapeStyle, { md: string; lg: string; xl: string }> = 
 const HEX = /^#[0-9a-fA-F]{6}$/
 
 /** Merge a stored (possibly partial or malformed) brand onto the defaults. */
-export function resolveBrand(raw: unknown): Brand {
+export function resolveBrand(
+  raw: unknown,
+  /** Translated TEXT_SLOTS for the reader's language; English when omitted. */
+  labelDefaults?: Record<TextSlot, string>,
+): Brand {
   const b = (raw && typeof raw === 'object' ? raw : {}) as Partial<Brand> & { heights?: unknown }
   const str = (v: unknown, fallback: string, max = 240) =>
     typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : fallback
@@ -549,7 +553,7 @@ export function resolveBrand(raw: unknown): Brand {
     props: (PROPS as readonly string[]).includes(b.props as string) ? (b.props as PropStyle) : DEFAULT_BRAND.props,
     font: FONTS.some((f) => f.value === b.font) ? (b.font as FontId) : DEFAULT_BRAND.font,
     levels: resolveLevels(b.levels),
-    labels: resolveLabels(b.labels),
+    labels: resolveLabels(b.labels, labelDefaults),
     showStats: bool(b.showStats, DEFAULT_BRAND.showStats),
     // Locked dashboard blocks, same treatment as the recap's: forced true so a
     // brand stored before the lock cannot strand published tests or shared
@@ -591,8 +595,22 @@ export function resolveBrand(raw: unknown): Brand {
 }
 
 /** Stored overrides merged onto the default wording, unknown slots dropped. */
-export function resolveLabels(raw: unknown): Record<TextSlot, string> {
-  const out = { ...TEXT_SLOTS } as Record<TextSlot, string>
+/**
+ * The teacher's headings, over the defaults.
+ *
+ * `defaults` exists so the portal can be read in the student's language. The
+ * split matters: a slot the teacher TYPED is their own words and must never
+ * be machine-translated, while a slot they left alone is ours and should
+ * follow whoever is reading. Passing translated defaults in gets both,
+ * because the overlay below only replaces slots that were actually set.
+ *
+ * Omitted, it behaves exactly as before — English.
+ */
+export function resolveLabels(
+  raw: unknown,
+  defaults: Record<TextSlot, string> = TEXT_SLOTS,
+): Record<TextSlot, string> {
+  const out = { ...defaults } as Record<TextSlot, string>
   if (raw && typeof raw === 'object') {
     for (const slot of TEXT_SLOT_IDS) {
       const v = (raw as any)[slot]

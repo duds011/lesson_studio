@@ -13,6 +13,7 @@ import {
   type RecapMetricId, type DashStatId, type DashSpeakId,
 } from '@/lib/brand'
 import LessonPageTabs from './LessonPageTabs'
+import { useT } from '@/components/I18nProvider'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from './portal/DashboardBlocks'
 
 /**
@@ -463,6 +464,7 @@ function SectionRow({ title, hint, on, onToggle, optionsOpen, onOptions, childre
  * decision, made once.
  */
 export default function BrandStudio({ initial, teacherName, teachingLanguage }: { initial: Brand; teacherName: string; teachingLanguage?: string | null }) {
+  const t = useT()
   const sample = sampleFor(teachingLanguage)
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -925,7 +927,7 @@ export default function BrandStudio({ initial, teacherName, teachingLanguage }: 
                             >✕</button>
                           </>
                         )}
-                        <DashboardBlock id={id} brand={brand} data={sample.data} preview onRemoveStat={removeStat} onRemoveSpeak={removeSpeak} />
+                        <DashboardBlock id={id} brand={brand} data={sample.data} copy={t.portal} preview onRemoveStat={removeStat} onRemoveSpeak={removeSpeak} />
                       </div>
                     )
                   })}

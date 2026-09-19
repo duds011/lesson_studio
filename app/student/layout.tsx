@@ -5,6 +5,7 @@ import { backgroundClass, brandVars, resolveBrand } from '@/lib/brand'
 import StudentTopBar from '@/components/koku/StudentTopBar'
 import I18nProvider from '@/components/I18nProvider'
 import { studentLocale } from '@/lib/i18n/server'
+import { getDict } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,11 +21,13 @@ export default async function StudentLayout({ children }: { children: React.Reac
     ? await admin.from('profiles').select('brand').eq('id', student.teacher_id).single()
     : { data: null }
 
-  const brand = resolveBrand((teacher as any)?.brand)
-
   // Follows students.instruction_language — the language they already told us
   // they read most comfortably. See lib/i18n/server.
   const locale = await studentLocale(admin, user.id)
+
+  // The teacher's own wording wins; anything they left at our default is
+  // read in the student's language. See resolveLabels in lib/brand.
+  const brand = resolveBrand((teacher as any)?.brand, getDict(locale).portal.slots)
 
   return (
     <I18nProvider locale={locale}>

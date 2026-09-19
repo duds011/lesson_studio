@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatDateShort, lessonBlurb, lessonDisplayTitle, ordinal } from '@/lib/portal-utils'
 import { PillarLesson } from '@/components/portal/LessonPillar'
 import { DashboardBlock, DASHBOARD_LAYOUT, blockHasContent, type DashboardData } from '@/components/portal/DashboardBlocks'
+import { getDict } from '@/lib/i18n'
+import { studentLocale, publicLocale } from '@/lib/i18n/server'
 import { DECKS, isDeckId, isDue, masteryOf, TOP_BOX } from '@/lib/flashcards'
 import DashboardTabs from '@/components/portal/DashboardTabs'
 import RecapLanguagePicker from '@/components/portal/RecapLanguagePicker'
@@ -18,12 +20,15 @@ export default async function StudentDashboard() {
   const { data: student } = await supabase.from('students').select('*').eq('profile_id', user.id).single()
 
   if (!student) {
+    // No student row means no instruction_language to follow, so the browser
+    // is the only signal there is.
+    const c = getDict(await publicLocale()).portal
     return (
       <div className="k-empty">
         <p style={{ fontSize: 34, margin: '0 0 8px' }}>⏳</p>
-        <strong style={{ color: 'var(--ink)' }}>Account not linked yet</strong>
+        <strong style={{ color: 'var(--ink)' }}>{c.notLinked}</strong>
         <br />
-        Ask your teacher to link your account.
+        {c.askTeacher}
       </div>
     )
   }
@@ -225,7 +230,11 @@ export default async function StudentDashboard() {
   // those panels are gone and the queries with them.
   const { data: teacherProfile } = await admin
     .from('profiles').select('brand').eq('id', student.teacher_id).single()
-  const brand = resolveBrand((teacherProfile as any)?.brand)
+  // Same rule as the layout: the teacher's own headings win, ours follow the
+  // student. See resolveLabels in lib/brand.
+  const locale = await studentLocale(admin, user.id)
+  const copy = getDict(locale).portal
+  const brand = resolveBrand((teacherProfile as any)?.brand, copy.slots)
 
   // Newest lesson first — the student opens this to reach their latest recap,
   // not to scroll past the whole course. `rows` already comes newest first.
@@ -423,7 +432,7 @@ export default async function StudentDashboard() {
           label,
           content: placements.map(({ id: blockId, w }) => (
             <div key={blockId} style={{ ['--w' as any]: w }}>
-              <DashboardBlock id={blockId} brand={brand} data={data} />
+              <DashboardBlock id={blockId} brand={brand} data={data} copy={copy} />
             </div>
           )),
         }))}

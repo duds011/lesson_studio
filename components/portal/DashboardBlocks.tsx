@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { fill, type Messages } from '@/lib/i18n'
 import ProgressCharts from './ProgressCharts'
 import VocabLevelBreakdown from './VocabLevelBreakdown'
 import VocabByLevel from './VocabByLevel'
@@ -157,7 +158,16 @@ export function blockHasContent(id: BlockId, brand: Brand, d: DashboardData): bo
   }
 }
 
-export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRemoveSpeak }: { id: BlockId; brand: Brand; data: DashboardData } & Mode) {
+/**
+ * `copy` arrives as a prop rather than from useT().
+ *
+ * This component renders in two places with two different readers: the
+ * student's dashboard, on the server, in the student's language; and the
+ * teacher's Branding Studio preview, on the client, in the teacher's. A hook
+ * only works in one of them and getDict needs a locale nobody here has, so
+ * the caller — which knows whose screen this is — hands the words in.
+ */
+export function DashboardBlock({ id, brand, data: d, copy, preview, onRemoveStat, onRemoveSpeak }: { id: BlockId; brand: Brand; data: DashboardData; copy: Messages['portal'] } & Mode) {
   const L = brand.labels
   const milestone = levelProgress(brand.levels, d.lessonCount)
 
@@ -196,9 +206,9 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
         const ma = Math.PI * (1 - then / 100)
         const headline = delta > 0
           ? (now >= 50
-            ? <>You went from listening to <em>leading the conversation</em>.</>
-            : <>You are speaking <em>{delta} points more</em> than when you started.</>)
-          : <>You spoke <em>{now}%</em> of your last lesson.</>
+            ? <>{copy.climbLed} <em>{copy.climbLedEm}</em>.</>
+            : <>{copy.climbMorePre} <em>{fill(copy.climbMoreEm, { delta })}</em> {copy.climbMorePost}</>)
+          : <>{copy.climbPlainPre} <em>{now}%</em> {copy.climbPlainPost}</>
 
         const strip = DASH_STAT_TILES
           .filter(({ id: sid }) => sid !== 'speaking' && !hid.includes(sid))
@@ -231,14 +241,14 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
               </svg>
               <div className="k-climb-mid">
                 <b><CountUp value={now} /><span>%</span></b>
-                <s>You spoke</s>
+                <s>{copy.youSpoke}</s>
               </div>
             </div>
             <div className="k-climb-copy">
-              <div className="k-climb-eyebrow">Across {d.lessonCount} lesson{d.lessonCount === 1 ? '' : 's'}</div>
+              <div className="k-climb-eyebrow">{d.lessonCount === 1 ? copy.acrossOneLesson : fill(copy.acrossLessons, { n: d.lessonCount })}</div>
               <h2 className="k-climb-line">{headline}</h2>
-              <p className="k-climb-sub">The mark on the arc is where you started — <b>{then}%</b>.</p>
-              {delta > 0 && <span className="k-climb-delta">▲ {delta} points since lesson 1</span>}
+              <p className="k-climb-sub">{copy.climbSubPre} <b>{then}%</b>.</p>
+              {delta > 0 && <span className="k-climb-delta">▲ {fill(copy.climbDelta, { delta })}</span>}
               {strip.length > 0 && <div className="k-climb-strip">{strip}</div>}
             </div>
           </div>
@@ -255,7 +265,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
               <b><CountUp value={d.lessonCount} /></b>
               {d.recentCount > 0 && <span className="k-chip">+{d.recentCount}</span>}
             </div>
-            <p className="k-stat-sub">{d.recentCount > 0 ? `${d.recentCount} in the last 30 days` : 'Total lessons completed'}</p>
+            <p className="k-stat-sub">{d.recentCount > 0 ? fill(copy.inLast30, { n: d.recentCount }) : copy.totalLessons}</p>
           </>
         ),
         score: (
@@ -301,7 +311,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
     case 'lessons':
       return (
         <>
-          <div className="k-sec-head"><h2>{L.lessonsTitle}</h2><span className="k-link">{d.pillarLessons.length} in all</span></div>
+          <div className="k-sec-head"><h2>{L.lessonsTitle}</h2><span className="k-link">{fill(copy.inAll, { n: d.pillarLessons.length })}</span></div>
           <LessonPillar lessons={d.pillarLessons} preview={preview} />
         </>
       )
@@ -319,7 +329,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
       // only. The words themselves are a Progress-tab read, not a glance.
       return (
         <>
-          <div className="k-sec-head"><h2>{L.vocabTotalsTitle}</h2><span className="k-link">{d.totalVocab} words</span></div>
+          <div className="k-sec-head"><h2>{L.vocabTotalsTitle}</h2><span className="k-link">{fill(copy.words, { n: d.totalVocab })}</span></div>
           <div className="k-card">
             <VocabLevelBreakdown distribution={d.vocabDistribution} totalCount={d.totalVocab} plain />
           </div>
@@ -332,7 +342,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
       // question a glance asks, and a level opens to answer "which words".
       return (
         <>
-          <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{d.vocabWords.length} words</span></div>
+          <div className="k-sec-head"><h2>{L.vocabTitle}</h2><span className="k-link">{fill(copy.words, { n: d.vocabWords.length })}</span></div>
           <div className="k-card">
             <VocabByLevel words={d.vocabWords} />
           </div>
@@ -355,7 +365,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
     case 'scores':
       return (
         <div className="k-card k-chart-card">
-          <div className="k-card-head"><h3>{L.scoresTitle}</h3><span className="k-link">Last {d.scoreTrend.length}</span></div>
+          <div className="k-card-head"><h3>{L.scoresTitle}</h3><span className="k-link">{fill(copy.lastN, { n: d.scoreTrend.length })}</span></div>
           <div className="k-chart-fill"><ScoreTrendChart points={d.scoreTrend} color={brand.accent} height="100%" /></div>
         </div>
       )
@@ -405,7 +415,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
       const hid = brand.hiddenSpeaking ?? []
       const tiles: { id: DashSpeakId; label: string; node: React.ReactNode }[] = []
       if (d.avgWpm != null && !hid.includes('pace')) tiles.push({
-        id: 'pace', label: 'Pace',
+        id: 'pace', label: copy.metricPace,
         node: (
           <>
             <div className="k-stat-head"><Icon d="M13 3 4 14h6l-1 7 9-11h-6z" /><span>Pace</span></div>
@@ -417,10 +427,10 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
         ),
       })
       if (d.avgThinkSec != null && !hid.includes('think')) tiles.push({
-        id: 'think', label: 'Thinking time',
+        id: 'think', label: copy.metricThinking,
         node: (
           <>
-            <div className="k-stat-head"><Icon d="M12 8v4l3 3M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /><span>Thinking time</span></div>
+            <div className="k-stat-head"><Icon d="M12 8v4l3 3M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z" /><span>{copy.metricThinking}</span></div>
             <div className="k-stat-val">
               <b><CountUp value={d.avgThinkSec} decimals={1} /><span style={{ fontSize: 17 }}> s</span></b>
             </div>
@@ -429,10 +439,10 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
         ),
       })
       if (d.latestTalk != null && !hid.includes('share')) tiles.push({
-        id: 'share', label: 'Your share',
+        id: 'share', label: copy.metricShare,
         node: (
           <>
-            <div className="k-stat-head"><Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" /><span>Your share</span></div>
+            <div className="k-stat-head"><Icon d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zM5 11a7 7 0 0 0 14 0M12 18v3" /><span>{copy.metricShare}</span></div>
             <div className="k-stat-val">
               <b><CountUp value={d.latestTalk} /><span style={{ fontSize: 17 }}>%</span></b>
             </div>
@@ -473,14 +483,14 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
       // answer to "am I getting anywhere" — due counts only say how much is
       // waiting, which goes up as often as it goes down.
       const bands = [
-        { k: 'known' as const, label: 'known', tone: '#1c7f52' },
-        { k: 'learning' as const, label: 'learning', tone: '#0a61c9' },
-        { k: 'new' as const, label: 'not started', tone: '#c8ccd2' },
+        { k: 'known' as const, label: copy.vocabKnown, tone: '#1c7f52' },
+        { k: 'learning' as const, label: copy.vocabLearning, tone: '#0a61c9' },
+        { k: 'new' as const, label: copy.vocabNew, tone: '#c8ccd2' },
       ]
       return (
         <>
           <div className="k-sec-head">
-            <h2>Practise your words</h2>
+            <h2>{copy.practiseTitle}</h2>
           </div>
 
           {/* Where the collection stands, and how the fortnight has gone. */}
@@ -530,7 +540,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
                 nothing would only tell a new student they are already behind. */}
             {days.length > 0 && (
               <div className="k-hist">
-                <p className="k-hist-lab">Practice, last two weeks</p>
+                <p className="k-hist-lab">{copy.practiceHistory}</p>
                 <div className="k-hist-bars">
                   {days.map((day) => (
                     <span
@@ -560,7 +570,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
               </p>
             )}
 
-            <p className="k-prac-ask" style={{ marginTop: 0 }}>By kind of word</p>
+            <p className="k-prac-ask" style={{ marginTop: 0 }}>{copy.byKind}</p>
             <div className="k-decks">
               {d.decks.map((deck) => (
                 <Go key={deck.id} href={`/student/practice?deck=${deck.id}`} className={`k-deck ${deck.tone}`} preview={preview}>
@@ -577,7 +587,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
                 from last Tuesday". Same cards, different cut. */}
             {d.cardLessons.length > 0 && (
               <>
-                <p className="k-prac-ask">By lesson</p>
+                <p className="k-prac-ask">{copy.byLesson}</p>
                 <div className="k-lesspicks">
                   {d.cardLessons.map((l) => (
                     <Go key={l.id} href={`/student/practice?lesson=${l.id}`} className="k-lesspick" preview={preview}>
@@ -596,7 +606,7 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
             )}
 
             <Go href="/student/practice" className="k-deck-all" preview={preview}>
-              {nothingDue ? 'Practise anything' : 'Practise what is due'}
+              {nothingDue ? copy.practiseAnything : copy.practiseDue}
               <span>{firstRound} card{firstRound === 1 ? '' : 's'} →</span>
             </Go>
           </div>
@@ -624,9 +634,9 @@ export function DashboardBlock({ id, brand, data: d, preview, onRemoveStat, onRe
                     </div>
                   </div>
                   {preview ? (
-                    <span className="k-btn-pill">Download</span>
+                    <span className="k-btn-pill">{copy.download}</span>
                   ) : (
-                    <a className="k-btn-pill" href={`/api/portal/download?kind=file&id=${f.id}`}>Download</a>
+                    <a className="k-btn-pill" href={`/api/portal/download?kind=file&id=${f.id}`}>{copy.download}</a>
                   )}
                 </div>
               ))}

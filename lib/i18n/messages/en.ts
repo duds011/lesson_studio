@@ -380,6 +380,79 @@ export const en = {
       'Recap sent, but an attachment failed to upload — add it from the lesson page.',
     suggestedScript: 'Suggested script',
   },
+  /**
+   * The student portal.
+   *
+   * `slots` are the DEFAULTS for lib/brand.ts TEXT_SLOTS — the headings a
+   * teacher can rename in the Branding Studio. Translating them here is
+   * correct precisely because they are defaults: resolveLabels overlays
+   * whatever the teacher actually typed on top, so their own wording is
+   * never machine-translated, and a heading they left alone follows the
+   * student instead of being stuck in English. Keys must match TEXT_SLOTS
+   * exactly or the overlay silently misses.
+   */
+  portal: {
+    slots: {
+      greeting: 'Welcome back,',
+      tabOverview: 'Overview',
+      tabLessons: 'Lessons',
+      tabProgress: 'Progress',
+      tabPractice: 'Practice',
+      tabFiles: 'Files',
+      tabTests: 'Tests',
+      statLessons: 'Lessons',
+      statScore: 'Avg score',
+      statSpeaking: 'Speaking',
+      lessonsTitle: 'Your lessons',
+      progressTitle: 'Your progress',
+      vocabTitle: 'Vocabulary',
+      milestoneTitle: 'Next milestone',
+      scoresTitle: 'Recent scores',
+      testsTitle: 'Practice tests',
+      speakingTitle: 'Speaking habits',
+      filesTitle: 'Lesson files',
+      vocabTotalsTitle: 'Vocabulary growth',
+    },
+
+    tabsAria: 'Dashboard sections',
+    notLinked: 'Account not linked yet',
+    askTeacher: 'Ask your teacher to link your account.',
+
+    /** The speaking arc. {delta}, {now} and {then} are percentages. */
+    climbLed: 'You went from listening to',
+    climbLedEm: 'leading the conversation',
+    climbMorePre: 'You are speaking',
+    climbMoreEm: '{delta} points more',
+    climbMorePost: 'than when you started.',
+    climbPlainPre: 'You spoke',
+    climbPlainPost: 'of your last lesson.',
+    youSpoke: 'You spoke',
+    acrossLessons: 'Across {n} lessons',
+    acrossOneLesson: 'Across 1 lesson',
+    climbSubPre: 'The mark on the arc is where you started —',
+    climbDelta: '{delta} points since lesson 1',
+
+    inLast30: '{n} in the last 30 days',
+    totalLessons: 'Total lessons completed',
+    inAll: '{n} in all',
+    words: '{n} words',
+    lastN: 'Last {n}',
+
+    metricPace: 'Pace',
+    metricThinking: 'Thinking time',
+    metricShare: 'Your share',
+
+    practiseTitle: 'Practise your words',
+    practiceHistory: 'Practice, last two weeks',
+    byKind: 'By kind of word',
+    byLesson: 'By lesson',
+    practiseAnything: 'Practise anything',
+    practiseDue: 'Practise what is due',
+    vocabKnown: 'known',
+    vocabLearning: 'learning',
+    vocabNew: 'not started',
+    download: 'Download',
+  },
 } as const
 
 /**
