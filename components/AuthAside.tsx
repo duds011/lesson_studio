@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useT } from '@/components/I18nProvider'
 
 /**
  * The panel beside the sign-in and sign-up forms.
@@ -47,8 +48,6 @@ function ScoreBars({ scores }: { scores: number[] }) {
 const SLIDES = [
   {
     id: 'recap',
-    title: 'The lesson writes itself up',
-    body: 'A Chrome extension records both voices. The recap comes back drafted — you edit and publish.',
     art: (
       <div className="k-ac-screen">
         <div className="k-ac-tabs">
@@ -86,8 +85,6 @@ const SLIDES = [
   },
   {
     id: 'progress',
-    title: 'Progress they can actually see',
-    body: 'Scores, talk-time and vocabulary tracked lesson to lesson, on a page built for the student.',
     art: (
       <div className="k-ac-screen">
         <div className="k-ac-head"><b>Recent scores</b><span>Last 5</span></div>
@@ -118,8 +115,6 @@ const SLIDES = [
   },
   {
     id: 'languages',
-    title: 'Whatever language you teach',
-    body: 'Japanese, French, Korean, Spanish and thirty-odd more — corrected in the language of the lesson, explained in the one your student thinks in.',
     art: (
       <div className="k-ac-screen">
         <div className="k-ac-head"><b>Languages</b><span>40+ supported</span></div>
@@ -148,8 +143,6 @@ const SLIDES = [
   },
   {
     id: 'practice',
-    title: 'Practice from their own words',
-    body: 'Flashcards and speaking tests made from the vocabulary that came up in the hour.',
     // Side by side, not stacked: a flashcard over a question was taller than
     // the screen it sits in and got clipped at the shorter canvas.
     art: (
@@ -182,8 +175,6 @@ const SLIDES = [
   },
   {
     id: 'portal',
-    title: 'A student portal with your name on it',
-    body: 'Your colours, your wording, and only the sections you teach with.',
     art: (
       <div className="k-ac-screen">
         <div className="k-ac-top">
@@ -215,6 +206,11 @@ const SLIDES = [
 ]
 
 export default function AuthAside({ headline, sub }: { headline: string; sub: string }) {
+  const t = useT()
+  // Paired to SLIDES by index: the artwork lives in this file, the words live
+  // in the dictionary, and the shape check keeps the two arrays the same
+  // length so a translator cannot drop one and silently shift the rest.
+  const copy = t.aside.slides
   const [i, setI] = useState(0)
   /** Paused while the pointer is on it — reading a slide should not be a race. */
   const [held, setHeld] = useState(false)
@@ -255,8 +251,8 @@ export default function AuthAside({ headline, sub }: { headline: string; sub: st
           </div>
 
           <div className="k-ac-cap" key={SLIDES[i].id}>
-            <b>{SLIDES[i].title}</b>
-            <small>{SLIDES[i].body}</small>
+            <b>{copy[i].title}</b>
+            <small>{copy[i].body}</small>
           </div>
 
           {/* One ring per slide; the active one fills over exactly HOLD_MS,
@@ -270,7 +266,7 @@ export default function AuthAside({ headline, sub }: { headline: string; sub: st
                 type="button"
                 role="tab"
                 aria-selected={n === i}
-                aria-label={s.title}
+                aria-label={copy[n].title}
                 className={n === i ? 'on' : ''}
                 onClick={() => setI(n)}
               >

@@ -38,6 +38,19 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   ja: '日本語',
 }
 
+/**
+ * Where a signed-out visitor's choice is kept.
+ *
+ * A cookie rather than localStorage because the login and signup pages are
+ * server-rendered: localStorage is not readable while the HTML is being
+ * built, so the page would arrive in English and flip afterwards. A cookie is
+ * on the request, so the first paint is already right.
+ *
+ * Read on the server by publicLocale(); written on the client by
+ * LocaleSwitch. Not httpOnly for that reason.
+ */
+export const LOCALE_COOKIE = 'koku_lang'
+
 export function isLocale(v: unknown): v is Locale {
   return typeof v === 'string' && (LOCALES as readonly string[]).includes(v)
 }

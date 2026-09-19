@@ -1,8 +1,9 @@
 import 'server-only'
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   DEFAULT_LOCALE,
+  LOCALE_COOKIE,
   isLocale,
   localeForTeachingLanguage,
   matchAcceptLanguage,
@@ -84,7 +85,22 @@ export async function acceptLanguageLocale(): Promise<Locale | null> {
   }
 }
 
-/** Signed-out pages: login, signup, a booking link. The browser is all we have. */
+/**
+ * Signed-out pages: login, signup, a reset link, a booking page.
+ *
+ * There is no profile to read, so the order is: what they picked on one of
+ * these pages, then what their browser asks for, then English. The cookie
+ * comes first because it is an actual decision and the header is a guess —
+ * somebody who switched to Japanese on the login screen has said something
+ * their Accept-Language header did not.
+ */
 export async function publicLocale(): Promise<Locale> {
+  try {
+    const jar = await cookies()
+    const picked = jar.get(LOCALE_COOKIE)?.value
+    if (isLocale(picked)) return picked
+  } catch {
+    // Outside a request scope; fall through to the header, then English.
+  }
   return (await acceptLanguageLocale()) ?? DEFAULT_LOCALE
 }

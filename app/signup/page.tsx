@@ -1,123 +1,23 @@
-'use client'
+import I18nProvider from '@/components/I18nProvider'
+import { publicLocale } from '@/lib/i18n/server'
+import SignupForm from '@/components/auth/SignupForm'
 
-import Link from 'next/link'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { signUpTeacher } from '@/app/actions/signup'
-import AuthAside from '@/components/AuthAside'
+/**
+ * A server shell whose only job is to know the language.
+ *
+ * The form itself has to be a client component — it holds three inputs and
+ * calls Supabase — but nobody is signed in here, so the locale has to be
+ * resolved from the request (cookie, then Accept-Language) before any HTML
+ * is written. Doing it in the page keeps that lookup on the server and lets
+ * the form stay a plain client component that just calls useT().
+ */
+export const dynamic = 'force-dynamic'
 
-export default function SignupPage() {
-  const router = useRouter()
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
-
-  /**
-   * Create the account server-side (already confirmed, no email sent), then
-   * sign straight in. Nothing here depends on Supabase's built-in mailer.
-   */
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    setNotice('')
-
-    const created = await signUpTeacher({ fullName, email, password })
-    if (!created.success) {
-      setError(created.error || 'Could not create your account.')
-      setLoading(false)
-      return
-    }
-
-    const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    })
-
-    if (signInError) {
-      setNotice('Account created — please sign in.')
-      setLoading(false)
-      return
-    }
-
-    router.push('/onboarding')
-    router.refresh()
-  }
-
+export default async function SignupPage() {
+  const locale = await publicLocale()
   return (
-    <div className="k-auth">
-      <AuthAside
-        headline="Your whole teaching practice, in one place."
-        sub="Set up in a couple of minutes. Add a student, record your next lesson, and the rest of this builds itself."
-      />
-
-      <main className="k-auth-main">
-        <div className="k-auth-card">
-          <h1>Create a teacher account</h1>
-          <p>Start your Koku Library workspace for students, lesson recaps, bookings, and progress tracking.</p>
-
-          <form onSubmit={handleSignup}>
-            <label className="k-field" htmlFor="fullName">
-              <span>Full name</span>
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                autoComplete="name"
-              />
-            </label>
-
-            <label className="k-field" htmlFor="email">
-              <span>Email address</span>
-              <input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </label>
-
-            <label className="k-field" htmlFor="password">
-              <span>Password</span>
-              <input
-                id="password"
-                type="password"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-            </label>
-
-            {error && <p className="k-error">{error}</p>}
-            {notice && (
-              <p className="k-error" style={{ background: 'var(--green-soft)', borderColor: '#b8dec7', color: 'var(--green)' }}>
-                {notice}
-              </p>
-            )}
-
-            <button type="submit" className="k-btn-block" disabled={loading} style={{ marginTop: 18 }}>
-              {loading ? 'Creating account…' : 'Create account'}
-            </button>
-          </form>
-
-          <p className="k-fine">
-            Already have an account? <Link href="/login">Sign in</Link>
-          </p>
-        </div>
-      </main>
-    </div>
+    <I18nProvider locale={locale}>
+      <SignupForm />
+    </I18nProvider>
   )
 }

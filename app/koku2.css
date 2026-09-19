@@ -2262,3 +2262,15 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-lang:hover:not(:disabled){border-color:var(--forest);background:var(--brand-soft)}
 .k-lang.is-on{border-color:var(--forest);background:var(--brand-soft);color:var(--forest)}
 .k-lang:disabled{opacity:.6;cursor:default}
+
+/* The language control on the signed-out pages. Top-right of the form column,
+   small and out of the way — it only matters to someone who cannot read the
+   page, and for everyone else it must not compete with the heading. */
+.k-auth-lang{position:absolute;top:18px;right:20px;display:flex;gap:4px;z-index:2}
+.k-auth-lang button{padding:5px 10px;border-radius:999px;border:1px solid transparent;
+  background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:700;
+  cursor:pointer;transition:.15s ease}
+.k-auth-lang button:hover{color:var(--ink);background:var(--surface-2)}
+.k-auth-lang button.is-on{color:var(--forest);background:var(--brand-soft);border-color:var(--brand-soft)}
+.k-auth-main{position:relative}
+@media(max-width:560px){.k-auth-lang{top:10px;right:10px}}

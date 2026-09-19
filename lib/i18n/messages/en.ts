@@ -62,6 +62,79 @@ export const en = {
     recordingsOnly: 'Recordings only',
     studentPortal: 'Student portal',
   },
+
+  /** app/login and app/signup — the two pages nobody is signed in to. */
+  auth: {
+    language: 'Language',
+    emailLabel: 'Email address',
+    emailPlaceholder: 'you@example.com',
+    passwordLabel: 'Password',
+
+    signInTitle: 'Sign in',
+    signInSub: 'Welcome back. Sign in to see your lessons, progress, and recaps.',
+    signInExpired: 'Your session timed out. Sign in and we’ll take you straight back.',
+    signInAction: 'Sign in',
+    signingIn: 'Signing in…',
+    passwordDots: '••••••••',
+    forgotPassword: 'Forgot your password?',
+    newHere: 'New here?',
+    createAccountLink: 'Create a teacher account',
+    freeToSetUp: 'Free to set up, and you can add your first student straight away.',
+    studentQuestion: 'Are you a student?',
+    studentAnswer:
+      'Your teacher sends you an invite link — open it and you choose your own email and password. After that, you sign in right here.',
+    signInHeadline: 'Every lesson, written up.',
+    signInAside:
+      'Lesson Studio turns each hour into a recap, a progress chart and a set of practice — for the teacher who ran it and the student who sat in it.',
+
+    signUpTitle: 'Create a teacher account',
+    signUpSub:
+      'Start your Koku Library workspace for students, lesson recaps, bookings, and progress tracking.',
+    fullNameLabel: 'Full name',
+    passwordHint: 'At least 6 characters',
+    createAccount: 'Create account',
+    creatingAccount: 'Creating account…',
+    createFailed: 'Could not create your account.',
+    createdNowSignIn: 'Account created — please sign in.',
+    haveAccount: 'Already have an account?',
+    signUpHeadline: 'Your whole teaching practice, in one place.',
+    signUpAside:
+      'Set up in a couple of minutes. Add a student, record your next lesson, and the rest of this builds itself.',
+  },
+
+  /**
+   * components/AuthAside.tsx — the carousel beside both auth forms.
+   *
+   * Order matters: the component pairs these with its artwork by INDEX, so
+   * the translator is told not to reorder and the shape check enforces the
+   * count. The labels inside the artwork itself ("SPEAKING BALANCE", the tab
+   * names) are still English — they are a picture of the product rather than
+   * the page's own copy, and translating a mock is a separate job.
+   */
+  aside: {
+    slides: [
+      {
+        title: 'The lesson writes itself up',
+        body: 'A Chrome extension records both voices. The recap comes back drafted — you edit and publish.',
+      },
+      {
+        title: 'Progress they can actually see',
+        body: 'Scores, talk-time and vocabulary tracked lesson to lesson, on a page built for the student.',
+      },
+      {
+        title: 'Whatever language you teach',
+        body: 'Japanese, French, Korean, Spanish and thirty-odd more — corrected in the language of the lesson, explained in the one your student thinks in.',
+      },
+      {
+        title: 'Practice from their own words',
+        body: 'Flashcards and speaking tests made from the vocabulary that came up in the hour.',
+      },
+      {
+        title: 'A student portal with your name on it',
+        body: 'Your colours, your wording, and only the sections you teach with.',
+      },
+    ],
+  },
 } as const
 
 /**
@@ -75,7 +148,10 @@ export const en = {
 type Widen<T> = T extends string
   ? string
   : T extends readonly (infer E)[]
-    ? Widen<E>[]
+    // readonly, not a mutable array: the generated files are `as const` too,
+    // and a readonly tuple is not assignable to a mutable array. Keeping the
+    // modifier means both sides agree and nothing here is ever mutated.
+    ? readonly Widen<E>[]
     : { -readonly [K in keyof T]: Widen<T[K]> }
 
 export type Messages = Widen<typeof en>

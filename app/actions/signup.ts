@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isLocale } from '@/lib/i18n/config'
 
 type Result = { success: boolean; error?: string }
 
@@ -20,6 +21,15 @@ export async function signUpTeacher(input: {
   fullName: string
   email: string
   password: string
+  /**
+   * The language they were reading the signup page in.
+   *
+   * Carried through so the workspace opens in the language they chose before
+   * they had an account to save it on. Without this, someone who switched
+   * the login page to Japanese gets an English app the moment they sign in,
+   * which reads as the setting not working.
+   */
+  uiLanguage?: string
 }): Promise<Result> {
   const fullName = (input.fullName ?? '').trim().slice(0, 80)
   const email = (input.email ?? '').trim().toLowerCase()
@@ -53,6 +63,9 @@ export async function signUpTeacher(input: {
     email,
     onboarding_completed_at: null,
     onboarding_step: 0,
+    // Only when it is a language we actually render. Anything else is left
+    // null, which means "follow the browser" rather than "English".
+    ...(isLocale(input.uiLanguage) ? { ui_language: input.uiLanguage } : {}),
   })
 
   return { success: true }
