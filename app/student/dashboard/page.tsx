@@ -8,7 +8,6 @@ import { getDict } from '@/lib/i18n'
 import { studentLocale, publicLocale } from '@/lib/i18n/server'
 import { DECKS, isDeckId, isDue, masteryOf, TOP_BOX } from '@/lib/flashcards'
 import DashboardTabs from '@/components/portal/DashboardTabs'
-import RecapLanguagePicker from '@/components/portal/RecapLanguagePicker'
 import { DASH_BLOCK_TAB, DASH_TAB_SLOT, DASH_TABS, resolveBrand, type DashTab } from '@/lib/brand'
 
 export const dynamic = 'force-dynamic'
@@ -438,12 +437,11 @@ export default async function StudentDashboard() {
         }))}
       />
 
-      {/* Under the tabs rather than inside one: it belongs to the student's
-          account, not to any single view of their lessons. */}
-      <RecapLanguagePicker
-        value={(student as any).instruction_language ?? null}
-        learning={(student as any).language ?? null}
-      />
+      {/* The recap-language picker used to sit here, under the tabs. It has
+          moved to /student/settings, next to the language the page itself is
+          written in — the two belong together, and neither of them belongs at
+          the foot of a dashboard where you find it by scrolling past your
+          lessons. */}
     </>
   )
 }

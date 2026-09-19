@@ -1,3 +1,20 @@
+'use client'
+
+/**
+ * The directive above is load-bearing, and it went missing for a day.
+ *
+ * This component reads useT(), and a hook only exists on the client. Without
+ * the line it compiled, type-checked and deployed as a *server* component —
+ * and then every lesson page, teacher's and student's alike, threw
+ * "(0 , a.NT) is not a function" the moment it rendered, because on the server
+ * `useT` is a reference to a client module rather than a function. Neither tsc
+ * nor next build can see that; only opening the page can. So: the directive
+ * goes in the same edit as the first hook.
+ *
+ * Both lesson pages still create this on the server and hand it to
+ * LessonPageTabs as a prop. That is fine — every prop below is plain data.
+ */
+
 import { formatDateShort } from '@/lib/portal-utils'
 import { useT } from '@/components/I18nProvider'
 import TeacherFileUpload from '@/components/portal/TeacherFileUpload'

@@ -505,9 +505,26 @@ export const en = {
   recapLanguage: {
     question: 'My recaps are written in',
     hint: 'The language you are learning stays as it is — this is the language everything around it is explained in.',
+    /**
+     * The same sentence with their target language named. One {lang}, not the
+     * two the English phrasing wants ("the French you are learning stays
+     * French"): Japanese does not repeat the noun, so the translator kept
+     * returning a single placeholder and the shape check kept rejecting it —
+     * correctly, both times.
+     */
+    hintLearning: 'The {lang} you are learning stays as it is — this is the language everything around it is explained in.',
     aria: 'The language my recaps are explained in',
     saved: 'Saved — from your next recap on.',
     didNotSave: 'That did not save.',
+  },
+  /** app/student/settings/page.tsx — the student's own two settings. */
+  studentSettings: {
+    eyebrow: 'Your account',
+    title: 'Settings',
+    back: '← Back to your lessons',
+    languageTitle: 'The language of this page',
+    languageDesc:
+      'Buttons, headings and the words around your lessons. It does not change the language your recaps are written in — that is the setting below.',
   },
   /** components/LessonPageTabs.tsx — the page a published recap lands on. */
   lesson: {

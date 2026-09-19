@@ -8,9 +8,13 @@ import { isLocale, LOCALES } from '@/lib/i18n/config'
 export type LanguageResult = { success: boolean; error?: string }
 
 /**
- * The teacher chooses what language the app speaks to them in.
+ * Whoever is signed in chooses what language the app speaks to them in.
  *
- * Written through the user's own client rather than the admin one: a teacher
+ * Teachers and students both, and deliberately the same action: they both have
+ * a profiles row, the column is on it, and a student's reason for wanting an
+ * English interface around a French recap is no different from a teacher's.
+ *
+ * Written through the user's own client rather than the admin one: someone
  * updating one column on their own profile row is exactly what RLS is for,
  * and there is nothing here worth bypassing it to do.
  *

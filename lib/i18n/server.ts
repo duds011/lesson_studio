@@ -71,17 +71,25 @@ export async function teacherLocale(
 }
 
 /**
- * A student's portal follows the language their recaps are written in.
+ * A student's own choice, then the language their recaps are written in.
  *
- * They already answered this question — students.instruction_language is "the
- * language I read most comfortably", which they set themselves. Asking a
- * second time would create two settings that can disagree, and the state
- * where your recap is in Portuguese and the page around it is in English is
- * exactly the one this feature exists to remove.
+ * The recap language used to be the whole answer, on the reasoning that a
+ * student had already told us which language they read most comfortably, so
+ * asking twice would only create two settings that can disagree. The reasoning
+ * was wrong in the ordinary case: instruction_language is the language a recap
+ * is WRITTEN IN, and plenty of learners deliberately have theirs written in the
+ * language they are learning. Someone learning French who picked French recaps
+ * got a French portal, with nowhere in the product to say otherwise — the two
+ * settings disagreeing is not the failure, having only one of them was.
  *
- * That column holds one of the twenty-seven teaching languages, most of which
- * have no interface. Anything we cannot render falls through to the browser
- * and then to English.
+ * So profiles.ui_language wins when it is set, exactly as it does for a
+ * teacher, and the recap language stays the opening guess for everyone who has
+ * never touched it. "Explain it to me in French, but label the buttons in
+ * English" is a sentence a learner is entitled to say.
+ *
+ * instruction_language holds one of the twenty-seven teaching languages, most
+ * of which have no interface. Anything we cannot render falls through to the
+ * browser and then to English.
  */
 export async function studentLocale(
   admin: SupabaseClient,
@@ -89,6 +97,15 @@ export async function studentLocale(
 ): Promise<Locale> {
   const forced = forcedLocale()
   if (forced) return forced
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('ui_language')
+    .eq('id', userId)
+    .maybeSingle()
+
+  const chosen = (profile as { ui_language?: string | null } | null)?.ui_language
+  if (isLocale(chosen)) return chosen
 
   const { data } = await admin
     .from('students')

@@ -58,10 +58,12 @@ export function isLocale(v: unknown): v is Locale {
 /**
  * A teaching language (lib/languages.ts, English names) → an interface locale.
  *
- * This is what lets the student portal have no language setting of its own.
- * A student already tells us which language they want their recaps written
- * in — the language they read most comfortably — so the chrome around the
- * recap should follow it rather than ask the same question twice.
+ * The opening guess for a student who has never picked a language, and only
+ * that. It used to be the whole answer, on the theory that the recap language
+ * and the reading language are one fact. They are not: a learner can quite
+ * reasonably ask for French recaps *because* they are learning French, and
+ * that must not decide what language their buttons are labelled in. A
+ * student's own profiles.ui_language wins — see studentLocale in ./server.
  *
  * Only the three we have an interface for appear here. A student who reads
  * Spanish gets Spanish recaps and an English portal, which is the honest

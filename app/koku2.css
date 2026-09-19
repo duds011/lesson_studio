@@ -1540,6 +1540,7 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-bar-mark{width:34px;height:34px;flex:0 0 auto;border-radius:11px;background:var(--forest);color:#fff;display:grid;place-items:center}
 .k-bar-mark .ui-icon{width:17px;height:17px}
 .k-bar-name{font-weight:750;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-bar-acts{display:flex;align-items:center;gap:8px;flex:0 0 auto}
 .k-bar-out{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;box-shadow:var(--shadow-soft);transition:.15s ease}
 .k-bar-out:hover{color:var(--ink)}
 .k-bar-out .ui-icon{width:16px;height:16px}

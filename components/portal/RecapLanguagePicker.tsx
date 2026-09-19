@@ -51,10 +51,13 @@ export default function RecapLanguagePicker({
     <div className="k-langpick">
       <div>
         <p className="k-langpick-q">{t.recapLanguage.question}</p>
+        {/* Naming the language they are learning makes the sentence land, so
+            it is a fill() rather than the generic line — which stays for a
+            student whose target language we do not have on file. Building it
+            from template literals, as this did, left one English sentence in
+            the middle of an otherwise French page. */}
         <p className="k-langpick-sub">
-          {target
-            ? `The ${target} you are learning stays ${target} — this is the language everything around it is explained in.`
-            : t.recapLanguage.hint}
+          {target ? fill(t.recapLanguage.hintLearning, { lang: target }) : t.recapLanguage.hint}
         </p>
       </div>
 
