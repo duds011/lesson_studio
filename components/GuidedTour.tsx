@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useCallback, useEffect, useState } from 'react'
 
 /**
@@ -11,7 +12,8 @@ export const tourDoneKey = (email?: string | null) => `ls.tour.done:${email || '
 /** Fired by the Settings replay button; the tour listens app-wide. */
 export const TOUR_EVENT = 'ls:tour'
 
-type Step = { target: string; title: string; body: string }
+/** Just the anchor now — the words live in t.tour.steps, paired by index. */
+type Step = { target: string }
 
 /**
  * The walkthrough: one sidebar destination at a time, everything else dimmed.
@@ -22,42 +24,36 @@ type Step = { target: string; title: string; body: string }
  * target is missing or hidden (collapsed nav on a phone) is skipped rather
  * than spotlighting a blank patch of screen.
  */
+/**
+ * Only the ANCHORS. `target` matches a data-tour attribute in AppNav, so it
+ * must not move with a translation; the words are in t.tour.steps, paired by
+ * position, and the shape check keeps the two arrays the same length.
+ */
 const STEPS: Step[] = [
   {
     target: 'overview',
-    title: 'Overview',
-    body: 'Home base. Recaps land here for you to review, and your latest lessons stack up below them.',
   },
   {
     target: 'students',
-    title: 'Students',
-    body: 'Add each student here. Their lessons, tests and progress all hang off this list — and each gets a portal of their own.',
   },
   {
     target: 'notes',
-    title: 'Notes',
-    body: 'One click per lesson taught: a month grid that doubles as your teaching diary.',
   },
   {
     target: 'student-view',
-    title: 'Student view',
-    body: 'Exactly what your students see, restyled to your taste — colours, names, sections. Not a mock-up: the real thing.',
   },
   {
     target: 'payments',
-    title: 'Payments',
-    body: 'Log what each student paid and how many lessons it covers. The balance counts down as recaps publish.',
   },
   {
     target: 'settings',
-    title: 'Settings',
-    body: 'Your calendar, the lesson recorder, and your account. This tour lives here too, if you ever want it again.',
   },
 ]
 
 const PAD = 8 // breathing room around the spotlit element
 
 export default function GuidedTour({ email }: { email?: string | null }) {
+  const t = useT()
   const [step, setStep] = useState(-1) // -1 = closed
   const [rect, setRect] = useState<DOMRect | null>(null)
 
@@ -121,6 +117,7 @@ export default function GuidedTour({ email }: { email?: string | null }) {
   if (step < 0 || !rect) return null
 
   const s = STEPS[step]
+  const words = t.tour.steps[step]
   const isLast = nextVisible(step + 1) === -1
   const goNext = () => (isLast ? finish() : setStep(nextVisible(step + 1)))
   const goBack = () => { const p = nextVisible(step - 1, -1); if (p !== -1) setStep(p) }
@@ -137,7 +134,7 @@ export default function GuidedTour({ email }: { email?: string | null }) {
     : Math.min(rect.bottom + PAD + 12, window.innerHeight - 220)
 
   return (
-    <div className="tour-layer" role="dialog" aria-modal="true" aria-label={`Tour: ${s.title}`}>
+    <div className="tour-layer" role="dialog" aria-modal="true" aria-label={words.title}>
       {/* The hole: one element whose enormous shadow is the dark backdrop. */}
       <div
         className="tour-spot"
@@ -150,16 +147,16 @@ export default function GuidedTour({ email }: { email?: string | null }) {
       />
       <div className="tour-card" style={{ left, top, width: cardW }}>
         <span className="tour-count">{step + 1} / {STEPS.length}</span>
-        <h3>{s.title}</h3>
-        <p>{s.body}</p>
+        <h3>{words.title}</h3>
+        <p>{words.body}</p>
         <div className="tour-actions">
-          <button type="button" className="tour-skip" onClick={finish}>Skip tour</button>
+          <button type="button" className="tour-skip" onClick={finish}>{t.tour.skip}</button>
           <div style={{ display: 'flex', gap: 8 }}>
             {nextVisible(step - 1, -1) !== -1 && (
-              <button type="button" className="btn btn-ghost btn-sm" onClick={goBack}>Back</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={goBack}>{t.common.back}</button>
             )}
             <button type="button" className="btn btn-primary btn-sm" onClick={goNext}>
-              {isLast ? 'Done' : 'Next'}
+              {isLast ? t.common.done : t.common.next}
             </button>
           </div>
         </div>

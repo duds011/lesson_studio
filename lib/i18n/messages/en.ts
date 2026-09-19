@@ -673,6 +673,47 @@ export const en = {
     editLater: 'Edit later',
     approveSend: 'Approve & send to student',
   },
+  /** app/book/page.tsx — the public booking page a student is sent a link to. */
+  book: {
+    months: ['January', 'February', 'March', 'April', 'May', 'June',
+             'July', 'August', 'September', 'October', 'November', 'December'],
+    loadFailed: 'Could not load availability.',
+    bookingFailed: 'Booking failed.',
+    bookingFailedRetry: 'Booking failed — try again.',
+    eyebrow: 'Schedule a lesson',
+    title: 'Find a time that works',
+    sub: 'Pick a day, then choose a time. Your confirmation and meeting details arrive by email.',
+    booked: 'You’re booked!',
+    invitePre: 'A calendar invite is on its way to',
+    openMeeting: 'Open meeting link',
+    noCalendar: 'Availability unavailable. Is the calendar connected?',
+    noTimes: 'No open lesson times in the next 30 days.',
+    pickDay: 'Pick a day',
+    pickDayHint: 'Days with a dot have open times.',
+    yourDetails: 'Your details',
+    /** {time} is already formatted for the reader's locale. */
+    confirmAt: 'Confirm {time}',
+    yourName: 'Your name',
+    namePlaceholder: 'Jane Doe',
+    yourEmail: 'Your email',
+    emailPlaceholder: 'you@email.com',
+    booking: 'Booking…',
+    bookAt: 'Book lesson · {time}',
+  },
+
+  /** components/GuidedTour.tsx — the first-run walkthrough. */
+  tour: {
+    /** Indexed to the component's STEPS; the `tour` anchors stay in the code. */
+    steps: [
+      { title: 'Overview', body: 'Home base. Recaps land here for you to review, and your latest lessons stack up below them.' },
+      { title: 'Students', body: 'Add each student here. Their lessons, tests and progress all hang off this list — and each gets a portal of their own.' },
+      { title: 'Notes', body: 'One click per lesson taught: a month grid that doubles as your teaching diary.' },
+      { title: 'Student view', body: 'Exactly what your students see, restyled to your taste — colours, names, sections. Not a mock-up: the real thing.' },
+      { title: 'Payments', body: 'Log what each student paid and how many lessons it covers. The balance counts down as recaps publish.' },
+      { title: 'Settings', body: 'Your calendar, the lesson recorder, and your account. This tour lives here too, if you ever want it again.' },
+    ],
+    skip: 'Skip tour',
+  },
 } as const
 
 /**
