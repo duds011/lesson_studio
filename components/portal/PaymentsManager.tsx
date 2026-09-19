@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -25,6 +27,7 @@ const emptyForm = () => ({ amount: '', status: 'paid' as 'paid' | 'pending', des
 export default function PaymentsManager({
   students, credits, payments, currency,
 }: { students: StudentOption[]; credits: Record<string, Credit>; payments: ManagedPayment[]; currency: string }) {
+  const t = useT()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -127,9 +130,9 @@ export default function PaymentsManager({
   function close() { setMode(null); setEditing(null) }
 
   function submit() {
-    if (mode === 'add' && !studentId) { setError('Select a student'); return }
+    if (mode === 'add' && !studentId) { setError(t.payments.selectStudent); return }
     const amount = parseFloat(form.amount)
-    if (!(amount > 0)) { setError('Enter an amount greater than zero'); return }
+    if (!(amount > 0)) { setError(t.payments.amountTooLow); return }
     const input: PaymentInput = {
       amount, currency, status: form.status, description: form.description,
       lessons_covered: form.lessons_covered ? parseInt(form.lessons_covered, 10) : null,
@@ -137,7 +140,7 @@ export default function PaymentsManager({
     }
     startTransition(async () => {
       const res = editing ? await updatePayment(editing.id, input) : await addPayment(studentId, input)
-      if (res.success) { close(); router.refresh() } else setError(res.error || 'Failed to save')
+      if (res.success) { close(); router.refresh() } else setError(res.error || t.payments.saveFailed)
     })
   }
   const act = (fn: () => Promise<any>) => startTransition(async () => { await fn(); close(); router.refresh() })
@@ -152,14 +155,14 @@ export default function PaymentsManager({
         eyebrow="Teacher"
         title="Payments"
         figures={[
-          { label: 'This month', value: formatMoney(thisMonth, currency) },
-          { label: 'Received all-time', value: formatMoney(totalReceived, currency) },
-          { label: 'Outstanding', value: formatMoney(totalOutstanding, currency) },
+          { label: t.payments.thisMonth, value: formatMoney(thisMonth, currency) },
+          { label: t.payments.receivedAllTime, value: formatMoney(totalReceived, currency) },
+          { label: t.payments.outstanding, value: formatMoney(totalOutstanding, currency) },
         ]}
         actions={
           <>
             <select
-              aria-label="Currency"
+              aria-label={t.payments.currency}
               className="k-thead-select"
               value={currency}
               disabled={pending}
@@ -191,13 +194,13 @@ export default function PaymentsManager({
 
       {/* Toolbar: the section label and the month the grid is showing. */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
-        <h2 className="section-heading" style={{ margin: 0 }}>Students</h2>
+        <h2 className="section-heading" style={{ margin: 0 }}>{t.payments.students}</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 8 }}>
-          <button onClick={prevMonth} className="btn btn-ghost btn-sm" aria-label="Previous month">←</button>
+          <button onClick={prevMonth} className="btn btn-ghost btn-sm" aria-label={t.payments.prevMonth}>←</button>
           <span style={{ fontWeight: 800, minWidth: 150, textAlign: 'center' }}>{monthLabel}</span>
-          <button onClick={nextMonth} className="btn btn-ghost btn-sm" aria-label="Next month">→</button>
+          <button onClick={nextMonth} className="btn btn-ghost btn-sm" aria-label={t.payments.nextMonth}>→</button>
         </div>
-        <button onClick={() => { setViewYear(now.getFullYear()); setViewMonth(now.getMonth()) }} className="btn btn-ghost btn-sm">Today</button>
+        <button onClick={() => { setViewYear(now.getFullYear()); setViewMonth(now.getMonth()) }} className="btn btn-ghost btn-sm">{t.payments.today}</button>
       </div>
 
       {/* Students down, the month's days across — the same shape as the notes
@@ -205,7 +208,7 @@ export default function PaymentsManager({
           a payment, which is why an empty one still offers a +. */}
       {sortedStudents.length === 0 ? (
         <div className="empty">
-          <strong style={{ color: 'var(--ink)' }}>No students yet</strong>
+          <strong style={{ color: 'var(--ink)' }}>{t.payments.noStudents}</strong>
           <br />
           Add students before recording payments.
         </div>
@@ -214,7 +217,7 @@ export default function PaymentsManager({
           <table className="pay-grid pay-days">
             <thead>
               <tr>
-                <th className="notes-name-col">Student</th>
+                <th className="notes-name-col">{t.payments.student}</th>
                 {days.map((d) => (
                   <th key={d.iso} className={`${d.iso === today ? 'is-now' : ''} ${d.weekend ? 'is-weekend' : ''}`}>
                     <div className="pay-mon">{d.day}</div>
@@ -282,7 +285,7 @@ export default function PaymentsManager({
       {/* Recent payments */}
       {recent.length > 0 && (
         <div>
-          <h2 className="section-heading">Recent payments</h2>
+          <h2 className="section-heading">{t.payments.recent}</h2>
           <DragScroller>
           <div className="k-table" style={{ minWidth: 720 }}>
             {recent.map(p => (
@@ -304,14 +307,14 @@ export default function PaymentsManager({
         <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(21,23,20,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={close}>
           <div className="surface" style={{ width: '100%', maxWidth: 440, padding: 22, maxHeight: '90vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0 }}>💰 {mode === 'add' ? 'New payment' : 'Edit payment'}</h3>
+              <h3 style={{ margin: 0 }}>💰 {mode === 'add' ? t.payments.newPayment : t.payments.editPayment}</h3>
               <button className="btn btn-ghost btn-sm" onClick={close}>✕</button>
             </div>
             <div style={{ display: 'grid', gap: 12 }}>
               {mode === 'add' ? (
-                <div className="field"><label>Student</label>
+                <div className="field"><label>{t.payments.student}</label>
                   <select value={studentId} onChange={(e) => setStudentId(e.target.value)} style={inputStyle}>
-                    <option value="">Select…</option>
+                    <option value="">{t.payments.selectPlaceholder}</option>
                     {sortedStudents.map(s => <option key={s.id} value={s.id}>{s.fullName}</option>)}
                     <option value={TRIAL_ID}>🎓 Trial (not a student)</option>
                     <option value={OTHER_ID}>✨ Other income</option>
@@ -320,20 +323,20 @@ export default function PaymentsManager({
               ) : <div style={{ fontWeight: 700 }}>{editing?.studentName}</div>}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div className="field"><label>Amount ({currencySymbol(currency)})</label><input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" style={inputStyle} autoFocus /></div>
-                <div className="field"><label>Status</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as any })} style={inputStyle}><option value="paid">Paid</option><option value="pending">Pending</option></select></div>
+                <div className="field"><label>{fill(t.payments.amount, { symbol: currencySymbol(currency) })}</label><input type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" style={inputStyle} autoFocus /></div>
+                <div className="field"><label>{t.payments.status}</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as any })} style={inputStyle}><option value="paid">{t.payments.paid}</option><option value="pending">{t.payments.pending}</option></select></div>
               </div>
-              <div className="field"><label>What it covers</label><input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="e.g. July package — 4 lessons" style={inputStyle} /></div>
+              <div className="field"><label>{t.payments.covers}</label><input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder={t.payments.coversPlaceholder} style={inputStyle} /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div className="field"><label>{form.status === 'paid' ? 'Payment date' : 'Due date'}</label><input type="date" value={form.status === 'paid' ? form.payment_date : form.due_date} onChange={(e) => setForm(form.status === 'paid' ? { ...form, payment_date: e.target.value } : { ...form, due_date: e.target.value })} style={inputStyle} /></div>
-                <div className="field"><label>Lessons covered</label><input type="number" min="0" step="1" value={form.lessons_covered} onChange={(e) => setForm({ ...form, lessons_covered: e.target.value })} placeholder="e.g. 4" style={inputStyle} /></div>
+                <div className="field"><label>{form.status === 'paid' ? t.payments.paymentDate : t.payments.dueDate}</label><input type="date" value={form.status === 'paid' ? form.payment_date : form.due_date} onChange={(e) => setForm(form.status === 'paid' ? { ...form, payment_date: e.target.value } : { ...form, due_date: e.target.value })} style={inputStyle} /></div>
+                <div className="field"><label>{t.payments.lessonsCovered}</label><input type="number" min="0" step="1" value={form.lessons_covered} onChange={(e) => setForm({ ...form, lessons_covered: e.target.value })} placeholder={t.payments.lessonsPlaceholder} style={inputStyle} /></div>
               </div>
-              <div className="field"><label>Method</label><input value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} placeholder="Bank transfer, Cash, PayPal…" style={inputStyle} /></div>
+              <div className="field"><label>{t.payments.method}</label><input value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })} placeholder={t.payments.methodPlaceholder} style={inputStyle} /></div>
               {error && <p style={{ color: 'var(--red)', fontSize: 12, margin: 0 }}>{error}</p>}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 4 }}>
                 {mode === 'edit' && editing && (
                   <>
-                    <button className="btn btn-danger-ghost btn-sm" disabled={pending} onClick={() => { if (confirm('Delete this payment?')) act(() => deletePayment(editing.id)) }}>Delete</button>
+                    <button className="btn btn-danger-ghost btn-sm" disabled={pending} onClick={() => { if (confirm(t.payments.confirmDelete)) act(() => deletePayment(editing.id)) }}>{t.common.delete}</button>
                     {editing.status === 'pending' && <button className="btn btn-ghost btn-sm" disabled={pending} onClick={() => act(() => markPaymentPaid(editing.id))}>Mark paid</button>}
                   </>
                 )}

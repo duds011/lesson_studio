@@ -134,6 +134,7 @@ export default async function SettingsPage() {
                 </div>
               </div>
               <ConnectorsGallery
+                t={t}
                 google={{ connected: Boolean(token), needsReconnect, email: token?.email }}
                 zoom={zoom}
                 stripe={stripe}

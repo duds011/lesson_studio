@@ -1,3 +1,4 @@
+import type { Messages } from '@/lib/i18n'
 // Gallery of teacher integrations (Google Calendar, Zoom, Stripe) as uniform
 // cards with brand logos, a description, status, and a connect/manage action.
 
@@ -40,27 +41,28 @@ export interface ConnectorState {
   stripe: { connected: boolean; chargesEnabled: boolean }
 }
 
-export default function ConnectorsGallery({ google, zoom, stripe }: ConnectorState) {
+/** A server component, so the copy comes from the caller — see RecordingsOverview. */
+export default function ConnectorsGallery({ google, zoom, stripe, t }: ConnectorState & { t: Messages }) {
   return (
     <div className="connector-grid">
       {/* Google Calendar */}
       <div className="connector-card">
         <div className="connector-logo"><GoogleCalendarLogo /></div>
-        <div className="connector-name">Google Calendar</div>
-        <div className="connector-desc">Reads your lessons and writes new bookings straight onto your calendar.</div>
+        <div className="connector-name">{t.connectors.googleName}</div>
+        <div className="connector-desc">{t.connectors.googleDesc}</div>
         <div className="connector-foot">
           {!google.connected ? (
-            <a className="btn btn-primary btn-sm" href="/api/google/auth">Connect</a>
+            <a className="btn btn-primary btn-sm" href="/api/google/auth">{t.connectors.connect}</a>
           ) : google.needsReconnect ? (
             <>
-              <span className="pill amber" style={{ alignSelf: 'flex-start' }}><span className="dot" />Permission needed</span>
-              <a className="btn btn-primary btn-sm" href="/api/google/auth">Reconnect</a>
+              <span className="pill amber" style={{ alignSelf: 'flex-start' }}><span className="dot" />{t.connectors.permissionNeeded}</span>
+              <a className="btn btn-primary btn-sm" href="/api/google/auth">{t.connectors.reconnect}</a>
             </>
           ) : (
             <>
               <ConnectedPill label="Connected" />
               <div className="connector-sub">{google.email}</div>
-              <form action="/api/google/disconnect" method="post"><button className="btn btn-ghost btn-sm" type="submit">Disconnect</button></form>
+              <form action="/api/google/disconnect" method="post"><button className="btn btn-ghost btn-sm" type="submit">{t.connectors.disconnect}</button></form>
             </>
           )}
         </div>
@@ -72,16 +74,16 @@ export default function ConnectorsGallery({ google, zoom, stripe }: ConnectorSta
       <div className="connector-card" style={zoom.connected ? undefined : { opacity: 0.72 }}>
         <div className="connector-logo"><ZoomLogo /></div>
         <div className="connector-name">Zoom</div>
-        <div className="connector-desc">Creates a unique Zoom room for each booked lesson automatically.</div>
+        <div className="connector-desc">{t.connectors.zoomDesc}</div>
         <div className="connector-foot">
           {zoom.connected ? (
             <>
               <ConnectedPill label="Connected" />
               {zoom.email && <div className="connector-sub">{zoom.email}</div>}
-              <form action="/api/zoom/disconnect" method="post"><button className="btn btn-ghost btn-sm" type="submit">Disconnect</button></form>
+              <form action="/api/zoom/disconnect" method="post"><button className="btn btn-ghost btn-sm" type="submit">{t.connectors.disconnect}</button></form>
             </>
           ) : (
-            <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--brand-soft)', color: 'var(--brand)' }}>Coming soon</span>
+            <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--brand-soft)', color: 'var(--brand)' }}>{t.connectors.comingSoon}</span>
           )}
         </div>
       </div>
@@ -89,10 +91,10 @@ export default function ConnectorsGallery({ google, zoom, stripe }: ConnectorSta
       {/* Stripe — coming soon */}
       <div className="connector-card" style={{ opacity: 0.72 }}>
         <div className="connector-logo"><StripeLogo /></div>
-        <div className="connector-name">Stripe</div>
-        <div className="connector-desc">Take card payments for lesson packages — payouts go straight to you.</div>
+        <div className="connector-name">{t.connectors.stripeName}</div>
+        <div className="connector-desc">{t.connectors.stripeDesc}</div>
         <div className="connector-foot">
-          <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--brand-soft)', color: 'var(--brand)' }}>Coming soon</span>
+          <span className="pill" style={{ alignSelf: 'flex-start', background: 'var(--brand-soft)', color: 'var(--brand)' }}>{t.connectors.comingSoon}</span>
         </div>
       </div>
     </div>

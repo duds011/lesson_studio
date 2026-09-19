@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState } from 'react'
 import { asHomework } from '@/lib/portal-utils'
 
@@ -24,6 +26,7 @@ export default function RecapReview({ rec, onClose, onPublished }: {
   onClose: () => void
   onPublished: (eventId: string, delivered: boolean, warning?: string) => void
 }) {
+  const t = useT()
   const r = rec.recap || {}
   const [body, setBody] = useState<string>(asText(r.recap))
   const [sections, setSections] = useState<Section[]>(
@@ -48,7 +51,7 @@ export default function RecapReview({ rec, onClose, onPublished }: {
   async function save() {
     setBusy('save'); setMsg('')
     await fetch('/api/recap/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
-    setBusy(''); setMsg('Saved ✓')
+    setBusy(''); setMsg(t.recap.savedTick)
   }
   async function approve() {
     setBusy('publish'); setMsg('')
@@ -66,44 +69,44 @@ export default function RecapReview({ rec, onClose, onPublished }: {
     <div className="modal-scrim" onClick={onClose}>
       <div className="modal-card" role="dialog" aria-modal="true" aria-label={`${rec.studentName} recap review`} onClick={(e) => e.stopPropagation()}>
         <div className="drawer-head">
-          <div><span className="eyebrow">Review before sending</span><h3>{rec.studentName} · Lesson recap</h3></div>
-          <button className="close-btn" onClick={onClose} aria-label="Close">×</button>
+          <div><span className="eyebrow">{t.recap.eyebrow}</span><h3>{fill(t.recap.title, { name: rec.studentName })}</h3></div>
+          <button className="close-btn" onClick={onClose} aria-label={t.common.close}>×</button>
         </div>
 
         <div className="drawer-body">
           <div className="review-banner">AI draft — edit, add or remove anything below, then approve to send it to {rec.studentName.split(' ')[0]}.</div>
 
           <div className="mini-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
-            <div className="mini"><div className="k">Score</div><div className="v">{r.score ?? '—'}</div></div>
-            <div className="mini"><div className="k">Student talk</div><div className="v">{r.talk_percentage ?? '—'}%</div></div>
-            <div className="mini"><div className="k">Vocab</div><div className="v">{r.vocab_total_count ?? (r.vocabulary?.length ?? 0)}</div></div>
+            <div className="mini"><div className="k">{t.lessonRow.score}</div><div className="v">{r.score ?? '—'}</div></div>
+            <div className="mini"><div className="k">{t.lessonRow.studentTalk}</div><div className="v">{r.talk_percentage ?? '—'}%</div></div>
+            <div className="mini"><div className="k">{t.recapReview.vocab}</div><div className="v">{r.vocab_total_count ?? (r.vocabulary?.length ?? 0)}</div></div>
           </div>
 
           {/* Editable: recap summary */}
           <div className="block">
-            <h4>Summary</h4>
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} style={area} placeholder="Lesson summary…" />
+            <h4>{t.recapReview.summary}</h4>
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={4} style={area} placeholder={t.recapReview.summaryPlaceholder} />
           </div>
 
           {/* Editable: each section (title + content), add/remove */}
           {sections.map((s, i) => (
             <div className="block" key={i}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
-                <input value={s.title} onChange={(e) => setSection(i, { title: e.target.value })} style={{ ...input, fontWeight: 700 }} placeholder="Section title" />
-                <button className="btn btn-danger-ghost btn-sm" onClick={() => setSections(sections.filter((_, j) => j !== i))} aria-label="Remove section">✕</button>
+                <input value={s.title} onChange={(e) => setSection(i, { title: e.target.value })} style={{ ...input, fontWeight: 700 }} placeholder={t.recapReview.sectionTitle} />
+                <button className="btn btn-danger-ghost btn-sm" onClick={() => setSections(sections.filter((_, j) => j !== i))} aria-label={t.recapReview.removeSection}>✕</button>
               </div>
-              <textarea value={s.content} onChange={(e) => setSection(i, { content: e.target.value })} rows={4} style={area} placeholder="Section content…" />
+              <textarea value={s.content} onChange={(e) => setSection(i, { content: e.target.value })} rows={4} style={area} placeholder={t.recapReview.sectionContent} />
             </div>
           ))}
           <button className="btn btn-ghost btn-sm" style={{ marginBottom: 14 }} onClick={() => setSections([...sections, { title: '', content: '' }])}>+ Add section</button>
 
           {/* Editable: homework */}
           <div className="block">
-            <h4>Homework</h4>
+            <h4>{t.lessonRow.homework}</h4>
             <div style={{ display: 'grid', gap: 6 }}>
               {homework.map((h, i) => (
                 <div key={i} style={{ display: 'flex', gap: 6 }}>
-                  <input value={h} onChange={(e) => setHomework(homework.map((x, j) => j === i ? e.target.value : x))} style={input} placeholder="Homework task" />
+                  <input value={h} onChange={(e) => setHomework(homework.map((x, j) => j === i ? e.target.value : x))} style={input} placeholder={t.recapReview.homeworkTask} />
                   <button className="btn btn-danger-ghost btn-sm" onClick={() => setHomework(homework.filter((_, j) => j !== i))} aria-label="Remove">✕</button>
                 </div>
               ))}
@@ -113,8 +116,8 @@ export default function RecapReview({ rec, onClose, onPublished }: {
 
           {/* Editable: teacher note */}
           <div className="block">
-            <h4>Your note to the student</h4>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} style={area} placeholder="A personal note for the student…" />
+            <h4>{t.recapReview.noteTitle}</h4>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} style={area} placeholder={t.recapReview.notePlaceholder} />
           </div>
         </div>
 

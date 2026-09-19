@@ -763,6 +763,67 @@ export const en = {
      * language the teacher happened to have the app in.
      */
   },
+  /** components/portal/PaymentsManager.tsx — what each student has paid. */
+  payments: {
+    selectStudent: 'Select a student',
+    amountTooLow: 'Enter an amount greater than zero',
+    saveFailed: 'Failed to save',
+    thisMonth: 'This month',
+    receivedAllTime: 'Received all-time',
+    outstanding: 'Outstanding',
+    currency: 'Currency',
+    students: 'Students',
+    prevMonth: 'Previous month',
+    nextMonth: 'Next month',
+    today: 'Today',
+    noStudents: 'No students yet',
+    student: 'Student',
+    recent: 'Recent payments',
+    newPayment: 'New payment',
+    editPayment: 'Edit payment',
+    selectPlaceholder: 'Select…',
+    /** {symbol} is the currency symbol the teacher charges in. */
+    amount: 'Amount ({symbol})',
+    status: 'Status',
+    paid: 'Paid',
+    pending: 'Pending',
+    covers: 'What it covers',
+    coversPlaceholder: 'e.g. July package — 4 lessons',
+    paymentDate: 'Payment date',
+    dueDate: 'Due date',
+    lessonsCovered: 'Lessons covered',
+    lessonsPlaceholder: 'e.g. 4',
+    method: 'Method',
+    methodPlaceholder: 'Bank transfer, Cash, PayPal…',
+    confirmDelete: 'Delete this payment?',
+  },
+
+  /** components/RecapReview.tsx — the compact review drawer. */
+  recapReview: {
+    vocab: 'Vocab',
+    summary: 'Summary',
+    summaryPlaceholder: 'Lesson summary…',
+    sectionTitle: 'Section title',
+    sectionContent: 'Section content…',
+    removeSection: 'Remove section',
+    homeworkTask: 'Homework task',
+    noteTitle: 'Your note to the student',
+    notePlaceholder: 'A personal note for the student…',
+  },
+
+  /** components/ConnectorsGallery.tsx — Settings → Connections. */
+  connectors: {
+    googleName: 'Google Calendar',
+    googleDesc: 'Reads your lessons and writes new bookings straight onto your calendar.',
+    connect: 'Connect',
+    permissionNeeded: 'Permission needed',
+    reconnect: 'Reconnect',
+    disconnect: 'Disconnect',
+    zoomDesc: 'Creates a unique Zoom room for each booked lesson automatically.',
+    comingSoon: 'Coming soon',
+    stripeName: 'Stripe',
+    stripeDesc: 'Take card payments for lesson packages — payouts go straight to you.',
+  },
 } as const
 
 /**
