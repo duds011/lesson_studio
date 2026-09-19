@@ -824,6 +824,68 @@ export const en = {
     stripeName: 'Stripe',
     stripeDesc: 'Take card payments for lesson packages — payouts go straight to you.',
   },
+  /** app/teacher/students/[id]/page.tsx — one student's page. */
+  student: {
+    notJoined: 'Invited — not joined yet',
+    avgScore: 'Avg score',
+    latestTalk: 'Latest talk',
+    vocabItems: 'Vocab items',
+    /** {left} remaining of {bought} bought. */
+    creditsLeft: '{left} lessons left / {bought} bought',
+    creditsOneLeft: '1 lesson left / {bought} bought',
+    noCredits: 'No lessons purchased yet',
+    managePayments: 'Manage payments →',
+    lessonsTitle: 'Lessons & recaps',
+    noLessons: 'No lessons yet',
+    noLessonsSub: 'Recorded lessons for this student will appear here.',
+    testsTitle: 'Practice tests',
+    noTests: 'No tests yet',
+  },
+
+  /** components/portal/AddStudentForm.tsx */
+  addStudent: {
+    /** Indexed to LEVELS in the component; the stored value is the English one. */
+    levels: ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'Upper-Intermediate', 'Advanced'],
+    createFailed: 'Could not create student',
+    aria: 'New student',
+    title: 'New student',
+    fullName: 'Full name',
+    namePlaceholder: 'Jane Doe',
+    level: 'Level',
+    learning: 'Learning',
+    choose: 'Choose…',
+    recapLanguage: 'Recap language',
+  },
+
+  /** components/TeacherCalendar.tsx */
+  calendar: {
+    months: ['January', 'February', 'March', 'April', 'May', 'June',
+             'July', 'August', 'September', 'October', 'November', 'December'],
+    upcoming: 'Upcoming',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    prev: 'Previous',
+    next: 'Next',
+    fixInSettings: 'Fix it in Settings',
+    /** {day} is already formatted for the reader's locale. */
+    nothingOn: 'Nothing on {day}.',
+    noLessonsThatDay: 'No lessons scheduled this day.',
+    agendaClear: 'Your agenda is clear.',
+    noUpcoming: 'No upcoming lessons on this calendar.',
+  },
+
+  /** app/forgot-password */
+  forgot: {
+    title: 'Reset your password',
+    lead: 'Enter the email address you sign in with and we’ll send you a link to choose a new password.',
+    send: 'Send reset link',
+    sending: 'Sending…',
+    /** {email} is what they typed, shown back so a typo is visible. */
+    sent: 'If {email} has an account, a reset link is on its way. Open the email and follow the link to choose a new password — it expires after an hour.',
+    spam: 'Nothing arriving? Check your spam folder, or try again with the address you signed up with.',
+    remembered: 'Remembered it?',
+    backToSignIn: 'Back to sign in',
+  },
 } as const
 
 /**

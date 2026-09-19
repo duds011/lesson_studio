@@ -1,5 +1,7 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import LessonRow, { type LessonView } from '@/components/LessonRow'
@@ -10,7 +12,7 @@ export type CalEvent = LessonView & { attendees?: string[]; recapStatus: 'draft'
 type View = 'day' | 'week' | 'month' | 'list'
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 
 // Local-time date helpers (teacher operates in her own tz).
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -26,13 +28,19 @@ function monthGrid(anchor: Date): Date[] {
   return Array.from({ length: 42 }, (_, i) => addDays(start, i))
 }
 
-const statusDot = (e: CalEvent): { c: string; t: string } | null => {
-  if (e.recapStatus === 'published') return { c: 'var(--green)', t: 'Recap published' }
-  if (e.recapStatus === 'draft') return { c: 'var(--brand)', t: 'Recap draft' }
+/**
+ * The dot's colour and WHICH label it carries — not the label itself. This is
+ * a module-level helper, so it cannot read the dictionary; the caller looks
+ * the key up where it has one.
+ */
+const statusDot = (e: CalEvent): { c: string; key: 'recapPublished' | 'recapDraft' } | null => {
+  if (e.recapStatus === 'published') return { c: 'var(--green)', key: 'recapPublished' as const }
+  if (e.recapStatus === 'draft') return { c: 'var(--brand)', key: 'recapDraft' as const }
   return null
 }
 
 export default function TeacherCalendar({ initialLessons }: { initialLessons: CalEvent[] }) {
+  const t = useT()
   const [view, setView] = useState<View>('week')
   const [anchor, setAnchor] = useState<Date>(startOfDay(new Date()))
   const [events, setEvents] = useState<CalEvent[]>(initialLessons)
@@ -74,10 +82,10 @@ export default function TeacherCalendar({ initialLessons }: { initialLessons: Ca
   const step = (dir: number) => setAnchor((a) => view === 'month' ? new Date(a.getFullYear(), a.getMonth() + dir, 1)
     : view === 'week' ? addDays(a, 7 * dir) : addDays(a, dir))
 
-  const label = view === 'month' ? `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`
-    : view === 'week' ? (() => { const s = startOfWeek(anchor); const e = addDays(s, 6); return `${MONTHS[s.getMonth()].slice(0, 3)} ${s.getDate()} – ${MONTHS[e.getMonth()].slice(0, 3)} ${e.getDate()}` })()
+  const label = view === 'month' ? `${t.calendar.months[anchor.getMonth()]} ${anchor.getFullYear()}`
+    : view === 'week' ? (() => { const s = startOfWeek(anchor); const e = addDays(s, 6); return `${t.calendar.months[s.getMonth()].slice(0, 3)} ${s.getDate()} – ${t.calendar.months[e.getMonth()].slice(0, 3)} ${e.getDate()}` })()
     : view === 'day' ? anchor.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
-    : 'Upcoming'
+    : t.calendar.upcoming
 
   return (
     <div style={{ display: 'grid', gap: 14 }}>
@@ -85,13 +93,13 @@ export default function TeacherCalendar({ initialLessons }: { initialLessons: Ca
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         {view !== 'list' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button className="btn btn-ghost btn-sm" onClick={() => setAnchor(startOfDay(new Date()))}>Today</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => step(-1)} aria-label="Previous">‹</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => step(1)} aria-label="Next">›</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setAnchor(startOfDay(new Date()))}>{t.calendar.today}</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => step(-1)} aria-label={t.calendar.prev}>‹</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => step(1)} aria-label={t.calendar.next}>›</button>
           </div>
         )}
         <strong style={{ fontSize: 16 }}>{label}</strong>
-        {loading && <span style={{ fontSize: 11, color: 'var(--muted)' }}>Loading…</span>}
+        {loading && <span style={{ fontSize: 11, color: 'var(--muted)' }}>{t.common.loading}</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, background: 'var(--surface-2)', padding: 3, borderRadius: 10 }}>
           {(['day', 'week', 'month', 'list'] as View[]).map((v) => (
             <button key={v} onClick={() => setView(v)} className="btn btn-sm"
@@ -105,7 +113,7 @@ export default function TeacherCalendar({ initialLessons }: { initialLessons: Ca
       {failure ? (
         <div className="empty">
           {CALENDAR_FAILURE_TEXT[failure]}{' '}
-          {isFixable(failure) && <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>Fix it in Settings</Link>}
+          {isFixable(failure) && <Link href="/settings" style={{ color: 'var(--brand)', fontWeight: 700 }}>{t.calendar.fixInSettings}</Link>}
         </div>
       ) : view === 'month' ? (
         <MonthView grid={monthGrid(anchor)} anchor={anchor} today={today} byDay={byDay} onPick={setSelected} onDay={(d) => { setAnchor(d); setView('day') }} />
@@ -195,7 +203,8 @@ function WeekView({ days, today, byDay, onPick, onDay }: {
 
 /* ── Day: full lesson rows with Join / recap actions visible inline ── */
 function DayView({ day, events }: { day: Date; events: CalEvent[] }) {
-  if (events.length === 0) return <div className="empty"><strong>Nothing on {day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}.</strong><br />No lessons scheduled this day.</div>
+  const t = useT()
+  if (events.length === 0) return <div className="empty"><strong>{fill(t.calendar.nothingOn, { day: day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) })}</strong><br />{t.calendar.noLessonsThatDay}</div>
   return (
     <div className="day-group">
       <div className="day-head"><span className="day-label">{day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</span></div>
@@ -208,12 +217,13 @@ function DayView({ day, events }: { day: Date; events: CalEvent[] }) {
 
 /* ── List (full LessonRow actions) ── */
 function ListView({ byDay, today }: { byDay: Map<string, CalEvent[]>; today: Date }) {
+  const t = useT()
   const keys = Array.from(byDay.keys()).sort()
-  if (keys.length === 0) return <div className="empty"><strong>Your agenda is clear.</strong><br />No upcoming lessons on this calendar.</div>
+  if (keys.length === 0) return <div className="empty"><strong>{t.calendar.agendaClear}</strong><br />{t.calendar.noUpcoming}</div>
   const dayLabel = (k: string) => {
     const d = new Date(`${k}T12:00:00`)
-    if (sameYmd(d, today)) return 'Today'
-    if (sameYmd(d, addDays(today, 1))) return 'Tomorrow'
+    if (sameYmd(d, today)) return t.calendar.today
+    if (sameYmd(d, addDays(today, 1))) return t.calendar.tomorrow
     return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
   }
   return (

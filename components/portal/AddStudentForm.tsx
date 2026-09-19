@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/I18nProvider'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
@@ -8,6 +9,11 @@ import { addPayment } from '@/app/actions/payments'
 import { languageOptions, SPOKEN_LANGUAGES } from '@/lib/languages'
 import InviteLink from '@/components/portal/InviteLink'
 
+/**
+ * The values STORED on the student row, so they stay English — a level
+ * written in French would not match one written in Japanese for the same
+ * student. t.addStudent.levels supplies what the teacher reads, by index.
+ */
 const LEVELS = ['Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate', 'Upper-Intermediate', 'Advanced']
 
 // Learning starts empty and has to be chosen. It used to inherit a
@@ -28,6 +34,7 @@ const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
 })
 
 export default function AddStudentForm({ currency = 'USD', teachingLanguage = '', speakingLanguage = '' }: { currency?: string; teachingLanguage?: string; speakingLanguage?: string }) {
+  const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -58,7 +65,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
     })
     if (!res.success || !res.studentId) {
       setBusy(false)
-      setError(res.error || 'Could not create student')
+      setError(res.error || t.addStudent.createFailed)
       return
     }
 
@@ -119,7 +126,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
       className="k-modal"
       role="dialog"
       aria-modal="true"
-      aria-label="New student"
+      aria-label={t.addStudent.aria}
       // Clicking the backdrop must not silently discard an unread invite link.
       onClick={(e) => { if (e.target === e.currentTarget && !created) setOpen(false) }}
     >
@@ -154,32 +161,32 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
       ) : (
         <div className="k-modal-card">
         <div className="settings-row" style={{ marginBottom: 14 }}>
-          <h3 style={{ margin: 0 }}>New student</h3>
-          <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>Close</button>
+          <h3 style={{ margin: 0 }}>{t.addStudent.title}</h3>
+          <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>{t.common.close}</button>
         </div>
 
         <form onSubmit={submit}>
           <div className="field">
-            <label>Full name</label>
-            <input value={form.full_name} onChange={set('full_name')} required placeholder="Jane Doe" />
+            <label>{t.addStudent.fullName}</label>
+            <input value={form.full_name} onChange={set('full_name')} required placeholder={t.addStudent.namePlaceholder} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
-              <label>Level</label>
+              <label>{t.addStudent.level}</label>
               <select value={form.level} onChange={set('level')} style={inputStyle}>
-                {LEVELS.map((l) => <option key={l}>{l}</option>)}
+                {LEVELS.map((l, i) => <option key={l} value={l}>{t.addStudent.levels[i]}</option>)}
               </select>
             </div>
             <div className="field">
-              <label>Learning</label>
+              <label>{t.addStudent.learning}</label>
               <select value={form.language} onChange={set('language')} required style={inputStyle}>
-                <option value="" disabled>Choose…</option>
+                <option value="" disabled>{t.addStudent.choose}</option>
                 {languageOptions(teachingLanguage).map((l) => <option key={l}>{l}</option>)}
               </select>
             </div>
           </div>
           <div className="field">
-            <label>Recap language</label>
+            <label>{t.addStudent.recapLanguage}</label>
             <select value={form.instruction_language} onChange={set('instruction_language')} required style={inputStyle}>
               {SPOKEN_LANGUAGES.map((l) => <option key={l}>{l}</option>)}
             </select>
