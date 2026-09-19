@@ -13,6 +13,8 @@
  * ranking of one thing above a history of another.
  */
 
+import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useState } from 'react'
 import { Bar, BarChart, Cell, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
@@ -37,21 +39,24 @@ export type StudentAnalytics = {
 
 type MetricKey = keyof Omit<LessonPoint, 'n'>
 
+/**
+ * Shape and data keys only. The words come from t.classAnalytics.measures by
+ * index — a module constant is built once at import, so a label baked in here
+ * would outlive every language change on the page.
+ */
 const METRICS: {
   key: MetricKey
-  label: string
-  sub: string
   unit: string
   domain?: [number, number]
   decimals?: number
   lowerIsBetter?: boolean
 }[] = [
-  { key: 'score', label: 'Average score', sub: 'Out of 10, across every scored lesson.', unit: ' / 10', domain: [0, 10], decimals: 1 },
-  { key: 'talk', label: 'Talk share', sub: 'How much of the lesson the student was the one speaking.', unit: '% of the lesson', domain: [0, 100] },
-  { key: 'wpm', label: 'Speaking pace', sub: 'Words a minute while they were talking. Rising over time is fluency.', unit: ' words / min' },
-  { key: 'think', label: 'Thinking time', sub: 'Seconds between you finishing and them starting. A long pause is where the work happens, not a fault.', unit: 's before replying', decimals: 1, lowerIsBetter: true },
-  { key: 'turnWords', label: 'Words per turn', sub: 'How much they say each time they speak. Short turns at a quick pace is answering, not conversing.', unit: ' words a turn' },
-  { key: 'fillers', label: 'Filler words', sub: 'Ums and ahs per lesson. Worth reading beside pace — fast and full of fillers is a different problem from slow and clean.', unit: ' per lesson', lowerIsBetter: true },
+  { key: 'score', unit: ' / 10', domain: [0, 10], decimals: 1 },
+  { key: 'talk', unit: '% of the lesson', domain: [0, 100] },
+  { key: 'wpm', unit: ' words / min' },
+  { key: 'think', unit: 's before replying', decimals: 1, lowerIsBetter: true },
+  { key: 'turnWords', unit: ' words a turn' },
+  { key: 'fillers', unit: ' per lesson', lowerIsBetter: true },
 ]
 
 /**
@@ -146,8 +151,11 @@ function TrendCard({
 }
 
 export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
+  const t = useT()
   const [i, setI] = useState(0)
   const metric = METRICS[i]
+  // Shape from METRICS, words from the dictionary, paired by position.
+  const words = t.classAnalytics.measures[i]
   const dp = metric.decimals ?? 0
 
   const colours = new Map(rows.map((r, idx) => [r.id, colourOf(idx)]))
@@ -182,27 +190,27 @@ export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
     <div style={{ display: 'grid', gap: 16 }}>
       <section className="analytics-card">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 16 }}>
-          {stat('Total lessons', String(totalLessons), `across ${rows.length} students`)}
-          {stat('Most active', busiest?.points.length ? busiest.name : '—', busiest?.points.length ? `${busiest.points.length} lessons` : 'nothing recorded yet')}
-          {stat('Vocabulary met', String(totalVocab), 'words across all lessons')}
-          {stat('Not seen lately', String(quiet.length), quiet.length ? quiet.map((q) => q.name).join(', ') : 'everyone is current')}
+          {stat(t.classAnalytics.totalLessons, String(totalLessons), fill(t.classAnalytics.acrossStudents, { n: rows.length }))}
+          {stat(t.classAnalytics.mostActive, busiest?.points.length ? busiest.name : '—', busiest?.points.length ? fill(t.classAnalytics.nLessons, { n: busiest.points.length }) : t.classAnalytics.nothingRecorded)}
+          {stat(t.classAnalytics.vocabMet, String(totalVocab), t.classAnalytics.wordsAcross)}
+          {stat(t.classAnalytics.notSeenLately, String(quiet.length), quiet.length ? quiet.map((q) => q.name).join(', ') : t.classAnalytics.everyoneCurrent)}
         </div>
       </section>
 
       <section className="analytics-card">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ margin: 0, fontSize: 15, letterSpacing: '-.01em' }}>{metric.label}</h3>
-            <p style={{ margin: '3px 0 0', fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.5 }}>{metric.sub}</p>
+            <h3 style={{ margin: 0, fontSize: 15, letterSpacing: '-.01em' }}>{words.label}</h3>
+            <p style={{ margin: '3px 0 0', fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.5 }}>{words.sub}</p>
           </div>
           {/* Paging beats scrolling: the comparison stays in the same place on
               the page, so only the measure changes under your eye. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <button className="k-metric-nav" onClick={() => step(-1)} aria-label="Previous measure">‹</button>
+            <button className="k-metric-nav" onClick={() => step(-1)} aria-label={t.classAnalytics.prevMeasure}>‹</button>
             <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
               {i + 1}/{METRICS.length}
             </span>
-            <button className="k-metric-nav" onClick={() => step(1)} aria-label="Next measure">›</button>
+            <button className="k-metric-nav" onClick={() => step(1)} aria-label={t.classAnalytics.nextMeasure}>›</button>
           </div>
         </div>
 
@@ -228,17 +236,17 @@ export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
           </ResponsiveContainer>
         ) : (
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: 0 }}>
-            Nothing measured for this yet — it fills in as lessons are recorded.
+            {t.classAnalytics.nothingMeasured}
           </p>
         )}
 
-        <div className="k-metric-dots" role="tablist" aria-label="Measure">
+        <div className="k-metric-dots" role="tablist" aria-label={t.classAnalytics.measureAria}>
           {METRICS.map((m, n) => (
             <button
               key={m.key}
               role="tab"
               aria-selected={n === i}
-              aria-label={m.label}
+              aria-label={t.classAnalytics.measures[n].label}
               className={`k-metric-dot ${n === i ? 'sel' : ''}`}
               onClick={() => setI(n)}
             />
@@ -247,9 +255,9 @@ export default function ClassAnalytics({ rows }: { rows: StudentAnalytics[] }) {
       </section>
 
       <section className="analytics-card">
-        <h3 style={{ margin: 0, fontSize: 15, letterSpacing: '-.01em' }}>{metric.label} — each student</h3>
+        <h3 style={{ margin: 0, fontSize: 15, letterSpacing: '-.01em' }}>{fill(t.classAnalytics.perStudent, { measure: words.label })}</h3>
         <p style={{ margin: '3px 0 14px', fontSize: 11.5, color: 'var(--muted)', lineHeight: 1.5 }}>
-          Their own lessons in order. The arrow is first lesson to last.
+          {t.classAnalytics.perStudentSub}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 12 }}>
           {rows.map((r) => (

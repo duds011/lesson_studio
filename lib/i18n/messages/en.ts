@@ -675,7 +675,12 @@ export const en = {
     title: 'Find a time that works',
     sub: 'Pick a day, then choose a time. Your confirmation and meeting details arrive by email.',
     booked: 'You’re booked!',
-    invitePre: 'A calendar invite is on its way to',
+    /**
+     * One sentence with the address in a slot, not a fragment with the email
+     * glued after it. Japanese rejected the fragment three times, correctly:
+     * it cannot end a sentence there. See rich() in lib/i18n.
+     */
+    invite: 'A calendar invite is on its way to {email}.',
     openMeeting: 'Open meeting link',
     noCalendar: 'Availability unavailable. Is the calendar connected?',
     noTimes: 'No open lesson times in the next 30 days.',
@@ -885,6 +890,69 @@ export const en = {
     spam: 'Nothing arriving? Check your spam folder, or try again with the address you signed up with.',
     remembered: 'Remembered it?',
     backToSignIn: 'Back to sign in',
+  },
+  /** app/reset-password — reached only from the link in an email. */
+  reset: {
+    tooShort: 'Your new password needs at least 6 characters.',
+    mismatch: 'The two passwords don’t match — give them another look.',
+    samePassword: 'That’s the same password as before — choose a new one.',
+    saveFailed: 'We couldn’t save that password. Please try again.',
+    title: 'Choose a new password',
+    expired: 'This reset link has expired or was already used. Request a fresh one and try again.',
+    noToken: 'This page only works from the link in a password-reset email. Request one and we’ll send it over.',
+    lead: 'Pick a new password for your account. You’ll be signed in as soon as it’s saved.',
+    newPassword: 'New password',
+    repeat: 'Repeat it',
+  },
+
+  /**
+   * components/portal/ClassAnalytics.tsx — the teacher's view across students.
+   * `measures` is indexed to the component's MEASURES, which keeps the data
+   * keys, units and domains.
+   */
+  classAnalytics: {
+    measures: [
+      { label: 'Average score', sub: 'Out of 10, across every scored lesson.' },
+      { label: 'Talk share', sub: 'How much of the lesson the student was the one speaking.' },
+      { label: 'Speaking pace', sub: 'Words a minute while they were talking. Rising over time is fluency.' },
+      { label: 'Thinking time', sub: 'Seconds between you finishing and them starting. A long pause is where the work happens, not a fault.' },
+      { label: 'Words per turn', sub: 'How much they say each time they speak. Short turns at a quick pace is answering, not conversing.' },
+      { label: 'Filler words', sub: 'Ums and ahs per lesson. Worth reading beside pace — fast and full of fillers is a different problem from slow and clean.' },
+    ],
+    totalLessons: 'Total lessons',
+    acrossStudents: 'across {n} students',
+    mostActive: 'Most active',
+    nLessons: '{n} lessons',
+    nothingRecorded: 'nothing recorded yet',
+    vocabMet: 'Vocabulary met',
+    wordsAcross: 'words across all lessons',
+    notSeenLately: 'Not seen lately',
+    everyoneCurrent: 'everyone is current',
+    measureAria: 'Measure',
+    nothingMeasured: 'Nothing measured for this yet — it fills in as lessons are recorded.',
+    /** {measure} is the measure's own label, already translated. */
+    perStudent: '{measure} — each student',
+    perStudentSub: 'Their own lessons in order. The arrow is first lesson to last.',
+    prevMeasure: 'Previous measure',
+    nextMeasure: 'Next measure',
+  },
+
+  /** app/teacher/students/[id]/tests/[testId] */
+  test: {
+    /** {level} is the student's level, already translated where it is shown. */
+    heading: '{level} Practice Test',
+    published: 'Published',
+    draftOnlyYou: 'Draft — only you can see this',
+    basedOn: 'Based on',
+    lessonN: 'Lesson {n}',
+    script: 'Script',
+    scriptBeginner: 'Hiragana + romaji',
+    scriptHiragana: 'Hiragana',
+    scriptKanji: 'Kanji + kana',
+    created: 'Created',
+    status: 'Status',
+    speakingAnswer: 'Speaking answer',
+    unplayable: 'Recording exists but could not be signed for playback.',
   },
 } as const
 

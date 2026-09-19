@@ -1,7 +1,7 @@
 'use client'
 
 import { useT } from '@/components/I18nProvider'
-import { fill } from '@/lib/i18n'
+import { fill, rich } from '@/lib/i18n'
 import { useEffect, useMemo, useState } from 'react'
 import { PublicNav } from '@/components/AppNav'
 
@@ -124,7 +124,7 @@ export default function BookForm() {
             </svg>
             <h3 style={{ margin: '.4rem 0' }}>{t.book.booked}</h3>
             <p className="sub">{picked && `${fmtDateLong(picked.slice(0, 10))} at ${fmtTime(picked)}`}</p>
-            <p className="sub">{t.book.invitePre} <strong>{email}</strong>.</p>
+            <p className="sub">{rich(t.book.invite, { email: <strong>{email}</strong> })}</p>
             {confirmed.meetUrl && (
               <p style={{ marginTop: '1rem' }}>
                 <a className="btn btn-primary" href={confirmed.meetUrl} target="_blank" rel="noreferrer">{t.book.openMeeting}</a>
