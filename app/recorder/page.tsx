@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { getDict, rich } from '@/lib/i18n'
+import { teacherLocale, publicLocale } from '@/lib/i18n/server'
 import { createClient } from '@/lib/supabase/server'
 import { currentUser } from '@/lib/auth'
 import { RECORDER_STORE_URL } from '@/lib/recorder'
@@ -17,17 +19,17 @@ export const dynamic = 'force-dynamic'
 export default async function RecorderPage() {
   const supabase = await createClient()
   const user = await currentUser(supabase)
+  // Reachable signed out (the Web Store listing links here), so fall back to
+  // the request when there is nobody to read a preference from.
+  const t = getDict(user ? await teacherLocale(supabase, user.id) : await publicLocale())
 
   return (
     <main className="main-wrap page-fade" style={{ maxWidth: 760 }}>
       <header style={{ marginBottom: 34 }}>
-        <span className="eyebrow">Lesson recorder</span>
-        <h1 style={{ marginTop: 6 }}>Record a lesson, get a recap</h1>
+        <span className="eyebrow">{t.guide.eyebrow}</span>
+        <h1 style={{ marginTop: 6 }}>{t.guide.title}</h1>
         <p className="sub" style={{ maxWidth: '56ch' }}>
-          A Chrome extension that records your lesson tab and your microphone as two separate
-          tracks, then turns them into a draft recap here. No bot joins the call, nothing is
-          installed on your student&rsquo;s side — it works on Preply, italki, Google Meet, Zoom,
-          anywhere your lesson lives in a tab.
+          {t.guide.sub}
         </p>
       </header>
 
@@ -36,10 +38,9 @@ export default async function RecorderPage() {
         <div className="rg-step">
           <span className="rg-n">1</span>
           <div className="rg-body">
-            <h3>Install it from the Chrome Web Store</h3>
+            <h3>{t.guide.step1Title}</h3>
             <p>
-              One click, no settings. Then pin it — click the puzzle piece next to the address
-              bar and tap the pin — so the K is always in reach mid-lesson.
+              {t.guide.step1Body}
             </p>
             <div className="rg-art">
               <div className="rg-browser">
@@ -51,10 +52,10 @@ export default async function RecorderPage() {
                 </div>
                 <div className="rg-page">
                   <div>
-                    <div className="rg-store-name">Lesson Studio Recorder</div>
+                    <div className="rg-store-name">{t.guide.storeName}</div>
                     <div className="rg-store-sub">by KOKU Labs · Free</div>
                   </div>
-                  <span className="rg-cta">Add to Chrome</span>
+                  <span className="rg-cta">{t.guide.addToChromeShort}</span>
                 </div>
               </div>
             </div>
@@ -65,12 +66,10 @@ export default async function RecorderPage() {
               className="btn btn-primary"
               style={{ marginTop: 14 }}
             >
-              Add to Chrome — it&rsquo;s free ↗
+              {t.guide.addToChrome}
             </a>
             <p className="sub" style={{ margin: '12px 0 0', fontSize: 12 }}>
-              <strong>Tested the beta from a folder?</strong> Remove that copy first
-              (<code>chrome://extensions</code> → Remove). Only one copy can record a tab at a
-              time.
+              {rich(t.guide.betaNote, { path: <code>chrome://extensions</code> })}
             </p>
           </div>
         </div>
@@ -81,11 +80,9 @@ export default async function RecorderPage() {
         <div className="rg-step">
           <span className="rg-n">2</span>
           <div className="rg-body">
-            <h3>Sign in — once</h3>
+            <h3>{t.guide.step2Title}</h3>
             <p>
-              Open the extension and sign in with the same email and password you use here.
-              That&rsquo;s the whole setup: it knows who you are, which students are yours, and
-              which language you teach.
+              {t.guide.step2Body}
             </p>
             <div className="rg-art">
               <div className="rg-popup">
@@ -93,7 +90,7 @@ export default async function RecorderPage() {
                 <div className="rg-pop-body">
                   <span className="rg-field">you@example.com</span>
                   <span className="rg-field">••••••••</span>
-                  <span className="rg-rec-btn" style={{ background: 'var(--forest)' }}>Sign in</span>
+                  <span className="rg-rec-btn" style={{ background: 'var(--forest)' }}>{t.guide.signIn}</span>
                 </div>
               </div>
             </div>
@@ -106,18 +103,15 @@ export default async function RecorderPage() {
         <div className="rg-step">
           <span className="rg-n">3</span>
           <div className="rg-body">
-            <h3>Open your lesson tab and hit record</h3>
+            <h3>{t.guide.step3Title}</h3>
             <p>
-              Be in the tab the lesson actually happens in — the Preply classroom, the Meet
-              call. Click the K, pick the student, press <strong>Start recording</strong>. The
-              first time, Chrome asks for your microphone: allow it. Then close the popup and
-              just teach — recording carries on.
+              {rich(t.guide.step3Body)}
             </p>
             <div className="rg-art">
               <div className="rg-popup">
                 <div className="rg-pop-head"><span className="rg-pin">K</span> Recording setup</div>
                 <div className="rg-pop-body">
-                  <span className="rg-field">Student: <b>Minami</b> ▾</span>
+                  <span className="rg-field">{t.guide.studentLabel} <b>Minami</b> ▾</span>
                   <span className="rg-rec-btn start">● Start recording</span>
                 </div>
               </div>
@@ -131,10 +125,9 @@ export default async function RecorderPage() {
         <div className="rg-step">
           <span className="rg-n">4</span>
           <div className="rg-body">
-            <h3>Stop, then send</h3>
+            <h3>{t.guide.step4Title}</h3>
             <p>
-              When the lesson ends, open the popup, hit <strong>Stop recording</strong>, then{' '}
-              <strong>Send to Lesson Studio</strong>. Nothing is uploaded until you press send.
+              {rich(t.guide.step4Body)}
             </p>
             <div className="rg-art">
               <div className="rg-popup">
@@ -142,7 +135,7 @@ export default async function RecorderPage() {
                 <div className="rg-pop-body">
                   <span className="rg-timer"><i /> 47:12</span>
                   <span className="rg-rec-btn" style={{ background: 'var(--ink)' }}>■ Stop recording</span>
-                  <span className="rg-rec-btn send">Send to Lesson Studio →</span>
+                  <span className="rg-rec-btn send">{t.guide.sendButton}</span>
                 </div>
               </div>
             </div>
@@ -155,7 +148,7 @@ export default async function RecorderPage() {
         <div className="rg-step">
           <span className="rg-n">5</span>
           <div className="rg-body">
-            <h3>Review the recap it becomes</h3>
+            <h3>{t.guide.step5Title}</h3>
             <p>
               A few minutes later the draft is waiting under <strong>Recaps to review</strong> on
               your overview — summary, vocabulary, homework, in your student&rsquo;s language.
@@ -166,7 +159,7 @@ export default async function RecorderPage() {
               <div className="rg-queue-row">
                 <span className="num">#4</span>
                 <span className="who"><b>Minami</b><span>Lesson 4 · today</span></span>
-                <span className="go">Review &amp; send</span>
+                <span className="go">{t.guide.reviewAndSend}</span>
               </div>
             </div>
           </div>
@@ -175,17 +168,12 @@ export default async function RecorderPage() {
 
       <Reveal>
         <section className="lesson-block" style={{ marginTop: 8 }}>
-          <h3 style={{ marginTop: 0 }}>Before you record someone</h3>
+          <h3 style={{ marginTop: 0 }}>{t.guide.consentTitle}</h3>
           <p className="sub" style={{ marginTop: 0 }}>
-            Tell your student you are recording and get their agreement. Some places require
-            everyone on a call to consent, and Preply and italki each have their own terms about
-            recording lessons — worth a look before you make this part of how you teach.
+            {t.guide.consentBody}
           </p>
           <p className="sub" style={{ margin: 0 }}>
-            The recorder captures both voices. Nothing is uploaded until you press{' '}
-            <strong>Send to Lesson Studio</strong>, audio is transcribed to write the recap, and
-            the files are deleted 30 days later. The full detail is in our{' '}
-            <Link href="/privacy">privacy policy</Link>.
+            {rich(t.guide.dataBody, { policy: <Link href="/privacy">{t.guide.privacyLink}</Link> })}
           </p>
         </section>
       </Reveal>

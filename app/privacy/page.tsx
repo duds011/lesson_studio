@@ -15,6 +15,18 @@ export const metadata = {
  *
  * Every claim here is checkable against the code. If the pipeline changes, this
  * page changes with it: an out-of-date policy is worse than a blunt one.
+ *
+ * DELIBERATELY NOT TRANSLATED, unlike the rest of the app.
+ *
+ * This is a legal commitment about what is collected and how long it is kept,
+ * and scripts/translate.mjs is a language model. A mistranslation here is not
+ * a clumsy button label — it is a promise we did not make, in a language
+ * nobody on this team can check. One authoritative version is also the normal
+ * shape for a policy, and the Chrome Web Store reviewer who requires this URL
+ * reads it signed out, in English.
+ *
+ * If it is ever translated, it needs a human who reads the language and a
+ * line saying which version governs.
  */
 
 /** One place to change it. Also the address on the Chrome developer account. */

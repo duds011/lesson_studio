@@ -1006,6 +1006,45 @@ export const en = {
     title: 'Generate a practice test',
     explanationLanguage: 'Explanation language',
   },
+  /**
+   * app/recorder — the setup guide, reachable signed out.
+   *
+   * Instructions, so translated. The privacy policy it links to is NOT — see
+   * the note at the top of app/privacy/page.tsx.
+   */
+  guide: {
+    eyebrow: 'Lesson recorder',
+    title: 'Record a lesson, get a recap',
+    sub: 'A Chrome extension that records your lesson tab and your microphone as two separate tracks, then turns them into a draft recap here. No bot joins the call, nothing is installed on your student’s side — it works on Preply, italki, Google Meet, Zoom, anywhere your lesson lives in a tab.',
+
+    step1Title: 'Install it from the Chrome Web Store',
+    step1Body: 'One click, no settings. Then pin it — click the puzzle piece next to the address bar and tap the pin — so the K is always in reach mid-lesson.',
+    storeName: 'Lesson Studio Recorder',
+    addToChromeShort: 'Add to Chrome',
+    addToChrome: 'Add to Chrome — it’s free ↗',
+    betaNote: '**Tested the beta from a folder?** Remove that copy first ({path} → Remove). Only one copy can record a tab at a time.',
+
+    step2Title: 'Sign in — once',
+    step2Body: 'Open the extension and sign in with the same email and password you use here. That’s the whole setup: it knows who you are, which students are yours, and which language you teach.',
+    signIn: 'Sign in',
+
+    step3Title: 'Open your lesson tab and hit record',
+    step3Body: 'Be in the tab the lesson actually happens in — the Preply classroom, the Meet call. Click the K, pick the student, press **Start recording**. The first time, Chrome asks for your microphone: allow it. Then close the popup and just teach — recording carries on.',
+    studentLabel: 'Student:',
+
+    step4Title: 'Stop, then send',
+    step4Body: 'When the lesson ends, open the popup, hit **Stop recording**, then **Send to Lesson Studio**. Nothing is uploaded until you press send.',
+    sendButton: 'Send to Lesson Studio →',
+
+    step5Title: 'Review the recap it becomes',
+    step5Body: 'A few minutes later the draft is waiting under **Recaps to review** on your overview — summary, vocabulary, homework, in your student’s language. Edit anything, hit send, and it lands in their portal.',
+    reviewAndSend: 'Review & send',
+
+    consentTitle: 'Before you record someone',
+    consentBody: 'Tell your student you are recording and get their agreement. Some places require everyone on a call to consent, and Preply and italki each have their own terms about recording lessons — worth a look before you make this part of how you teach.',
+    dataBody: 'The recorder captures both voices. Nothing is uploaded until you press **Send to Lesson Studio**, audio is transcribed to write the recap, and the files are deleted 30 days later. The full detail is in our {policy}.',
+    privacyLink: 'privacy policy',
+  },
 } as const
 
 /**
