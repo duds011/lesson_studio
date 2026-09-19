@@ -5,7 +5,7 @@ import { calendarFailure, CALENDAR_FAILURE_TEXT, isFixable, type CalendarFailure
 import AppNav from '@/components/AppNav'
 import I18nProvider from '@/components/I18nProvider'
 import { teacherLocale, publicLocale } from '@/lib/i18n/server'
-import { getDict, fill, type Locale } from '@/lib/i18n'
+import { getDict, fill, rich, type Locale } from '@/lib/i18n'
 import TeacherCalendar, { type CalEvent } from '@/components/TeacherCalendar'
 import RecapsToReview from '@/components/RecapsToReview'
 import CountUp from '@/components/portal/CountUp'
@@ -41,14 +41,16 @@ function ConnectScreen({ configured, locale }: { configured: boolean; locale: Lo
         <p>{t.connect.body}</p>
         {!configured && (
           <div className="warn-box">
-            {t.connect.notConfiguredPre}<strong>GOOGLE_CLIENT_ID</strong>{t.connect.notConfiguredMid}
-            <strong>GOOGLE_CLIENT_SECRET</strong>{t.connect.notConfiguredPost}
+            {rich(t.connect.notConfigured, {
+              id: <strong>GOOGLE_CLIENT_ID</strong>,
+              secret: <strong>GOOGLE_CLIENT_SECRET</strong>,
+            })}
           </div>
         )}
         <ul className="scopes">
-          <li><strong>{t.connect.scopeReadBold}</strong>{t.connect.scopeRead}</li>
-          <li><strong>{t.connect.scopeRecordBold}</strong>{t.connect.scopeRecord}</li>
-          <li><strong>{t.connect.scopeRecapBold}</strong>{t.connect.scopeRecap}</li>
+          <li>{rich(t.connect.scopeRead)}</li>
+          <li>{rich(t.connect.scopeRecord)}</li>
+          <li>{rich(t.connect.scopeRecap)}</li>
         </ul>
         <a
           className="btn btn-primary"

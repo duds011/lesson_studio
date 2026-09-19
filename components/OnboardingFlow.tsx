@@ -1,7 +1,7 @@
 'use client'
 
 import { useT } from '@/components/I18nProvider'
-import { fill } from '@/lib/i18n'
+import { fill, rich } from '@/lib/i18n'
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveOnboarding, completeOnboarding } from '@/app/actions/onboarding'
@@ -368,9 +368,13 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               </a>
 
               <p className="k-onb-fine">
-                Prefer the full walkthrough (mic permission, what gets recorded)? It&rsquo;s on the{' '}
-                <a href="/recorder" target="_blank" rel="noopener">setup guide</a> — also at{' '}
-                <strong>Settings → Lesson recorder</strong> whenever you&rsquo;re ready.
+                {rich(t.onboarding.recorderFine, {
+                  guide: (
+                    <a href="/recorder" target="_blank" rel="noopener">
+                      {t.onboarding.recorderFineLink}
+                    </a>
+                  ),
+                })}
               </p>
             </>
           )}

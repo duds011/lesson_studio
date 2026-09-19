@@ -66,8 +66,10 @@ export default function SubscriptionPanel({ usage }: { usage: RecapUsage }) {
           </strong>
           <span style={{ color: 'var(--muted)', fontWeight: 650 }}>
             {usage.trial
-              ? fill(t.billing.ofFree, { total: TRIAL_RECAPS }) +
-                (usage.used ? fill(t.billing.usedSuffix, { used: usage.used }) : '')
+              ? fill(usage.used ? t.billing.ofFreeUsed : t.billing.ofFree, {
+                  total: TRIAL_RECAPS,
+                  used: usage.used,
+                })
               : fill(t.billing.builtSoFar, { used: usage.used })}
           </span>
         </div>

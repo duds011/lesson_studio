@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { fill, type Messages } from '@/lib/i18n'
+import { fill, rich, type Messages } from '@/lib/i18n'
 import ProgressCharts from './ProgressCharts'
 import VocabLevelBreakdown from './VocabLevelBreakdown'
 import VocabByLevel from './VocabByLevel'
@@ -206,9 +206,9 @@ export function DashboardBlock({ id, brand, data: d, copy, preview, onRemoveStat
         const ma = Math.PI * (1 - then / 100)
         const headline = delta > 0
           ? (now >= 50
-            ? <>{copy.climbLed} <em>{copy.climbLedEm}</em>.</>
-            : <>{copy.climbMorePre} <em>{fill(copy.climbMoreEm, { delta })}</em> {copy.climbMorePost}</>)
-          : <>{copy.climbPlainPre} <em>{now}%</em> {copy.climbPlainPost}</>
+            ? <>{rich(copy.climbLed, { em: <em>{copy.climbLedEm}</em> })}</>
+            : <>{rich(copy.climbMore, { em: <em>{fill(copy.climbMoreEm, { delta })}</em> })}</>)
+          : <>{rich(copy.climbPlain, { em: <em>{now}%</em> })}</>
 
         const strip = DASH_STAT_TILES
           .filter(({ id: sid }) => sid !== 'speaking' && !hid.includes(sid))
@@ -247,7 +247,7 @@ export function DashboardBlock({ id, brand, data: d, copy, preview, onRemoveStat
             <div className="k-climb-copy">
               <div className="k-climb-eyebrow">{d.lessonCount === 1 ? copy.acrossOneLesson : fill(copy.acrossLessons, { n: d.lessonCount })}</div>
               <h2 className="k-climb-line">{headline}</h2>
-              <p className="k-climb-sub">{copy.climbSubPre} <b>{then}%</b>.</p>
+              <p className="k-climb-sub">{rich(copy.climbSub, { then: <b>{then}%</b> })}</p>
               {delta > 0 && <span className="k-climb-delta">▲ {fill(copy.climbDelta, { delta })}</span>}
               {strip.length > 0 && <div className="k-climb-strip">{strip}</div>}
             </div>

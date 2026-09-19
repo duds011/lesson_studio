@@ -1,3 +1,4 @@
+import { createElement, Fragment, type ReactNode } from 'react'
 import { DEFAULT_LOCALE, LOCALES, isLocale, type Locale } from './config'
 import { en, type Messages } from './messages/en'
 import { fr } from './messages/fr'
@@ -44,6 +45,44 @@ export function fill(template: string, values: Record<string, string | number>):
   return template.replace(/\{(\w+)\}/g, (whole, key) =>
     key in values ? String(values[key]) : whole,
   )
+}
+
+/**
+ * One translated sentence that contains markup, rendered as nodes.
+ *
+ * This exists because the alternative was splitting a sentence into two or
+ * three keys around its <em> or its link — and that only works in a language
+ * whose word order matches English. Japanese puts the verb last, so
+ * "You spoke {pct} of your last lesson." came back with an empty trailing
+ * fragment, which is correct Japanese and a broken key. The translator kept
+ * rejecting it, correctly.
+ *
+ * Two forms, both survive a JSON round trip and both read as markup to
+ * someone editing the raw file:
+ *
+ *   **bold**   -> <strong>
+ *   {name}     -> whatever node the caller passes under that name
+ *
+ * A slot with no node falls back to the literal "{name}", so a typo shows up
+ * on the page as a bug report rather than as the word "undefined".
+ *
+ * Deliberately the only markup supported. Anything more and this becomes a
+ * Markdown renderer with an injection surface, in a file a model writes into.
+ */
+export function rich(text: string, slots: Record<string, ReactNode> = {}): ReactNode[] {
+  return text
+    .split(/(\*\*[^*]+\*\*|\{\w+\})/g)
+    .filter(Boolean)
+    .map((part, i) => {
+      if (/^\*\*[^*]+\*\*$/.test(part)) {
+        return createElement('strong', { key: i }, part.slice(2, -2))
+      }
+      const slot = /^\{(\w+)\}$/.exec(part)
+      if (slot && slot[1] in slots) {
+        return createElement(Fragment, { key: i }, slots[slot[1]])
+      }
+      return createElement(Fragment, { key: i }, part)
+    })
 }
 
 export type { Messages }

@@ -204,18 +204,13 @@ export const en = {
     recorderTitle: 'Install the recorder',
     recorderLead:
       'This is the part that does the work: a Chrome extension that records your lesson and writes the recap. No bot joins the call, and nothing is installed on your student’s side.',
-    recorderStep1Bold: 'Add it from the Chrome Web Store',
-    recorderStep1: ' — one click, then pin it to your toolbar.',
-    recorderStep2Bold: 'Sign in inside the extension',
-    recorderStep2: ' with this same email and password. There is nothing to copy across.',
-    recorderStep3Bold: 'Record a lesson',
-    recorderStep3: ': pick the student, hit start, hit stop at the end.',
+    recorderStep1: '**Add it from the Chrome Web Store** — one click, then pin it to your toolbar.',
+    recorderStep2: '**Sign in inside the extension** with this same email and password. There is nothing to copy across.',
+    recorderStep3: '**Record a lesson**: pick the student, hit start, hit stop at the end.',
     addToChrome: 'Add to Chrome — it’s free ↗',
-    recorderFinePre: 'Prefer the full walkthrough (mic permission, what gets recorded)? It’s on the ',
+    recorderFine:
+      'Prefer the full walkthrough (mic permission, what gets recorded)? It’s on the {guide} — also at **Settings → Lesson recorder** whenever you’re ready.',
     recorderFineLink: 'setup guide',
-    recorderFineMid: ' — also at ',
-    recorderFineBold: 'Settings → Lesson recorder',
-    recorderFinePost: ' whenever you’re ready.',
   },
   /** app/page.tsx — the Overview page and the Google connect wall. */
   overview: {
@@ -243,15 +238,10 @@ export const en = {
     title: 'Connect your Google Calendar',
     body:
       'Link your calendar so Lesson Studio can see your upcoming lessons, take bookings, and record each class.',
-    notConfiguredPre: 'Google OAuth isn’t configured yet. Add ',
-    notConfiguredMid: ' and ',
-    notConfiguredPost: ' to the environment, then restart.',
-    scopeReadBold: 'Read your calendar',
-    scopeRead: ' — find lessons and their meeting links',
-    scopeRecordBold: 'Record lessons',
-    scopeRecord: ' — capture classes with the Lesson Studio extension',
-    scopeRecapBold: 'Build recaps',
-    scopeRecap: ' — AI lesson summaries for you to review and share',
+    notConfigured: 'Google OAuth isn’t configured yet. Add {id} and {secret} to the environment, then restart.',
+    scopeRead: '**Read your calendar** — find lessons and their meeting links',
+    scopeRecord: '**Record lessons** — capture classes with the Lesson Studio extension',
+    scopeRecap: '**Build recaps** — AI lesson summaries for you to review and share',
     continueGoogle: 'Continue with Google',
     fine: 'You’ll be sent to Google’s consent screen. Manage this later in Settings.',
   },
@@ -261,7 +251,7 @@ export const en = {
     title: 'Settings',
 
     recorderTitle: 'Lesson recorder',
-    recorderDesc: 'The Chrome extension that records a lesson and turns it into a recap. ',
+    recorderDesc: 'The Chrome extension that records a lesson and turns it into a recap. {guide}',
     recorderGuide: 'Step-by-step guide →',
     replayTourHint: 'Forgot what a page is for? The walkthrough runs again from here.',
 
@@ -302,7 +292,7 @@ export const en = {
     leftDesc: 'One is spent each time a lesson is written up. They do not expire and nothing renews.',
     /** {total} free, and {used} of them gone. */
     ofFree: 'of your {total} free write-ups',
-    usedSuffix: ' · {used} used',
+    ofFreeUsed: 'of your {total} free write-ups · {used} used',
     builtSoFar: '{used} built so far',
     emptyTrial:
       'That is the free ones used. A pack below keeps your lessons being written up — there is no subscription and no renewal date.',
@@ -418,18 +408,20 @@ export const en = {
     notLinked: 'Account not linked yet',
     askTeacher: 'Ask your teacher to link your account.',
 
-    /** The speaking arc. {delta}, {now} and {then} are percentages. */
-    climbLed: 'You went from listening to',
+    /**
+     * The speaking arc. One key per sentence, with {em} standing for the part
+     * the arc emphasises — NOT three keys glued together, which only works in
+     * a language whose word order matches English. See rich() in lib/i18n.
+     */
+    climbLed: 'You went from listening to {em}.',
     climbLedEm: 'leading the conversation',
-    climbMorePre: 'You are speaking',
+    climbMore: 'You are speaking {em} than when you started.',
     climbMoreEm: '{delta} points more',
-    climbMorePost: 'than when you started.',
-    climbPlainPre: 'You spoke',
-    climbPlainPost: 'of your last lesson.',
+    climbPlain: 'You spoke {em} of your last lesson.',
     youSpoke: 'You spoke',
     acrossLessons: 'Across {n} lessons',
     acrossOneLesson: 'Across 1 lesson',
-    climbSubPre: 'The mark on the arc is where you started —',
+    climbSub: 'The mark on the arc is where you started — {then}.',
     climbDelta: '{delta} points since lesson 1',
 
     inLast30: '{n} in the last 30 days',
@@ -547,9 +539,8 @@ export const en = {
     joining: 'Joining…',
     /** {name} is the email they are already signed in as. */
     joinAs: 'Join as {name}',
-    notYouPre: 'Not you? ',
+    notYou: 'Not you? {signOut} and open this link again.',
     notYouLink: 'Sign out',
-    notYouPost: ' and open this link again.',
     emailLabel: 'Your email address',
     passwordLabel: 'Choose a password',
     passwordHint: 'At least 8 characters',

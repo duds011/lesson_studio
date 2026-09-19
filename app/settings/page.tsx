@@ -17,7 +17,7 @@ import ReplayTourButton from '@/components/ReplayTourButton'
 import LanguagePicker from '@/components/LanguagePicker'
 import { teacherLocale } from '@/lib/i18n/server'
 import { DEFAULT_LOCALE } from '@/lib/i18n/config'
-import { getDict } from '@/lib/i18n'
+import { getDict, rich } from '@/lib/i18n'
 import SubscriptionPanel from '@/components/SubscriptionPanel'
 import { getRecapUsage } from '@/lib/recap-quota'
 
@@ -90,8 +90,13 @@ export default async function SettingsPage() {
                 <div>
                   <h3>{t.settings.recorderTitle}</h3>
                   <p className="desc">
-                    {t.settings.recorderDesc}
-                    <a href="/recorder" style={{ color: 'var(--brand)', fontWeight: 700 }}>{t.settings.recorderGuide}</a>
+                    {rich(t.settings.recorderDesc, {
+                      guide: (
+                        <a href="/recorder" style={{ color: 'var(--brand)', fontWeight: 700 }}>
+                          {t.settings.recorderGuide}
+                        </a>
+                      ),
+                    })}
                   </p>
                 </div>
               </div>

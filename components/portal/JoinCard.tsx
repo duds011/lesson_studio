@@ -1,7 +1,7 @@
 'use client'
 
 import { useT } from '@/components/I18nProvider'
-import { fill } from '@/lib/i18n'
+import { fill, rich } from '@/lib/i18n'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { claimInvite, claimInviteAsCurrentUser, type InvitePreview } from '@/app/actions/join'
@@ -118,7 +118,7 @@ export default function JoinCard({
                 </button>
                 {error && <p className="k-join-error">{error}</p>}
                 <p className="k-join-fine k-join-step" style={{ animationDelay: '400ms' }}>
-                  {t.join.notYouPre}<a href="/logout">{t.join.notYouLink}</a>{t.join.notYouPost}
+                  {rich(t.join.notYou, { signOut: <a href="/logout">{t.join.notYouLink}</a> })}
                 </p>
               </>
             ) : (
