@@ -49,23 +49,32 @@ export async function POST(req: NextRequest) {
   const stripe = getStripe()
   const base = publicBase(req)
 
+  /**
+   * Make this teacher a Stripe Customer and remember which one.
+   *
+   * Separated out because it is now reached from two places: the first time a
+   * teacher buys anything, and again if the id we stored turns out to point at
+   * nothing.
+   */
+  const mintCustomer = async (): Promise<string> => {
+    const customer = await stripe.customers.create({
+      email: (profile as any).email ?? user.email ?? undefined,
+      name: (profile as any).full_name ?? undefined,
+      metadata: { teacher_id: user.id },
+    })
+    const { error } = await admin
+      .from('profiles').update({ stripe_customer_id: customer.id }).eq('id', user.id)
+    // If this write fails we would mint a second customer next time, which
+    // splits their billing history — better to stop than to paper over it.
+    if (error) throw new Error(`Could not save the Stripe customer: ${error.message}`)
+    return customer.id
+  }
+
   try {
     // One Stripe Customer per teacher, reused forever, so the billing portal
     // and every future invoice hang off the same record.
-    let customerId = (profile as any).stripe_customer_id as string | null
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: (profile as any).email ?? user.email ?? undefined,
-        name: (profile as any).full_name ?? undefined,
-        metadata: { teacher_id: user.id },
-      })
-      customerId = customer.id
-      const { error } = await admin
-        .from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
-      // If this write fails we would mint a second customer next time, which
-      // splits their billing history — better to stop than to paper over it.
-      if (error) throw new Error(`Could not save the Stripe customer: ${error.message}`)
-    }
+    let customerId =
+      ((profile as any).stripe_customer_id as string | null) || (await mintCustomer())
 
     const lookupKey = pack.lookupKey
     const prices = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 })
@@ -94,31 +103,55 @@ export async function POST(req: NextRequest) {
      */
     const currency = asPackCurrency(wanted).toLowerCase()
 
-    const session = await stripe.checkout.sessions.create({
-      // A payment, never a subscription. Nothing here renews.
-      mode: 'payment',
-      currency,
-      customer: customerId,
-      line_items: [{ price: price.id, quantity: 1 }],
-      allow_promotion_codes: true,
-      client_reference_id: user.id,
-      /**
-       * The COUNT rides on the session, not just the pack id.
-       *
-       * The webhook is what grants the write-ups, and it should not have to
-       * trust that this deployment's lib/plans still says what it said when
-       * the session was made. If a pack is ever resized, someone who paid
-       * yesterday gets what they paid for.
-       */
-      metadata: {
-        teacher_id: user.id,
-        kind: 'pack',
-        pack_id: pack.id,
-        pack_recaps: String(pack.recaps),
-      },
-      success_url: `${base}/teacher/recaps?billing=success`,
-      cancel_url: `${base}/teacher/recaps?billing=cancelled`,
-    })
+    const openSession = (customer: string) =>
+      stripe.checkout.sessions.create({
+        // A payment, never a subscription. Nothing here renews.
+        mode: 'payment',
+        currency,
+        customer,
+        line_items: [{ price: price.id, quantity: 1 }],
+        allow_promotion_codes: true,
+        client_reference_id: user.id,
+        /**
+         * The COUNT rides on the session, not just the pack id.
+         *
+         * The webhook is what grants the write-ups, and it should not have to
+         * trust that this deployment's lib/plans still says what it said when
+         * the session was made. If a pack is ever resized, someone who paid
+         * yesterday gets what they paid for.
+         */
+        metadata: {
+          teacher_id: user.id,
+          kind: 'pack',
+          pack_id: pack.id,
+          pack_recaps: String(pack.recaps),
+        },
+        success_url: `${base}/teacher/recaps?billing=success`,
+        cancel_url: `${base}/teacher/recaps?billing=cancelled`,
+      })
+
+    /**
+     * A customer id we stored ourselves can still point at nothing.
+     *
+     * Stripe keeps test and live data in separate worlds, so every customer
+     * minted while the keys were sk_test_ is a dead id the moment the keys go
+     * live — and the profile row holding it looks perfectly valid. The same
+     * happens to anyone deleted from the dashboard. Failing here would mean a
+     * teacher can never buy anything again because of a pointer we wrote, so
+     * mint a fresh customer and carry on. They see a checkout page, not an
+     * error.
+     */
+    let session
+    try {
+      session = await openSession(customerId)
+    } catch (e: any) {
+      const missingCustomer =
+        e?.code === 'resource_missing' &&
+        (e?.param === 'customer' || /customer/i.test(String(e?.message ?? '')))
+      if (!missingCustomer) throw e
+      customerId = await mintCustomer()
+      session = await openSession(customerId)
+    }
 
     return NextResponse.json({ ok: true, url: session.url })
   } catch (e: any) {
