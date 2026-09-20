@@ -113,6 +113,22 @@ export async function POST(req: NextRequest) {
         allow_promotion_codes: true,
         client_reference_id: user.id,
         /**
+         * The price on the site is the price on the Stripe page.
+         *
+         * Stripe Tax is active on the account and its default behaviour is
+         * "exclusive" — VAT added on top of the figure we quote. These prices
+         * are rounded by hand against a fixed FX table precisely so that a
+         * teacher sees one number and pays it. Disabled here rather than in
+         * the dashboard so a settings change can never quietly reprice us.
+         */
+        automatic_tax: { enabled: false },
+        /**
+         * Same promise, different mechanism. Adaptive Pricing converts into
+         * the buyer's local currency at Stripe's live rate, which would quote
+         * a fourth number next to our three hand-rounded lists.
+         */
+        adaptive_pricing: { enabled: false },
+        /**
          * The COUNT rides on the session, not just the pack id.
          *
          * The webhook is what grants the write-ups, and it should not have to
