@@ -119,10 +119,9 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
         never lives up here — it slides in from the side, the same rail as on
         desktop, so the app has one navigation and two ways to summon it. */}
     <header className="mobile-topbar">
-      <Link className="logo" href="/" aria-label={t.nav.overviewAria}>
-        <LogoMark />
-        <span className="brand-word">{t.nav.appName}</span>
-      </Link>
+      {/* Button first, and on the left, because that is the edge the drawer
+          comes in from. On the right it was a control pointing away from the
+          thing it opens — your thumb goes right, the rail arrives left. */}
       <button
         type="button"
         className="mobile-nav-btn"
@@ -133,6 +132,10 @@ export default function AppNav({ email, connected, calendar = true }: { email?: 
       >
         <Icon name={mobileOpen ? 'close' : 'menu'} />
       </button>
+      <Link className="logo" href="/" aria-label={t.nav.overviewAria}>
+        <LogoMark />
+        <span className="brand-word">{t.nav.appName}</span>
+      </Link>
     </header>
     {mobileOpen && <div className="mobile-nav-scrim" onClick={() => setMobileOpen(false)} aria-hidden />}
 

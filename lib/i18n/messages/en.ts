@@ -771,15 +771,38 @@ export const en = {
 
   /** components/GuidedTour.tsx — the first-run walkthrough. */
   tour: {
-    /** Indexed to the component's STEPS; the `tour` anchors stay in the code. */
+    /**
+     * Indexed to TOUR_STEPS in lib/tour.ts; the anchors stay in the code.
+     *
+     * `wait` is what the card says where a Next button would be, on a step
+     * that is waiting for the teacher to do something. It has to read as "your
+     * turn", not as "loading" — the screen is watching them, not stuck.
+     */
     steps: [
-      { title: 'Overview', body: 'Home base. Recaps land here for you to review, and your latest lessons stack up below them.' },
-      { title: 'Students', body: 'Add each student here. Their lessons, tests and progress all hang off this list — and each gets a portal of their own.' },
-      { title: 'Notes', body: 'One click per lesson taught: a month grid that doubles as your teaching diary.' },
-      { title: 'Student view', body: 'Exactly what your students see, restyled to your taste — colours, names, sections. Not a mock-up: the real thing.' },
-      { title: 'Settings', body: 'Your calendar, the lesson recorder, and your account. This tour lives here too, if you ever want it again.' },
+      {
+        title: 'Start with a student',
+        body: 'Everything hangs off one: lessons, recaps, their own portal. Open Students and we will add your first.',
+        wait: 'Open Students',
+      },
+      {
+        title: 'Add your first student',
+        body: 'You only need their name and what they are learning. No email yet — you will get a link to send them at the end.',
+        wait: 'Press Add student',
+      },
+      {
+        title: 'Just the name and the language',
+        body: 'The level is a starting guess and the recap language is what their write-ups get explained in. Both are changeable later, so do not agonise.',
+        wait: 'Fill it in and save',
+      },
+      {
+        title: 'Send them this link',
+        body: 'This is the whole handover. They open it, pick their own password, and their portal is live — lessons, vocabulary and progress, all under your studio name.',
+        wait: '',
+      },
     ],
-    skip: 'Skip tour',
+    skip: 'Skip',
+    /** components/ReplayTourButton.tsx — Settings → Connections. */
+    replay: '✨ Walk me through it again',
   },
   /** components/LanguagesPanel.tsx — Settings → Languages. */
   languages: {
@@ -931,6 +954,13 @@ export const en = {
     learning: 'Learning',
     choose: 'Choose…',
     recapLanguage: 'Recap language',
+    trigger: '+ Add student',
+    /** The link window, which is the last step of the tour. {name} is theirs. */
+    inviteTitle: 'Invite link for {name}',
+    inviteBody:
+      'Send this to them however you normally talk. They open it, pick their own email and password, and land in your workspace ready to go.',
+    addAnother: 'Add another student',
+    copyAgain: 'You can copy this again any time from {name}’s row.',
   },
 
   /** components/TeacherCalendar.tsx */

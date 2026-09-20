@@ -1,123 +1,182 @@
 'use client'
 
 import { useT } from '@/components/I18nProvider'
-import { useCallback, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  TOUR_DID_EVENT, TOUR_EVENT, TOUR_STEPS, tourAtKey, tourDoneKey,
+} from '@/lib/tour'
 
-/**
- * Scoped per account, not per browser. The old browser-wide key meant that
- * finishing the tour on one account silenced it for every account ever
- * created in that browser — a brand-new teacher saw nothing.
- */
-export const tourDoneKey = (email?: string | null) => `ls.tour.done:${email || 'anon'}`
-/** Fired by the Settings replay button; the tour listens app-wide. */
-export const TOUR_EVENT = 'ls:tour'
-
-/** Just the anchor now — the words live in t.tour.steps, paired by index. */
-type Step = { target: string }
-
-/**
- * The walkthrough: one sidebar destination at a time, everything else dimmed.
- *
- * Steps target the nav links rather than page content, deliberately — the nav
- * is on every teacher page, so the tour can start (and be replayed) anywhere,
- * and "what each window is" is literally what the sidebar lists. A step whose
- * target is missing or hidden (collapsed nav on a phone) is skipped rather
- * than spotlighting a blank patch of screen.
- */
-/**
- * Only the ANCHORS. `target` matches a data-tour attribute in AppNav, so it
- * must not move with a translation; the words are in t.tour.steps, paired by
- * position, and the shape check keeps the two arrays the same length.
- */
-const STEPS: Step[] = [
-  {
-    target: 'overview',
-  },
-  {
-    target: 'students',
-  },
-  {
-    target: 'notes',
-  },
-  {
-    target: 'student-view',
-  },
-  {
-    target: 'settings',
-  },
-]
+// Re-exported so the two things that start the tour — Settings' replay button
+// and the trial welcome — keep importing it from here.
+export { TOUR_EVENT, tourDoneKey }
 
 const PAD = 8 // breathing room around the spotlit element
 
+/**
+ * The walkthrough: one control at a time, everything else dimmed, and it waits
+ * for the teacher to use the control rather than to press Next. What the steps
+ * are and why is in lib/tour.
+ *
+ * Two things about how it is mounted, both of which were bugs.
+ *
+ * It hangs off AppNav, which is rendered by the teacher layout on /teacher/*
+ * and separately by / and /settings. Moving between those remounts this
+ * component. With the step in useState that meant the tour restarted from the
+ * beginning every time the teacher changed tab — and during a transition Next
+ * keeps the old page mounted while the new one loads, so for a moment there
+ * were two of these on screen drawing two cards. Hence: the step lives in
+ * localStorage so a remount resumes, and a claim on <html> means only one
+ * instance paints. Both are cheap; the alternative was hoisting the tour out
+ * of the nav that owns its anchors.
+ */
 export default function GuidedTour({ email }: { email?: string | null }) {
   const t = useT()
+  const pathname = usePathname()
   const [step, setStep] = useState(-1) // -1 = closed
   const [rect, setRect] = useState<DOMRect | null>(null)
+  /**
+   * Whether THIS instance is the one allowed to draw.
+   *
+   * Claimed on <html> rather than in a module variable: two instances can be
+   * mounted from two different page trees, and a module variable would be
+   * shared between them with no way to tell who released it.
+   */
+  const [owner, setOwner] = useState(false)
+  const ownerRef = useRef(false)
 
-  /** First step at or after `from` whose target actually exists and has size. */
-  const nextVisible = useCallback((from: number, dir: 1 | -1 = 1) => {
-    for (let i = from; i >= 0 && i < STEPS.length; i += dir) {
-      const el = document.querySelector(`[data-tour="${STEPS[i].target}"]`)
-      if (el && (el as HTMLElement).getBoundingClientRect().width > 0) return i
-    }
-    return -1
-  }, [])
-
-  const measure = useCallback((i: number) => {
-    const el = document.querySelector(`[data-tour="${STEPS[i]?.target}"]`)
-    if (!el) return
-    el.scrollIntoView({ block: 'nearest' })
-    // Synchronous, on purpose. getBoundingClientRect forces layout, so there
-    // is nothing to wait a frame for — and the requestAnimationFrame this
-    // used to sit in never fires in a hidden tab, which froze the tour with
-    // the backdrop up and no card if the teacher switched tabs mid-step.
-    setRect(el.getBoundingClientRect())
-  }, [])
-
-  // Auto-start once, and on the replay event from Settings.
   useEffect(() => {
-    const start = () => {
-      const first = nextVisible(0)
-      if (first !== -1) setStep(first)
-    }
-    let seen = false
-    try { seen = localStorage.getItem(tourDoneKey(email)) === '1' } catch { seen = true }
-    // Deferred one tick so TrialWelcome (mounted later in the tree) gets to
-    // raise its flag first — a new account meets the welcome, THEN the tour.
-    const t = setTimeout(() => {
-      if (!seen && document.documentElement.dataset.welcome !== 'open') start()
-    }, 400)
-    window.addEventListener(TOUR_EVENT, start)
-    return () => { clearTimeout(t); window.removeEventListener(TOUR_EVENT, start) }
-  }, [nextVisible, email])
-
-  // The spotlight is position:fixed, so any scroll or resize desyncs it from
-  // its element — remeasure rather than trying to forbid scrolling.
-  useEffect(() => {
-    if (step < 0) return
-    measure(step)
-    const sync = () => measure(step)
-    window.addEventListener('resize', sync)
-    window.addEventListener('scroll', sync, true)
+    const root = document.documentElement
+    if (root.dataset.tourMounted === '1') return
+    root.dataset.tourMounted = '1'
+    ownerRef.current = true
+    setOwner(true)
     return () => {
-      window.removeEventListener('resize', sync)
-      window.removeEventListener('scroll', sync, true)
+      if (!ownerRef.current) return
+      delete root.dataset.tourMounted
+      ownerRef.current = false
     }
-  }, [step, measure])
+  }, [])
 
-  const finish = () => {
-    try { localStorage.setItem(tourDoneKey(email), '1') } catch { /* still closes */ }
+  /** Remember where we are, so a route change does not start the tour over. */
+  const remember = useCallback((i: number) => {
+    try {
+      if (i < 0) localStorage.removeItem(tourAtKey(email))
+      else localStorage.setItem(tourAtKey(email), String(i))
+    } catch { /* private window — the tour just will not resume */ }
+  }, [email])
+
+  const go = useCallback((i: number) => { setStep(i); remember(i); setRect(null) }, [remember])
+
+  const finish = useCallback(() => {
+    try {
+      localStorage.setItem(tourDoneKey(email), '1')
+      localStorage.removeItem(tourAtKey(email))
+    } catch { /* still closes */ }
     setStep(-1)
     setRect(null)
-  }
+  }, [email])
 
-  if (step < 0 || !rect) return null
+  // Start, resume, or replay.
+  useEffect(() => {
+    if (!owner) return
+    const start = () => { setRect(null); go(0) }
 
-  const s = STEPS[step]
+    let done = false
+    let at = -1
+    try {
+      done = localStorage.getItem(tourDoneKey(email)) === '1'
+      const raw = localStorage.getItem(tourAtKey(email))
+      at = raw == null ? -1 : Number(raw)
+    } catch { done = true }
+
+    // Mid-tour already: pick it up where it was left, with no delay and no
+    // second look at the welcome — that decision was made when it started.
+    if (!done && at >= 0 && at < TOUR_STEPS.length) setStep(at)
+
+    // Deferred one tick so TrialWelcome (mounted later in the tree) gets to
+    // raise its flag first — a new account meets the welcome, THEN the tour.
+    const timer = setTimeout(() => {
+      if (done || at >= 0) return
+      if (document.documentElement.dataset.welcome !== 'open') start()
+    }, 400)
+
+    window.addEventListener(TOUR_EVENT, start)
+    return () => { clearTimeout(timer); window.removeEventListener(TOUR_EVENT, start) }
+  }, [owner, email, go])
+
+  /**
+   * Find the step's element and measure it, waiting for it to arrive.
+   *
+   * Every step after the first points at something on a page the teacher has
+   * not opened yet, so the element is genuinely absent for a moment — and a
+   * dialog's card does not exist until the dialog is opened. Polling rather
+   * than a MutationObserver because the answer is also "has it moved", which
+   * an observer does not tell you.
+   */
+  useEffect(() => {
+    if (!owner || step < 0) return
+    const s = TOUR_STEPS[step]
+    if (!s) return
+
+    const look = () => {
+      const el = document.querySelector(`[data-tour="${s.target}"]`)
+      const box = el ? (el as HTMLElement).getBoundingClientRect() : null
+      setRect(box && box.width > 0 ? box : null)
+    }
+
+    /**
+     * No timeout on the wait, deliberately.
+     *
+     * The obvious version gives up after a while and closes the tour, which
+     * punishes a teacher for wandering off to look at Settings for ten
+     * seconds: they come back and the walkthrough has decided they were done.
+     * There is nothing to protect against by closing — with no rect this
+     * renders null, so an absent anchor already means an untouched page rather
+     * than a dark screen. So it just keeps looking, and picks the teacher back
+     * up when they return to where the step is. Skip is the way out.
+     */
+    look()
+    const poll = setInterval(look, 120)
+    window.addEventListener('resize', look)
+    window.addEventListener('scroll', look, true)
+    return () => {
+      clearInterval(poll)
+      window.removeEventListener('resize', look)
+      window.removeEventListener('scroll', look, true)
+    }
+  }, [owner, step])
+
+  /** Step ends when the teacher arrives on the page it was pointing at. */
+  useEffect(() => {
+    if (!owner || step < 0) return
+    const until = TOUR_STEPS[step]?.until
+    if (until?.kind !== 'route') return
+    if (pathname?.startsWith(until.value)) go(step + 1 < TOUR_STEPS.length ? step + 1 : -1)
+  }, [owner, step, pathname, go])
+
+  /** …or when they do the thing it was pointing at. */
+  useEffect(() => {
+    if (!owner || step < 0) return
+    const until = TOUR_STEPS[step]?.until
+    if (until?.kind !== 'event') return
+    const onDid = (e: Event) => {
+      if ((e as CustomEvent).detail !== until.value) return
+      if (step + 1 < TOUR_STEPS.length) go(step + 1)
+      else finish()
+    }
+    window.addEventListener(TOUR_DID_EVENT, onDid)
+    return () => window.removeEventListener(TOUR_DID_EVENT, onDid)
+  }, [owner, step, go, finish])
+
+  if (!owner || step < 0 || !rect) return null
+
+  const s = TOUR_STEPS[step]
   const words = t.tour.steps[step]
-  const isLast = nextVisible(step + 1) === -1
-  const goNext = () => (isLast ? finish() : setStep(nextVisible(step + 1)))
-  const goBack = () => { const p = nextVisible(step - 1, -1); if (p !== -1) setStep(p) }
+  const isLast = step === TOUR_STEPS.length - 1
+  // Only a step with nothing to do gets a way forward. The rest are waiting on
+  // the teacher doing the thing, and a Next button beside it is a second door.
+  const waiting = Boolean(s.until)
 
   // Card beside the spotlight: to the right when there is room (the sidebar
   // case), otherwise below, clamped to the viewport.
@@ -132,7 +191,9 @@ export default function GuidedTour({ email }: { email?: string | null }) {
 
   return (
     <div className="tour-layer" role="dialog" aria-modal="true" aria-label={words.title}>
-      {/* The hole: one element whose enormous shadow is the dark backdrop. */}
+      {/* The hole: one element whose enormous shadow is the dark backdrop.
+          pointer-events are off in CSS, so the control underneath is still
+          usable — which is the whole point of a tour you do rather than read. */}
       <div
         className="tour-spot"
         style={{
@@ -143,19 +204,20 @@ export default function GuidedTour({ email }: { email?: string | null }) {
         }}
       />
       <div className="tour-card" style={{ left, top, width: cardW }}>
-        <span className="tour-count">{step + 1} / {STEPS.length}</span>
+        <span className="tour-count">{step + 1} / {TOUR_STEPS.length}</span>
         <h3>{words.title}</h3>
         <p>{words.body}</p>
         <div className="tour-actions">
           <button type="button" className="tour-skip" onClick={finish}>{t.tour.skip}</button>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {nextVisible(step - 1, -1) !== -1 && (
-              <button type="button" className="btn btn-ghost btn-sm" onClick={goBack}>{t.common.back}</button>
-            )}
-            <button type="button" className="btn btn-primary btn-sm" onClick={goNext}>
+          {waiting ? (
+            // Not a button: it is the tour saying it is watching, so the
+            // teacher knows the screen is waiting on them and not stuck.
+            <span className="tour-wait">{words.wait}</span>
+          ) : (
+            <button type="button" className="btn btn-primary btn-sm" onClick={finish}>
               {isLast ? t.common.done : t.common.next}
             </button>
-          </div>
+          )}
         </div>
       </div>
     </div>

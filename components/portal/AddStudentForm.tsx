@@ -1,6 +1,7 @@
 'use client'
 
 import { useT } from '@/components/I18nProvider'
+import { fill } from '@/lib/i18n'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
@@ -8,6 +9,7 @@ import { createStudent } from '@/app/actions/portal-students'
 import { addPayment } from '@/app/actions/payments'
 import { languageOptions, SPOKEN_LANGUAGES } from '@/lib/languages'
 import InviteLink from '@/components/portal/InviteLink'
+import { tourDid } from '@/lib/tour'
 
 /**
  * The values STORED on the student row, so they stay English — a level
@@ -90,6 +92,9 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
 
     setBusy(false)
     setCreated({ name: form.full_name, note, inviteCode: res.inviteCode })
+    // The tour's third step is waiting on exactly this, and only this: the
+    // student existing. Not the form opening, not the button being pressed.
+    tourDid('student-created')
     setForm(emptyForm(teachingLanguage, speakingLanguage))
     // No router.refresh() here. Refreshing re-renders the tree this modal is
     // mounted in, which threw away `created` and closed the link window before
@@ -106,8 +111,12 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
   const inputStyle: React.CSSProperties = { border: '1px solid var(--line)', borderRadius: 9, padding: '11px 12px', background: '#fff' }
 
   const trigger = (
-    <button className="btn btn-primary" onClick={() => { setOpen(true); setCreated(null) }}>
-      + Add student
+    <button
+      className="btn btn-primary"
+      data-tour="add-student"
+      onClick={() => { setOpen(true); setCreated(null); tourDid('add-student-open') }}
+    >
+      {t.addStudent.trigger}
     </button>
   )
   if (!open) return trigger
@@ -134,32 +143,31 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
           exists there is nothing left to fill in, and leaving the fields on
           screen behind a success banner buried the one thing that matters. */}
       {created ? (
-        <div className="k-modal-card" style={{ maxWidth: 460, textAlign: 'center', color: 'var(--ink)' }}>
+        <div className="k-modal-card" data-tour="invite-link" style={{ maxWidth: 460, textAlign: 'center', color: 'var(--ink)' }}>
           <div className="k-join-mark" style={{ margin: '0 auto 16px' }} aria-hidden>🔗</div>
           <h3 style={{ margin: 0, fontSize: 20, color: 'var(--ink)', letterSpacing: '-.02em' }}>
-            Invite link for {created.name}
+            {fill(t.addStudent.inviteTitle, { name: created.name })}
           </h3>
           <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '10px 0 0', lineHeight: 1.6 }}>
-            Send this to them however you normally talk. They open it, pick their own email and password, and land
-            in your workspace ready to go.
+            {t.addStudent.inviteBody}
           </p>
 
           {created.inviteCode && <InviteLink code={created.inviteCode} />}
           {created.note && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{created.note}</p>}
 
-          <button className="k-modal-cta" onClick={finish}>Done</button>
+          <button className="k-modal-cta" onClick={finish}>{t.common.done}</button>
           <button
             onClick={() => setCreated(null)}
             style={{ marginTop: 12, background: 'none', border: 0, font: 'inherit', fontSize: 12.5, color: 'var(--muted)', cursor: 'pointer', textDecoration: 'underline' }}
           >
-            Add another student
+            {t.addStudent.addAnother}
           </button>
           <p style={{ fontSize: 11, color: 'var(--muted)', margin: '10px 0 0' }}>
-            You can copy this again any time from {created.name}&rsquo;s row.
+            {fill(t.addStudent.copyAgain, { name: created.name })}
           </p>
         </div>
       ) : (
-        <div className="k-modal-card">
+        <div className="k-modal-card" data-tour="add-student-form">
         <div className="settings-row" style={{ marginBottom: 14 }}>
           <h3 style={{ margin: 0 }}>{t.addStudent.title}</h3>
           <button className="btn btn-ghost btn-sm" onClick={() => setOpen(false)}>{t.common.close}</button>

@@ -158,11 +158,16 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
    One element makes both the hole and the darkness: the spotlight's oversized
    box-shadow is the backdrop, so the dimming can never disagree with the hole
    it is supposed to leave. */
-.tour-layer{position:fixed;inset:0;z-index:220}
+/* The layer lets clicks through, and only the card catches them.
+   It used to be a full-screen div with default pointer-events, which swallowed
+   every click that was not on the card — fine for a tour you read, fatal for
+   one you do: the spotlight was on Add student and the spotlight was also what
+   stopped you pressing it. */
+.tour-layer{position:fixed;inset:0;z-index:220;pointer-events:none}
 .tour-spot{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(16,24,32,.62);
   transition:all .28s cubic-bezier(.3,.8,.3,1);pointer-events:none}
 .tour-card{position:fixed;background:var(--surface);border-radius:16px;padding:18px 20px;
-  box-shadow:0 18px 50px rgba(16,24,32,.35);animation:tour-in .25s ease}
+  box-shadow:0 18px 50px rgba(16,24,32,.35);animation:tour-in .25s ease;pointer-events:auto}
 .tour-card h3{margin:6px 0 6px;font-size:16px;letter-spacing:-.02em}
 .tour-card p{margin:0 0 14px;font-size:13px;line-height:1.6;color:var(--muted)}
 .tour-count{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--muted)}
@@ -170,6 +175,14 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .tour-skip{border:0;background:none;font:inherit;font-size:12px;color:var(--muted);
   cursor:pointer;text-decoration:underline;padding:0}
 .tour-skip:hover{color:var(--ink)}
+/* Where the Next button would be on a step that is waiting for the teacher to
+   do something. Deliberately not a button: the page is not stuck, it is
+   watching, and the dot says so without offering a second way forward. */
+.tour-wait{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--brand)}
+.tour-wait::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--brand);
+  animation:tour-pulse 1.4s ease-in-out infinite}
+@keyframes tour-pulse{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.tour-wait::before{animation:none;opacity:1}}
 @keyframes tour-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* — student dashboard tabs — */
@@ -711,7 +724,9 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
      Now it keeps its desktop shape and hides off-canvas: a slim top bar holds
      the logo and one menu button, and tapping it slides the same rail in from
      the left. One navigation, summoned two ways. */
-  .mobile-topbar{display:flex;position:sticky;top:0;z-index:40;height:56px;align-items:center;justify-content:space-between;padding:0 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  /* Menu button, then the wordmark, both hard left — the drawer slides in from
+     that edge, so the control that summons it sits on the same side. */
+  .mobile-topbar{display:flex;position:sticky;top:0;z-index:40;height:56px;align-items:center;justify-content:flex-start;gap:12px;padding:0 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
   .mobile-topbar .logo{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.02em}
   .mobile-nav-btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;color:var(--ink);cursor:pointer}
   .mobile-nav-scrim{position:fixed;inset:0;background:rgba(31,41,55,.38);backdrop-filter:blur(2px);z-index:88}
