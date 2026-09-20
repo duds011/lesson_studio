@@ -62,6 +62,29 @@ export const en = {
     studentPortal: 'Student portal',
   },
 
+  /**
+   * Where a teacher meets their students. Indexed to TEACHING_PLATFORMS in
+   * lib/teaching-platform.ts.
+   *
+   * Four of the five are product names and come back unchanged — the
+   * translator's KEEP list holds them — so only the last is really translated.
+   * Names only: the line of explanation each card used to carry answered a
+   * question about our plumbing that nobody choosing a platform had asked.
+   */
+  platforms: ['Google Meet', 'Zoom', 'Preply', 'italki', 'Another platform'],
+
+  /** The two answers to "where do your lessons live", indexed to CALENDAR_MODES. */
+  calendarModes: [
+    {
+      label: 'Yes — they’re on my Google Calendar',
+      hint: 'We read your lessons, take bookings, and send the recorder',
+    },
+    {
+      label: 'No — I schedule somewhere else',
+      hint: 'Lessons arrive as recordings; nothing calendar-shaped is shown',
+    },
+  ],
+
   /** app/login and app/signup — the two pages nobody is signed in to. */
   auth: {
     language: 'Language',

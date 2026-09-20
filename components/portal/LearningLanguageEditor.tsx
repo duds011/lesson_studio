@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { setLearningLanguage } from '@/app/actions/portal-students'
 import { languageOptions } from '@/lib/languages'
+import { useT } from '@/components/I18nProvider'
 
 /**
  * What this student is LEARNING — the field that picks which recap and test
@@ -11,6 +12,7 @@ import { languageOptions } from '@/lib/languages'
  * put right; the copy says plainly that only future lessons change.
  */
 export default function LearningLanguageEditor({ studentId, value }: { studentId: string; value: string | null }) {
+  const t = useT()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
@@ -50,7 +52,7 @@ export default function LearningLanguageEditor({ studentId, value }: { studentId
         autoFocus
         style={{ border: '1px solid rgba(255,255,255,.35)', borderRadius: 999, padding: '7px 13px', fontSize: 12.5, background: '#fff', color: 'var(--ink)', font: 'inherit', lineHeight: 1 }}
       >
-        <option value="" disabled>choose…</option>
+        <option value="" disabled>{t.onboarding.choose}</option>
         {languageOptions(value).map((l) => <option key={l} value={l}>{l}</option>)}
       </select>
       <button disabled={busy} onClick={save} style={{ border: 'none', borderRadius: 999, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, background: '#fff', color: 'var(--brand)', cursor: 'pointer', font: 'inherit', lineHeight: 1 }}>{busy ? 'Saving…' : 'Save'}</button>

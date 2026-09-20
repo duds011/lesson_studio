@@ -7,10 +7,8 @@ import { useRouter } from 'next/navigation'
 import { saveOnboarding, completeOnboarding } from '@/app/actions/onboarding'
 import { RECORDER_STORE_URL } from '@/lib/recorder'
 import { ACCENT_PRESETS, type Brand } from '@/lib/brand'
-import {
-  TEACHING_PLATFORMS, TEACHING_PLATFORM_META, isExternalPlatform, type TeachingPlatform,
-} from '@/lib/teaching-platform'
-import { CALENDAR_MODE_META, type CalendarMode } from '@/lib/calendar-mode'
+import { TEACHING_PLATFORMS, isExternalPlatform, type TeachingPlatform } from '@/lib/teaching-platform'
+import { CALENDAR_MODES, type CalendarMode } from '@/lib/calendar-mode'
 import { SPOKEN_LANGUAGES, TEACHING_LANGUAGES } from '@/lib/languages'
 
 type Props = {
@@ -166,7 +164,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   value={teachingLanguage}
                   onChange={(e) => setTeachingLanguage(e.target.value)}
                 >
-                  <option value="" disabled>choose…</option>
+                  <option value="" disabled>{t.onboarding.choose}</option>
                   {TEACHING_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
@@ -189,7 +187,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   value={spokenLanguage}
                   onChange={(e) => setSpokenLanguage(e.target.value)}
                 >
-                  <option value="" disabled>choose…</option>
+                  <option value="" disabled>{t.onboarding.choose}</option>
                   {SPOKEN_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
@@ -210,33 +208,30 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {step === 1 && (
             <>
               <h1>{t.onboarding.platformTitle}</h1>
-              <p className="k-onb-lead">
-                On Meet or Zoom we create the link when a student books. On a marketplace the lesson already has a
-                room, so we leave the link alone and take it from there.
-              </p>
+              <p className="k-onb-lead">{t.onboarding.platformLead}</p>
 
+              {/* Names, nothing else. See the note in lib/teaching-platform. */}
               <div className="k-choices">
-                {TEACHING_PLATFORMS.map((id) => {
-                  const meta = TEACHING_PLATFORM_META[id]
-                  const hint = id === 'zoom' && !zoomConnected ? t.onboarding.zoomLater : meta.hint
-                  return (
-                    <button key={id} type="button" className={`k-choice ${platform === id ? 'sel' : ''}`} onClick={() => setPlatform(id)}>
-                      <span className="k-choice-tick" aria-hidden>✓</span>
-                      <span>{meta.label}<small>{hint}</small></span>
-                    </button>
-                  )
-                })}
+                {TEACHING_PLATFORMS.map((id, i) => (
+                  <button key={id} type="button" className={`k-choice ${platform === id ? 'sel' : ''}`} onClick={() => setPlatform(id)}>
+                    <span className="k-choice-tick" aria-hidden>✓</span>
+                    <span>{t.platforms[i]}</span>
+                  </button>
+                ))}
               </div>
+
+              {/* The one thing a card no longer says that still has to be said:
+                  picking Zoom here does not connect it. */}
+              {platform === 'zoom' && !zoomConnected && (
+                <p className="k-fine" style={{ textAlign: 'left', marginTop: 14 }}>{t.onboarding.zoomLater}</p>
+              )}
 
               {external && (
                 <div className="k-onb-ok" style={{ marginTop: 16, background: 'var(--amber-soft)' }}>
                   <span aria-hidden style={{ background: 'var(--amber)' }}>i</span>
                   <div>
                     <strong>{t.onboarding.stayOutTitle}</strong>
-                    <small>
-                      No links created, no bot sent. You record the lesson yourself and the recap, vocabulary and
-                      practice are built from that — everything your students see works the same.
-                    </small>
+                    <small>{t.onboarding.stayOutBody}</small>
                   </div>
                 </div>
               )}
@@ -249,12 +244,12 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               <h1>{t.onboarding.calendarTitle}</h1>
               <p className="k-onb-lead">
                 {external
-                  ? `Some ${TEACHING_PLATFORM_META[platform].label} teachers still keep their week on Google Calendar, and some never leave the platform. Your answer decides what the workspace shows you.`
-                  : 'If your students are on your Google Calendar we can read the week, take bookings and send the recorder. If you schedule elsewhere, we stay out of it.'}
+                  ? fill(t.onboarding.calendarLeadExternal, { platform: t.platforms[TEACHING_PLATFORMS.indexOf(platform)] })
+                  : t.onboarding.calendarLead}
               </p>
 
               <div className="k-choices">
-                {(['google', 'none'] as const).map((id) => (
+                {CALENDAR_MODES.map((id, i) => (
                   <button
                     key={id}
                     type="button"
@@ -263,7 +258,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                     aria-pressed={calendarMode === id}
                   >
                     <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{CALENDAR_MODE_META[id].label}<small>{CALENDAR_MODE_META[id].hint}</small></span>
+                    <span>{t.calendarModes[i].label}<small>{t.calendarModes[i].hint}</small></span>
                   </button>
                 ))}
               </div>
@@ -283,8 +278,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                     {t.onboarding.connectGoogle}
                   </a>
                   <p className="k-fine" style={{ textAlign: 'left', marginTop: 12 }}>
-                    You&rsquo;ll be sent to Google&rsquo;s consent screen and returned here. You can carry on without it,
-                    but bookings and automatic recording stay off until you connect.
+                    {t.onboarding.connectGoogleFine}
                   </p>
                 </div>
               ))}
@@ -306,8 +300,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                     </div>
                   </div>
                   <p className="k-fine" style={{ textAlign: 'left', marginTop: 14 }}>
-                    No calendar, no booking page, no nagging — your workspace opens on lessons and recaps instead.
-                    Change your mind any time in Settings.
+                    {t.onboarding.noCalendarFine}
                   </p>
                 </div>
               )}
@@ -330,8 +323,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   autoFocus
                 />
                 <small className="k-fine" style={{ textAlign: 'left', marginTop: 6 }}>
-                  This is the name across the top of every student&rsquo;s portal, and on the invite they
-                  open. Your own studio name, not ours.
+                  {t.onboarding.portalNameFine}
                 </small>
               </label>
 
@@ -361,16 +353,15 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
           {step === 4 && (
             <>
               <h1>{t.onboarding.recorderTitle}</h1>
-              <p className="k-onb-lead">
-                This is the part that does the work: a Chrome extension that records your lesson
-                and writes the recap. No bot joins the call, and nothing is installed on your
-                student&rsquo;s side.
-              </p>
+              <p className="k-onb-lead">{t.onboarding.recorderLead}</p>
 
+              {/* rich() rather than markup: each of these is one sentence with a
+                  bold opening, and splitting it into two keys only works in a
+                  language whose word order matches English. */}
               <ol className="k-onb-list">
-                <li><strong>Add it from the Chrome Web Store</strong> — one click, then pin it to your toolbar.</li>
-                <li><strong>Sign in inside the extension</strong> with this same email and password. There is nothing to copy across.</li>
-                <li><strong>Record a lesson</strong>: pick the student, hit start, hit stop at the end.</li>
+                <li>{rich(t.onboarding.recorderStep1)}</li>
+                <li>{rich(t.onboarding.recorderStep2)}</li>
+                <li>{rich(t.onboarding.recorderStep3)}</li>
               </ol>
 
               <a

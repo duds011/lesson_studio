@@ -16,13 +16,20 @@ export type TeachingPlatform = (typeof TEACHING_PLATFORMS)[number]
 export const isTeachingPlatform = (v: unknown): v is TeachingPlatform =>
   TEACHING_PLATFORMS.includes(v as TeachingPlatform)
 
-export const TEACHING_PLATFORM_META: Record<TeachingPlatform, { label: string; hint: string }> = {
-  google_meet: { label: 'Google Meet', hint: 'We create the link on your calendar' },
-  zoom: { label: 'Zoom', hint: 'We create the room for each booking' },
-  preply: { label: 'Preply', hint: 'Lessons happen in Preply’s classroom' },
-  italki: { label: 'italki', hint: 'Lessons happen in italki’s classroom' },
-  other: { label: 'Another platform', hint: 'Cambly, Verbling, Skype, your own room…' },
-}
+/**
+ * The display names live in the dictionary — `platforms`, indexed to the list
+ * above — and not in this file.
+ *
+ * There used to be a META constant here holding a label and a line of
+ * explanation for each: "We create the link on your calendar" under Google
+ * Meet, and so on. Two things were wrong with it. A module constant is
+ * evaluated once at import, so those strings stayed English on a French page,
+ * which is most of how this step ended up half translated. And the
+ * explanations answered a question nobody had asked — somebody choosing where
+ * they teach does not want to be told what we do about links, and the
+ * paragraph above the cards says it anyway. The cards are a list of places,
+ * and a list of places needs names.
+ */
 
 /** True when the lesson happens somewhere we neither create nor schedule. */
 export const isExternalPlatform = (p: TeachingPlatform | null | undefined) =>

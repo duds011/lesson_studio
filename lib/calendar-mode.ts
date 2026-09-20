@@ -28,13 +28,11 @@ export const resolveCalendarMode = (raw: unknown): CalendarMode =>
 /** True when this teacher has told us not to expect a calendar. */
 export const skipsCalendar = (m: CalendarMode | null | undefined) => m === 'none'
 
-export const CALENDAR_MODE_META: Record<CalendarMode, { label: string; hint: string }> = {
-  google: {
-    label: 'Yes — they’re on my Google Calendar',
-    hint: 'We read your lessons, take bookings, and send the recorder',
-  },
-  none: {
-    label: 'No — I schedule somewhere else',
-    hint: 'Lessons arrive as recordings; nothing calendar-shaped is shown',
-  },
-}
+/**
+ * How the two answers are worded lives in the dictionary — `calendarModes`,
+ * indexed to CALENDAR_MODES above — and not here.
+ *
+ * It was a module constant, which is evaluated once at import, so onboarding
+ * and Settings both printed these in English however the rest of the page was
+ * written. Same trap as the nav labels and the platform names.
+ */

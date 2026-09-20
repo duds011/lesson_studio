@@ -3,7 +3,7 @@ import { listCalendars, type CalendarInfo } from '@/lib/google'
 import { getSettings } from '@/lib/settings'
 import { getBookingConfig } from '@/lib/booking'
 import { createClient } from '@/lib/supabase/server'
-import { CALENDAR_MODES, CALENDAR_MODE_META, resolveCalendarMode } from '@/lib/calendar-mode'
+import { CALENDAR_MODES, resolveCalendarMode } from '@/lib/calendar-mode'
 import { chooseCalendarMode } from '@/app/actions/calendar'
 import { chooseSpeakingSubmissions } from '@/app/actions/portal-settings'
 import { chooseAutoPublish } from '@/app/actions/auto-publish'
@@ -146,10 +146,10 @@ export default async function SettingsPage() {
                 name="mode"
                 value={calendarMode}
                 action={chooseCalendarMode}
-                options={CALENDAR_MODES.map((m) => ({
+                options={CALENDAR_MODES.map((m, i) => ({
                   value: m,
-                  label: CALENDAR_MODE_META[m].label,
-                  hint: CALENDAR_MODE_META[m].hint,
+                  label: t.calendarModes[i].label,
+                  hint: t.calendarModes[i].hint,
                 }))}
               />
             </section>

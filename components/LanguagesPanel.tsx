@@ -54,7 +54,7 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
               disabled={pending}
               onChange={(e) => { setTeach(e.target.value); save({ teachingLanguage: e.target.value }) }}
             >
-              <option value="" disabled>choose…</option>
+              <option value="" disabled>{t.onboarding.choose}</option>
               {languageOptions(teachingLanguage).map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           </label>
@@ -71,7 +71,7 @@ export default function LanguagesPanel({ teachingLanguage, speakingLanguage }: {
               disabled={pending}
               onChange={(e) => { setSpeak(e.target.value); save({ speakingLanguage: e.target.value }) }}
             >
-              <option value="" disabled>choose…</option>
+              <option value="" disabled>{t.onboarding.choose}</option>
               {SPOKEN_LANGUAGES.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           </label>

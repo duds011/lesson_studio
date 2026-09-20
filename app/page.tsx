@@ -18,7 +18,7 @@ import { currentCalendarMode } from '@/lib/calendar-mode.server'
 import { listPendingRecordings } from '@/app/actions/recordings'
 import PendingRecordings from '@/components/portal/PendingRecordings'
 import RecorderMissing from '@/components/portal/RecorderMissing'
-import { resolveTeachingPlatform, TEACHING_PLATFORM_META } from '@/lib/teaching-platform'
+import { resolveTeachingPlatform, TEACHING_PLATFORMS } from '@/lib/teaching-platform'
 import { TRIAL_RECAPS, getRecapUsage } from '@/lib/recap-quota'
 import TrialWelcome from '@/components/TrialWelcome'
 
@@ -248,7 +248,7 @@ async function RecordingsHome() {
           publishedCount={publishedCount}
           usage={usage}
           recent={recent.filter((l) => l.status === 'published')}
-          platformLabel={TEACHING_PLATFORM_META[platform].label}
+          platformLabel={t.platforms[TEACHING_PLATFORMS.indexOf(platform)]}
           review={<RecapsToReview drafts={draftRecaps} students={studentOptions} />}
         />
       </main>
