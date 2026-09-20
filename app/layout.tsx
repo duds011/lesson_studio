@@ -25,7 +25,19 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Lesson Studio',
   },
+  /**
+   * The tab icon was never declared, only the iOS one — so the app that a
+   * teacher keeps pinned all day showed the browser's blank page glyph beside
+   * six other tabs. The small sizes are their own files rather than a 512 left
+   * for the browser to shrink, because that downscale is done at paint time
+   * with no filtering and turns the two bars into grey mush.
+   */
   icons: {
+    icon: [
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
     apple: '/icons/apple-touch-icon.png',
   },
 }
