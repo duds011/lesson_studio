@@ -86,15 +86,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     if (step === 0) {
       if (!teachingLanguage) { setError(t.onboarding.pickTeaching); return }
       if (!spokenLanguage) { setError(t.onboarding.pickSpoken); return }
-      // The teaching language decides the workspace language (see
-      // saveOnboarding), so the answer they just gave has to reach the server
-      // and come back before the next step is drawn — otherwise the flow
-      // carries on in the old language and the setting looks broken until the
-      // first full page load.
-      persist({ teachingLanguage, speakingLanguage: spokenLanguage, timezone, step: 1 }, () => {
-        setStep(1)
-        router.refresh()
-      })
+      persist({ teachingLanguage, speakingLanguage: spokenLanguage, timezone, step: 1 }, () => setStep(1))
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
@@ -173,12 +165,6 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
                   had the keys all along. */}
               <p className="k-onb-lead" style={{ fontSize: 12.5 }}>
                 {t.onboarding.teachHint}
-              </p>
-              {/* Said out loud, because the answer above quietly decides what
-                  language this workspace is in. A setting nobody was told
-                  about is indistinguishable from a bug. */}
-              <p className="k-onb-lead" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>
-                {t.onboarding.uiFollows}
               </p>
 
               <div className="k-onb-sentence" aria-label={t.onboarding.spokenAria}>

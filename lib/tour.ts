@@ -33,16 +33,28 @@ export type TourStep = {
  * added here without copy fails the build rather than rendering blank.
  */
 export const TOUR_STEPS: TourStep[] = [
-  // Where students live. Ends when they actually go there.
+  // First the tour of the place: five windows, one Next each. Nothing to do
+  // but look, and looking is quick — the sidebar is on every teacher page, so
+  // these work from wherever the tour was started.
+  { target: 'overview' },
+  { target: 'students' },
+  { target: 'notes' },
+  { target: 'student-view' },
+  { target: 'settings' },
+
+  // Then the job, which is the reason any of it matters. Starting here was
+  // wrong: pressing "show me around" and being marched straight into a form
+  // answers a question the teacher had not asked yet.
   { target: 'students', until: { kind: 'route', value: '/teacher/dashboard' } },
-  // The button. Ends when the dialog opens.
   { target: 'add-student', until: { kind: 'event', value: 'add-student-open' } },
-  // The form. Ends when the student exists — however long that takes them.
   { target: 'add-student-form', until: { kind: 'event', value: 'student-created' } },
   // The invite link, which is the whole point: a student with no link is a row
-  // in a table. This one is read, so it is the one step with a button.
+  // in a table. Read, not done, so it ends on a button.
   { target: 'invite-link' },
 ]
+
+/** Where the walkthrough stops describing and starts asking. */
+export const FIRST_DOING_STEP = 5
 
 /** Where the tour has got to, per account — see GuidedTour. */
 export const tourDoneKey = (email?: string | null) => `ls.tour.done:${email || 'anon'}`

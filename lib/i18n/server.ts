@@ -71,6 +71,37 @@ export async function teacherLocale(
 }
 
 /**
+ * Onboarding: what they have actually chosen, and English until they do.
+ *
+ * Deliberately not teacherLocale, which falls back to Accept-Language. That
+ * guess is a reasonable one for a teacher who has been using the app for
+ * months and never opened Settings; it is a bad one on the very first screen,
+ * where being handed a language you did not pick is indistinguishable from the
+ * product being broken — and where the person has no idea yet that Settings
+ * exists to undo it.
+ *
+ * So setup opens in English, with the three languages in the corner of the
+ * page. Pressing one writes ui_language, which is then what this returns, and
+ * what the rest of the app uses from that moment on.
+ */
+export async function onboardingLocale(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<Locale> {
+  const forced = forcedLocale()
+  if (forced) return forced
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('ui_language')
+    .eq('id', userId)
+    .maybeSingle()
+
+  const chosen = (data as { ui_language?: string | null } | null)?.ui_language
+  return isLocale(chosen) ? chosen : DEFAULT_LOCALE
+}
+
+/**
  * A student's own choice, then the language their recaps are written in.
  *
  * The recap language used to be the whole answer, on the reasoning that a

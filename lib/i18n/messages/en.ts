@@ -181,14 +181,6 @@ export const en = {
     iTeach: 'I teach',
     teachHint:
       'Recaps and practice tests are built for this language. It’s the default for every student you add — each student can be switched individually later.',
-    /**
-     * Said on the step itself, because the answer above also sets the language
-     * of the workspace. English, French and Japanese are the three interfaces
-     * that exist; everything else gets English. Settings → Language changes it
-     * afterwards and wins from then on.
-     */
-    uiFollows:
-      'Your workspace will be in this language too, if we have it — English, French or Japanese, and English for anything else. You can change that in Settings whenever you like.',
     spokenAria: 'The language your lessons are spoken in',
     spokenIn: 'my lessons are mostly spoken in',
     spokenHint:
@@ -774,14 +766,40 @@ export const en = {
     /**
      * Indexed to TOUR_STEPS in lib/tour.ts; the anchors stay in the code.
      *
-     * `wait` is what the card says where a Next button would be, on a step
-     * that is waiting for the teacher to do something. It has to read as "your
-     * turn", not as "loading" — the screen is watching them, not stuck.
+     * The first five describe the place and carry Next. The rest ask for
+     * something, and `wait` is what the card says where the button would be —
+     * it has to read as "your turn", not as "loading", because the screen is
+     * watching them rather than stuck.
      */
     steps: [
       {
-        title: 'Start with a student',
-        body: 'Everything hangs off one: lessons, recaps, their own portal. Open Students and we will add your first.',
+        title: 'Overview',
+        body: 'Home base. Finished recaps land here for you to check and send, with your latest lessons underneath.',
+        wait: '',
+      },
+      {
+        title: 'Students',
+        body: 'Everyone you teach. Their lessons, tests and progress all hang off this list, and each one gets a portal of their own.',
+        wait: '',
+      },
+      {
+        title: 'Notes',
+        body: 'One click per lesson taught — a month at a glance that doubles as your teaching diary.',
+        wait: '',
+      },
+      {
+        title: 'Student view',
+        body: 'Exactly what your students open, in your colours and your wording. Not a mock-up: the real thing.',
+        wait: '',
+      },
+      {
+        title: 'Settings',
+        body: 'Your calendar, the lesson recorder, and your account. This walkthrough lives here too, if you want it again.',
+        wait: '',
+      },
+      {
+        title: 'Now add your first student',
+        body: 'That is the tour. Nothing else works until someone is in the list, so let us put one there — open Students.',
         wait: 'Open Students',
       },
       {

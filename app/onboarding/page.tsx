@@ -7,7 +7,8 @@ import { resolveTeachingPlatform } from '@/lib/teaching-platform'
 import { isCalendarMode } from '@/lib/calendar-mode'
 import OnboardingFlow from '@/components/OnboardingFlow'
 import I18nProvider from '@/components/I18nProvider'
-import { teacherLocale } from '@/lib/i18n/server'
+import { onboardingLocale } from '@/lib/i18n/server'
+import LocaleSwitch from '@/components/LocaleSwitch'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,16 +32,20 @@ export default async function OnboardingPage() {
   try { zoomConnected = Boolean((await zoomConnection())?.connected) } catch { /* optional */ }
 
   /**
-   * Onboarding sits outside app/teacher, so it had no I18nProvider — which
-   * meant useT() found no context and every step rendered in English no matter
-   * who was reading. It is also the flow that now CHOOSES the workspace
-   * language, at step one, so it is the last page in the app that should have
-   * been stuck in one.
+   * Onboarding sits outside app/teacher, so it had no I18nProvider at all —
+   * useT() found no context and every step rendered in English whatever the
+   * profile said. It has one now, fed by the resolver that opens in English
+   * and follows the corner picker from there. See onboardingLocale.
    */
-  const locale = await teacherLocale(supabase, user.id)
+  const locale = await onboardingLocale(supabase, user.id)
 
   return (
     <I18nProvider locale={locale}>
+    {/* The three languages, in the corner, before anything else on the page —
+        somebody who cannot read this screen needs them first and has never
+        seen Settings. Writes to the account, not a cookie: they are signed
+        in, so the answer should follow them to the next device. */}
+    <LocaleSwitch persist="account" />
     <OnboardingFlow
       initial={{
         fullName: profile.full_name ?? '',

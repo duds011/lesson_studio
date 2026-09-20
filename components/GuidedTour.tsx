@@ -177,6 +177,9 @@ export default function GuidedTour({ email }: { email?: string | null }) {
   // Only a step with nothing to do gets a way forward. The rest are waiting on
   // the teacher doing the thing, and a Next button beside it is a second door.
   const waiting = Boolean(s.until)
+  // Back only through the part that is just description. Once the walkthrough
+  // has started asking for things, stepping back would mean undoing them.
+  const canGoBack = step > 0 && !waiting && !TOUR_STEPS[step - 1]?.until
 
   // Card beside the spotlight: to the right when there is room (the sidebar
   // case), otherwise below, clamped to the viewport.
@@ -214,9 +217,20 @@ export default function GuidedTour({ email }: { email?: string | null }) {
             // teacher knows the screen is waiting on them and not stuck.
             <span className="tour-wait">{words.wait}</span>
           ) : (
-            <button type="button" className="btn btn-primary btn-sm" onClick={finish}>
-              {isLast ? t.common.done : t.common.next}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {canGoBack && (
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => go(step - 1)}>
+                  {t.common.back}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => (isLast ? finish() : go(step + 1))}
+              >
+                {isLast ? t.common.done : t.common.next}
+              </button>
+            </div>
           )}
         </div>
       </div>

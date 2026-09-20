@@ -6,7 +6,6 @@ import { setPlatform, type Platform } from '@/lib/settings'
 import { linkPlatformFor, isTeachingPlatform, type TeachingPlatform } from '@/lib/teaching-platform'
 import { isCalendarMode, type CalendarMode } from '@/lib/calendar-mode'
 import { resolveBrand, type Brand } from '@/lib/brand'
-import { DEFAULT_LOCALE, localeForTeachingLanguage } from '@/lib/i18n/config'
 
 type Result = { success: boolean; error?: string }
 
@@ -15,13 +14,9 @@ async function currentTeacher() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, onboarding_completed_at')
-    .eq('id', user.id)
-    .single()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'teacher') return null
-  return { supabase, userId: user.id, setUp: Boolean(profile.onboarding_completed_at) }
+  return { supabase, userId: user.id }
 }
 
 export type OnboardingPatch = {
@@ -42,33 +37,24 @@ export type OnboardingPatch = {
 export async function saveOnboarding(patch: OnboardingPatch): Promise<Result> {
   const ctx = await currentTeacher()
   if (!ctx) return { success: false, error: 'Not signed in as a teacher' }
-  const { supabase, userId, setUp } = ctx
+  const { supabase, userId } = ctx
 
   const update: Record<string, unknown> = {}
+  /**
+   * The teaching language does NOT decide what language the workspace is in.
+   *
+   * It briefly did, and the reasoning was wrong: plenty of people teach a
+   * language they do not read comfortably themselves — a teacher of French
+   * who thinks in English is ordinary, not an edge case — so inferring one
+   * from the other hands them an interface they never asked for and cannot
+   * easily undo while they are still in setup.
+   *
+   * The interface language is its own question, asked the only honest way:
+   * a picker in the corner of the onboarding page, three buttons, wearing
+   * their own names. See LocaleSwitch.
+   */
   if (typeof patch.teachingLanguage === 'string') {
-    const name = patch.teachingLanguage.trim().slice(0, 60)
-    update.teaching_language = name || null
-
-    /**
-     * The teaching language decides what language the workspace is in.
-     *
-     * A teacher of English gets an English app, of French a French one, of
-     * Japanese a Japanese one, and of any of the other twenty-four English —
-     * because those are the three interfaces that exist, and guessing from the
-     * browser instead is how somebody ends up reading a language they never
-     * asked for.
-     *
-     * Written as an explicit 'en' rather than left null for the unsupported
-     * languages. Null means "follow Accept-Language", which would give a
-     * Spanish teacher on a French browser a French app: technically a guess
-     * we are entitled to make, and exactly the surprise this is here to stop.
-     *
-     * Only during setup. Once onboarding is finished this never fires again,
-     * so changing your teaching language in Settings later cannot silently
-     * undo a language you chose there — that picker owns the column from then
-     * on.
-     */
-    if (!setUp) update.ui_language = localeForTeachingLanguage(name) ?? DEFAULT_LOCALE
+    update.teaching_language = patch.teachingLanguage.trim().slice(0, 60) || null
   }
   if (typeof patch.speakingLanguage === 'string') update.speaking_language = patch.speakingLanguage.trim().slice(0, 60) || null
   if (typeof patch.timezone === 'string' && patch.timezone.trim()) update.timezone = patch.timezone.trim().slice(0, 60)
@@ -97,9 +83,6 @@ export async function saveOnboarding(patch: OnboardingPatch): Promise<Result> {
     try { await setPlatform(update.meeting_platform as Platform) } catch { /* non-fatal */ }
   }
 
-  // The whole layout, not just this route: the language may have just changed
-  // under the flow, and the steps after this one have to be written in it.
-  if (update.ui_language) revalidatePath('/', 'layout')
   revalidatePath('/onboarding')
   return { success: true }
 }
