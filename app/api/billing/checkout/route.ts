@@ -113,21 +113,19 @@ export async function POST(req: NextRequest) {
         allow_promotion_codes: true,
         client_reference_id: user.id,
         /**
-         * The price on the site is the price on the Stripe page.
+         * Tax and currency are NOT set here, and cannot be.
          *
-         * Stripe Tax is active on the account and its default behaviour is
-         * "exclusive" — VAT added on top of the figure we quote. These prices
-         * are rounded by hand against a fixed FX table precisely so that a
-         * teacher sees one number and pays it. Disabled here rather than in
-         * the dashboard so a settings change can never quietly reprice us.
+         * Managed Payments is on for this account, and under it Stripe rejects
+         * the session outright if you pass automatic_tax[enabled]=false or
+         * adaptive_pricing[enabled]=false - "Managed Payments handles taxes for
+         * you". Setting them to keep the quoted price honest is what took
+         * checkout down on both products at once.
+         *
+         * So the quoted price is governed from the Stripe side instead: the
+         * account's Tax Settings default tax_behavior decides whether VAT is
+         * added on top of these amounts or carved out of them. Changing it
+         * needs no deploy, and there is no parameter here that can override it.
          */
-        automatic_tax: { enabled: false },
-        /**
-         * Same promise, different mechanism. Adaptive Pricing converts into
-         * the buyer's local currency at Stripe's live rate, which would quote
-         * a fourth number next to our three hand-rounded lists.
-         */
-        adaptive_pricing: { enabled: false },
         /**
          * The COUNT rides on the session, not just the pack id.
          *
