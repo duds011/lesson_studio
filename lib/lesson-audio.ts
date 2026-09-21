@@ -42,7 +42,7 @@
 import { spawn } from 'node:child_process'
 import { postMultipart, type Part } from '@/lib/long-post'
 import { toWhisperLanguage } from '@/lib/whisper'
-import { RECORDING_BUCKET, trackPath } from '@/lib/ext-storage'
+import { RECORDING_BUCKET, trackPath, transcriptPath } from '@/lib/ext-storage'
 
 export type TimedWord = { text: string; start: number; end: number }
 export type Voice = 'teacher' | 'student'
@@ -81,6 +81,59 @@ export function norm(s: string): string {
 
 /** Tokens, with the apostrophe treated as a break — l'ami is two tokens. */
 const tokens = (s: string) => norm(s).replace(/'/g, " ").split(' ').filter(Boolean)
+
+/**
+ * Articles, in the languages this app teaches. One flat set rather than one
+ * per language: a token that is an article in French is not a content word in
+ * German either, and the phrase being searched for is short enough that a
+ * false strip costs a candidate, not a wrong clip — every hit is still checked
+ * against the audio afterwards.
+ */
+const ARTICLES = new Set([
+  'le', 'la', 'les', 'l', 'un', 'une', 'des', 'du', 'de',
+  'der', 'die', 'das', 'den', 'dem', 'ein', 'eine', 'einen',
+  'el', 'los', 'las', 'una', 'lo', 'il', 'i', 'gli', 'o', 'os', 'as', 'um', 'uma',
+  'the', 'a', 'an', 'to',
+])
+
+/**
+ * The forms of a phrase worth looking for, best first.
+ *
+ * A recap stores a French noun with its article — "la commande", "les frites"
+ * — because that is how the gender is taught. The teacher, mid-sentence, said
+ * "une commande" or "des frites", and an exact search finds neither. On
+ * Duarte's restaurant lesson that one mismatch accounted for most of the
+ * misses: twelve nouns nobody could hear, all of them said out loud.
+ *
+ * Also handled: the slash form a recap uses for gendered pairs
+ * ("amusant/amusante"), which is two words and never one utterance, and the
+ * parenthetical gloss ("la pièce (de théâtre)"), which is an explanation
+ * rather than something anybody said.
+ */
+export function variantsOf(phrase: string): string[] {
+  const out: string[] = []
+  const add = (v: string) => {
+    const t = v.trim()
+    if (t && !out.some((x) => norm(x) === norm(t))) out.push(t)
+  }
+
+  add(phrase)
+
+  // "la pièce (de théâtre)" → "la pièce"
+  const noParens = phrase.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim()
+  if (noParens) add(noParens)
+
+  // "amusant/amusante" → each side. The whole is never one utterance.
+  for (const half of noParens.split('/')) add(half)
+
+  // Each of those again without its leading article.
+  for (const v of [...out]) {
+    const parts = v.split(/\s+/)
+    if (parts.length > 1 && ARTICLES.has(norm(parts[0]))) add(parts.slice(1).join(' '))
+  }
+
+  return out
+}
 
 /**
  * Every place a phrase appears in a word timeline.
@@ -278,6 +331,25 @@ export async function attachLessonAudio(
   const { join } = await import('node:path')
   const { tmpdir } = await import('node:os')
 
+  /**
+   * The transcript the RECAP was written from.
+   *
+   * A correction's "said" is a quotation out of this, so this is where it will
+   * be found word for word — the target-language pass heard the same seconds
+   * differently and spells them differently. Free: it is already paid for and
+   * already on disk. Absent for a lesson built before the cache existed.
+   */
+  let original: Record<string, TimedWord[]> | null | undefined
+  const originalWords = async (track: string): Promise<TimedWord[]> => {
+    if (original === undefined) {
+      try {
+        const file = await admin.storage.from(RECORDING_BUCKET).download(transcriptPath(opts.recordingId))
+        original = file.data ? (JSON.parse(await file.data.text())?.tracks ?? null) : null
+      } catch { original = null }
+    }
+    return original?.[track] ?? []
+  }
+
   /** A track, transcribed and on disk — ffmpeg cannot seek a pipe. */
   const prepare = async (track: string) => {
     if (!words[track]) {
@@ -315,9 +387,26 @@ export async function attachLessonAudio(
 
       let placed = false
       let lastHeard = ''
+      const forms = variantsOf(want.phrase)
       for (const voice of voices) {
-        const { words: ws, file } = await prepare(trackOf(voice))
-        const windows = rank(findWindows(ws, want.phrase), want.phrase)
+        const track = trackOf(voice)
+        const { words: ws, file } = await prepare(track)
+        // The recap's own transcript first for a quotation, the target-language
+        // pass first for anything the model wrote itself.
+        const sources = want.kind === 'said'
+          ? [await originalWords(track), ws]
+          : [ws, await originalWords(track)]
+
+        const windows: { start: number; end: number }[] = []
+        for (const form of forms) {
+          for (const src of sources) {
+            if (!src.length) continue
+            windows.push(...rank(findWindows(src, form), form))
+            if (windows.length) break
+          }
+          if (windows.length) break
+        }
+
         for (const w of windows.slice(0, MAX_TRIES)) {
           const start = Math.max(0, w.start - PAD_BEFORE)
           const seconds = Math.min(MAX_CLIP_SEC, (w.end - w.start) + PAD_BEFORE + PAD_AFTER)
