@@ -173,6 +173,13 @@ export const en = {
     couldNotFinish: 'Could not finish',
     pickTeaching: 'Pick the language you teach.',
     pickSpoken: 'Pick the language your lessons are spoken in.',
+    comingSoon: 'Coming soon',
+    /** Replaces the Google option's hint while the connection is off. */
+    calendarSoonHint: 'Not ready yet — we are fixing the connection to Google',
+    calendarSoonTitle: 'Google Calendar is not ready yet',
+    calendarSoonBody:
+      'The connection to Google is being fixed, so it cannot be switched on today. Choose the other answer for now — a lesson reaches Lesson Studio the moment its recording does, and that does not change when the calendar arrives. You can turn it on in Settings the day it does.',
+
     pickCalendar: 'Tell us whether your lessons live on a calendar.',
     pickPortalName: 'Give the portal a name — your students will see it.',
 
@@ -925,6 +932,8 @@ export const en = {
   connectors: {
     googleName: 'Google Calendar',
     googleDesc: 'Reads your lessons and writes new bookings straight onto your calendar.',
+    /** Shown in place of Connect while GOOGLE_CALENDAR_LIVE is off. */
+    googleSoon: 'We are fixing the connection to Google. Until it is back, record your lessons and they arrive here the same way.',
     connect: 'Connect',
     permissionNeeded: 'Permission needed',
     reconnect: 'Reconnect',

@@ -1,4 +1,5 @@
 import type { Messages } from '@/lib/i18n'
+import { GOOGLE_CALENDAR_LIVE } from '@/lib/calendar-mode'
 // Gallery of teacher integrations — Google Calendar, and only that. Zoom and
 // Stripe cards were removed: both sat at "Coming soon" indefinitely, which is
 // an advert for something that does not exist on the one page a teacher opens
@@ -35,12 +36,29 @@ export default function ConnectorsGallery({ google, t }: ConnectorState & { t: M
         <div className="connector-name">{t.connectors.googleName}</div>
         <div className="connector-desc">{t.connectors.googleDesc}</div>
         <div className="connector-foot">
-          {!google.connected ? (
+          {/* While the OAuth flow is down there is no Connect and no Reconnect:
+              both lead to the same broken door, and a button that fails is a
+              worse answer than a date. Disconnect stays — anyone already
+              connected must still be able to leave. See GOOGLE_CALENDAR_LIVE.
+
+              Not the same thing as the Zoom and Stripe cards above, which were
+              deleted for advertising what does not exist. This is a built
+              feature that other accounts are using today, and the card has to
+              stay for them regardless. */}
+          {!GOOGLE_CALENDAR_LIVE && !google.connected ? (
+            <>
+              <span className="pill amber" style={{ alignSelf: 'flex-start' }}><span className="dot" />{t.connectors.comingSoon}</span>
+              <p className="connector-note">{t.connectors.googleSoon}</p>
+            </>
+          ) : !google.connected ? (
             <a className="btn btn-primary btn-sm" href="/api/google/auth">{t.connectors.connect}</a>
           ) : google.needsReconnect ? (
             <>
               <span className="pill amber" style={{ alignSelf: 'flex-start' }}><span className="dot" />{t.connectors.permissionNeeded}</span>
-              <a className="btn btn-primary btn-sm" href="/api/google/auth">{t.connectors.reconnect}</a>
+              {GOOGLE_CALENDAR_LIVE
+                ? <a className="btn btn-primary btn-sm" href="/api/google/auth">{t.connectors.reconnect}</a>
+                : <p className="connector-note">{t.connectors.googleSoon}</p>}
+              <form action="/api/google/disconnect" method="post"><button className="btn btn-ghost btn-sm" type="submit">{t.connectors.disconnect}</button></form>
             </>
           ) : (
             <>

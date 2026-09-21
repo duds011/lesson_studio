@@ -15,6 +15,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { mapEventToStudent } from '@/lib/lesson-link'
 import { currentCalendarMode } from '@/lib/calendar-mode.server'
+import { GOOGLE_CALENDAR_LIVE } from '@/lib/calendar-mode'
 import { listPendingRecordings } from '@/app/actions/recordings'
 import PendingRecordings from '@/components/portal/PendingRecordings'
 import RecorderStatus from '@/components/portal/RecorderStatus'
@@ -258,8 +259,13 @@ export default async function Home() {
   const configured = isConfigured()
 
   if (!token) {
-    // A teacher who said "no calendar" should never meet the connect wall.
-    if ((await currentCalendarMode()) === 'none') return <RecordingsHome />
+    /**
+     * A teacher who said "no calendar" should never meet the connect wall —
+     * and while Google is off, nobody should: old accounts have no stored
+     * answer and resolveCalendarMode calls that 'google', so every teacher who
+     * never connected would be held at a door that does not open.
+     */
+    if (!GOOGLE_CALENDAR_LIVE || (await currentCalendarMode()) === 'none') return <RecordingsHome />
     const locale = await publicLocale()
     return (
       <I18nProvider locale={locale}>

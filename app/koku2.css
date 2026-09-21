@@ -1021,6 +1021,9 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 /* connector cards — tighter than the stock .connector-card in globals */
 .k-sec .connector-grid{margin-top:0;gap:12px}
 .k-sec .connector-card{min-height:0;padding:16px;gap:8px}
+/* A sentence, not an email address: .connector-sub is nowrap + ellipsis, which
+   quietly cut "Until it is …" off the end of the coming-soon note. */
+.connector-note{margin:0;font-size:11px;line-height:1.5;color:var(--muted)}
 .k-sec .connector-logo{width:40px;height:40px;border-radius:10px}
 
 /* selectable option cards (calendar, platform) */
@@ -1031,6 +1034,13 @@ html[data-rail="expanded"] .k-rail-name{display:block;font-size:12.5px;font-weig
 .k-choice-tick{flex:0 0 auto;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-strong);display:grid;place-items:center;font-size:11px;color:transparent}
 .k-choice.sel .k-choice-tick{background:var(--forest);border-color:var(--forest);color:#fff}
 .k-choice small{display:block;font-weight:500;font-size:11px;color:var(--muted);margin-top:1px}
+/* An option that exists but cannot be taken yet. Greyed rather than removed:
+   a teacher who schedules on Google should see that we are coming for it. */
+.k-choice.soon{position:relative;cursor:default;opacity:.62;background:var(--surface);padding-right:96px}
+.k-choice.soon:hover{border-color:var(--line);background:var(--surface)}
+.k-choice.soon .k-choice-tick{visibility:hidden}
+.k-soon-tag{position:absolute;top:11px;right:12px;font-size:9.5px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--amber)}
 
 /* availability */
 .k-avail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px 12px;margin-bottom:16px}

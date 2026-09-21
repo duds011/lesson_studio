@@ -8,7 +8,7 @@ import { saveOnboarding, completeOnboarding } from '@/app/actions/onboarding'
 import { RECORDER_STORE_URL } from '@/lib/recorder'
 import { ACCENT_PRESETS, type Brand } from '@/lib/brand'
 import { TEACHING_PLATFORMS, isExternalPlatform, type TeachingPlatform } from '@/lib/teaching-platform'
-import { CALENDAR_MODES, type CalendarMode } from '@/lib/calendar-mode'
+import { CALENDAR_MODES, GOOGLE_CALENDAR_LIVE, type CalendarMode } from '@/lib/calendar-mode'
 import { SPOKEN_LANGUAGES, TEACHING_LANGUAGES } from '@/lib/languages'
 
 type Props = {
@@ -68,6 +68,8 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
   const [calendarMode, setCalendarMode] = useState<CalendarMode | null>(
     googleConnected ? 'google' : initial.calendarMode
   )
+  /** Offered, but not yet openable — see GOOGLE_CALENDAR_LIVE. */
+  const calendarSoon = (id: CalendarMode) => id === 'google' && !GOOGLE_CALENDAR_LIVE && !googleConnected
   const [accent, setAccent] = useState(initial.brand.accent)
   // Empty until they answer, for the same reason calendarMode is: this field
   // used to open pre-filled with the resolved default, so it read as already
@@ -232,22 +234,45 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               </p>
 
               <div className="k-choices">
-                {CALENDAR_MODES.map((id, i) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`k-choice ${calendarMode === id ? 'sel' : ''}`}
-                    onClick={() => { setCalendarMode(id); setError('') }}
-                    aria-pressed={calendarMode === id}
-                  >
-                    <span className="k-choice-tick" aria-hidden>✓</span>
-                    <span>{t.calendarModes[i].label}<small>{t.calendarModes[i].hint}</small></span>
-                  </button>
-                ))}
+                {CALENDAR_MODES.map((id, i) => {
+                  const soon = calendarSoon(id)
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      // Disabled rather than hidden. A teacher who schedules on
+                      // Google needs to know we are coming for it; removing the
+                      // option entirely reads as "this product is not for you".
+                      disabled={soon}
+                      className={`k-choice ${calendarMode === id ? 'sel' : ''}${soon ? ' soon' : ''}`}
+                      onClick={() => { if (soon) return; setCalendarMode(id); setError('') }}
+                      aria-pressed={calendarMode === id}
+                    >
+                      <span className="k-choice-tick" aria-hidden>✓</span>
+                      <span>
+                        {t.calendarModes[i].label}
+                        <small>{soon ? t.onboarding.calendarSoonHint : t.calendarModes[i].hint}</small>
+                      </span>
+                      {soon && <span className="k-soon-tag">{t.onboarding.comingSoon}</span>}
+                    </button>
+                  )
+                })}
               </div>
 
+              {/* Only reachable by an account that connected before the door
+                  was shut, or one mid-setup with 'google' already saved. */}
+              {calendarMode === 'google' && !GOOGLE_CALENDAR_LIVE && !googleConnected && (
+                <div className="k-onb-ok" style={{ marginTop: 16, background: 'var(--amber-soft)' }}>
+                  <span aria-hidden style={{ background: 'var(--amber)' }}>i</span>
+                  <div>
+                    <strong>{t.onboarding.calendarSoonTitle}</strong>
+                    <small>{t.onboarding.calendarSoonBody}</small>
+                  </div>
+                </div>
+              )}
+
               {/* What that answer means, shown in place rather than a step later. */}
-              {calendarMode === 'google' && (googleConnected ? (
+              {calendarMode === 'google' && (googleConnected || GOOGLE_CALENDAR_LIVE) && (googleConnected ? (
                 <div className="k-onb-ok" style={{ marginTop: 16 }}>
                   <span aria-hidden>✓</span>
                   <div>
