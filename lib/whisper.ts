@@ -210,10 +210,33 @@ function isRepetitionLoop(words: Word[]): boolean {
   return false
 }
 
+/**
+ * The longest a single word is allowed to have taken.
+ *
+ * Whisper's word timestamps are honest about order and careless about
+ * duration: over a quiet stretch it hands one token the whole silence. In a
+ * real 45-minute lesson the median word is 0.38s and the 90th percentile is
+ * 1.26s — and then there is an "Okay" that claims 21 seconds and an "mm" that
+ * claims 57. Those are not words, they are silence wearing a label.
+ *
+ * Left alone they corrupt everything measured from a clock: a two-word "Okay
+ * okay" was reported to one learner as her longest answer of the hour at 34
+ * seconds, and 4.5 minutes of her talk time (12.4 of her teacher's) was
+ * silence. Nobody sustains one word for two seconds, so anything past that is
+ * trimmed back to it — the word is kept, its claim on the clock is not.
+ */
+const MAX_WORD_SEC = 2
+
 /** Group one speaker's words into turns, breaking on silence. */
 function toSegments(words: Word[], speaker: string, isHost: boolean) {
   const segments: any[] = []
   let current: Word[] = []
+
+  // Done here rather than at the parse, so it also covers a rebuild reading
+  // words that were cached before this existed. Trimming the end lengthens the
+  // gap to the next word, which is correct twice over: the silence stops
+  // counting as speech AND it can now break the turn, which is what it was.
+  words = words.map((w) => (w.end - w.start > MAX_WORD_SEC ? { ...w, end: w.start + MAX_WORD_SEC } : w))
 
   const flush = () => {
     if (!current.length) return
