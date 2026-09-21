@@ -2,9 +2,11 @@ import { notFound, redirect } from 'next/navigation'
 import { getDict } from '@/lib/i18n'
 import { teacherLocale } from '@/lib/i18n/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { brandVars, resolveBrand } from '@/lib/brand'
 import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
+import { heardForLesson } from '@/lib/lesson-audio'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
 import MemoPlayer from '@/components/portal/MemoPlayer'
@@ -31,6 +33,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
 
   const l = lesson as any
   const summary = Array.isArray(l.lesson_summaries) ? l.lesson_summaries[0] : l.lesson_summaries
+  const heard = await heardForLesson(createAdminClient(), l).catch(() => undefined)
   const recap = summary?.recap_json
   const studentRow = Array.isArray(l.students) ? l.students[0] : l.students
   const studentName = studentRow?.full_name ?? ''
@@ -114,6 +117,7 @@ export default async function TeacherLessonPage({ params }: { params: { id: stri
         teacherFirst={teacherFirst}
         brand={brand}
         language={studentRow?.language ?? null}
+        heard={heard}
         back={{ href: `/teacher/students/${params.id}`, label: studentName || 'Student' }}
         speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'teacher', takes: takes as any }}
         files={<LessonExchange lessonId={l.id} role="teacher" files={files || []} audios={practice} />}

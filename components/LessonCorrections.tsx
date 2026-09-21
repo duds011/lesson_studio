@@ -3,6 +3,14 @@
 import { useT } from '@/components/I18nProvider'
 import { useState } from 'react'
 import type { Correction, Strength } from '@/lib/openai'
+import SayIt from '@/components/portal/SayIt'
+
+/** Which halves of which corrections can be played, and in whose voice. */
+export type HeardCorrections = {
+  lessonId: string
+  said?: Record<string, 'teacher' | 'student'>
+  fixed?: Record<string, 'teacher' | 'student'>
+}
 
 /**
  * What the student said, and what it should have been.
@@ -65,18 +73,36 @@ function Marked({ tokens, keep, kind }: { tokens: string[]; keep: boolean[]; kin
   )
 }
 
-function CorrectionCard({ c, who }: { c: Correction; who: string }) {
+function CorrectionCard({ c, who, heard, index }: {
+  c: Correction; who: string; heard?: HeardCorrections; index: number
+}) {
   const t = useT()
   const said = tokenize(c.said)
   const fix = tokenize(c.correction)
   const { aKeep, bKeep } = diffFlags(said, fix)
+  // Two halves, two voices: the mistake as it was made, the fix as it was
+  // given. Either can be missing — nothing here assumes both were found.
+  const saidVoice = heard?.said?.[String(index)]
+  const fixVoice = heard?.fixed?.[String(index)]
 
   return (
     <div className="cx-card">
-      <span className="cx-label">{who} said</span>
+      <span className="cx-label">
+        {who} said
+        {heard && saidVoice && (
+          <SayIt lessonId={heard.lessonId} kind="said" itemKey={String(index)}
+                 voice={saidVoice} label={c.said} tone="inline" />
+        )}
+      </span>
       <p className="cx-line">…<Marked tokens={said} keep={aKeep} kind="said" /></p>
 
-      <span className="cx-label">{t.misc.correction}</span>
+      <span className="cx-label">
+        {t.misc.correction}
+        {heard && fixVoice && (
+          <SayIt lessonId={heard.lessonId} kind="fixed" itemKey={String(index)}
+                 voice={fixVoice} label={c.correction} tone="inline" />
+        )}
+      </span>
       <p className="cx-line cx-fix"><Marked tokens={fix} keep={bKeep} kind="fix" /></p>
 
       {(c.categories.length > 0 || c.explanation) && (
@@ -90,10 +116,12 @@ function CorrectionCard({ c, who }: { c: Correction; who: string }) {
 }
 
 export default function LessonCorrections({
-  corrections, didWell, who,
+  corrections, didWell, who, heard,
 }: {
   corrections: Correction[]
   didWell: Strength[]
+  /** Playable audio for these corrections, if the recording still holds any. */
+  heard?: HeardCorrections
   /** Whose sentences these are — "You" for the student, their name for the teacher. */
   who: string
 }) {
@@ -128,7 +156,7 @@ export default function LessonCorrections({
 
       <div className="cx-grid">
         {showing === 'improve'
-          ? corrections.map((c, i) => <CorrectionCard key={i} c={c} who={who} />)
+          ? corrections.map((c, i) => <CorrectionCard key={i} c={c} who={who} heard={heard} index={i} />)
           : didWell.map((s, i) => (
               <div className="cx-card cx-good" key={i}>
                 <span className="cx-label">{who} said</span>

@@ -2357,3 +2357,17 @@ a.k-stat:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(31,41,55,.
 .k-auth-lang button.is-on{color:var(--forest);background:var(--brand-soft);border-color:var(--brand-soft)}
 .k-auth-main{position:relative}
 @media(max-width:560px){.k-auth-lang{top:10px;right:10px}}
+
+/* Hear it said. A speaker on a word, and a named one beside a correction's
+   two halves — which mouth it came out of is most of the teaching there. */
+.say-it{display:inline-flex;align-items:center;gap:5px;vertical-align:-3px;
+  min-width:22px;height:22px;padding:0 6px;margin-left:6px;border:0;border-radius:999px;
+  background:var(--brand-soft);color:var(--brand);cursor:pointer;transition:.15s ease}
+.say-it svg{width:13px;height:13px;flex:0 0 auto}
+.say-it span{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.say-it:hover{background:var(--brand);color:#fff}
+.say-it.mine{background:var(--amber-soft);color:#8a5a06}
+.say-it.mine:hover{background:var(--amber);color:#fff}
+.say-it.on{animation:say-pulse 1s ease-in-out infinite}
+@keyframes say-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.say-it.on{animation:none}}

@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { resolveBrand } from '@/lib/brand'
 import { formatDateShort, lessonDisplayTitle } from '@/lib/portal-utils'
 import LessonPageTabs from '@/components/LessonPageTabs'
+import { heardForLesson } from '@/lib/lesson-audio'
 import CountUp from '@/components/portal/CountUp'
 import LessonExchange from '@/components/portal/LessonExchange'
 import MemoPlayer from '@/components/portal/MemoPlayer'
@@ -23,7 +24,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
 
   const { data: lesson } = await supabase
     .from('lessons')
-    .select(`id, lesson_number, lesson_date, title,
+    .select(`id, lesson_number, lesson_date, title, source_event_id,
       lesson_summaries ( recap_json, score ),
       students ( full_name, teacher_id, language )`)
     .eq('id', params.id)
@@ -41,6 +42,10 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
 
   // The teacher owns how this page is arranged — same brand the studio edits.
   const admin = createAdminClient()
+
+  // What of this lesson can be played back. One storage listing, so a play
+  // button is never offered for a clip that is not there.
+  const heard = await heardForLesson(admin, l).catch(() => undefined)
   const [{ data: files }, { data: audios }, { data: teacherProfile }] = await Promise.all([
     supabase.from('lesson_attachments').select('id, file_name, created_at, content_type, url, kind, thumbnail').eq('lesson_id', l.id).order('created_at', { ascending: false }),
     supabase.from('student_audio_submissions').select('id, file_name, created_at, prompt_index').eq('lesson_id', l.id).order('created_at', { ascending: false }),
@@ -126,6 +131,7 @@ export default async function StudentLessonPage({ params }: { params: { id: stri
         teacherFirst={teacherFirst}
         brand={brand}
         language={student?.language ?? null}
+        heard={heard}
         back={{ href: '/student/dashboard', label: t.misc.dashboardBack }}
         speaking={{ lessonId: l.id, enabled: speakingEnabled, role: 'student', takes: takes as any }}
         files={<LessonExchange lessonId={l.id} role="student" files={files || []} audios={practice} />}

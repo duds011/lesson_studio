@@ -145,7 +145,34 @@ export async function deliverRecapToStudent(eventId: string, rec: any): Promise<
   // Deliberately last, and deliberately unable to fail the publish.
   await notifyStudent(admin, lessonRow.id, linked.studentId, linked.teacherId, title, lessonDate, recapObj)
 
+  // And ask the other function to cut the audio for the words and corrections
+  // just written. Not awaited and unable to fail anything: a lesson whose
+  // words cannot be played is still a lesson, and this takes minutes.
+  cutLessonAudio(lessonRow.id)
+
   return { delivered: true, lessonId: lessonRow.id, studentId: linked.studentId }
+}
+
+/**
+ * Ask /api/lesson/audio to cut this lesson's vocabulary and corrections out of
+ * the recording.
+ *
+ * Over HTTP rather than by importing the lib, on purpose: the cutting needs an
+ * 80MB ffmpeg binary and this module is imported by the upload and publish
+ * paths, which are the requests people actually wait on.
+ *
+ * Fire and forget. The pass is idempotent and re-runnable by hand, so a call
+ * that never lands costs some play buttons, not correctness.
+ */
+function cutLessonAudio(lessonId: string) {
+  const secret = process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!secret) return
+  const base = (process.env.PUBLIC_APP_URL || 'https://koku-library.app').replace(/\/+$/, '')
+  fetch(`${base}/api/lesson/audio`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
+    body: JSON.stringify({ lessonId }),
+  }).catch((e) => console.error('[recap-delivery] audio trigger failed:', e?.message || e))
 }
 
 /**

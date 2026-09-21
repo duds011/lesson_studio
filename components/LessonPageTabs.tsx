@@ -6,6 +6,7 @@ import { FormattedContent } from './RecapView'
 import RecapSections from './RecapSections'
 import LessonExercises, { type SpeakingConfig } from './LessonExercises'
 import LessonCorrections from './LessonCorrections'
+import SayIt from '@/components/portal/SayIt'
 import { hesitationExamples } from '@/lib/languages'
 import Flashcards from './Flashcards'
 import CountUp from './portal/CountUp'
@@ -26,9 +27,23 @@ function Metric({ v, decimals = 0, suffix = '' }: { v: unknown; decimals?: numbe
 
 export default function LessonPageTabs({
   lesson, studentFirst, teacherFirst, brand = DEFAULT_BRAND, files, preview,
-  language, speaking, back, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
+  language, speaking, back, heard, tab: controlledTab, onTabChange, onRemoveSection, onRemoveMetric,
 }: {
   lesson: Lesson; studentFirst: string; teacherFirst?: string; brand?: Brand
+  /**
+   * What of this lesson can be played back, and in whose voice.
+   *
+   * Keyed by the word itself and by each correction's position, because those
+   * are what the renderer has — the clips are filed under the vocabulary row's
+   * id, and the page resolves that before handing this down. Absent (the
+   * branding preview, a purged recording) means no play buttons anywhere,
+   * which is the correct rendering of "there is nothing to hear".
+   */
+  heard?: {
+    vocab?: Record<string, { key: string; voice: 'teacher' | 'student' }>
+    said?: Record<string, 'teacher' | 'student'>
+    fixed?: Record<string, 'teacher' | 'student'>
+  }
   /** The language this student is learning — picks the hesitation examples. */
   language?: string | null
   /** File exchange, filling the Files tab. Omitted = no tab. */
@@ -182,7 +197,10 @@ export default function LessonPageTabs({
           return (
             <div className="corrections-card">
               <div className="stat-card-head" style={{ marginBottom: '.75rem' }}><span className="stat-icon">✍️</span><span className="stat-card-label">{t.lesson.corrections}</span></div>
-              <LessonCorrections corrections={corrections} didWell={didWell} who={studentFirst} />
+              <LessonCorrections
+                corrections={corrections} didWell={didWell} who={studentFirst}
+                heard={heard ? { lessonId: lesson.id, said: heard.said, fixed: heard.fixed } : undefined}
+              />
             </div>
           )
         }
@@ -247,14 +265,24 @@ export default function LessonPageTabs({
         return (
           <div className="lesson-block">
             <h3>{t.lesson.wordsFromLesson}</h3>
-            {(r.vocabulary || []).map((v: any, i: number) => (
+            {(r.vocabulary || []).map((v: any, i: number) => {
+              const say = heard?.vocab?.[String(v.word)]
+              return (
               <div className="example" key={i}>
-                <span className="jp">{v.word}</span> <span className="romaji">{v.reading}</span>
+                <span className="jp">{v.word}</span>
+                {say && (
+                  <SayIt
+                    lessonId={lesson.id} kind="vocab" itemKey={say.key}
+                    voice={say.voice} label={String(v.word)}
+                  />
+                )}{' '}
+                <span className="romaji">{v.reading}</span>
                 {v.jlpt_level && <span className="jlpt sm"> {v.jlpt_level}</span>}
                 <br />{v.definition}
                 {v.example_sentence && <><br /><span className="jp" style={{ fontWeight: 600 }}>{v.example_sentence}</span></>}
               </div>
-            ))}
+              )
+            })}
           </div>
         )
     }
