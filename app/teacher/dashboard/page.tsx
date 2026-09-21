@@ -62,8 +62,7 @@ export default async function TeacherDashboard() {
   const daysSince = (d: string | null) =>
     d ? Math.floor((Date.now() - new Date(`${d}T12:00:00`).getTime()) / 86_400_000) : null
 
-  const { data: profile } = await supabase.from('profiles').select('currency, teaching_language, speaking_language').eq('id', user.id).single()
-  const currency = (profile as any)?.currency ?? 'USD'
+  const { data: profile } = await supabase.from('profiles').select('teaching_language, speaking_language').eq('id', user.id).single()
   const teachingLanguage = (profile as any)?.teaching_language ?? ''
   // Pre-fills the new-student "explain lessons in" field: the language the
   // teacher said they explain in is usually every student's.
@@ -98,7 +97,7 @@ export default async function TeacherDashboard() {
           { label: t.dashboard.withLogin, value: rows.filter((r) => r.profile_id).length },
           { label: t.dashboard.lessonsRecorded, value: totalLessons },
         ]}
-        actions={<AddStudentForm currency={currency} teachingLanguage={teachingLanguage} speakingLanguage={speakingLanguage} />}
+        actions={<AddStudentForm teachingLanguage={teachingLanguage} speakingLanguage={speakingLanguage} />}
       />
 
       {lowStudents.length > 0 && (

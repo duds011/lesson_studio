@@ -7,7 +7,7 @@ import GuidedTour from '@/components/GuidedTour'
 import { useT } from '@/components/I18nProvider'
 import Thinking from '@/components/portal/Thinking'
 
-type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'eye' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note' | 'menu' | 'close'
+type IconName = 'home' | 'users' | 'calendar' | 'settings' | 'book' | 'arrow' | 'external' | 'wallet' | 'clock' | 'collapse' | 'note' | 'menu' | 'close'
 
 function Icon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
@@ -16,7 +16,6 @@ function Icon({ name }: { name: IconName }) {
     calendar: <><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></>,
     settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.34.7.64.96.3.25.68.4 1.07.4H21v4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></>,
     book: <><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></>,
-    eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
     arrow: <><path d="m9 18 6-6-6-6"/></>,
     external: <><path d="M15 3h6v6M10 14 21 3"/><path d="M18 13v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h7"/></>,
     wallet: <><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M21 12a2 2 0 0 0-2-2h-5a2 2 0 0 0 0 4h5a2 2 0 0 0 2-2Z"/></>,
@@ -59,7 +58,6 @@ const LINKS = [
   { href: '/teacher/dashboard', key: 'students', icon: 'users' as IconName, tour: 'students' },
   { href: '/teacher/notes', key: 'notes', icon: 'note' as IconName, tour: 'notes' },
   { href: '/teacher/materials', key: 'materials', icon: 'book' as IconName, tour: 'materials' },
-  { href: '/teacher/branding', key: 'studentView', icon: 'eye' as IconName, tour: 'student-view' },
 ] as const
 
 /** Remembered per browser, and read straight off the root element so the

@@ -52,7 +52,6 @@ export const en = {
     students: 'Students',
     notes: 'Notes',
     materials: 'Materials',
-    studentView: 'Student view',
     availability: 'Availability',
     settings: 'Settings',
     /** Under the account name: what the calendar connection is actually doing. */
@@ -185,7 +184,6 @@ export const en = {
     spokenIn: 'my lessons are mostly spoken in',
     spokenHint:
       'Often not the language being learned — a beginner’s hour runs mostly in the language you share. It’s what the recorder listens for.',
-    timezone: 'Your timezone',
 
     platformTitle: 'Where do you meet students?',
     platformLead:
@@ -766,7 +764,7 @@ export const en = {
     /**
      * Indexed to TOUR_STEPS in lib/tour.ts; the anchors stay in the code.
      *
-     * The first five describe the place and carry Next. The rest ask for
+     * The first four describe the place and carry Next. The rest ask for
      * something, and `wait` is what the card says where the button would be —
      * it has to read as "your turn", not as "loading", because the screen is
      * watching them rather than stuck.
@@ -785,11 +783,6 @@ export const en = {
       {
         title: 'Notes',
         body: 'One click per lesson taught — a month at a glance that doubles as your teaching diary.',
-        wait: '',
-      },
-      {
-        title: 'Student view',
-        body: 'Exactly what your students open, in your colours and your wording. Not a mock-up: the real thing.',
         wait: '',
       },
       {
@@ -1096,9 +1089,22 @@ export const en = {
   },
 
   /** components/portal/RecorderMissing.tsx */
-  recorderMissing: {
-    title: 'Add the recorder to start',
-    body: 'Lesson Studio writes recaps from your lessons, and the Chrome extension is what records them. Until it is installed and signed in, nothing will reach this page — there is no other way to get a lesson in.',
+  recorderStatus: {
+    missingPill: 'Recorder not installed',
+    missingTitle: 'The recorder is not installed yet',
+    missingBody: 'Lesson Studio writes recaps from your lessons, and the Chrome extension is what records them. Until it is installed and signed in, nothing can reach this page — there is no other way to get a lesson in.',
+    /** Why there is no button here to say you have done it. */
+    auto: 'Install it and sign in inside the extension with this same email and password. This panel notices by itself and turns green — there is nothing to confirm here.',
+    setupGuide: 'Setup guide',
+    getExtension: 'Get the extension',
+
+    readyPill: 'Recorder connected',
+    readyTitle: 'Your recorder is ready',
+    readyBody: 'It is installed and signed in to this account. Open your next lesson in Chrome and press record — the recap arrives here on its own.',
+    /** {date} is already formatted. */
+    lastRecording: 'Last recording {date}.',
+    nothingYet: 'Nothing recorded yet.',
+    check: 'Check it in Settings',
   },
 
   /** components/portal/PendingRecordings.tsx — a recording with no student yet. */
@@ -1216,16 +1222,6 @@ export const en = {
     extResetFailed: 'Could not reset the recorder connection.',
     extSigningOut: 'Signing out…',
     extSignOutEverywhere: 'Sign the recorder out everywhere',
-
-    /** components/HowLessonsReachYou.tsx */
-    howTitle: 'How lessons reach you',
-    /** {platform} is a marketplace name — Preply, italki — never translated. */
-    howLead: 'You teach in {platform}, so nothing is scheduled here. A lesson enters Lesson Studio the moment its recording does.',
-    howSteps: [
-      { title: 'Record the lesson', body: 'Use the browser recorder, or upload the file your platform gives you.' },
-      { title: 'We build the recap', body: 'Summary, vocabulary, corrections and practice, drafted from the transcript.' },
-      { title: 'You review and publish', body: 'Edit anything, then send it — the student sees it in their portal.' },
-    ],
 
     /** components/portal/InstructionLanguageEditor.tsx */
     instrStudentChose: 'Your student chose this language themselves. You can change it, but they picked it.',

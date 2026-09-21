@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createStudent } from '@/app/actions/portal-students'
-import { addPayment } from '@/app/actions/payments'
 import { languageOptions, SPOKEN_LANGUAGES } from '@/lib/languages'
 import InviteLink from '@/components/portal/InviteLink'
 import { tourDid } from '@/lib/tour'
@@ -28,14 +27,9 @@ const emptyForm = (defaultLanguage: string, defaultInstruction: string) => ({
   // teacher's own answer — it was optional-and-blank before, which read as
   // "leave it" and quietly meant English for students who could not read it.
   instruction_language: defaultInstruction.trim() || 'English',
-  // How many lessons they have in hand. Not a price and not a payment — money
-  // lives in Payments. This is the number the balance counts down from as
-  // recaps are published, and the only reason it is asked for here is that a
-  // teacher adding a student almost always knows it.
-  lessons: '',
 })
 
-export default function AddStudentForm({ currency = 'USD', teachingLanguage = '', speakingLanguage = '' }: { currency?: string; teachingLanguage?: string; speakingLanguage?: string }) {
+export default function AddStudentForm({ teachingLanguage = '', speakingLanguage = '' }: { teachingLanguage?: string; speakingLanguage?: string }) {
   const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -43,7 +37,7 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
   const [error, setError] = useState('')
   // Set once the student exists. Its presence swaps the form out for the link
   // window — the teacher's next job is to send the link, not to fill anything.
-  const [created, setCreated] = useState<{ name: string; note?: string; inviteCode?: string } | null>(null)
+  const [created, setCreated] = useState<{ name: string; inviteCode?: string } | null>(null)
   const [form, setForm] = useState(emptyForm(teachingLanguage, speakingLanguage))
   // document.body does not exist during the server render.
   const [mounted, setMounted] = useState(false)
@@ -71,27 +65,8 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
       return
     }
 
-    // The balance is Σ paid payments' lessons_covered − published lessons, so
-    // the starting count is still written as a payment row — with no amount,
-    // because this is a lesson count and not a sale. Recording it any other way
-    // would need a second source of truth for the same number.
-    const lessons = form.lessons ? parseInt(form.lessons, 10) : 0
-    let note = ''
-    if (lessons > 0) {
-      const pay = await addPayment(res.studentId, {
-        amount: 0, currency, status: 'paid',
-        description: `${lessons} lesson${lessons === 1 ? '' : 's'} to start`,
-        lessons_covered: lessons,
-        payment_date: new Date().toISOString().slice(0, 10),
-        method: '',
-      })
-      note = pay.success
-        ? `${lessons} lesson${lessons === 1 ? '' : 's'} on their balance — it counts down as you publish recaps.`
-        : `Student created, but the lesson count failed to save: ${pay.error}`
-    }
-
     setBusy(false)
-    setCreated({ name: form.full_name, note, inviteCode: res.inviteCode })
+    setCreated({ name: form.full_name, inviteCode: res.inviteCode })
     // The tour's third step is waiting on exactly this, and only this: the
     // student existing. Not the form opening, not the button being pressed.
     tourDid('student-created')
@@ -153,7 +128,6 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
           </p>
 
           {created.inviteCode && <InviteLink code={created.inviteCode} />}
-          {created.note && <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>{created.note}</p>}
 
           <button className="k-modal-cta" onClick={finish}>{t.common.done}</button>
           <button
@@ -201,23 +175,6 @@ export default function AddStudentForm({ currency = 'USD', teachingLanguage = ''
             <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0' }}>
               The language this student reads. Their recaps, word meanings and test questions are written in it —
               not the language they are learning.
-            </p>
-          </div>
-
-          {/* How many lessons they have. One number, no money — the teacher
-              gets warned when it runs down, which is the whole point of it. */}
-          <div style={{ borderTop: '1px solid var(--line)', margin: '8px 0 4px', paddingTop: 12 }}>
-            <div className="field" style={{ maxWidth: 220 }}>
-              <label>Lessons they have</label>
-              <input
-                type="number" min="0" step="1" inputMode="numeric"
-                value={form.lessons} onChange={set('lessons')}
-                placeholder="e.g. 4" style={inputStyle}
-              />
-            </div>
-            <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0 }}>
-              Counts down by one each time you publish a recap, and warns you when they are nearly
-              out. Leave it blank if you don&rsquo;t track lessons this way.
             </p>
           </div>
 

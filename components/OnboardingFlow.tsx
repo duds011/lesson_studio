@@ -17,7 +17,6 @@ type Props = {
     teachingLanguage: string | null
     /** What they explain in. Null until they have been through this step. */
     speakingLanguage: string | null
-    timezone: string
     teachingPlatform: TeachingPlatform
     /** null until they answer — this step has no safe default. */
     calendarMode: CalendarMode | null
@@ -34,12 +33,18 @@ type Props = {
   zoomConnected: boolean
 }
 
-const ZONES = [
-  'Asia/Tokyo', 'Asia/Seoul', 'Asia/Shanghai', 'Asia/Singapore', 'Asia/Dubai',
-  'Europe/London', 'Europe/Lisbon', 'Europe/Madrid', 'Europe/Paris', 'Europe/Berlin',
-  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Sao_Paulo',
-  'Australia/Sydney',
-]
+/**
+ * The teacher's timezone, read off the browser rather than asked for.
+ *
+ * Setup used to open with a sixteen-entry picker defaulted to Asia/Tokyo — a
+ * question every teacher outside Japan had to answer correctly before they
+ * could get on, and one the machine they are sitting at has always known. It
+ * is still saved with the first step; only where the answer comes from
+ * changed.
+ */
+const browserZone = () => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || '' } catch { return '' }
+}
 
 /**
  * Only the COUNT and the order live here now; the words come from the
@@ -58,7 +63,6 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
   const [step, setStep] = useState(Math.min(initial.step, STEP_COUNT - 1))
   const [teachingLanguage, setTeachingLanguage] = useState(initial.teachingLanguage ?? '')
   const [spokenLanguage, setSpokenLanguage] = useState(initial.speakingLanguage ?? '')
-  const [timezone, setTimezone] = useState(initial.timezone)
   const [platform, setPlatform] = useState<TeachingPlatform>(initial.teachingPlatform)
   // A calendar already connected is an answer in itself; otherwise they choose.
   const [calendarMode, setCalendarMode] = useState<CalendarMode | null>(
@@ -86,7 +90,7 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
     if (step === 0) {
       if (!teachingLanguage) { setError(t.onboarding.pickTeaching); return }
       if (!spokenLanguage) { setError(t.onboarding.pickSpoken); return }
-      persist({ teachingLanguage, speakingLanguage: spokenLanguage, timezone, step: 1 }, () => setStep(1))
+      persist({ teachingLanguage, speakingLanguage: spokenLanguage, timezone: browserZone(), step: 1 }, () => setStep(1))
     } else if (step === 1) {
       persist({ teachingPlatform: platform, step: 2 }, () => setStep(2))
     } else if (step === 2) {
@@ -180,13 +184,6 @@ export default function OnboardingFlow({ initial, googleConnected, zoomConnected
               <p className="k-onb-lead" style={{ fontSize: 12.5 }}>
                 {t.onboarding.spokenHint}
               </p>
-
-              <label className="k-field">
-                <span>{t.onboarding.timezone}</span>
-                <select className="k-input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
-                  {ZONES.map((z) => <option key={z} value={z}>{z.replace('_', ' ')}</option>)}
-                </select>
-              </label>
             </>
           )}
 

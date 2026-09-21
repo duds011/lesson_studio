@@ -33,13 +33,12 @@ export type TourStep = {
  * added here without copy fails the build rather than rendering blank.
  */
 export const TOUR_STEPS: TourStep[] = [
-  // First the tour of the place: five windows, one Next each. Nothing to do
+  // First the tour of the place: four windows, one Next each. Nothing to do
   // but look, and looking is quick — the sidebar is on every teacher page, so
   // these work from wherever the tour was started.
   { target: 'overview' },
   { target: 'students' },
   { target: 'notes' },
-  { target: 'student-view' },
   { target: 'settings' },
 
   // Then the job, which is the reason any of it matters. Starting here was
@@ -54,7 +53,7 @@ export const TOUR_STEPS: TourStep[] = [
 ]
 
 /** Where the walkthrough stops describing and starts asking. */
-export const FIRST_DOING_STEP = 5
+export const FIRST_DOING_STEP = 4
 
 /** Where the tour has got to, per account — see GuidedTour. */
 export const tourDoneKey = (email?: string | null) => `ls.tour.done:${email || 'anon'}`

@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import type { Messages } from '@/lib/i18n'
 import CountUp from '@/components/portal/CountUp'
-import HowLessonsReachYou from '@/components/HowLessonsReachYou'
 import type { RecapUsage } from '@/lib/recap-quota'
 import { TRIAL_RECAPS } from '@/lib/plans'
 
@@ -22,8 +21,6 @@ type Props = {
   /** This month's recap allowance — every teacher sees where they stand. */
   usage?: RecapUsage | null
   recent: RecentLesson[]
-  /** Where they told us they teach — quoted back so the page feels theirs. */
-  platformLabel: string
   /** The review queue, rendered FIRST in the main column — it is the page's
    *  whole point. It used to float below the grid as a separate afterthought,
    *  while the drafts it held were invisible in the lessons list (no lesson
@@ -45,7 +42,7 @@ const fmtDate = (d: string | null) =>
  * provider but cannot read it — that hook only exists on the client.
  */
 export default function RecordingsOverview({
-  studentCount, draftCount, publishedCount, usage, recent, platformLabel, review, t,
+  studentCount, draftCount, publishedCount, usage, recent, review, t,
 }: Props & { t: Messages }) {
   return (
     <>
@@ -67,9 +64,6 @@ export default function RecordingsOverview({
 
       <div className="k-overview">
         <div className="k-overview-main">
-          {/* Closes, and stays closed — see HowLessonsReachYou. */}
-          <HowLessonsReachYou platformLabel={platformLabel} />
-
           {review}
 
           <section className="k-sec">

@@ -17,8 +17,7 @@ import { mapEventToStudent } from '@/lib/lesson-link'
 import { currentCalendarMode } from '@/lib/calendar-mode.server'
 import { listPendingRecordings } from '@/app/actions/recordings'
 import PendingRecordings from '@/components/portal/PendingRecordings'
-import RecorderMissing from '@/components/portal/RecorderMissing'
-import { resolveTeachingPlatform, TEACHING_PLATFORMS } from '@/lib/teaching-platform'
+import RecorderStatus from '@/components/portal/RecorderStatus'
 import { TRIAL_RECAPS, getRecapUsage } from '@/lib/recap-quota'
 import TrialWelcome from '@/components/TrialWelcome'
 
@@ -166,24 +165,25 @@ async function loadDraftRecaps(recapRecs: Record<string, any>): Promise<DraftRec
  * student can read and no doc to count. The tile said 3 while the list under
  * it showed 6. The row is what the student sees, so the row is the truth.
  */
-async function hasRecorder(teacherId: string): Promise<boolean> {
+async function recorderState(teacherId: string): Promise<{ connected: boolean; lastUsedAt: string | null }> {
   const admin = createAdminClient()
 
-  // Written the first time the extension signs in with THIS account.
+  // Written the first time the extension signs in with THIS account, and
+  // touched on every call it makes afterwards.
   const { data: token } = await admin
-    .from('teacher_ext_tokens').select('teacher_id').eq('teacher_id', teacherId).maybeSingle()
-  if (token) return true
+    .from('teacher_ext_tokens').select('last_used_at').eq('teacher_id', teacherId).maybeSingle()
+  if (token) return { connected: true, lastUsedAt: (token as any).last_used_at ?? null }
 
   /**
    * Or: anything ever arrived. A teacher with lessons on the board plainly has
    * a working recorder, whatever the token table says — they may have signed
    * the extension in under another of their accounts, or predate the token
    * entirely. Telling someone with six published recaps that nothing can reach
-   * this page is both wrong and impossible to dismiss.
+   * this page is simply wrong.
    */
   const { count } = await admin
     .from('lessons').select('id', { count: 'exact', head: true }).eq('teacher_id', teacherId)
-  return (count ?? 0) > 0
+  return { connected: (count ?? 0) > 0, lastUsedAt: null }
 }
 
 async function publishedLessonCount(supabase: any, teacherId: string): Promise<number> {
@@ -200,8 +200,7 @@ async function RecordingsHome() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: profile }, { data: students }, { data: lessons }] = await Promise.all([
-    supabase.from('profiles').select('teaching_platform, meeting_platform').eq('id', user?.id ?? '').single(),
+  const [{ data: students }, { data: lessons }] = await Promise.all([
     supabase.from('students').select('id, full_name').eq('teacher_id', user?.id ?? ''),
     supabase.from('lessons')
       .select('id, title, status, lesson_date, lesson_number, student_id')
@@ -223,11 +222,10 @@ async function RecordingsHome() {
 
   const recapRecs = await getRecaps()
   const draftRecaps = await loadDraftRecaps(recapRecs)
-  const platform = resolveTeachingPlatform((profile as any)?.teaching_platform ?? (profile as any)?.meeting_platform)
   const pending = await listPendingRecordings()
   const studentOptions = (students ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
   const publishedCount = await publishedLessonCount(supabase, user?.id ?? '')
-  const recorderReady = await hasRecorder(user?.id ?? '')
+  const recorder = await recorderState(user?.id ?? '')
   const usage = user ? await getRecapUsage(user.id) : null
   // `/` sits OUTSIDE app/teacher/layout.tsx, so it does not inherit that
   // layout's provider — without this the sidebar here would be the only one
@@ -240,7 +238,7 @@ async function RecordingsHome() {
       <AppNav email={user?.email} connected={false} calendar={false} />
       <main className="wrap page-fade">
         {usage?.trial && <TrialWelcome email={user?.email} freeRecaps={usage.left} />}
-        {!recorderReady && <RecorderMissing t={t} />}
+        <RecorderStatus t={t} connected={recorder.connected} lastUsedAt={recorder.lastUsedAt} />
         <PendingRecordings recordings={pending} students={studentOptions} />
         <RecordingsOverview t={t}
           studentCount={(students ?? []).length}
@@ -248,7 +246,6 @@ async function RecordingsHome() {
           publishedCount={publishedCount}
           usage={usage}
           recent={recent.filter((l) => l.status === 'published')}
-          platformLabel={t.platforms[TEACHING_PLATFORMS.indexOf(platform)]}
           review={<RecapsToReview drafts={draftRecaps} students={studentOptions} />}
         />
       </main>
@@ -304,7 +301,7 @@ export default async function Home() {
     .from('students').select('id, full_name').eq('teacher_id', me?.id ?? '')
   const studentOptions = (myStudents ?? []).map((s: any) => ({ id: s.id, name: s.full_name }))
   const publishedCount = await publishedLessonCount(supabaseForStudents, me?.id ?? '')
-  const recorderReady = await hasRecorder(me?.id ?? '')
+  const recorder = await recorderState(me?.id ?? '')
   const usage = me ? await getRecapUsage(me.id) : null
   const locale = me ? await teacherLocale(supabaseForStudents, me.id) : await publicLocale()
   const t = getDict(locale)
@@ -337,7 +334,7 @@ export default async function Home() {
           </div>
         </header>
 
-        {!recorderReady && <RecorderMissing t={t} />}
+        <RecorderStatus t={t} connected={recorder.connected} lastUsedAt={recorder.lastUsedAt} />
         <PendingRecordings recordings={pending} students={studentOptions} />
 
         <div className="k-overview">
