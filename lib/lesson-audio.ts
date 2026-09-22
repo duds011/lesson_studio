@@ -411,8 +411,26 @@ export async function attachLessonAudio(
           const start = Math.max(0, w.start - PAD_BEFORE)
           const seconds = Math.min(MAX_CLIP_SEC, (w.end - w.start) + PAD_BEFORE + PAD_AFTER)
           const clip = await cutClip(file, start, seconds)
-          if (!clip.length) continue
-          const heard = await heardIn(clip, lang, want.phrase)
+          /**
+           * A header and no audio.
+           *
+           * ffmpeg answers a window that lands past the end of the track, or
+           * one of no duration, with a valid WebM container holding nothing —
+           * a few hundred bytes. Whisper replies 400 "could not be decoded",
+           * and until this guard existed that 400 threw and took the whole
+           * lesson's pass down with it.
+           */
+          if (clip.length < 2000) continue
+
+          let heard = ''
+          try {
+            heard = await heardIn(clip, lang, want.phrase)
+          } catch (e: any) {
+            // One unreadable second is a candidate to skip, never a reason to
+            // abandon the other forty phrases in the lesson.
+            say(`    (check failed for "${want.phrase.slice(0, 32)}": ${String(e?.message || e).slice(0, 80)})`)
+            continue
+          }
           lastHeard = heard
           if (!saysIt(heard, want.phrase)) continue
 
